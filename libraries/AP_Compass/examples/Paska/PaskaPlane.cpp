@@ -3440,11 +3440,15 @@ void controlTask()
   } else {    
     if(vpFeature.keepLevel)
       // Strong leveler enabled
+      
       targetRollRate = rollP * (levelBank + aileStick*maxBank - bankAngle);
 
     else if(vpMode.bankLimiter) {
-      // Bank limiter + weak leveling
-      targetRollRate -= rollP*clamp(bankAngle, -1/RADIAN, 1/RADIAN);
+      // Weak leveling
+      
+      targetRollRate -= rollP*clamp(bankAngle, -1.0/2/RADIAN, 1.0/2/RADIAN);
+
+      // Bank limiter
       
       targetRollRate =
 	clamp(targetRollRate,
