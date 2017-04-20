@@ -2713,7 +2713,7 @@ void configurationTask()
   if(modeSelectorValue == -1) {
     if(!vpMode.slowFlight)
       consoleNoteLn_P(PSTR("Slow flight mode ENABLED"));
-    vpMode.slowFlight = false;
+    vpMode.slowFlight = true;
   } else if(vpMode.slowFlight) {
     consoleNoteLn_P(PSTR("Slow flight mode DISABLED"));
     vpMode.slowFlight = false;
