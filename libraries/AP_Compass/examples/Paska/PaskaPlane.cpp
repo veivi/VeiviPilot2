@@ -211,7 +211,7 @@ float testGain = 0;
 float iAS, dynPressure, alpha, aileStick, elevStick, throttleStick, rudderStick, tuningKnob;
 bool ailePilotInput, elevPilotInput, rudderPilotInput;
 uint32_t controlCycleEnded;
-float elevTrim, elevTrimSub, targetAlpha;
+float elevTrim, targetAlpha;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float autoAlphaP, rudderMix, stallAlpha, shakerAlpha, pusherAlpha;
@@ -2002,8 +2002,7 @@ void receiverTask()
   
   if(vpMode.rxFailSafe && vpStatus.armed) {
     vpFeature.stabilizePitch = vpFeature.stabilizeBank
-      = vpFeature.alphaHold = vpMode.bankLimiter = true;
-    vpFeature.pusher = false;
+      = vpFeature.alphaHold = vpMode.bankLimiter = vpFeature.pusher = true;
 
     trimRateLimiter.setRate(1.5/RADIAN);
     elevTrim = elevPredict(vpDerived.thresholdAlpha);
