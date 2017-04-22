@@ -2001,8 +2001,8 @@ void receiverTask()
   //
   
   if(vpMode.rxFailSafe && vpStatus.armed) {
-    vpFeature.stabilizePitch = vpFeature.stabilizeBank
-      = vpFeature.alphaHold = vpMode.bankLimiter = vpFeature.pusher = true;
+    vpMode.slowFlight = vpMode.bankLimiter = vpFeature.stabilizePitch
+      = vpFeature.stabilizeBank = vpFeature.alphaHold = vpFeature.pusher = true;
 
     trimRateLimiter.setRate(1.5/RADIAN);
     elevTrim = elevPredict(vpDerived.thresholdAlpha);
