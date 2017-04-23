@@ -2987,8 +2987,13 @@ void configurationTask()
     case 13:
       // Disable stabilization for max roll rate test
 
-      vpFeature.stabilizeBank = vpMode.bankLimiter
-	= vpFeature.keepLevel = false;
+      if(ailePilotInput) {
+	vpFeature.stabilizeBank = vpMode.bankLimiter
+	  = vpFeature.keepLevel = false;
+      } else {
+	vpFeature.stabilizeBank = vpMode.bankLimiter
+	  = vpFeature.keepLevel = true;
+      }
       break;
     }
   } else { 
