@@ -2542,6 +2542,16 @@ void statusTask()
       vpStatus.stall = true;
     }
   }
+
+  //
+  //
+  //
+
+  const float accDirection = atan2(accZ, accX);
+  const float relativeWind = alpha - vpParam.offset;
+  const float absDiff = abs(accDirection - relativeWind);
+  const float difference = MIN((2 * PI) - absDiff, absDiff);
+    
 }
   
 void configurationTask()
