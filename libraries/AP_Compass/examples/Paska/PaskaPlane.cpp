@@ -216,6 +216,7 @@ Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float autoAlphaP, rudderMix, stallAlpha, shakerAlpha, pusherAlpha;
 float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, levelBank, slope;
+float accDirection, relativeWind;
 uint16_t heading;
 NewI2C I2c = NewI2C();
 Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2*CONTROL_HZ), iasEntropyAcc(CONFIG_HZ), alphaEntropyAcc(CONFIG_HZ);
@@ -2478,7 +2479,7 @@ void statusTask()
   // Do we have positive airspeed?
   //
 
-  static uint32_t lastNegativeIAS, lastStall;
+  static uint32_t lastNegativeIAS, lastStall, lastAlphaLocked;
 
   if(vpStatus.pitotBlocked || iasFilter.output() < vpDerived.stallIAS*2/3) {
     if(vpStatus.positiveIAS) {
@@ -2523,11 +2524,39 @@ void statusTask()
   }
 
   //
+  // Alpha/accel lockup detection (a.o.a. sensor blade detached?)
+  //
+
+  accDirection = atan2(accZ, -accX);
+  
+  relativeWind = alpha - vpParam.offset;
+  
+  const float diff = fabsf(accDirection - relativeWind),
+    disagreement = MIN(diff, 2*PI - diff);
+
+  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
+     || disagreement > 15.0/RADIAN) {
+    if(!vpStatus.alphaLocked)
+      lastAlphaLocked = currentTime;
+    else if(currentTime - lastAlphaLocked > 0.1e6) {
+      consoleNoteLn_P(PSTR("Alpha lockup RESOLVED"));
+      vpStatus.alphaLocked = false;
+    }
+  } else {
+    if(vpStatus.alphaLocked)
+      lastAlphaLocked = currentTime;
+    else if(currentTime - lastAlphaLocked > 0.5e6) {
+      consoleNoteLn_P(PSTR("Alpha and acceleration LOCKED"));
+      vpStatus.alphaLocked = true;
+    }
+  }
+  
+  //
   // Stall detection
   //
   
-  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-     || alpha < stallAlpha*1.05) {
+  if(alphaFailed() || vpMode.alphaFailSafe || vpMode.sensorFailSafe
+     || vpMode.takeOff || alpha < stallAlpha*1.05) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.5e6) {
@@ -2542,16 +2571,6 @@ void statusTask()
       vpStatus.stall = true;
     }
   }
-
-  //
-  //
-  //
-
-  const float accDirection = atan2(accZ, accX);
-  const float relativeWind = alpha - vpParam.offset;
-  const float absDiff = abs(accDirection - relativeWind);
-  const float difference = MIN((2 * PI) - absDiff, absDiff);
-    
 }
   
 void configurationTask()
@@ -2828,7 +2847,7 @@ void configurationTask()
 
     if(vpMode.slowFlight)
       vpMode.bankLimiter = true;
-  
+
     // Failsafe mode interpretation
 
     if(vpMode.sensorFailSafe) {
@@ -3161,8 +3180,11 @@ void gaugeTask()
 	consolePrint_P(PSTR(" alpha = "));
 	consolePrint(alpha*RADIAN, 1);
 	consoleTab(15);
-	consolePrint_P(PSTR(" CoL(rel) = "));
-	consolePrint(2*cos(alpha)*accZ/square(iAS), 3);
+	consolePrint_P(PSTR(" relWind = "));
+	consolePrint(relativeWind*RADIAN, 1);
+	consoleTab(30);
+	consolePrint_P(PSTR(" accDir = "));
+	consolePrint(accDirection*RADIAN, 1);
 	break;
 	
       case 12:

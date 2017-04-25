@@ -16,6 +16,7 @@ struct StatusRecord {
   bool fullStop;
   bool pitotBlocked;
   bool stall;
+  bool alphaLocked;
   bool weightOnWheels;
   bool aloft;
 };

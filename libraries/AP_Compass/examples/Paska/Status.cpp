@@ -11,6 +11,7 @@ bool pitotFailed()
 
 bool alphaFailed()
 {
-  return !vpStatus.simulatorLink && alphaDevice.status();
+  return vpStatus.alphaLocked
+    || (!vpStatus.simulatorLink && alphaDevice.status());
 }
 
