@@ -214,7 +214,7 @@ uint32_t controlCycleEnded;
 float elevTrim, targetAlpha;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-float autoAlphaP, rudderMix, stallAlpha, shakerAlpha, pusherAlpha;
+float outer_P, rudderMix, stallAlpha, shakerAlpha, pusherAlpha;
 float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, levelBank, slope;
 float accDirection, relativeWind;
 uint16_t heading;
@@ -2879,7 +2879,7 @@ void configurationTask()
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
   throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
 
-  autoAlphaP = vpParam.o_P;
+  outer_P = vpParam.o_P;
   stallAlpha = vpParam.alphaMax;
   shakerAlpha = vpDerived.shakerAlpha;
   pusherAlpha = vpDerived.pusherAlpha;
@@ -2963,7 +2963,7 @@ void configurationTask()
       // Auto alpha outer loop gain
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      autoAlphaP = testGain = testGainExpo(vpParam.o_P);
+      outer_P = testGain = testGainExpo(vpParam.o_P);
       break;
                
     case 5:
@@ -3412,10 +3412,10 @@ void controlTask()
     targetPitchRate = nominalPitchRate(bankAngle, targetAlpha)
       + clamp(targetAlpha - alpha,
 	      -30/RADIAN - pitchAngle,
-	      vpParam.maxPitch - pitchAngle)*autoAlphaP;
+	      vpParam.maxPitch - pitchAngle)*outer_P;
 
   else if(vpFeature.pitchHold)
-    targetPitchRate = (0.1 + effStick/2 - pitchAngle)*autoAlphaP;
+    targetPitchRate = (0.1 + effStick/2 - pitchAngle)*outer_P;
 
   else
     targetPitchRate = effStick*PI/2;
@@ -3452,7 +3452,6 @@ void controlTask()
   //
   
   float maxBank = 45/RADIAN;
-  const float rollP = 2.5;
 
   if(vpMode.rxFailSafe)
     maxBank = 10/RADIAN;
@@ -3477,18 +3476,18 @@ void controlTask()
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollRate = rollP * (levelBank + aileStick*maxBank - bankAngle);
+      targetRollRate = outer_P * (levelBank + aileStick*maxBank - bankAngle);
 
     else if(vpMode.bankLimiter) {
       // Weak leveling
       
-      targetRollRate -= rollP*clamp(bankAngle, -1.0/2/RADIAN, 1.0/2/RADIAN);
+      targetRollRate -= outer_P*clamp(bankAngle, -1.0/2/RADIAN, 1.0/2/RADIAN);
 
       // Bank limiter
       
       targetRollRate =
 	clamp(targetRollRate,
-	      (-maxBank - bankAngle)*rollP, (maxBank - bankAngle)*rollP);
+	      (-maxBank - bankAngle)*outer_P, (maxBank - bankAngle)*outer_P);
     }
       
     aileCtrl.input(targetRollRate - rollRate, controlCycle);
