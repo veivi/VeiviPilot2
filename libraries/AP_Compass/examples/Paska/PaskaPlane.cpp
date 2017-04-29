@@ -1279,6 +1279,13 @@ void executeCommand(char *buf)
     case c_dump:
       logDumpBinary();
       break;
+
+    case c_fault:
+      if(numParams > 0)
+	vpStatus.fault = param[0];
+      else
+	vpStatus.fault = 0;
+      break;
     
     case c_backup:
       for(int i = 0; i < maxModels(); i++) {
@@ -2046,7 +2053,7 @@ void sensorTaskFast()
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
   dynPressure = pressureBuffer.output() * factor_c
-    / cos(clamp(alpha, -vpParam.alphaMax, vpParam.alphaMax));
+    / cos(clamp(relativeWind, -vpParam.alphaMax, vpParam.alphaMax));
   
   // Attitude
 
@@ -2530,6 +2537,9 @@ void statusTask()
   accDirection = atan2(accZ, -accX);
   
   relativeWind = alpha - vpParam.offset;
+
+  if(vpStatus.fault == 3)
+    relativeWind = accDirection;
   
   const float diff = fabsf(accDirection - relativeWind),
     disagreement = MIN(diff, 2*PI - diff);

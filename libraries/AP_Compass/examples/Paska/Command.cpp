@@ -91,6 +91,7 @@ const struct Command commands[] PROGMEM = {
   { "tab_elev", c_tab_elev },  
   { "curve", c_curve },
   { "gear", c_gear },
+  { "fault", c_fault },
   { "", c_invalid }
 };
 

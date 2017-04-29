@@ -19,6 +19,7 @@ struct StatusRecord {
   bool alphaLocked;
   bool weightOnWheels;
   bool aloft;
+  int fault;
 };
 
 extern struct StatusRecord vpStatus;
