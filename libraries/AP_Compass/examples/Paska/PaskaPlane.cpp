@@ -234,46 +234,6 @@ I2CDevice alphaDevice(&I2c, 0, "alpha"), pitotDevice(&I2c, 0, "pitot");
 I2CDevice eepromDevice(&I2c, 0, "EEPROM"), displayDevice(&I2c, 0, "display");
 bool paramsModified = false;
 
-const int maxTests_c = 1;
-float autoTestIAS[maxTests_c], autoTestK[maxTests_c], autoTestT[maxTests_c], autoTestKxIAS[maxTests_c];
-int autoTestCount;
-
-typedef enum { idle_c, start_c, trim_c, init_c, pert0_c, pert1_c, wait_c, measure_c, stop_c } TestState_t;
-
-TestState_t testState;
-
-const int cycleWindow_c = 1<<2;
-uint32_t cycleBuffer[cycleWindow_c];
-int cycleBufferPtr, cycleCount;
-bool oscillating = false, rising = false, oscillationStopped = false;
-float oscCycleMean;
-typedef enum { ac_elev, ac_aile } analyzerInputCh_t;
-analyzerInputCh_t analyzerInputCh;
-float analyzerInput = 0;
-float pertubPolarity = 1;
-
-float testPertub()
-{
-  if(testState == pert0_c)
-    return pertubPolarity;
-  else if(testState == pert1_c)
-    return -pertubPolarity;
-  else
-    return 0;
-}
-
-bool testPertubActive()
-{
-  return vpMode.test && vpMode.autoTest
-    && (testState == pert0_c || testState == pert1_c);
-}
-
-bool testActive()
-{
-  return vpMode.test && vpMode.autoTest
-    && testState != idle_c && testState != start_c && testState != trim_c;
-}
-
 //
 // Link test
 //
@@ -2022,21 +1982,6 @@ void receiverTask()
   
   elevStick = elevatorDelay.input(elevStick);
   aileStick = aileronDelay.input(aileStick);
-  
-  //
-  //
-  //
-
-  if(testPertubActive())
-    switch(analyzerInputCh) {
-    case ac_aile:
-      aileStick = testPertub();
-      break;
-
-    case ac_elev:
-      elevStick = testPertub();
-      break;
-    }
 }
 
 const float simulatedAttitudeErr_c = 0.7/RADIAN;
@@ -2232,206 +2177,6 @@ void measurementTask()
     lastPPMWarn = currentTime;
     ppmWarnSlow = ppmWarnShort = false;
   }
-}
-
-//
-// Auto test stuff
-//
-
-const float testGainStep_c = 0.05;
-
-bool increasing, autoTestCompleted;
-int oscCount;
-float finalK, finalKxIAS, finalT, finalIAS;
-
-void testStateMachine()
-{
-  static uint32_t nextTransition;
-
-  if(!vpMode.test || !vpMode.autoTest) {
-    nextTransition = 0;
-    testState = idle_c;
-    return;
-  }
-  
-  if(currentTime < nextTransition)
-    return;
-  
-  switch(testState) {
-  case start_c:
-    increasing = true;
-    oscCount = 0;
-    testState = trim_c;
-    nextTransition = currentTime+4*1e6;
-    break;
-
-  case trim_c:
-    testState = init_c;
-    break;
-    
-  case init_c:
-    if(analyzerInputCh == ac_aile)
-      pertubPolarity = -pertubPolarity;
-    else
-      pertubPolarity = 1.0;
-    testState = pert0_c;
-    nextTransition = currentTime+1e6/4;
-    autoTestCompleted = false;
-    break;
-
-  case pert0_c:
-    testState = pert1_c;
-    nextTransition = currentTime+1e6/4;
-    break;
-
-  case pert1_c:
-    testState = wait_c;
-    nextTransition = currentTime+4*1e6;
-    break;
-
-  case wait_c:
-    testState = measure_c;
-    break;
-
-  case measure_c:
-    if(oscillating && ++oscCount > 1) {
-      if(increasing) {
-	increasing = false;	
-	consoleNoteLn_P(PSTR("Reached stable oscillation"));
-      }
-      
-      nextTransition = currentTime + 3*1e6/2;
-      testGain /= 1 + testGainStep_c/5;
-      consoleNote_P(PSTR("Gain decreased to = "));
-      consolePrintLn(testGain);	
-      testState = wait_c;
-
-    } else if(increasing) {
-      if(!oscillating)
-	oscCount = 0;
-      
-      testGain *= 1 + testGainStep_c;
-      testState = init_c;
-
-      consoleNote_P(PSTR("Gain increased to = "));
-      consolePrintLn(testGain);
-    } else {
-      finalK = testGain;
-      finalIAS = iAS;
-      finalT = oscCycleMean/1e6;
-      finalKxIAS = finalK/powf(finalIAS, (analyzerInputCh == ac_aile ? stabilityAileExp1_c : stabilityElevExp_c));
-      
-      consoleNote_P(PSTR("Test "));
-      consolePrint(autoTestCount);
-      consolePrint_P(PSTR(" COMPLETED, final K/IAS^exp1 = "));
-      consolePrintLn(finalKxIAS);
-
-      testState = idle_c;
-      vpMode.test = vpMode.autoTest = false;
-      autoTestCompleted = true;
-    }
-    break;
-    
-  default:
-    break;
-  }
-}
-
-Damper analAvg(10), analLowpass(2);
-float upSwing, downSwing, prevUpSwing, prevDownSwing;
-
-void analyzerTask()
-{
-  if(!vpMode.test || !vpMode.autoTest)
-    return;
-  
-  switch(analyzerInputCh) {
-  case ac_aile:
-    analyzerInput = aileOutput;
-    break;
-
-  case ac_elev:
-    analyzerInput = elevOutput;
-    break;
-  }
-
-  analLowpass.input(analyzerInput);
-  analAvg.input(analyzerInput);
-
-  analyzerInput = analLowpass.output() - analAvg.output();
-
-  bool crossing = false;
-  static uint32_t prevCrossing;
-
-  const float threshold_c = increasing ? 0.03 : 0.005;
-  const float hystheresis_c = threshold_c/3;
-  
-  if(rising) {
-    upSwing = fmaxf(upSwing, analyzerInput);
-    
-    if(analyzerInput < -hystheresis_c) {
-      crossing = true;
-      rising = false;
-      prevUpSwing = upSwing;
-      downSwing = analyzerInput;
-    }
-  } else {
-    downSwing = fminf(downSwing, analyzerInput);
-    
-    if(analyzerInput > hystheresis_c) {
-      crossing = true;
-      rising = true;
-      prevDownSwing = downSwing;
-      upSwing = analyzerInput;
-    }
-  }
-
-  float lastSwing = prevUpSwing - prevDownSwing;
-  
-  uint32_t halfCycle = currentTime - prevCrossing;  
-  static uint32_t prevHalfCycle;
-
-  if(crossing && lastSwing > threshold_c) {
-    if(prevHalfCycle > 0) {
-      cycleBuffer[cycleBufferPtr++] = prevHalfCycle + halfCycle;
-      cycleBufferPtr %= cycleWindow_c;
-      cycleCount++;
-
-      if(cycleCount > cycleWindow_c-1) {
-	oscCycleMean = 0.0;
-      
-	for(int i = 0; i < cycleWindow_c; i++)
-	  oscCycleMean += cycleBuffer[i];
-
-	oscCycleMean /= cycleWindow_c;
-
-	if(!oscillating && oscCycleMean > 1/10.0) {
-	  oscillating = true;
-
-	  for(int i = 0; i < cycleWindow_c; i++)
-	    if(cycleBuffer[i] < oscCycleMean/1.3
-	       || cycleBuffer[i] > oscCycleMean*1.3)
-	      oscillating = false;
-
-	  	  if(oscillating)
-	  	    consoleNoteLn_P(PSTR("Oscillation DETECTED"));
-	}
-      }
-    }
-    
-    prevHalfCycle = halfCycle;
-  } else if(oscillating && prevHalfCycle + halfCycle > oscCycleMean*1.3) {
-    // Not oscillating (anymore)
-    
-    oscillating = false;
-    prevHalfCycle = 0;
-    upSwing = downSwing = prevUpSwing = prevDownSwing = 0.0;
-
-     consoleNoteLn_P(PSTR("Oscillation STOPPED"));    
-  }
-
-  if(crossing)
-    prevCrossing = currentTime;
 }
 
 //
@@ -2776,46 +2521,9 @@ void configurationTask()
     vpMode.test = true;
     consoleNoteLn_P(PSTR("Test mode ENABLED"));
 
-    if(autoTestCompleted) {
-      if(autoTestCount < maxTests_c) {
-	autoTestIAS[autoTestCount] = finalIAS;
-	autoTestT[autoTestCount] = finalT;
-	autoTestK[autoTestCount] = finalK;
-	autoTestKxIAS[autoTestCount] = finalKxIAS;
-	autoTestCount++;
-      }
-
-      autoTestCompleted = false;
-
-      //      alphaTrim = (alphaTrim - origoAlpha) * 1.0555555 + origoAlpha;
-      
-      //      if(alphaTrim > shakerAlpha)
-      //	alphaTrim -= shakerAlpha - minAlpha;
-    }
   } else if(vpMode.test && tuningKnob < 0) {
     vpMode.test = vpMode.autoTest = false;
     consoleNoteLn_P(PSTR("Test mode DISABLED"));
-
-    if(autoTestCount > 0) {
-      consolePrint_P(PSTR("testR = ["));
-
-      for(int i = 0; i < autoTestCount; i++) {
-	if(i > 0)
-	  consolePrint(";\n  ");
-	
-	consolePrint(autoTestIAS[i]);
-	consolePrint(", ");
-	consolePrint(autoTestK[i]);
-	consolePrint(", ");
-	consolePrint(autoTestT[i]);
-	consolePrint(", ");
-	consolePrint(autoTestKxIAS[i]);
-      }
-
-      consolePrintLn_P(PSTR("]"));
-      
-      autoTestCount = 0;
-    }
   }
 
   // Wing leveler disable when stick input detected
@@ -2911,20 +2619,6 @@ void configurationTask()
       aileCtrl.setPID(testGain = testGainExpo(s_Ku_ref), 0, 0);
       break;
             
-    case 21:
-      // Wing stabilizer gain autotest
-
-      analyzerInputCh = ac_aile;
-      vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;
-	
-      if(!vpMode.autoTest) {
-	vpMode.autoTest = true;
-	testGain = 1.3*s_Ku;
-	testState = start_c;
-      } else if(testActive())
-	aileCtrl.setPID(testGain, 0, 0);
-      break;
-      
     case 2:
       // Elevator stabilizer gain, outer loop disabled
          
@@ -2933,40 +2627,11 @@ void configurationTask()
       elevCtrl.setPID(testGain = testGainExpo(i_Ku_ref), 0, 0);
       break;
          
-    case 22:
-      // Elevator stabilizer gain, outer loop disabled
-   
-      analyzerInputCh = ac_elev;
-      vpFeature.stabilizePitch = true;
-      vpFeature.alphaHold = false;
-	
-      if(!vpMode.autoTest) {
-	vpMode.autoTest = true;
-	testGain = 1.3*i_Ku;
-	testState = start_c;
-      } else if(testActive())
-	elevCtrl.setPID(testGain, 0, 0);
-      break;
-      
     case 3:
       // Elevator stabilizer gain, outer loop enabled
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
       elevCtrl.setPID(testGain = testGainExpo(i_Ku_ref), 0, 0);
-      break;
-         
-    case 23:
-      // Elevator stabilizer gain, outer loop enabled
-         
-      analyzerInputCh = ac_elev;
-      vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-	
-      if(!vpMode.autoTest) {
-	vpMode.autoTest = true;
-	testGain = 1.3*i_Ku;
-	testState = start_c;
-      } else if(testActive())
-	elevCtrl.setPID(testGain, 0, 0);
       break;
          
     case 4:
@@ -3796,12 +3461,10 @@ void logSaveTask()
 
 void controlTaskGroup()
 {
-  testStateMachine();
   receiverTask();
   sensorTaskFast();
   controlTask();
   actuatorTask();
-  analyzerTask();
 }
 
 struct Task taskList[] = {
