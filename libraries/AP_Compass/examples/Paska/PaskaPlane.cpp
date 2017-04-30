@@ -1921,6 +1921,8 @@ void airspeedTask()
 
 DelayLine elevatorDelay, aileronDelay;
 
+void configurationTask();
+
 void receiverTask()
 {
   if(inputValid(&aileInput))
@@ -1952,30 +1954,22 @@ void receiverTask()
   //
   
   if(LEVELBUTTON.state()
-     && throttleStick < 0.1 && aileStick < -0.90 && elevStick > 0.90) {
+     && throttleStick < 0.1 && aileStick < -0.90 && elevStick > 0.90
+     && modeSelectorValue == -1) {
     if(!vpMode.rxFailSafe) {
       consoleNoteLn_P(PSTR("Receiver failsafe mode ENABLED"));
       vpMode.rxFailSafe = true;
       vpMode.alphaFailSafe = vpMode.sensorFailSafe = vpMode.takeOff = false;
+      trimRateLimiter.setRate(1.5/RADIAN);
+      // Allow the config task to react synchronously
+      configurationTask();
     }
   } else if(vpMode.rxFailSafe) {
     consoleNoteLn_P(PSTR("Receiver failsafe mode DISABLED"));
     vpMode.rxFailSafe = false;
+    trimRateLimiter.setRate(CIRCLE);
   }
 
-  //
-  // Apply rx failsafe settings
-  //
-  
-  if(vpMode.rxFailSafe && vpStatus.armed) {
-    vpMode.slowFlight = vpMode.bankLimiter = vpFeature.stabilizePitch
-      = vpFeature.stabilizeBank = vpFeature.alphaHold = vpFeature.pusher = true;
-
-    trimRateLimiter.setRate(1.5/RADIAN);
-    elevTrim = elevPredict(vpDerived.thresholdAlpha);
-  } else
-    trimRateLimiter.setRate(CIRCLE);
-      
   // Delay the controls just to make sure we always detect the failsafe
   // mode before doing anything abrupt
   
@@ -1983,7 +1977,7 @@ void receiverTask()
   aileStick = aileronDelay.input(aileStick);
 }
 
-const float simulatedAttitudeErr_c = 0.7/RADIAN;
+const float simulatedAttitudeErr_c = 0.3/RADIAN;
 
 void sensorTaskFast()
 {
@@ -2310,10 +2304,10 @@ void statusTask()
   //
   
   if(alphaFailed() || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff || alpha < stallAlpha*1.05) {
+     || vpMode.takeOff || alpha < stallAlpha*1.1) {
     if(!vpStatus.stall)
       lastStall = currentTime;
-    else if(currentTime - lastStall > 0.5e6) {
+    else if(currentTime - lastStall > 0.2e6) {
       consoleNoteLn_P(PSTR("We've RECOVERED"));
       vpStatus.stall = false;
     }
@@ -2544,39 +2538,40 @@ void configurationTask()
   }
 
   //
-  // Map mode to features (unless we're in receiver failsafe mode)
+  // Map mode to features : default
   //
+  
+  vpFeature.stabilizeBank = true;
+  vpFeature.keepLevel = vpMode.wingLeveler;
+  vpFeature.pusher = !vpMode.slowFlight;
+  vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;
+  vpFeature.pitchHold = false;
 
-  if(!vpMode.rxFailSafe) {
-    // Default
+  // Modify if taking off or stalling
+  
+  if(vpMode.takeOff) {
+    vpFeature.keepLevel = true;
+    vpFeature.pusher = vpFeature.stabilizePitch = vpFeature.alphaHold
+      = vpFeature.stabilizeBank = false;
+    
+  } else if(vpStatus.stall)
+    vpFeature.stabilizeBank = vpFeature.keepLevel = false;
 
-    vpFeature.stabilizeBank
-      = !(vpStatus.stall || (vpStatus.weightOnWheels && vpMode.wingLeveler) || vpMode.takeOff);
-    vpFeature.keepLevel
-      = !vpStatus.stall && (vpMode.wingLeveler || vpMode.takeOff);
-    vpFeature.pusher
-      = !alphaFailed() && !vpMode.takeOff && !vpMode.slowFlight;
-    vpFeature.stabilizePitch = vpFeature.alphaHold
-      = !alphaFailed() && vpMode.slowFlight && !vpMode.takeOff;
-    vpFeature.pitchHold = false;
+  // Modify if alpha has failed
+  
+  if(alphaFailed())
+    vpFeature.stabilizePitch = vpFeature.alphaHold = vpFeature.pusher = false;
+  
+  // Failsafe overrides
 
-    // Slow flight implies bank limiter
+  if(vpMode.sensorFailSafe) {
+    vpFeature.stabilizePitch = vpFeature.stabilizeBank
+      = vpFeature.pitchHold = vpFeature.alphaHold = vpFeature.pusher
+      = vpMode.bankLimiter = vpFeature.keepLevel = vpMode.takeOff = false;
 
-    if(vpMode.slowFlight)
-      vpMode.bankLimiter = true;
-
-    // Failsafe mode interpretation
-
-    if(vpMode.sensorFailSafe) {
-      vpFeature.stabilizePitch = vpFeature.stabilizeBank
-	= vpFeature.pitchHold = vpFeature.alphaHold = vpFeature.pusher
-	= vpMode.bankLimiter = vpFeature.keepLevel = vpMode.takeOff
-	= vpMode.slowFlight = false;
-
-    } else if(vpMode.alphaFailSafe)
-      vpFeature.stabilizePitch = vpFeature.pitchHold = vpFeature.alphaHold
-	= vpFeature.pusher = vpMode.takeOff = vpMode.slowFlight = false;
-  }
+  } else if(vpMode.alphaFailSafe)
+    vpFeature.stabilizePitch = vpFeature.pitchHold = vpFeature.alphaHold
+      = vpFeature.pusher = vpMode.takeOff = false;
   
   // Safety scaling (test mode 0)
   
@@ -3103,8 +3098,13 @@ void controlTask()
 
     if(vpFeature.alphaHold)
       elevOutput += elevOutputFeedForward;
-  } else
+  } else {
+
+    if(vpMode.rxFailSafe)
+      elevOutput = elevOutputFeedForward;
+    
     elevCtrl.reset(elevOutput - elevOutputFeedForward, 0.0);
+  }
 
   // Pusher
 
@@ -3127,9 +3127,11 @@ void controlTask()
   
   float maxBank = 45/RADIAN;
 
-  if(vpMode.rxFailSafe)
+  if(vpMode.rxFailSafe) {
     maxBank = 10/RADIAN;
-  else if(vpFeature.alphaHold)
+    if(vpStatus.stall)
+      aileStick = 0;
+  } else if(vpFeature.alphaHold)
     maxBank /= 1 + elevPredictInverse(elevTrim) / vpDerived.thresholdAlpha / 2;
   
   float targetRollRate = ailePredictInverse(aileStick);
@@ -3296,7 +3298,7 @@ void trimTask()
   
   static bool prevMode;
 
-  if(vpStatus.positiveIAS && prevMode != vpMode.slowFlight) {
+  if(vpStatus.positiveIAS && !alphaFailed() && prevMode != vpMode.slowFlight) {
 
     const float predictError =
       clamp(elevPredict(alpha) - elevOutput, -0.2, 0.2);
@@ -3321,7 +3323,9 @@ void trimTask()
     else
       elevTrim = vpParam.takeoffTrim;
       
-  } else
+  } else if(vpMode.rxFailSafe)
+    elevTrim = elevPredict(vpDerived.thresholdAlpha);
+  else
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
 
@@ -3460,8 +3464,8 @@ void logSaveTask()
 
 void controlTaskGroup()
 {
-  receiverTask();
   sensorTaskFast();
+  receiverTask();
   controlTask();
   actuatorTask();
 }
@@ -3490,9 +3494,9 @@ struct Task taskList[] = {
     HZ_TO_PERIOD(TRIM_HZ) },
   { sensorMonitorTask,
     HZ_TO_PERIOD(CONFIG_HZ) },
-  { configurationTask,
-    HZ_TO_PERIOD(CONFIG_HZ) },
   { statusTask,
+    HZ_TO_PERIOD(CONFIG_HZ) },
+  { configurationTask,
     HZ_TO_PERIOD(CONFIG_HZ) },
   { fastLogTask,
     HZ_TO_PERIOD(LOG_HZ_FAST) },
