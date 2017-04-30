@@ -177,7 +177,6 @@ struct ModeRecord {
   bool wingLeveler;
   bool slowFlight;
   bool autoThrottle;
-  bool autoTest;
   bool loggingSuppressed;
 };
 
@@ -2522,7 +2521,7 @@ void configurationTask()
     consoleNoteLn_P(PSTR("Test mode ENABLED"));
 
   } else if(vpMode.test && tuningKnob < 0) {
-    vpMode.test = vpMode.autoTest = false;
+    vpMode.test = false;
     consoleNoteLn_P(PSTR("Test mode DISABLED"));
   }
 
