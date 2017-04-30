@@ -2427,10 +2427,8 @@ void configurationTask()
     // PULSE : Takeoff mode enable
     //
   
-    if(vpMode.alphaFailSafe || vpMode.sensorFailSafe) {
-      failsafeDisable();
-      
-    } else if(!vpStatus.positiveIAS) {
+    if(!vpMode.alphaFailSafe && !vpMode.sensorFailSafe
+       && !vpStatus.positiveIAS) {
 	    
       vpStatus.silent = false;
 
@@ -2458,7 +2456,7 @@ void configurationTask()
   
     failsafeDisable();
     
-    if(!vpMode.wingLeveler) {
+    if(!vpMode.wingLeveler && !ailePilotInput) {
       consoleNoteLn_P(PSTR("Wing leveler ENABLED"));
       vpMode.wingLeveler = true;
     } 
