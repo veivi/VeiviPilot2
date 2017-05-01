@@ -3262,15 +3262,15 @@ void actuatorTask()
 
 void trimTask()
 {
-  if(TRIMBUTTON.state()) {
-    //
-    // Trim rate
-    //
+  //
+  // Trim rate
+  //
     
-    const float trimRateMin_c = 7.5/100, trimRateRange_c = 2*trimRateMin_c;
-    const float elevTrimRate = trimRateMin_c + fabsf(elevStick)*trimRateRange_c,
-      steerTrimRate = trimRateMin_c + fabsf(rudderStick)*trimRateRange_c;
+  const float trimRateMin_c = 7.5/100, trimRateRange_c = 2*trimRateMin_c;
+  const float elevTrimRate = trimRateMin_c + fabsf(elevStick)*trimRateRange_c,
+    steerTrimRate = trimRateMin_c + fabsf(rudderStick)*trimRateRange_c;
     
+  if(TRIMBUTTON.state() || vpMode.rxFailSafe) {
     //
     // Nose wheel
     //
@@ -3319,10 +3319,8 @@ void trimTask()
     if(vpMode.slowFlight)
       elevTrim = elevPredict(vpDerived.thresholdAlpha);
     else
-      elevTrim = vpParam.takeoffTrim;
-      
-  } else if(vpMode.rxFailSafe)
-    elevTrim = elevPredict(vpDerived.thresholdAlpha);
+      elevTrim = vpParam.takeoffTrim;      
+  }
   else
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
@@ -3662,7 +3660,7 @@ void setup()
 
   aileCtrl.limit(-0.5, 0.5);
   pushCtrl.limit(-0.5, fmaxf(1 - elevPredict(vpDerived.pusherAlpha), 0.0));
-  flapRateLimiter.setRate(0.5);
+  flapRateLimiter.setRate(0.5/RADIAN);
   
   // Misc filters
 

@@ -125,8 +125,8 @@ float RunningAvgFilter::input(float v)
   
 void DelayLine::setDelay(int a) 
 {
-  if(a < 1 || a > DelayMax)
-     a = DelayMax;
+  if(a < 0 || a > DelayMax-1)
+     a = DelayMax-1;
 
    delay = a;
 
