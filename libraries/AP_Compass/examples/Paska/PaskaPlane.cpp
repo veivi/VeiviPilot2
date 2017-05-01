@@ -1919,7 +1919,11 @@ void airspeedTask()
   }
 }
 
-DelayLine elevatorDelay, aileronDelay;
+DelayLine elevDelay, aileDelay;
+Derivator elevDeriv, aileDeriv;
+const float maxSlope_c = 0.6*CONTROL_HZ, abruptDelay_c = 0.1;
+uint32_t lastAbruptInput;
+bool inputDelayed;
 
 void configurationTask();
 
@@ -1972,9 +1976,33 @@ void receiverTask()
 
   // Delay the controls just to make sure we always detect the failsafe
   // mode before doing anything abrupt
+
+  elevDeriv.input(elevStick, controlCycle);
+  aileDeriv.input(aileStick, controlCycle);
+
+  if(elevDeriv.output() > maxSlope_c || aileDeriv.output() > maxSlope_c) {
+    // We're seeing an abrupt change, apply delay from now on
+    
+    if(!inputDelayed) {
+      consoleNoteLn_P(PSTR("Seeing ABRUPT aile/elev input, delay applied"));
+      elevDelay.setDelay(abruptDelay_c*CONTROL_HZ);
+      aileDelay.setDelay(abruptDelay_c*CONTROL_HZ);
+      inputDelayed = true;
+    }
+    
+    lastAbruptInput = currentTime;
+
+  } else if(inputDelayed && currentTime - lastAbruptInput > abruptDelay_c*1e6) {
+    // No abrupt changes for a while, remove the delay
+    
+    consoleNoteLn_P(PSTR("Aile/elev input seems SMOOTH"));
+    elevDelay.setDelay(0);
+    aileDelay.setDelay(0);
+    inputDelayed = false;
+  }
   
-  elevStick = elevatorDelay.input(elevStick);
-  aileStick = aileronDelay.input(aileStick);
+  elevStick = elevDelay.input(elevStick);
+  aileStick = aileDelay.input(aileStick);
 }
 
 const float simulatedAttitudeErr_c = 0.3/RADIAN;
@@ -3650,11 +3678,6 @@ void setup()
   // Alpha filter (sliding average over alphaWindow_c/seconds)
   
   alphaFilter.setWindow(alphaWindow_c*ALPHA_HZ);
-
-  // Elevator delay
-
-  elevatorDelay.setDelay(1);
-  aileronDelay.setDelay(1);
 
   // Static controller settings
 
