@@ -3689,7 +3689,7 @@ void setup()
   // Misc filters
 
   accAvg.reset(G);
-  trimRateLimiter.setRate(1.5/RADIAN);
+  trimRateLimiter.setRate(1.2/RADIAN);
 
   // Cycle time monitor
   
