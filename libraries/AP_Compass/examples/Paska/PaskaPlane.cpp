@@ -3102,7 +3102,9 @@ void controlTask()
 
   if(vpMode.rxFailSafe)
     targetAlpha = trimRateLimiter.input(targetAlpha, controlCycle);
-
+  else
+    trimRateLimiter.reset(targetAlpha);
+    
   if(vpFeature.alphaHold)
     targetPitchRate = nominalPitchRate(bankAngle, targetAlpha)
       + clamp(targetAlpha - alpha,
