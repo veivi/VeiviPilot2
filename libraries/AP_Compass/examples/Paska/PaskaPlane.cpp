@@ -3097,8 +3097,7 @@ void controlTask()
     
   elevOutput = effStick + elevTrim;
   
-  targetAlpha =
-    clamp(elevPredictInverse(elevOutput), -vpParam.alphaMax, effMaxAlpha);
+  targetAlpha = fminf(elevPredictInverse(elevOutput), effMaxAlpha);
 
   if(vpMode.rxFailSafe)
     targetAlpha = trimRateLimiter.input(targetAlpha, controlCycle);
