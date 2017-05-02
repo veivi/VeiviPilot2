@@ -1964,14 +1964,12 @@ void receiverTask()
       consoleNoteLn_P(PSTR("Receiver failsafe mode ENABLED"));
       vpMode.rxFailSafe = true;
       vpMode.alphaFailSafe = vpMode.sensorFailSafe = vpMode.takeOff = false;
-      trimRateLimiter.setRate(1.5/RADIAN);
       // Allow the config task to react synchronously
       configurationTask();
     }
   } else if(vpMode.rxFailSafe) {
     consoleNoteLn_P(PSTR("Receiver failsafe mode DISABLED"));
     vpMode.rxFailSafe = false;
-    trimRateLimiter.setRate(CIRCLE);
   }
 
   // Delay the controls just to make sure we always detect the failsafe
@@ -3099,9 +3097,11 @@ void controlTask()
     
   elevOutput = effStick + elevTrim;
   
-  targetAlpha = trimRateLimiter.input
-    (clamp(elevPredictInverse(elevOutput), -vpParam.alphaMax, effMaxAlpha),
-     controlCycle);
+  targetAlpha =
+    clamp(elevPredictInverse(elevOutput), -vpParam.alphaMax, effMaxAlpha);
+
+  if(vpMode.rxFailSafe)
+    targetAlpha = trimRateLimiter.input(targetAlpha, controlCycle);
 
   if(vpFeature.alphaHold)
     targetPitchRate = nominalPitchRate(bankAngle, targetAlpha)
@@ -3688,6 +3688,7 @@ void setup()
   // Misc filters
 
   accAvg.reset(G);
+  trimRateLimiter.setRate(1.5/RADIAN);
 
   // Cycle time monitor
   
