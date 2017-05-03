@@ -2226,9 +2226,9 @@ void statusTask()
   //
 
   vpStatus.pitotFailed = 
-      vpStatus.fault == 1 || (!vpStatus.simulatorLink && pitotDevice.status());
+    vpStatus.fault == 1 || (!vpStatus.simulatorLink && pitotDevice.status());
   vpStatus.alphaFailed = 
-      vpStatus.fault == 2 || (!vpStatus.simulatorLink && alphaDevice.status())
+    vpStatus.fault == 2 || (!vpStatus.simulatorLink && alphaDevice.status());
 
   if(!vpStatus.armed)
     return;
