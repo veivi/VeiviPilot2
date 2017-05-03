@@ -782,7 +782,7 @@ bool toc_test_pitot(bool reset)
   else if(vpStatus.positiveIAS)
     positiveIAS = true;
   
-  return (!pitotFailed() && iasEntropyAcc.output() > 50
+  return (!vpStatus.pitotFailed && iasEntropyAcc.output() > 50
 	  && !vpStatus.pitotBlocked && positiveIAS && iAS < 5)
     || vpStatus.simulatorLink;
 }
@@ -1425,7 +1425,7 @@ void executeCommand(char *buf)
 	consolePrint_P(PSTR(" PPM_SLOW"));
       if(eepromDevice.status())
 	consolePrint_P(PSTR(" EEPROM_FAILED"));
-      if(pitotFailed())
+      if(vpStatus.pitotFailed)
 	consolePrint_P(PSTR(" IAS_FAILED"));
       
       consolePrintLn("");
@@ -2298,9 +2298,9 @@ void statusTask()
   // Alpha/IAS sensor status
   //
 
-  vpStatus.iasFailed = iasFailed();
-  vpStatus.alphaFailed = alphaFailed();
-    
+  vpStatus.alphaFailed = vpStatus.fault == 2 || (!vpStatus.simulatorLink && alphaDevice.status())
+  vpStatus.pitotFailed = vpStatus.fault == 1 || (!vpStatus.simulatorLink && pitotDevice.status());
+
   //
   // Alpha/accel lockup detection (a.o.a. sensor blade detached?)
   //
@@ -2562,7 +2562,7 @@ void configurationTask()
 
   // TakeOff mode disabled when airspeed detected (or fails)
 
-  if(vpMode.takeOff && (pitotFailed() || vpStatus.positiveIAS)) {
+  if(vpMode.takeOff && (vpStatus.pitotFailed || vpStatus.positiveIAS)) {
     consoleNoteLn_P(PSTR("TakeOff COMPLETED"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
