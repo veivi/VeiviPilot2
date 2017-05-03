@@ -3131,20 +3131,24 @@ void controlTask()
       elevOutput = elevOutputFeedForward;
     
     elevCtrl.reset(elevOutput - elevOutputFeedForward, 0.0);
-  }
+      
+    // Pusher
 
-  // Pusher
-
-  if(vpFeature.alphaHold && !vpFeature.stabilizePitch) {
-    pushCtrl.input(targetAlpha - alpha, controlCycle);
-    elevOutput = elevOutputFeedForward + pushCtrl.output();
-  } else if(vpFeature.pusher) {
-    pushCtrl.input(effMaxAlpha - alpha, controlCycle);
-    elevOutput = fminf(elevOutput,
-		       elevPredict(effMaxAlpha) + pushCtrl.output());
-  } else
-    pushCtrl.reset(elevOutput - elevPredict(effMaxAlpha),
+    if(vpFeature.alphaHold) {
+      // Pusher as alpha hold (test purposes)
+        
+      pushCtrl.input(targetAlpha - alpha, controlCycle);
+      elevOutput = elevOutputFeedForward + pushCtrl.output();
+    } else if(vpFeature.pusher) {
+      // Pusher active
+        
+      pushCtrl.input(effMaxAlpha - alpha, controlCycle);
+      elevOutput = fminf(elevOutput,
+	  	       elevPredict(effMaxAlpha) + pushCtrl.output());
+    } else
+      pushCtrl.reset(elevOutput - elevPredict(effMaxAlpha),
 		   effMaxAlpha - alpha);
+  }
   
   elevOutput = clamp(elevOutput, -1, 1);
 
