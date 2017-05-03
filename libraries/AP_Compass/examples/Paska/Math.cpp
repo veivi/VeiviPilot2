@@ -41,7 +41,7 @@ float scaleByIAS(float k, float expo)
 {
   float effIAS = fmaxf(iasFilter.output(), vpDerived.stallIAS);
   
-  if(pitotFailed() || vpStatus.pitotBlocked)
+  if(vpStatus.pitotFailed || vpStatus.pitotBlocked)
     // Failsafe value chosen to be ... on the safe side
     effIAS = expo > 0 ? vpDerived.stallIAS : vpDerived.stallIAS * 3/2;
   
