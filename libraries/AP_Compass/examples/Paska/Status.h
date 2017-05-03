@@ -14,6 +14,7 @@ struct StatusRecord {
   bool silent;
   bool positiveIAS;
   bool fullStop;
+  bool pitotFailed;
   bool pitotBlocked;
   bool stall;
   bool weightOnWheels;
@@ -24,13 +25,5 @@ struct StatusRecord {
 };
 
 extern struct StatusRecord vpStatus;
-
-//
-//
-//
-extern I2CDevice alphaDevice, pitotDevice;
-
-bool pitotFailed();
-bool alphaFailed();
 
 #endif
