@@ -3509,6 +3509,13 @@ void controlTaskGroup()
   actuatorTask();
 }
 
+void configTaskGroup()
+{
+  sensorMonitorTask();
+  statusTask();
+  configurationTask();
+}
+
 struct Task taskList[] = {
   { communicationTask,
     HZ_TO_PERIOD(100) },
@@ -3531,11 +3538,7 @@ struct Task taskList[] = {
     HZ_TO_PERIOD(CONTROL_HZ/5) },
   { trimTask,
     HZ_TO_PERIOD(TRIM_HZ) },
-  { sensorMonitorTask,
-    HZ_TO_PERIOD(CONFIG_HZ) },
-  { statusTask,
-    HZ_TO_PERIOD(CONFIG_HZ) },
-  { configurationTask,
+  { configTaskGroup,
     HZ_TO_PERIOD(CONFIG_HZ) },
   { fastLogTask,
     HZ_TO_PERIOD(LOG_HZ_FAST) },
