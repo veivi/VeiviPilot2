@@ -737,7 +737,7 @@ bool toc_test_fdr(bool reset)
 
 bool toc_test_alpha_sensor(bool reset)
 {
-  return !alphaFailed() && alphaEntropyAcc.output() > 50;
+  return !vpStatus.alphaUnreliable && alphaEntropyAcc.output() > 50;
 }
 
 bool toc_test_alpha_range(bool reset)
@@ -1396,7 +1396,7 @@ void executeCommand(char *buf)
       consolePrintLn(simInputFreq);
       consoleNote_P(PSTR("Alpha = "));
       consolePrint(alpha*RADIAN);
-      if(alphaFailed())
+      if(vpStatus.alphaFailed)
 	consolePrintLn_P(PSTR(" FAIL"));
       else
 	consolePrintLn_P(PSTR(" OK"));
@@ -2295,6 +2295,13 @@ void statusTask()
   }
 
   //
+  // Alpha/IAS sensor status
+  //
+
+  vpStatus.iasFailed = iasFailed();
+  vpStatus.alphaFailed = alphaFailed();
+    
+  //
   // Alpha/accel lockup detection (a.o.a. sensor blade detached?)
   //
 
@@ -2310,26 +2317,29 @@ void statusTask()
 
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
      || disagreement > 15.0/RADIAN) {
-    if(!vpStatus.alphaLocked)
+    if(!vpStatus.alphaUnreliable)
       lastAlphaLocked = currentTime;
     else if(currentTime - lastAlphaLocked > 0.1e6) {
       consoleNoteLn_P(PSTR("Alpha lockup RESOLVED"));
-      vpStatus.alphaLocked = false;
+      vpStatus.alphaUnreliable = false;
     }
   } else {
-    if(vpStatus.alphaLocked)
+    if(vpStatus.alphaUnreliable)
       lastAlphaLocked = currentTime;
     else if(currentTime - lastAlphaLocked > 0.5e6) {
       consoleNoteLn_P(PSTR("Alpha and acceleration LOCKED"));
-      vpStatus.alphaLocked = true;
+      vpStatus.alphaUnreliable = true;
     }
   }
   
+  if(vpStatus.alphaFailed)
+      vpStatus.alphaUnreliable = true;
+    
   //
   // Stall detection
   //
   
-  if(alphaFailed() || vpMode.alphaFailSafe || vpMode.sensorFailSafe
+  if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
      || vpMode.takeOff || alpha < stallAlpha*1.1) {
     if(!vpStatus.stall)
       lastStall = currentTime;
@@ -2583,7 +2593,7 @@ void configurationTask()
 
   // Modify if alpha has failed
   
-  if(alphaFailed())
+  if(vpStatus.alphaUnreliable)
     vpFeature.stabilizePitch = vpFeature.alphaHold = vpFeature.pusher = false;
   
   // Failsafe overrides
@@ -3329,7 +3339,7 @@ void trimTask()
   
   static bool prevMode;
 
-  if(vpStatus.positiveIAS && !alphaFailed() && prevMode != vpMode.slowFlight) {
+  if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable && prevMode != vpMode.slowFlight) {
 
     const float predictError =
       clamp(elevPredict(alpha) - elevOutput, -0.2, 0.2);
