@@ -16,10 +16,11 @@ struct StatusRecord {
   bool fullStop;
   bool pitotBlocked;
   bool stall;
-  bool alphaLocked;
   bool weightOnWheels;
   bool aloft;
   int fault;
+  bool alphaFailed;
+  bool alphaUnreliable;
 };
 
 extern struct StatusRecord vpStatus;
