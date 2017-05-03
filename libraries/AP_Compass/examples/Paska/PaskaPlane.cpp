@@ -2109,42 +2109,6 @@ void sensorTaskSlow()
   vpStatus.weightOnWheels = (gearOutput == 0);
 }
 
-void sensorMonitorTask()
-{
-  //
-  // Entropy monitor
-  //
-
-  iasEntropyAcc.input(iasEntropy);
-  alphaEntropyAcc.input(alphaEntropy);
-  iasEntropy = alphaEntropy = 0;
-
-  //
-  // Random seed from hashed sensor data
-  //
-  
-  srand(sensorHash);
-  
-  //
-  // Pitot block detection
-  //
-  
-  static uint32_t iasLastAlive;
-
-  if(iAS < vpDerived.stallIAS/3 || fabsf(iAS - iasFilterSlow.output()) > 0.5) {
-    if(vpStatus.pitotBlocked) {
-      consoleNoteLn_P(PSTR("Pitot block CLEARED"));
-      vpStatus.pitotBlocked = false;
-    }
-    
-    iasLastAlive = currentTime;
-  } else if(!vpStatus.simulatorLink
-	    && currentTime - iasLastAlive > 10.0e6 && !vpStatus.pitotBlocked) {
-    consoleNoteLn_P(PSTR("Pitot appears BLOCKED"));
-    vpStatus.pitotBlocked = true;
-  }
-}
-
 void fastLogTask()
 {
   //  logAlpha();  
@@ -2243,8 +2207,50 @@ static void failsafeDisable()
 
 void statusTask()
 {
+  //
+  // Entropy monitor
+  //
+
+  iasEntropyAcc.input(iasEntropy);
+  alphaEntropyAcc.input(alphaEntropy);
+  iasEntropy = alphaEntropy = 0;
+
+  //
+  // Random seed from hashed sensor data
+  //
+  
+  srand(sensorHash);
+  
+  //
+  // Alpha/IAS sensor status
+  //
+
+  vpStatus.pitotFailed = 
+      vpStatus.fault == 1 || (!vpStatus.simulatorLink && pitotDevice.status());
+  vpStatus.alphaFailed = 
+      vpStatus.fault == 2 || (!vpStatus.simulatorLink && alphaDevice.status())
+
   if(!vpStatus.armed)
     return;
+    
+  //
+  // Pitot block detection
+  //
+  
+  static uint32_t iasLastAlive;
+
+  if(iAS < vpDerived.stallIAS/3 || fabsf(iAS - iasFilterSlow.output()) > 0.5) {
+    if(vpStatus.pitotBlocked) {
+      consoleNoteLn_P(PSTR("Pitot block CLEARED"));
+      vpStatus.pitotBlocked = false;
+    }
+    
+    iasLastAlive = currentTime;
+  } else if(!vpStatus.simulatorLink
+	    && currentTime - iasLastAlive > 10.0e6 && !vpStatus.pitotBlocked) {
+    consoleNoteLn_P(PSTR("Pitot appears BLOCKED"));
+    vpStatus.pitotBlocked = true;
+  }
   
   //
   // Do we have positive airspeed?
@@ -2252,7 +2258,7 @@ void statusTask()
 
   static uint32_t lastNegativeIAS, lastStall, lastAlphaLocked;
 
-  if(vpStatus.pitotBlocked || iasFilter.output() < vpDerived.stallIAS*2/3) {
+  if(vpStatus.pitotBlocked || iasFilter.output() < vpDerived.stallIAS/2) {
     if(vpStatus.positiveIAS) {
       consoleNoteLn_P(PSTR("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
@@ -2295,22 +2301,11 @@ void statusTask()
   }
 
   //
-  // Alpha/IAS sensor status
-  //
-
-  vpStatus.alphaFailed = vpStatus.fault == 2 || (!vpStatus.simulatorLink && alphaDevice.status())
-  vpStatus.pitotFailed = vpStatus.fault == 1 || (!vpStatus.simulatorLink && pitotDevice.status());
-
-  //
   // Alpha/accel lockup detection (a.o.a. sensor blade detached?)
   //
 
   accDirection = atan2(accZ, -accX);
-  
-  relativeWind = alpha - vpParam.offset;
-
-  if(vpStatus.fault == 3)
-    relativeWind = accDirection;
+  relativeWind = vpStatus.fault == 3 ? accDirection : alpha - vpParam.offset;
   
   const float diff = fabsf(accDirection - relativeWind),
     disagreement = MIN(diff, 2*PI - diff);
@@ -2332,8 +2327,11 @@ void statusTask()
     }
   }
   
-  if(vpStatus.alphaFailed)
+  if(vpStatus.alphaFailed) {
+      // Failed alpha is also unreliable
       vpStatus.alphaUnreliable = true;
+      lastAlphaLocked = currentTime;
+  }
     
   //
   // Stall detection
@@ -3511,7 +3509,6 @@ void controlTaskGroup()
 
 void configTaskGroup()
 {
-  sensorMonitorTask();
   statusTask();
   configurationTask();
 }
