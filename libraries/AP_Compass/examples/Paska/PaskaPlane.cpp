@@ -2230,9 +2230,6 @@ void statusTask()
   vpStatus.alphaFailed = 
     vpStatus.fault == 2 || (!vpStatus.simulatorLink && alphaDevice.status());
 
-  if(!vpStatus.armed)
-    return;
-    
   //
   // Pitot block detection
   //
@@ -2301,38 +2298,39 @@ void statusTask()
   }
 
   //
-  // Alpha/accel lockup detection (a.o.a. sensor blade detached?)
+  // Alpha/accel lockup detection (sensor blade detached?)
   //
 
   accDirection = atan2(accZ, -accX);
   relativeWind = vpStatus.fault == 3 ? accDirection : alpha - vpParam.offset;
   
-  const float diff = fabsf(accDirection - relativeWind),
-    disagreement = MIN(diff, 2*PI - diff);
-
-  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-     || disagreement > 15.0/RADIAN) {
-    if(!vpStatus.alphaUnreliable)
-      lastAlphaLocked = currentTime;
-    else if(currentTime - lastAlphaLocked > 0.1e6) {
-      consoleNoteLn_P(PSTR("Alpha lockup RESOLVED"));
-      vpStatus.alphaUnreliable = false;
-    }
-  } else {
-    if(vpStatus.alphaUnreliable)
-      lastAlphaLocked = currentTime;
-    else if(currentTime - lastAlphaLocked > 0.5e6) {
-      consoleNoteLn_P(PSTR("Alpha and acceleration LOCKED"));
+  if(vpStatus.alphaFailed) {
+      // Failed alpha is also unreliable
+    
       vpStatus.alphaUnreliable = true;
+      lastAlphaLocked = currentTime;
+  } else {
+    const float diff = fabsf(accDirection - relativeWind),
+      disagreement = MIN(diff, 2*PI - diff);
+
+    if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
+       || disagreement > 15.0/RADIAN) {
+      if(!vpStatus.alphaUnreliable)
+	lastAlphaLocked = currentTime;
+      else if(currentTime - lastAlphaLocked > 0.1e6) {
+	consoleNoteLn_P(PSTR("Alpha sensor appears RELIABLE"));
+	vpStatus.alphaUnreliable = false;
+      }
+    } else {
+      if(vpStatus.alphaUnreliable)
+	lastAlphaLocked = currentTime;
+      else if(currentTime - lastAlphaLocked > 0.5e6) {
+	consoleNoteLn_P(PSTR("Alpha sensor UNRELIABLE"));
+	vpStatus.alphaUnreliable = true;
+      }
     }
   }
   
-  if(vpStatus.alphaFailed) {
-      // Failed alpha is also unreliable
-      vpStatus.alphaUnreliable = true;
-      lastAlphaLocked = currentTime;
-  }
-    
   //
   // Stall detection
   //
@@ -2342,7 +2340,7 @@ void statusTask()
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.2e6) {
-      consoleNoteLn_P(PSTR("We've RECOVERED"));
+      consoleNoteLn_P(PSTR("Stall RECOVERED"));
       vpStatus.stall = false;
     }
   } else {
