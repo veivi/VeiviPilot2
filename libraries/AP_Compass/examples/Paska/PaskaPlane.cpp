@@ -396,13 +396,29 @@ void logConfig(void)
 		  vpMode.bankLimiter,
 		  vpMode.wingLeveler };
 
-  float modeSum = 0;
+  float sum = 0;
   
   for(uint16_t i = 0; i < sizeof(mode)/sizeof(bool); i++)
     if(mode[i])
-      modeSum += 1.0/(2<<i);
+      sum += 1.0/(2<<i);
   
-  logGeneric(lc_mode, modeSum);
+  logGeneric(lc_mode, sum);
+  
+  bool status[] = { vpStatus.alphaFailed,
+		    vpStatus.alphaUnreliable,
+		    vpStatus.pitotFailed,
+		    vpStatus.pitotBlocked,
+		    vpStatus.stall,
+		    vpStatus.weightOnWheels };
+  
+  sum = 0;
+  
+  for(uint16_t i = 0; i < sizeof(status)/sizeof(bool); i++)
+    if(status[i])
+      sum += 1.0/(2<<i);
+  
+  logGeneric(lc_status, sum);
+  
   logGeneric(lc_target, targetAlpha*RADIAN);
   logGeneric(lc_target_pr, targetPitchRate*RADIAN);
   logGeneric(lc_trim, elevTrim*100);
@@ -2412,7 +2428,7 @@ void configurationTask()
     consoleNoteLn_P(PSTR("Gear UP"));
     
     vpMode.autoThrottle = false;
-    gearOutput = 1;
+    //    gearOutput = 1;
 
   } else if(GEARBUTTON.depressed()) {
     if(gearOutput) {
@@ -2580,12 +2596,16 @@ void configurationTask()
   // Modify if taking off or stalling
   
   if(vpMode.takeOff) {
-    vpFeature.keepLevel = true;
     vpFeature.pusher = vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.stabilizeBank = false;
     
   } else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
+
+  // Modify wing leveling if weight on wheels
+  
+  if(vpMode.wingLeveler && vpStatus.weightOnWheels)
+    vpFeature.stabilizeBank = false;
 
   // Modify if alpha has failed
   
@@ -2616,7 +2636,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
   throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
@@ -3175,7 +3195,9 @@ void controlTask()
   
   // We accumulate individual contributions so start with 0
 
-  aileOutput = 0; 
+  const float aileTrimError_c = -0.2;
+  
+  aileOutput = aileTrimError_c; 
   
   if(!vpFeature.stabilizeBank) {
     aileCtrl.reset(0, 0);
@@ -3183,7 +3205,7 @@ void controlTask()
     if(vpFeature.keepLevel)
       // Simple leveling for situations where we want to avoid I term wind-up
       
-      aileOutput -= bankAngle/2 + rollRate/32;
+      aileOutput -= bankAngle + rollRate/32;
     
   } else {    
     if(vpFeature.keepLevel)
