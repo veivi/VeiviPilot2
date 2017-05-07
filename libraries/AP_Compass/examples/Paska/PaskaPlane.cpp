@@ -2420,15 +2420,15 @@ void configurationTask()
     } else if(!vpStatus.positiveIAS)
       logDisable();
     
-  } else if(GEARBUTTON.singlePulse() && !gearOutput) {
+  } else if(GEARBUTTON.singlePulse() && !gearOutput && vpParam.servoGear > -1) {
     //
-    // SINGLE PULSE: GEAR UP
+    // SINGLE PULSE: GEAR UP (and we believe we have retractable gear)
     //
     
     consoleNoteLn_P(PSTR("Gear UP"));
     
     vpMode.autoThrottle = false;
-    //    gearOutput = 1;
+    gearOutput = 1;
 
   } else if(GEARBUTTON.depressed()) {
     if(gearOutput) {
