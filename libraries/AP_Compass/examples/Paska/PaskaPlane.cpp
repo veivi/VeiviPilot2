@@ -2420,7 +2420,7 @@ void configurationTask()
     } else if(!vpStatus.positiveIAS)
       logDisable();
     
-  } else if(GEARBUTTON.singlePulse() && !gearOutput && vpParam.servoGear > -1) {
+  } else if(GEARBUTTON.singlePulse() && !gearOutput && gearHandle) {
     //
     // SINGLE PULSE: GEAR UP (and we believe we have retractable gear)
     //
@@ -3195,9 +3195,7 @@ void controlTask()
   
   // We accumulate individual contributions so start with 0
 
-  const float aileTrimError_c = -0.2;
-  
-  aileOutput = aileTrimError_c; 
+  aileOutput = 0;
   
   if(!vpFeature.stabilizeBank) {
     aileCtrl.reset(0, 0);
