@@ -2119,10 +2119,6 @@ void sensorTaskSlow()
 #ifdef USE_COMPASS
   compass.read();
 #endif
-  
-  // Weight on wheels switch not available for now
-
-  vpStatus.weightOnWheels = (gearOutput == 0);
 }
 
 void fastLogTask()
@@ -2365,6 +2361,29 @@ void statusTask()
     else if(currentTime - lastStall > 0.5e6) {
       consoleNoteLn_P(PSTR("We're STALLING"));
       vpStatus.stall = true;
+    }
+  }
+    
+  //  
+  // Weight on wheels?
+  //
+
+  const float groundSupportRel = accZ * cos(relativeWind) / (coeffOfLift(alpha) * dynPressure);
+      
+  if(!vpMode.takeOff && (vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
+     || gearOutput == 1 || groundSupportRel < 1.5)) {
+    if(!vpStatus.weightOnWheels)
+      lastWoW = currentTime;
+    else if(currentTime - lastWoW > 0.5e6) {
+      consoleNoteLn_P(PSTR("Weight seems to be OFF THE WHEELS"));
+      vpStatus.weightOnWheels = false;
+    }
+  } else {
+    if(vpStatus.weightOnWheels)
+      lastWoW = currentTime;
+    else if(currentTime - lastWoW > 0.1e6) {
+      consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
+      vpStatus.weightOnWheels = true;
     }
   }
 }
