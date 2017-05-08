@@ -2370,8 +2370,8 @@ void statusTask()
 
   const float groundSupportRel = accZ * cos(relativeWind) / (coeffOfLift(alpha) * dynPressure);
       
-  if(!vpMode.takeOff && (vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || gearOutput == 1 || groundSupportRel < 1.5)) {
+  if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
+     || gearOutput == 1 || groundSupportRel < 1.5) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.5e6) {
@@ -2606,7 +2606,7 @@ void configurationTask()
   // Map mode to features : default
   //
   
-  vpFeature.stabilizeBank = true;
+  vpFeature.stabilizeBank = !vpStatus.weightOnWheels;
   vpFeature.keepLevel = vpMode.wingLeveler;
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;
@@ -2620,11 +2620,6 @@ void configurationTask()
     
   } else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
-
-  // Modify wing leveling if weight on wheels
-  
-  if(vpMode.wingLeveler && vpStatus.weightOnWheels)
-    vpFeature.stabilizeBank = false;
 
   // Modify if alpha has failed
   
