@@ -1353,8 +1353,9 @@ void executeCommand(char *buf)
 
       consoleNoteLn_P(PSTR("Coeff of lift per Wing Load"));
   
-      for(float aR = -0.2; aR <= 1.2; aR += 0.07)
-	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN, coeffOfLift(vpParam.alphaMax*aR)/vpParam.cL_max);
+      for(float aR = -0.3; aR <= 1; aR += 0.07)
+	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN,
+			  coeffOfLift(vpParam.alphaMax*aR)/vpParam.cL_max);
       break;
       
     case c_clear:
@@ -2368,13 +2369,13 @@ void statusTask()
   // Weight on wheels?
   //
 
-  const float lift = accZ * cos(relativeWind),
+  const float lift = accZ * cos(pitchAngle) + accX * sin(pitchAngle),
     liftExp = coeffOfLift(alpha) * dynPressure;
       
   static uint32_t lastWoW;
   
-  if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || gearOutput == 1 || lift < G/2 || lift > 1.5*G || lift < 1.5*liftExp) {
+  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe
+     || gearOutput == 1 || lift < G/2 || lift > 1.5*G || lift < 2*liftExp) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.2e6) {
@@ -2609,7 +2610,7 @@ void configurationTask()
   // Map mode to features : default
   //
   
-  vpFeature.stabilizeBank = !vpStatus.weightOnWheels;
+  vpFeature.stabilizeBank = true; // !vpStatus.weightOnWheels;
   vpFeature.keepLevel = vpMode.wingLeveler;
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;

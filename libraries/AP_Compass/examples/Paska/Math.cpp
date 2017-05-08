@@ -60,6 +60,8 @@ float dynamicPressureInverse(float pressure)
 
 float coeffOfLift(float aoa)
 {
+  aoa = clamp(aoa, -vpParam.alphaMax, vpParam.alphaMax);
+  
   const float i = (vpParam.cL_max - vpParam.cL_A)/vpParam.cL_B,
     d = 2/(PI-2)*(vpParam.alphaMax - i),
     w = d + vpParam.alphaMax - i;
