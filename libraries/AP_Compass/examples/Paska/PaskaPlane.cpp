@@ -404,12 +404,12 @@ void logConfig(void)
   
   logGeneric(lc_mode, sum);
   
-  bool status[] = { vpStatus.alphaFailed,
+  bool status[] = { vpStatus.weightOnWheels,
+		    vpStatus.alphaFailed,
 		    vpStatus.alphaUnreliable,
 		    vpStatus.pitotFailed,
 		    vpStatus.pitotBlocked,
-		    vpStatus.stall,
-		    vpStatus.weightOnWheels };
+		    vpStatus.stall };
   
   sum = 0;
   
@@ -2088,7 +2088,7 @@ void sensorTaskFast()
     accX = sensorData.accx*FOOT;
     accY = sensorData.accy*FOOT;
     accZ = -sensorData.accz*FOOT;
-
+    
     dynPressure = dynamicPressure(iAS);
     
   } else if(dynPressure > 0)
@@ -2368,20 +2368,23 @@ void statusTask()
   // Weight on wheels?
   //
 
-  const float groundSupportRel = accZ * cos(relativeWind) / (coeffOfLift(alpha) * fmaxf(dynPressure, 0.1));
+  const float lift = accZ * cos(relativeWind),
+    liftExp = coeffOfLift(alpha) * dynPressure;
       
+  static uint32_t lastWoW;
+  
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || gearOutput == 1 || groundSupportRel < 1.5) {
+     || gearOutput == 1 || lift < G/2 || lift > 1.5*G || lift < 1.5*liftExp) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.5e6) {
+    else if(currentTime - lastWoW > 0.2e6) {
       consoleNoteLn_P(PSTR("Weight seems to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.1e6) {
+    else if(currentTime - lastWoW > 0.5e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
@@ -2625,6 +2628,11 @@ void configurationTask()
   
   if(vpStatus.alphaUnreliable)
     vpFeature.stabilizePitch = vpFeature.alphaHold = vpFeature.pusher = false;
+
+  // Modify wing leveler if gear down
+
+  if(vpMode.wingLeveler && gearOutput == 0)
+    vpFeature.stabilizeBank = false;
   
   // Failsafe overrides
 
