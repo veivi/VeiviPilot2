@@ -2368,7 +2368,7 @@ void statusTask()
   // Weight on wheels?
   //
 
-  const float groundSupportRel = accZ * cos(relativeWind) / (coeffOfLift(alpha) * dynPressure);
+  const float groundSupportRel = accZ * cos(relativeWind) / (coeffOfLift(alpha) * fmaxf(dynPressure, 0.1));
       
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
      || gearOutput == 1 || groundSupportRel < 1.5) {
