@@ -3228,7 +3228,7 @@ void controlTask()
   
   // We accumulate individual contributions so start with 0
 
-  aileOutput = 0.3;
+  aileOutput = 0;
   
   if(!vpFeature.stabilizeBank) {
     aileCtrl.reset(0, 0);
