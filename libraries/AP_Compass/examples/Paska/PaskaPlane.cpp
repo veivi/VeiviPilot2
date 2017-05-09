@@ -220,7 +220,7 @@ uint16_t heading;
 NewI2C I2c = NewI2C();
 Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2*CONTROL_HZ), iasEntropyAcc(CONFIG_HZ), alphaEntropyAcc(CONFIG_HZ);
 AlphaBuffer pressureBuffer;
-RunningAvgFilter alphaFilter;
+RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
@@ -2218,6 +2218,8 @@ static void failsafeDisable()
   }
 }
 
+RunningAvgFilter liftFilter(CONFIG_HZ/5);
+
 void statusTask()
 {
   //
@@ -2369,7 +2371,7 @@ void statusTask()
   // Weight on wheels?
   //
 
-  const float lift = accZ * cos(pitchAngle) + accX * sin(pitchAngle),
+  const float lift = liftFilter.input(accZ * cos(pitchAngle) + accX * sin(pitchAngle)),
     liftExp = coeffOfLift(alpha) * dynPressure;
       
   static uint32_t lastWoW;
@@ -2392,7 +2394,7 @@ void statusTask()
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.5e6) {
+    else if(currentTime - lastWoW > 0.2e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
@@ -3737,10 +3739,6 @@ void setup()
   
   //  setPinState(&PIEZO.pin, 0);
   //  configureOutput(&PIEZO.pin);
-
-  // Alpha filter (sliding average over alphaWindow_c/seconds)
-  
-  alphaFilter.setWindow(alphaWindow_c*ALPHA_HZ);
 
   // Static controller settings
 
