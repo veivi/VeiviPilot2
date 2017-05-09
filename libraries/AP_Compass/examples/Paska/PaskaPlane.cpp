@@ -171,7 +171,7 @@ struct ModeRecord {
   bool rattle;
   bool alphaFailSafe;
   bool sensorFailSafe;
-  bool rxFailSafe;
+  bool radioFailSafe;
   bool bankLimiter;
   bool takeOff;
   bool wingLeveler;
@@ -388,13 +388,14 @@ void logAlpha(void)
 
 void logConfig(void)
 {
-  bool mode[] = { vpMode.rxFailSafe,
+  bool mode[] = { vpMode.radioFailSafe,
 		  vpMode.sensorFailSafe,
 		  vpMode.alphaFailSafe,
 		  vpMode.takeOff,
 		  vpMode.slowFlight,
 		  vpMode.bankLimiter,
-		  vpMode.wingLeveler };
+		  vpMode.wingLeveler,
+          vpMode.autoThrottle };
 
   float sum = 0;
   
@@ -1977,16 +1978,16 @@ void receiverTask()
   if(LEVELBUTTON.state()
      && throttleStick < 0.1 && aileStick < -0.90 && elevStick > 0.90
      && modeSelectorValue == -1) {
-    if(!vpMode.rxFailSafe) {
-      consoleNoteLn_P(PSTR("Receiver failsafe mode ENABLED"));
-      vpMode.rxFailSafe = true;
+    if(!vpMode.radioFailSafe) {
+      consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
+      vpMode.radioFailSafe = true;
       vpMode.alphaFailSafe = vpMode.sensorFailSafe = vpMode.takeOff = false;
       // Allow the config task to react synchronously
       configurationTask();
     }
-  } else if(vpMode.rxFailSafe) {
-    consoleNoteLn_P(PSTR("Receiver failsafe mode DISABLED"));
-    vpMode.rxFailSafe = false;
+  } else if(vpMode.radioFailSafe) {
+    consoleNoteLn_P(PSTR("Radio failsafe mode DISABLED"));
+    vpMode.radioFailSafe = false;
   }
 
   // Delay the controls just to make sure we always detect the failsafe
@@ -3149,7 +3150,7 @@ void controlTask()
   //
 
   const float shakerLimit = (float) 2/3;
-  const float effStick = vpMode.rxFailSafe ? shakerLimit : elevStick;
+  const float effStick = vpMode.radioFailSafe ? shakerLimit : elevStick;
   const float stickStrength = fmaxf(effStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha = mixValue(stickStrength, shakerAlpha, pusherAlpha);
     
@@ -3157,7 +3158,7 @@ void controlTask()
   
   targetAlpha = fminf(elevPredictInverse(elevOutput), effMaxAlpha);
 
-  if(vpMode.rxFailSafe)
+  if(vpMode.radioFailSafe)
     targetAlpha = trimRateLimiter.input(targetAlpha, controlCycle);
   else
     trimRateLimiter.reset(targetAlpha);
@@ -3185,7 +3186,7 @@ void controlTask()
       elevOutput += elevOutputFeedForward;
   } else {
 
-    if(vpMode.rxFailSafe)
+    if(vpMode.radioFailSafe)
       elevOutput = elevOutputFeedForward;
     
     elevCtrl.reset(elevOutput - elevOutputFeedForward, 0.0);
@@ -3216,7 +3217,7 @@ void controlTask()
   
   float maxBank = 45/RADIAN;
 
-  if(vpMode.rxFailSafe) {
+  if(vpMode.radioFailSafe) {
     maxBank = 10/RADIAN;
     if(vpStatus.stall)
       aileStick = 0;
@@ -3361,7 +3362,7 @@ void trimTask()
   const float elevTrimRate = trimRateMin_c + fabsf(elevStick)*trimRateRange_c,
     steerTrimRate = trimRateMin_c + fabsf(rudderStick)*trimRateRange_c;
     
-  if(TRIMBUTTON.state() || vpMode.rxFailSafe) {
+  if(TRIMBUTTON.state() || vpMode.radioFailSafe) {
     //
     // Nose wheel
     //
