@@ -2374,12 +2374,19 @@ void statusTask()
       
   static uint32_t lastWoW;
   
-  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || gearOutput == 1 || lift < G/2 || lift > 1.5*G || lift < 1.5*liftExp) {
+  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || gearOutput == 1 
+     || fabsf(bankAngle) > 15/RADIAN || lift < G/2 || lift > 1.5*G) {
+    if(vpStatus.weightOnWheels) {
+      consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
+      vpStatus.weightOnWheels = false;
+    }
+      
+    lastWoW = currentTime;
+  } else if(lift < 1.5*liftExp) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.5e6) {
-      consoleNoteLn_P(PSTR("Weight seems to be OFF THE WHEELS"));
+      consoleNoteLn_P(PSTR("Weight probably is OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
