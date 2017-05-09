@@ -96,8 +96,7 @@ RunningAvgFilter::RunningAvgFilter(int w)
 
 RunningAvgFilter::~RunningAvgFilter(int w)
 {
-  if(memory)
-      delete(memory);
+  delete[] memory;
   memory = NULL;
   windowLen = 0;
 }
