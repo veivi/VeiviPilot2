@@ -4,18 +4,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-const int windowLenMax = 1<<5;
-
 class RunningAvgFilter {
  public:
   RunningAvgFilter(int w);
-  RunningAvgFilter(void);
-  void setWindow(int w);
   float input(float v);
   float output();
     
  private:
-  float memory[windowLenMax], sum;
+  float memory[], sum;
   int windowLen;
   int ptr;
 };
