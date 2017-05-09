@@ -94,7 +94,7 @@ RunningAvgFilter::RunningAvgFilter(int w)
   memset(memory, '\0', sizeof(float)*w);
 }
 
-RunningAvgFilter::~RunningAvgFilter(int w)
+RunningAvgFilter::~RunningAvgFilter()
 {
   delete[] memory;
   memory = NULL;

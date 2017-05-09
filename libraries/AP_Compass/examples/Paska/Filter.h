@@ -12,7 +12,7 @@ class RunningAvgFilter {
   float output();
     
  private:
-  float memory[], sum;
+  float *memory, sum;
   int windowLen;
   int ptr;
 };
