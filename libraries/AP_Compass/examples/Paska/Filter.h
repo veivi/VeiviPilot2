@@ -7,6 +7,7 @@
 class RunningAvgFilter {
  public:
   RunningAvgFilter(int w);
+  ~RunningAvgFilter();
   float input(float v);
   float output();
     
