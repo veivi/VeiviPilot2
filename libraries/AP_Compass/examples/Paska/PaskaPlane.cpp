@@ -2372,8 +2372,9 @@ void statusTask()
   // Weight on wheels?
   //
 
-  const float lift = liftFilter.input(accZ * cos(pitchAngle) + accX * sin(pitchAngle)),
-    liftExp = coeffOfLift(alpha) * dynPressure;
+  const float
+    lift = liftFilter.input(accZ * cos(pitchAngle) + accX * sin(pitchAngle)),
+    liftExpected = coeffOfLift(alpha) * dynPressure;
       
   static uint32_t lastWoW;
   
@@ -2385,17 +2386,17 @@ void statusTask()
     }
       
     lastWoW = currentTime;
-  } else if(lift < 1.5*liftExp) {
+  } else if(lift < 1.5*liftExpected) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.5e6) {
+    else if(currentTime - lastWoW > 0.2e6) {
       consoleNoteLn_P(PSTR("Weight probably is OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.2e6) {
+    else if(currentTime - lastWoW > 0.5e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
@@ -2628,11 +2629,10 @@ void configurationTask()
 
   // Modify if taking off or stalling
   
-  if(vpMode.takeOff) {
+  if(vpMode.takeOff)
     vpFeature.pusher = vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.stabilizeBank = false;
-    
-  } else if(vpStatus.stall)
+  else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
 
   // Modify if alpha has failed
@@ -3228,7 +3228,7 @@ void controlTask()
   
   // We accumulate individual contributions so start with 0
 
-  aileOutput = 0;
+  aileOutput = 0.3;
   
   if(!vpFeature.stabilizeBank) {
     aileCtrl.reset(0, 0);
