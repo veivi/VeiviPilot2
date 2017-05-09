@@ -86,26 +86,20 @@ float RateLimiter::output(void)
   return state;
 }
 
-RunningAvgFilter::RunningAvgFilter(void)
-{
-  setWindow(-1);
-}
-
 RunningAvgFilter::RunningAvgFilter(int w)
 {
-  setWindow(w);
+  sum = 0.0;
+  windowLen = w;
+  memory = new float[w];
+  memset(memory, '\0', sizeof(float)*w);
 }
 
-void RunningAvgFilter::setWindow(int a) 
+RunningAvgFilter::~RunningAvgFilter(int w)
 {
-  if(a < 1 || a > windowLenMax)
-     a = windowLenMax;
-
-   sum = 0.0;
-   windowLen = a;
-
-   for(int i = 0; i < windowLen; i++)
-     memory[i] = 0.0;
+  if(memory)
+      delete(memory);
+  memory = NULL;
+  windowLen = 0;
 }
 
 float RunningAvgFilter::output() 
