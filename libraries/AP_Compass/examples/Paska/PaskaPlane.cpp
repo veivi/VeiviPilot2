@@ -203,7 +203,7 @@ struct StatusRecord vpStatus;
 // struct GPSFix gpsFix;
 
 uint32_t currentTime, lastPPMWarn;
-float controlCycle = 10.0e-3;
+float controlCycle = 1.0/CONTROL_HZ;
 uint32_t idleMicros;
 float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 float testGain = 0;
@@ -234,35 +234,6 @@ I2CDevice eepromDevice(&I2c, 0, "EEPROM"), displayDevice(&I2c, 0, "display");
 bool paramsModified = false;
 
 //
-// Link test
-//
-
-uint32_t pingTestTxCount, pingTestRxCount, pingTestFailCount, pingTestData, pingTestTxTime;
-
-void pingTestRx(uint32_t value)
-{
-  if(!pingTestRxCount) {
-    consoleNoteLn_P(PSTR("Unexpected PING datagram"));
-    pingTestFailCount++;
-  } else {
-    if(pingTestData != value) {
-      pingTestFailCount++;
-      consoleNote_P(PSTR("Datagram PING FAIL, total = "));
-      consolePrintLn(pingTestFailCount);
-    }
-    
-    pingTestRxCount--;
-
-    if(!pingTestRxCount) {
-      if(pingTestFailCount > 0)
-	consoleNoteLn_P(PSTR("Datagram ping test FAILED"));
-      else
-	consoleNoteLn_P(PSTR("Datagram ping test SUCCESS"));
-    }
-  }
-}
-
-//
 // Datagram protocol integration
 //
 
@@ -291,8 +262,6 @@ void datagramRxError(const char *error)
   
 void datagramInterpreter(uint8_t t, uint8_t *data, int size)
 {
-  uint32_t pingBuffer = 0;
-  
   switch(t) {
   case DG_HEARTBEAT:
     if(!vpStatus.consoleLink) {
@@ -321,8 +290,6 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
     break;
 
   case DG_PING:
-    memcpy(&pingBuffer, data, sizeof(pingBuffer));
-    pingTestRx(pingBuffer);
     break;
     
   default:
@@ -1155,11 +1122,6 @@ void executeCommand(char *buf)
     float offset = 0.0;
     
     switch(command.token) {
-    case c_ping:
-      pingTestTxCount = pingTestRxCount = param[0];
-      pingTestFailCount = 0;
-      break;
-      
     case c_atrim:
       vpParam.aileNeutral += vpParam.aileDefl*param[0];
       break;
@@ -3417,46 +3379,6 @@ void trimTask()
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
 
-void pingTestTask()
-{
-  if(pingTestRxCount < 1)
-    // We're done testing
-    return;
-
-  else if(pingTestTxCount < pingTestRxCount) {
-    // Waiting for the ping back
-    
-    if(currentTime > pingTestTxTime + 1e6) {
-      consoleNoteLn_P(PSTR("Ping reception TIMED OUT"));
-      pingTestTxCount = pingTestRxCount = 0;
-    }
-  } else {
-    // Transmit a new packet
-
-    switch(pingTestTxCount % 4) {
-    case 0:
-      pingTestData = 0UL;
-      break;
-    case 1:
-      pingTestData = ~0UL;
-      break;
-    case 2:
-      pingTestData = randomUInt32();
-      break;
-    case 3:
-      pingTestData = currentTime;
-      break;
-    }
-
-    datagramTxStart(DG_PING);
-    datagramTxOut((const uint8_t*) &pingTestData, sizeof(pingTestData));
-    datagramTxEnd();
-
-    pingTestTxTime = currentTime;
-    pingTestTxCount--;
-  } 
-}
-
 bool logInitialized = false;
 
 void backgroundTask(uint32_t durationMicros)
@@ -3602,8 +3524,6 @@ struct Task taskList[] = {
     HZ_TO_PERIOD(HEARTBEAT_HZ) },
   { gaugeTask,
     HZ_TO_PERIOD(10) },
-  { pingTestTask,
-    HZ_TO_PERIOD(30) },
   { beepTask,
     HZ_TO_PERIOD(BEEP_HZ) },
   { NULL } };
