@@ -2471,8 +2471,7 @@ void configurationTask()
     // PULSE : Takeoff mode enable
     //
   
-    if(!vpMode.alphaFailSafe && !vpMode.sensorFailSafe
-       && !vpStatus.positiveIAS) {
+    if(!vpStatus.positiveIAS) {
 	    
       vpStatus.silent = false;
 
@@ -2481,6 +2480,7 @@ void configurationTask()
       if(!vpMode.takeOff) {
 	consoleNoteLn_P(PSTR("TakeOff mode ENABLED"));
 	vpMode.takeOff = true;
+    vpStatus.aloft = false;
       }
 	
       if(tocTestStatus(tocReportConsole)) {
