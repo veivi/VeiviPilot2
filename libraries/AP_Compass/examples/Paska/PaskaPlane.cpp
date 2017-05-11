@@ -2610,32 +2610,35 @@ void configurationTask()
   vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;
   vpFeature.pitchHold = false;
 
-  // Modify if taking off or stalling
+  // Modify if taking off...
   
   if(vpMode.takeOff)
     vpFeature.pusher = vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.stabilizeBank = false;
+
+  /// ... or stalling...
+  
   else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
+  
+  // ... or wing leveling enabled while gear down
 
-  // Modify if alpha has failed
+  else if(vpMode.wingLeveler && gearOutput == 0)
+    vpFeature.stabilizeBank = false;
+  
+  // Disable alpha dependent stuff if the sensor fails
   
   if(vpStatus.alphaUnreliable)
     vpFeature.stabilizePitch = vpFeature.alphaHold = vpFeature.pusher = false;
 
-  // Modify wing leveler if gear down
-
-  if(vpMode.wingLeveler && gearOutput == 0)
-    vpFeature.stabilizeBank = false;
-  
   // Failsafe overrides
 
-  if(vpMode.sensorFailSafe) {
+  if(vpMode.sensorFailSafe)
     vpFeature.stabilizePitch = vpFeature.stabilizeBank
       = vpFeature.pitchHold = vpFeature.alphaHold = vpFeature.pusher
       = vpMode.bankLimiter = vpFeature.keepLevel = vpMode.takeOff = false;
 
-  } else if(vpMode.alphaFailSafe)
+  else if(vpMode.alphaFailSafe)
     vpFeature.stabilizePitch = vpFeature.pitchHold = vpFeature.alphaHold
       = vpFeature.pusher = vpMode.takeOff = false;
   
