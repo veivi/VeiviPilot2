@@ -488,29 +488,31 @@ bool AS5048B_alpha(int16_t *result)
 #define SSD1306_ADDR 0x3C
 #define BLOCK 16
 
+bool SSD1306_transmit(const uint8_t *buffer, uint8_t bytes) 
+{
+  if(displayDevice.hasFailed())
+    return false;
+  
+  return displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffer, bytes));
+}
+
 bool SSD1306_data(const uint8_t *storage, uint8_t bytes) 
 {
   uint8_t buffer[1+BLOCK] = { (1<<6) };
 
-  if(displayDevice.hasFailed())
-    return false;
-     
   if(bytes > BLOCK)
     bytes = BLOCK;
   
   for(int i = 0; i < bytes; i++)
     buffer[1+i] = storage[i];
   
-  return displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffer, bytes+1));
+  return SSD1306_transmit(buffer, bytes+1);
 }
 
 bool SSD1306_zero(uint8_t bytes) 
 {
   uint8_t buffer[1+BLOCK] = { (1<<6) };
 
-  if(displayDevice.hasFailed())
-    return false;
-     
   memset(&buffer[1], 0, sizeof(buffer)-1);
   
   while(bytes > 0) {
@@ -519,7 +521,7 @@ bool SSD1306_zero(uint8_t bytes)
     if(block > BLOCK)
       block = BLOCK;
   
-    if(!displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffer, block+1)))
+    if(!SSD1306_transmit(buffer, block+1))
       return false;
 
     bytes -= block;
@@ -532,8 +534,7 @@ bool SSD1306_command(const uint8_t value)
 {
   uint8_t buffer[] = { 0, value };
   
-  return !displayDevice.hasFailed()
-    && displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffer, sizeof(buffer)));
+  return SSD1306_transmit(buffer, sizeof(buffer));
 }
 
 //
