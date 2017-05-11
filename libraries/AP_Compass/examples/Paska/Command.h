@@ -95,7 +95,8 @@ typedef enum {
   c_climb,
   c_gear,
   c_delete,
-  c_fault
+  c_fault,
+  c_bias
 } token_t;
 
 typedef enum

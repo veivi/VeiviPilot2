@@ -232,6 +232,7 @@ int beepDuration, gaugeCount, gaugeVariable[maxParams];
 I2CDevice alphaDevice(&I2c, 0, "alpha"), pitotDevice(&I2c, 0, "pitot");
 I2CDevice eepromDevice(&I2c, 0, "EEPROM"), displayDevice(&I2c, 0, "display");
 bool paramsModified = false;
+float rollBias, aileBias, alphaBias, pitchBias;
 
 //
 // Datagram protocol integration
@@ -712,7 +713,7 @@ bool toc_test_timing(bool reset)
 
 bool toc_test_load(bool reset)
 {
-  return idleAvg > 0.20;
+  return idleAvg > 0.15;
 }
 
 bool toc_test_fdr(bool reset)
@@ -1219,6 +1220,27 @@ void executeCommand(char *buf)
       logDumpBinary();
       break;
 
+    case c_bias:
+      if(numParams > 1)
+	switch((int) param[0]) {
+	case 0:
+	  rollBias = param[1]/RADIAN;
+	  break;
+
+	case 1:
+	  aileBias = param[1]/100;
+	  break;
+	  
+	case 2:
+	  pitchBias = param[1]/RADIAN;
+	  break;
+	  
+	case 3:
+	  alphaBias = param[1]/RADIAN;
+	  break;
+	}
+      break;
+      
     case c_fault:
       if(numParams > 0)
 	vpStatus.fault = param[0];
@@ -1984,8 +2006,6 @@ void receiverTask()
   aileStick = aileDelay.input(aileStick);
 }
 
-const float simulatedAttitudeErr_c = 0.3/RADIAN;
-
 void sensorTaskFast()
 {
   // Alpha input
@@ -2042,13 +2062,13 @@ void sensorTaskFast()
   // Simulator link overrides
   
   if(vpStatus.simulatorLink) {
-    alpha = sensorData.alpha/RADIAN + simulatedAttitudeErr_c/2;
+    alpha = sensorData.alpha/RADIAN + alphaBias;
     iAS = sensorData.ias*1852/60/60;
     rollRate = sensorData.rrate;
     pitchRate = sensorData.prate;
     yawRate = sensorData.yrate;
-    bankAngle = sensorData.roll/RADIAN + simulatedAttitudeErr_c;
-    pitchAngle = sensorData.pitch/RADIAN + simulatedAttitudeErr_c;
+    bankAngle = sensorData.roll/RADIAN + rollBias;
+    pitchAngle = sensorData.pitch/RADIAN + pitchBias;
     heading = (int) (sensorData.heading + 0.5);
     accX = sensorData.accx*FOOT;
     accY = sensorData.accy*FOOT;
@@ -3191,7 +3211,7 @@ void controlTask()
   
   // We accumulate individual contributions so start with 0
 
-  aileOutput = 0;
+  aileOutput = vpStatus.simulatorLink ? aileBias : 0;
   
   if(!vpFeature.stabilizeBank) {
     aileCtrl.reset(0, 0);
