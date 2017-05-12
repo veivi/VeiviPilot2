@@ -20,6 +20,7 @@ class NewI2C
     void pullup(uint8_t);
     uint8_t wait(uint8_t);
     uint8_t write(uint8_t, const uint8_t*, uint8_t);
+    uint8_t write(uint8_t, const I2CBuffer_t*, int);
     uint8_t write(uint8_t, uint8_t, const uint8_t*, uint8_t);
     uint8_t write(uint8_t, uint16_t, const uint8_t*, uint8_t);
     uint8_t write(uint8_t, const uint8_t*, uint8_t, const uint8_t*, uint8_t);
