@@ -215,7 +215,7 @@ uint8_t NewI2C::write(uint8_t address, uint16_t memAddress, const uint8_t *data,
   return write(address, addrArray, sizeof(addrArray), data, numberBytes);
 }
 
-uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const uint8_t *data, uint8_t numberBytes)
+uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const I2CBuffer_t *buffer, int numberBuffers)
 {
   returnStatus = start();
   if(returnStatus){return(returnStatus);}
@@ -236,14 +236,17 @@ uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSiz
     }
   }
 
-  for (uint8_t i = 0; i < numberBytes; i++)
+  for (int j = 0; j < numberBuffers; j++) 
   {
-    returnStatus = transmitByte(data[i]);
-    if(returnStatus)
-      {
-        if(returnStatus == 1){return(3);}
-        return(returnStatus);
-      }
+    for (uint8_t i = 0; i < buffer[j].size; i++)
+    {
+      returnStatus = transmitByte(buffer[j].data[i]);
+      if(returnStatus)
+        {
+          if(returnStatus == 1){return(3);}
+          return(returnStatus);
+        }
+    }
   }
 
   returnStatus = stop();
@@ -252,6 +255,12 @@ uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSiz
     return 7;
     
   return returnStatus;
+}
+
+uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const uint8_t *data, uint8_t numberBytes)
+{
+  I2CBuffer_t buffer = { data, numberBytes };
+  return write(address, addrArray, addrSize, &buffer, 1);
 }
 
 uint8_t NewI2C::read(uint8_t address, uint8_t *dataBuffer, uint8_t numberBytes)
