@@ -6,9 +6,9 @@
 bool handleFailure(const char *name, bool fail, bool *warn, bool *failed, int *count);
 
 typedef struct {
-    const uint8_t *buffer;
+    const uint8_t *data;
     uint8_t size;
-} I2CDataDescriptor_t;
+} I2CBuffer_t;
 
 class NewI2C
 {
@@ -23,7 +23,7 @@ class NewI2C
     uint8_t write(uint8_t, uint8_t, const uint8_t*, uint8_t);
     uint8_t write(uint8_t, uint16_t, const uint8_t*, uint8_t);
     uint8_t write(uint8_t, const uint8_t*, uint8_t, const uint8_t*, uint8_t);
-    uint8_t write(uint8_t, const uint8_t*, uint8_t, const I2CDataDescriptor_t*, uint8_t);
+    uint8_t write(uint8_t, const uint8_t*, uint8_t, const I2CBuffer_t*, int);
     uint8_t read(uint8_t, uint8_t*, uint8_t);
     uint8_t read(uint8_t, uint8_t, uint8_t*, uint8_t);
     uint8_t read(uint8_t, uint16_t, uint8_t*, uint8_t);
