@@ -489,7 +489,7 @@ bool AS5048B_alpha(int16_t *result)
 #define SSD1306_ADDR 0x3C
 #define BLOCK 16
 
-bool SSD1306_transmit(const I2CBuffer_t *buffers, int numBuffers) 
+bool SSD1306_transmitBuffers(const I2CBuffer_t *buffers, int numBuffers) 
 {
   if(displayDevice.hasFailed())
     return false;
@@ -497,11 +497,11 @@ bool SSD1306_transmit(const I2CBuffer_t *buffers, int numBuffers)
   return displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffers, numBuffers));
 }
 
-bool SSD1306_transmit(uint8_t command, const uint8_t *data, uint8_t bytes) 
+bool SSD1306_transmit(uint8_t commandByte, const uint8_t *data, uint8_t bytes) 
 {
-  I2CBuffer_t buffers[] = { { &command, 1 }, { data, bytes } };
+  I2CBuffer_t buffers[] = { { &commandByte, 1 }, { data, bytes } };
     
-  return SSD1306_transmit(buffers, sizeof(buffers)/sizeof(I2CBuffer_t));
+  return SSD1306_transmitBuffers(buffers, sizeof(buffers)/sizeof(I2CBuffer_t));
 }
 
 bool SSD1306_data(const uint8_t *storage, uint8_t bytes) 
@@ -509,14 +509,14 @@ bool SSD1306_data(const uint8_t *storage, uint8_t bytes)
   return SSD1306_transmit((1<<6), storage, bytes);
 }
 
+bool SSD1306_zero(uint8_t bytes) 
+{
+  return SSD1306_data(NULL, bytes);
+}
+
 bool SSD1306_command(const uint8_t value)
 {
   return SSD1306_transmit(0, &value, 1);
-}
-
-bool SSD1306_zero(uint8_t bytes) 
-{
-  return SSD1306_transmit(NULL, bytes);
 }
 
 //
