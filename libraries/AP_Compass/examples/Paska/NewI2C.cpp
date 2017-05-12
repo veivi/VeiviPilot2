@@ -246,7 +246,7 @@ uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSiz
   {
     for (uint8_t i = 0; i < buffer[j].size; i++)
     {
-      returnStatus = transmitByte(buffer[j].data[i]);
+      returnStatus = transmitByte(buffer[j].data ? buffer[j].data[i] : '\0');
       if(returnStatus)
         {
           if(returnStatus == 1){return(3);}
