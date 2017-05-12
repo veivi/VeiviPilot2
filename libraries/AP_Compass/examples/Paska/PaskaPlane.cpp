@@ -489,16 +489,24 @@ bool AS5048B_alpha(int16_t *result)
 #define SSD1306_ADDR 0x3C
 #define BLOCK 16
 
-bool SSD1306_transmit(const uint8_t *buffer, uint8_t bytes) 
+bool SSD1306_transmit(const I2CBuffer_t *buffers, int numBuffers) 
 {
   if(displayDevice.hasFailed())
     return false;
   
-  return displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffer, bytes));
+  return displayDevice.handleStatus(I2c.write(SSD1306_ADDR, buffers, numBuffers));
+}
+
+bool SSD1306_transmit(const uint8_t *data, uint8_t bytes) 
+{
+  I2CBuffer_t buffer = { data, bytes };
+  return SSD1306_transmit(&buffer, 1);
 }
 
 bool SSD1306_data(const uint8_t *storage, uint8_t bytes) 
 {
+  uint8_t command = (1<<6);
+  I2CBuffer_t buffers[] = { { &command, 1 }, {}
   uint8_t buffer[1+BLOCK] = { (1<<6) };
 
   if(bytes > BLOCK)
