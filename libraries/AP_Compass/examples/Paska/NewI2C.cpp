@@ -195,9 +195,15 @@ uint8_t NewI2C::wait(uint8_t address)
   }
 }
 
+uint8_t NewI2C::write(uint8_t address, const I2CBuffer_t *buffers, int numberBuffers)
+{
+  return write(address, NULL, 0, buffers, numberBuffers);
+}
+
 uint8_t NewI2C::write(uint8_t address, const uint8_t *data, uint8_t numberBytes)
 {
-  return write(address, NULL, 0, data, numberBytes);
+  I2CBuffer_t buffer = { data, numberBytes };
+  return write(address, NULL, 0, &buffer, 1);
 }
 
 uint8_t NewI2C::write(uint8_t address, uint8_t registerAddress, const uint8_t *data, uint8_t numberBytes)
