@@ -2185,7 +2185,7 @@ static void failsafeDisable()
   }
 }
 
-RunningAvgFilter liftFilter(CONFIG_HZ/5);
+RunningAvgFilter liftFilter(CONFIG_HZ/4);
 
 void statusTask()
 {
@@ -2340,23 +2340,25 @@ void statusTask()
 
   const float
     lift = liftFilter.input(accZ * cos(pitchAngle) + accX * sin(pitchAngle)),
-    liftExpected = coeffOfLift(alpha) * dynPressure;
+    liftExpected = coeffOfLift(alpha) * dynPressure,
+    liftMax = vpParam.cL_max * dynPressure;
       
   static uint32_t lastWoW;
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || gearOutput == 1 
-     || fabsf(bankAngle) > 15/RADIAN || lift < G/2 || lift > 1.5*G
-     || iAS > 1.5*vpDerived.stallIAS) {
+     || fabsf(bankAngle) > 15/RADIAN || iAS > 1.5*vpDerived.stallIAS) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
       
     lastWoW = currentTime;
-  } else if(lift < 1.5*liftExpected) {
+  } else if(lift < G/2 || lift > 1.5*G
+	    || (lift > liftExpected - liftMax/4
+		&& lift < liftExpected + liftMax/4)) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.2e6) {
+    else if(currentTime - lastWoW > 0.5e6) {
       consoleNoteLn_P(PSTR("Weight probably is OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }

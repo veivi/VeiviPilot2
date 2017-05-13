@@ -261,7 +261,7 @@ void printParams()
   consolePrint(vpParam.cL_max, 4);
   consolePrintLn(")");
   consoleNote_P(PSTR("  Roll rate K = "));
-  consolePrintLn(vpParam.roll_C);
+  consolePrintLn(vpParam.roll_C, 3);
   consoleNoteLn_P(PSTR("  Elevator"));
   consoleNote_P(PSTR("    deflection = "));
   consolePrint(vpParam.elevDefl*90);
