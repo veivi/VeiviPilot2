@@ -2339,7 +2339,8 @@ void statusTask()
   //
 
   const float
-    lift = liftFilter.input(accZ * cos(pitchAngle) + accX * sin(pitchAngle)),
+    lift = accZ * cos(pitchAngle) + accX * sin(pitchAngle),
+    liftAvg = liftFilter.input(lift),
     liftExpected = coeffOfLift(alpha) * dynPressure,
     liftMax = vpParam.cL_max * dynPressure;
       
@@ -2353,19 +2354,18 @@ void statusTask()
     }
       
     lastWoW = currentTime;
-  } else if(lift < G/2 || lift > 1.5*G
-	    || (lift > liftExpected - liftMax/4
-		&& lift < liftExpected + liftMax/4)) {
+  } else if(liftAvg < G/2 || liftAvg > 1.5*G
+	    || lift < liftExpected + liftMax/3) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.5e6) {
-      consoleNoteLn_P(PSTR("Weight probably is OFF THE WHEELS"));
+      consoleNoteLn_P(PSTR("Weight is probably OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.5e6) {
+    else if(currentTime - lastWoW > 0.2e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
@@ -2607,9 +2607,9 @@ void configurationTask()
   else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
   
-  // ... or wing leveling enabled while gear down
+  // ... or wing leveling enabled when weight on wheels
 
-  else if(vpMode.wingLeveler && gearOutput == 0)
+  else if(vpMode.wingLeveler && vpStatus.weightOnWheels)
     vpFeature.stabilizeBank = false;
   
   // Disable alpha dependent stuff if the sensor fails
