@@ -147,7 +147,7 @@ struct PWMOutput pwmOutput[] = {
 //
 
 #define CONTROL_HZ 50
-#define CONFIG_HZ (CONTROL_HZ/4)
+#define CONFIG_HZ (CONTROL_HZ/4.0)
 #define ALPHA_HZ (CONTROL_HZ*10)
 #define AIRSPEED_HZ (CONTROL_HZ*5)
 #define BEEP_HZ 5
@@ -155,7 +155,7 @@ struct PWMOutput pwmOutput[] = {
 #define LED_HZ 3
 #define LED_TICK 100
 #define LOG_HZ_FAST CONTROL_HZ
-#define LOG_HZ_SLOW (CONTROL_HZ/3)
+#define LOG_HZ_SLOW (CONTROL_HZ/3.0)
 #define LOG_HZ_SAVE 2
 #define HEARTBEAT_HZ 1
   
@@ -233,6 +233,7 @@ I2CDevice alphaDevice(&I2c, 0, "alpha"), pitotDevice(&I2c, 0, "pitot");
 I2CDevice eepromDevice(&I2c, 0, "EEPROM"), displayDevice(&I2c, 0, "display");
 bool paramsModified = false;
 float rollBias, aileBias, alphaBias, pitchBias;
+float sampleRate = LOG_HZ_SLOW;
 
 //
 // Datagram protocol integration
@@ -947,13 +948,15 @@ const prog_char_t *applyParamUpdate()
   vpParam.ff_B *= RADIAN;
   return PSTR("ff_B scaled by RADIAN");
   */
-
+  /*
   vpParam.cL_A *= vpDerived.totalMass;
   vpParam.cL_B *= vpDerived.totalMass;
   vpParam.cL_max *= vpDerived.totalMass;
   
   return PSTR("CoL scaled by mass (now indicates F instead of a)");
-  //  return NULL;
+  */
+  
+  return NULL;
 }
 
 char *parse(char *ptr)

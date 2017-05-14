@@ -10,6 +10,8 @@ struct LogInfo {
   uint16_t stamp;
   uint16_t test;
   int32_t length;
+  float sampleRate;
+  float mass;
   char name[NAME_LEN];
 };
 

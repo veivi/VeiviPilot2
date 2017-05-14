@@ -216,12 +216,14 @@ void logDisable()
   consoleNoteLn_P(PSTR("Logging DISABLED"));
 }
 
+extern float sampleRate;
+
 void logDumpBinary(void)
 {
   if(!logReady())
     return;
   
-  struct LogInfo info = { nvState.logStamp, nvState.testNum, logLen };
+  struct LogInfo info = { nvState.logStamp, nvState.testNum, logLen, sampleRate, vpDerived.totalMass };
   strncpy(info.name, vpParam.name, NAME_LEN);
 
   datagramTxStart(DG_LOGINFO);    
