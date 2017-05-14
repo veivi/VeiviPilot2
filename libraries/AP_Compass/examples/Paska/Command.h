@@ -33,6 +33,7 @@ typedef enum {
   c_flapstep,
   c_gservo,
   c_weight,
+  c_fuel,
   c_thrust,
   c_elevon,
   c_vtail,

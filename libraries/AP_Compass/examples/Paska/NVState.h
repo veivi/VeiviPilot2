@@ -35,7 +35,7 @@ struct ParamRecord {
   float cL_B;
   float servoRate;
   float takeoffTrim;
-  float weight, thrust;
+  float weightDry, fuel, thrust;
   float thresholdMargin;
   float glideSlope;
   float offset;
@@ -44,6 +44,7 @@ struct ParamRecord {
   };
 
 struct DerivedParams {
+  float totalMass;
   float stallIAS, zeroLiftAlpha;
   float thresholdAlpha, shakerAlpha, pusherAlpha;
   float apexAlpha, apexElev;

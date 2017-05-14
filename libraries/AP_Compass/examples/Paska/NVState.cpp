@@ -47,7 +47,8 @@ const struct ParamRecord paramDefaults = {
   .cL_B = 0.6,
   .servoRate = 60/0.09,
   .takeoffTrim = 0.25,
-  .weight = 0,
+  .weightDry = 1,
+  .fuel = 0.5,
   .thrust = 0,
   .thresholdMargin = 0.15,
   .glideSlope = 3.0/RADIAN,
@@ -125,7 +126,9 @@ bool setModel(int model, bool verbose)
 
   if(verbose)
     printParams();
-
+  else
+    deriveParams();
+  
   return isGood;
 }
   
@@ -186,17 +189,19 @@ void storeNVState(void)
 void printParams()
 {
   deriveParams();
-  
+    
   consoleNote_P(PSTR("  NAME \""));
   consolePrint(vpParam.name);
   consolePrintLn_P(PSTR("\""));
   
-  consoleNote_P(PSTR("  Weight = "));
-  consolePrint(vpParam.weight, 3);
-  consolePrint_P(PSTR(" kg  thrust = "));
+  consoleNote_P(PSTR("  Weight(dry) = "));
+  consolePrint(vpDerived.totalMass, 3);
+  consolePrint_P(PSTR("("));
+  consolePrint(vpParam.weightDry, 3);
+  consolePrint_P(PSTR(") kg  thrust = "));
   consolePrint(vpParam.thrust, 3);
   consolePrint_P(PSTR(" kg ("));
-  consolePrint(vpParam.thrust/vpParam.weight*100, 0);
+  consolePrint(vpParam.thrust/vpDerived.totalMass*100, 0);
   consolePrintLn_P(PSTR("% of weight)"));
   consoleNote_P(PSTR("  AS5048B ref = "));
   consolePrintLn(vpParam.alphaRef);
@@ -398,13 +403,18 @@ void backupParams()
 
 void deriveParams()
 {
+  // Total mass
+
+  vpDerived.totalMass = vpParam.weightDry + vpParam.fuel;
+  
   // Zero lift alpha
   
   vpDerived.zeroLiftAlpha = -vpParam.cL_A/vpParam.cL_B;
 
   // Stall IAS
   
-  vpDerived.stallIAS = dynamicPressureInverse(G/vpParam.cL_max);
+  vpDerived.stallIAS =
+    dynamicPressureInverse(G * vpDerived.totalMass / vpParam.cL_max);
   
   //
   // Effective alpha limits

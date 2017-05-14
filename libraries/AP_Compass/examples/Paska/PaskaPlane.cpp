@@ -947,7 +947,13 @@ const prog_char_t *applyParamUpdate()
   vpParam.ff_B *= RADIAN;
   return PSTR("ff_B scaled by RADIAN");
   */
-  return NULL;
+
+  vpParam.cL_A *= vpDerived.totalMass;
+  vpParam.cL_B *= vpDerived.totalMass;
+  vpParam.cL_max *= vpDerived.totalMass;
+  
+  return PSTR("CoL scaled by mass (now indicates F instead of a)");
+  //  return NULL;
 }
 
 char *parse(char *ptr)
@@ -1244,7 +1250,7 @@ void executeCommand(char *buf)
 	for(int i = 0; i < maxModels(); i++) {
 	  if(setModel(i, false)) {
 	    updateDescription = applyParamUpdate();
-	    paramsModified = true;
+	    storeParams();
 	  }
 	}
 	
@@ -1320,7 +1326,7 @@ void executeCommand(char *buf)
       for(float e = 1; e >= -1; e -= 0.07)
 	printCoeffElement(-vpParam.alphaMax/2, vpParam.alphaMax, e, elevPredictInverse(e));
 
-      consoleNoteLn_P(PSTR("Coeff of lift per Wing Load"));
+      consoleNoteLn_P(PSTR("Coeff of lift"));
   
       for(float aR = -0.3; aR <= 1; aR += 0.07)
 	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN,
@@ -2341,8 +2347,8 @@ void statusTask()
   const float
     lift = accZ * cos(pitchAngle) + accX * sin(pitchAngle),
     liftAvg = liftFilter.input(lift),
-    liftExpected = coeffOfLift(alpha) * dynPressure,
-    liftMax = vpParam.cL_max * dynPressure;
+    liftExpected = coeffOfLift(alpha) * dynPressure / vpDerived.totalMass,
+    liftMax = vpParam.cL_max * dynPressure / vpDerived.totalMass;
       
   static uint32_t lastWoW;
   
@@ -3100,7 +3106,8 @@ void gpsTask()
 
 float nominalPitchRate(float bank, float target)
 {
-  return square(sin(bank))*coeffOfLift(target)*iasFilter.output()/2;
+  return square(sin(bank))*coeffOfLift(target)/vpDerived.totalMass
+    *iasFilter.output()/2;
 }
 
 void controlTask()
