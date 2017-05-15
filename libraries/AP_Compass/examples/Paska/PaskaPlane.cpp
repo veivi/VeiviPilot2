@@ -2497,11 +2497,11 @@ void configurationTask()
       if(!vpMode.takeOff) {
 	consoleNoteLn_P(PSTR("TakeOff mode ENABLED"));
 	vpMode.takeOff = true;
-    vpStatus.aloft = false;
       }
 	
       if(tocTestStatus(tocReportConsole)) {
 	consoleNoteLn_P(PSTR("T/o configuration is GOOD"));
+	vpStatus.aloft = false;
 	goodBeep(1);
       } else {
 	consolePrintLn("");
