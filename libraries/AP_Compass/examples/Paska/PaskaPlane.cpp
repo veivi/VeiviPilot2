@@ -2356,7 +2356,7 @@ void statusTask()
   static uint32_t lastWoW;
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || gearOutput == 1 
-     || fabsf(bankAngle) > 7.5/RADIAN || fabsf(pitchAngle) > 20/RADIAN
+     || fabsf(bankAngle) > 10/RADIAN || fabsf(pitchAngle) > 20/RADIAN
      || iAS > vpDerived.stallIAS*(1 + 4*vpParam.thresholdMargin)) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
@@ -2375,7 +2375,7 @@ void statusTask()
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.2e6) {
+    else if(currentTime - lastWoW > 0.1e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
