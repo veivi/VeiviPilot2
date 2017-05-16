@@ -2600,7 +2600,7 @@ void configurationTask()
   // Map mode to features : default
   //
   
-  vpFeature.stabilizeBank = true; // !vpStatus.weightOnWheels;
+  vpFeature.stabilizeBank = true;
   vpFeature.keepLevel = vpMode.wingLeveler;
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;
@@ -2616,7 +2616,12 @@ void configurationTask()
   
   else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
+
+  // ... or WoW calibrated and weight is on wheels...
   
+  else if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
+    vpFeature.stabilizePitch = vpFeature.stabilizeBank = false;
+    
   // ... or wing leveling enabled when weight on wheels
 
   else if(vpMode.wingLeveler && vpStatus.weightOnWheels)

@@ -52,6 +52,7 @@ const struct Command commands[] PROGMEM = {
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
   { "slope", c_slope, e_angle, &vpParam.glideSlope },
   { "offset", c_offset, e_angle, &vpParam.offset },
+  { "wow", c_wow, e_int8, &vpParam.wowCalibrated },
   { "stall", c_stall },
   { "peak", c_peak },
   { "max", c_max },
