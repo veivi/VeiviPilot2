@@ -2617,14 +2617,14 @@ void configurationTask()
   else if(vpStatus.stall)
     vpFeature.stabilizeBank = vpFeature.keepLevel = false;
 
-  // ... or WoW calibrated and weight is on wheels...
+  // ... or weight is on wheels...
   
   else if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
     vpFeature.stabilizePitch = vpFeature.stabilizeBank = false;
     
-  // ... or wing leveling enabled when weight on wheels
-
-  else if(vpMode.wingLeveler && vpStatus.weightOnWheels)
+  // ... or wing leveling enabled with wheels down
+  
+  else if(vpMode.wingLeveler && gearOutput == 0)
     vpFeature.stabilizeBank = false;
   
   // Disable alpha dependent stuff if the sensor fails
@@ -3676,7 +3676,8 @@ void setup()
 
   // Static controller settings
 
-  aileCtrl.limit(-0.5, 0.5);
+  elevCtrl.limit(-0.66, 0.66);
+  aileCtrl.limit(-0.66, 0.66);
   pushCtrl.limit(-0.5, fmaxf(1 - elevPredict(vpDerived.pusherAlpha), 0.0));
   flapRateLimiter.setRate(0.5/RADIAN);
   
