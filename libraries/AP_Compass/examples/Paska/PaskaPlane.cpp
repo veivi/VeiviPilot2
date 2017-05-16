@@ -2706,14 +2706,6 @@ void configurationTask()
       pushCtrl.setPID(testGain = testGainExpo(p_Ku_ref), 0, 0);
       break;
 
-    case 6:
-      // Pusher used as alpha hold
-
-      vpFeature.alphaHold = true;
-      vpFeature.stabilizePitch = false;
-      pushCtrl.setPID(testGain = testGainExpo(p_Ku_ref), 0, 0);
-      break;
-
     case 8:
       // Stall behavior test
       
@@ -3176,12 +3168,7 @@ void controlTask()
       
     // Pusher
 
-    if(vpFeature.alphaHold) {
-      // Pusher as alpha hold (test purposes)
-        
-      pushCtrl.input(targetAlpha - alpha, controlCycle);
-      elevOutput = elevOutputFeedForward + pushCtrl.output();
-    } else if(vpFeature.pusher) {
+    if(vpFeature.pusher) {
       // Pusher active
         
       pushCtrl.input(effMaxAlpha - alpha, controlCycle);
