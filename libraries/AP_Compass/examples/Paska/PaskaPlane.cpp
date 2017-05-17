@@ -3147,7 +3147,8 @@ void controlTask()
     targetPitchRate = nominalPitchRate(bankAngle, targetAlpha)
       + clamp(targetAlpha - alpha,
 	      -30/RADIAN - pitchAngle,
-	      vpParam.maxPitch - pitchAngle)*outer_P;
+	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - pitchAngle)
+      *outer_P;
 
   else if(vpFeature.pitchHold)
     targetPitchRate = (0.1 + effStick/2 - pitchAngle)*outer_P;
