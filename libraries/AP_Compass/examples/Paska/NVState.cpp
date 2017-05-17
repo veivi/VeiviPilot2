@@ -55,7 +55,8 @@ const struct ParamRecord paramDefaults = {
   .offset = -0.4/RADIAN,
   .elevon = 0,
   .veeTail = 0,
-  .virtualOnly = true
+  .virtualOnly = true,
+  .wowCalibrated = false
 };
 
 const struct NVStateRecord stateDefaults = {
@@ -318,6 +319,10 @@ void printParams()
   consolePrintLn(vpParam.servoSteer);
   consoleNote_P(PSTR("  Servo rate = "));
   consolePrintLn(vpParam.servoRate);
+  consoleNote_P(PSTR("  Weight on wheels"));
+  if(!vpParam.wowCalibrated)
+    consolePrint_P(PSTR(" NOT"));  
+  consolePrintLn_P(PSTR(" CALIBRATED"));
 }
 
 static void backupParamEntry(const Command *e)

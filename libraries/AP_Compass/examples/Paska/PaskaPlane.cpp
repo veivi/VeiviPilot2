@@ -214,7 +214,7 @@ float elevTrim, targetAlpha;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float outer_P, rudderMix, stallAlpha, shakerAlpha, pusherAlpha;
-float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, levelBank, slope;
+float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, slope;
 float accDirection, relativeWind;
 uint16_t heading;
 NewI2C I2c = NewI2C();
@@ -2619,10 +2619,11 @@ void configurationTask()
 
   // ... or weight is on wheels...
   
-  else if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
-    vpFeature.stabilizePitch = vpFeature.stabilizeBank = false;
-    
-  // ... or wing leveling enabled with wheels down
+  if(vpParam.wowCalibrated) {
+    if(vpStatus.weightOnWheels)
+      vpFeature.stabilizePitch = vpFeature.stabilizeBank = false;
+  }
+  // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
   else if(vpMode.wingLeveler && gearOutput == 0)
     vpFeature.stabilizeBank = false;
@@ -2666,7 +2667,6 @@ void configurationTask()
   shakerAlpha = vpDerived.shakerAlpha;
   pusherAlpha = vpDerived.pusherAlpha;
   rudderMix = vpParam.r_Mix;
-  levelBank = 0;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
 
@@ -3205,19 +3205,13 @@ void controlTask()
 
   aileOutput = vpStatus.simulatorLink ? aileBias : 0;
   
-  if(!vpFeature.stabilizeBank) {
-    aileCtrl.reset(0, 0);
+  if(vpFeature.stabilizeBank) {
+    // Stabilization is enabled
     
-    if(vpFeature.keepLevel)
-      // Simple leveling for situations where we want to avoid I term wind-up
-      
-      aileOutput -= bankAngle + rollRate/32;
-    
-  } else {    
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollRate = outer_P * (levelBank + aileStick*maxBank - bankAngle);
+      targetRollRate = outer_P * (aileStick*maxBank - bankAngle);
 
     else if(vpMode.bankLimiter) {
       // Weak leveling
@@ -3232,6 +3226,15 @@ void controlTask()
     }
       
     aileCtrl.input(targetRollRate - rollRate, controlCycle);
+  } else {
+    // Stabilization disabled
+    
+    aileCtrl.reset(0, 0);
+    
+    if(vpFeature.keepLevel)
+      // Simple leveling for situations where we want to avoid I term wind-up
+      aileOutput -= bankAngle + rollRate/32;
+    
   }
 
   //   Apply controller output + feedforward
