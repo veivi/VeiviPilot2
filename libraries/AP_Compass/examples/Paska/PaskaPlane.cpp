@@ -3129,12 +3129,12 @@ void controlTask()
   // Elevator control
   //
 
-  const float shakerLimit = (float) 2/3;
+  const float shakerLimit = (float) 1/2;
   const float effStick = vpMode.radioFailSafe ? shakerLimit : elevStick;
   const float stickStrength = fmaxf(effStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha = mixValue(stickStrength, shakerAlpha, pusherAlpha);
     
-  elevOutput = effStick + elevTrim;
+  elevOutput = clamp(effStick + elevTrim, -1, 1);
   
   targetAlpha = fminf(elevPredictInverse(elevOutput), effMaxAlpha);
 
@@ -3156,8 +3156,12 @@ void controlTask()
   else
     targetPitchRate = effStick*PI/2;
 
-  elevOutputFeedForward = elevPredict(targetAlpha);
-
+  if(vpMode.radioFailSafe)
+    elevOutputFeedForward = elevPredict(targetAlpha);
+  else
+    elevOutputFeedForward =
+      mixValue(stickStrength, elevPredict(targetAlpha), elevOutput);
+    
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
     
