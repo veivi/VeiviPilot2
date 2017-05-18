@@ -3156,11 +3156,8 @@ void controlTask()
   else
     targetPitchRate = effStick*PI/2;
 
-  if(vpMode.radioFailSafe)
-    elevOutputFeedForward = elevPredict(targetAlpha);
-  else
-    elevOutputFeedForward =
-      mixValue(stickStrength, elevPredict(targetAlpha), elevOutput);
+  elevOutputFeedForward =
+    mixValue(stickStrength, elevPredict(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
