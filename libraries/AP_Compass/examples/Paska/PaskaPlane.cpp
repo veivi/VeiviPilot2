@@ -2656,7 +2656,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
   throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
