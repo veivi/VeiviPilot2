@@ -1074,12 +1074,10 @@ void executeCommand(char *buf)
     // Simple variable
     //
     
-    for(int i = 0; command.var[i]; i++) {
-      const char *txt = i < numParams ? paramText[i] : "";
-	
+    for(int i = 0; i < numParams && command.var[i]; i++) {
       switch(command.varType) {
       case e_string:
-	strncpy((char*) command.var[i], txt, NAME_LEN-1);
+	strncpy((char*) command.var[i], paramText[i], NAME_LEN-1);
 	break;
       
       case e_uint16:
@@ -3159,7 +3157,7 @@ void controlTask()
     targetPitchRate = effStick*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickStrength, elevPredict(targetAlpha), elevOutput);
+    mixValue(stickStrength*2.0/3, elevPredict(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
