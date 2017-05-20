@@ -222,7 +222,7 @@ Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
-RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
+RateLimiter aileRateLimiter, rollRate2Limiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
 float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
@@ -2658,7 +2658,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
   throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
@@ -2670,6 +2670,7 @@ void configurationTask()
   rudderMix = vpParam.r_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
+  rollRate2Limiter.setRate(8 * vpParam.roll_C * iAS);
 
   //
   // Apply test mode
@@ -3227,7 +3228,11 @@ void controlTask()
 	clamp(targetRollRate,
 	      (-maxBank - bankAngle)*outer_P, (maxBank - bankAngle)*outer_P);
     }
-      
+
+    // Limit roll acceleration for a smoother ride
+    
+    targetRollRate = rollRate2Limiter.input(targetRollRate, controlCycle);
+    
     aileCtrl.input(targetRollRate - rollRate, controlCycle);
   } else {
     // Stabilization disabled
@@ -3235,9 +3240,8 @@ void controlTask()
     aileCtrl.reset(0, 0);
     
     if(vpFeature.keepLevel)
-      // Simple leveling for situations where we want to avoid I term wind-up
+      // Simple proportional wing leveler
       aileOutput -= bankAngle + rollRate/32;
-    
   }
 
   //   Apply controller output + feedforward
