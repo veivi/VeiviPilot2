@@ -2327,7 +2327,7 @@ void statusTask()
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff || alpha < stallAlpha*1.1) {
+     || vpMode.takeOff || alpha < stallAlpha) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.2e6) {
@@ -2337,7 +2337,7 @@ void statusTask()
   } else {
     if(vpStatus.stall)
       lastStall = currentTime;
-    else if(currentTime - lastStall > 0.5e6) {
+    else if(currentTime - lastStall > 0.2e6) {
       consoleNoteLn_P(PSTR("We're STALLING"));
       vpStatus.stall = true;
     }
