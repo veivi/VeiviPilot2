@@ -2668,7 +2668,7 @@ void configurationTask()
   rudderMix = vpParam.r_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollRate2Limiter.setRate(8 * vpParam.roll_C * iAS);
+  rollRate2Limiter.setRate(5 * vpParam.roll_C * iAS);
 
   //
   // Apply test mode
