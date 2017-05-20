@@ -2355,8 +2355,9 @@ void statusTask()
       
   static uint32_t lastWoW;
   
-  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || gearOutput == 1 
-     || fabsf(bankAngle) > 10/RADIAN || fabsf(pitchAngle) > 20/RADIAN
+  if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
+     || gearOutput == 1 
+     || fabsf(bankAngle) > 7.5/RADIAN || fabsf(pitchAngle) > 15/RADIAN
      || iAS > vpDerived.stallIAS*(1 + 4*vpParam.thresholdMargin)) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
