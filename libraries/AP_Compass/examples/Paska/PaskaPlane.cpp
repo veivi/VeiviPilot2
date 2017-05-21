@@ -36,7 +36,7 @@ extern "C" {
 
 // #define USE_COMPASS  1
 
-const float alphaWindow_c = 1.0/30;
+const float alphaWindow_c = RATIO(1/30);
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;
@@ -2648,7 +2648,7 @@ void configurationTask()
   float scale = 1.0;
   
   if(vpMode.test && nvState.testNum == 0)
-    scale = testGainLinear(1.0/3, 1.5);
+    scale = testGainLinear(RATIO(1/3), RATIO(3/2));
   
   // Default controller settings
 
@@ -3129,10 +3129,10 @@ void controlTask()
   // Elevator control
   //
 
-  const float shakerLimit = (float) 1/2;
+  const float shakerLimit = RATIO(1/2);
   const float effStick = vpMode.radioFailSafe ? shakerLimit : elevStick;
-  const float stickStrength = fmaxf(effStick-shakerLimit, 0)/(1-shakerLimit);
-  const float effMaxAlpha = mixValue(stickStrength, shakerAlpha, pusherAlpha);
+  const float stickForce = fmaxf(effStick-shakerLimit, 0)/(1-shakerLimit);
+  const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
     
   elevOutput = clamp(effStick + elevTrim, -1, 1);
   
@@ -3157,7 +3157,7 @@ void controlTask()
     targetPitchRate = effStick*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickStrength*2.0/3, elevPredict(targetAlpha), elevOutput);
+    mixValue(stickForce*RATIO(2/3), elevPredict(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
