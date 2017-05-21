@@ -3684,9 +3684,9 @@ void setup()
 
   // Static controller settings
 
-  elevCtrl.limit(-0.66, 0.66);
-  aileCtrl.limit(-0.66, 0.66);
-  pushCtrl.limit(-0.5, fmaxf(1 - elevPredict(vpDerived.pusherAlpha), 0.0));
+  elevCtrl.limit(RATIO(2/3));
+  aileCtrl.limit(RATIO(2/3));
+  pushCtrl.limit(RATIO(-1/2), 1 - elevPredict(vpDerived.pusherAlpha));
   flapRateLimiter.setRate(0.5/RADIAN);
   
   // Misc filters

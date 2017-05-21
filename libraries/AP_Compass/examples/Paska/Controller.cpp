@@ -38,6 +38,10 @@ void Controller::limit(float a, float b) {
   rangeMax = b;
 }
 
+void Controller::limit(float r) {
+  limit(-r, r);
+}
+
 void Controller::input(float err, float d) {
   prevD = d;
   D = err - prevErr;

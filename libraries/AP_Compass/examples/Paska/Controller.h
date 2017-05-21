@@ -11,6 +11,7 @@ public:
   void reset(float value, float err);
   void input(float err, float d);
   void limit(float, float);
+  void limit(float);
 
   float output(void);
 protected:
