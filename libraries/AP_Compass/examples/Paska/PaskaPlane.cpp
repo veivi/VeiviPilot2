@@ -1369,7 +1369,7 @@ void executeCommand(char *buf)
       
     case c_stall:
       if(numParams > 0) {
-	vpParam.cL_max = 2*G / square(param[0]);
+	vpParam.cL_max = G * vpDerived.totalMass / dynamicPressure(param[0]);
 	if(numParams > 1)
 	  vpParam.alphaMax = param[1]/RADIAN;
       }
@@ -3157,7 +3157,7 @@ void controlTask()
     targetPitchRate = effStick*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickForce*RATIO(2/3), elevPredict(targetAlpha), elevOutput);
+    mixValue(stickForce, elevPredict(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
