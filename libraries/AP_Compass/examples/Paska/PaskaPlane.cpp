@@ -222,7 +222,7 @@ Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
-RateLimiter aileRateLimiter, rollRate2Limiter, flapRateLimiter, trimRateLimiter;
+RateLimiter aileRateLimiter, rollAccelLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
 float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
@@ -2668,7 +2668,7 @@ void configurationTask()
   rudderMix = vpParam.r_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollRate2Limiter.setRate(5 * vpParam.roll_C * iAS);
+  rollAccelLimiter.setRate(5 * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -3229,7 +3229,7 @@ void controlTask()
 
     // Limit roll acceleration for a smoother ride
     
-    targetRollRate = rollRate2Limiter.input(targetRollRate, controlCycle);
+    targetRollRate = rollAccelLimiter.input(targetRollRate, controlCycle);
     
     aileCtrl.input(targetRollRate - rollRate, controlCycle);
   } else {
