@@ -3195,7 +3195,7 @@ void controlTask()
   float maxBank = 45/RADIAN;
 
   if(vpMode.radioFailSafe) {
-    maxBank = 10/RADIAN;
+    maxBank = 15/RADIAN;
     if(vpStatus.stall)
       aileStick = 0;
   } else if(vpFeature.alphaHold)
