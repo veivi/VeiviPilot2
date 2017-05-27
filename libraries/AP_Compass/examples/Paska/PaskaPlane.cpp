@@ -2340,7 +2340,23 @@ void statusTask()
       vpStatus.stall = true;
     }
   }
-    
+
+  //
+  // Attitude is upright?
+  //
+  
+  static uint32_t lastUpright;
+  
+  if(fabsf(bankAngle) < 12.5/RADIAN && fabsf(pitchAngle) < 12.5/RADIAN) {
+    vpStatus.upright = true;
+    lastUpright = currentTime;
+  } else {
+    if(!vpStatus.upright)
+      lastUpright = currentTime;
+    else if(currentTime - lastUpright > 0.5e6)
+      vpStatus.upright = false;
+  }
+
   //  
   // Weight on wheels?
   //
@@ -2354,17 +2370,18 @@ void statusTask()
   static uint32_t lastWoW;
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
-     || gearOutput == 1 
-     || fabsf(bankAngle) > 7.5/RADIAN || fabsf(pitchAngle) > 15/RADIAN
-     || iAS > vpDerived.stallIAS*(1 + 4*vpParam.thresholdMargin)) {
+     || vpStatus.alphaUnreliable || vpStatus.pitotFailed
+     || gearOutput == 1 || !vpStatus.upright
+     || iAS > vpDerived.stallIAS*2) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
       
     lastWoW = currentTime;
-  } else if(liftAvg < G/2 || liftAvg > 1.5*G
-	    || lift < liftExpected + liftMax/3) {
+  } else if(iAS > vpDerived.stallIAS
+	    && (liftAvg < G/2 || liftAvg > 1.5*G
+		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.5e6) {
