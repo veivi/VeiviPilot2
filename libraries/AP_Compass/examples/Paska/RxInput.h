@@ -26,7 +26,7 @@ bool inputValid(struct RxInputRecord *record);
 float inputValue(struct RxInputRecord *record);
 int8_t readSwitch(struct SwitchRecord *record);
 
-#define NULLZONE RATIO(3/100)
+#define NULLZONE RATIO(5/100)
 
 float applyNullZone(float value, bool *pilotInput);
 float applyNullZone(float value);

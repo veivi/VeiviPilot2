@@ -213,7 +213,7 @@ uint32_t controlCycleEnded;
 float elevTrim, targetAlpha;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-float outer_P, rudderMix, stallAlpha, shakerAlpha, pusherAlpha;
+float outer_P, rudderMix, shakerAlpha, pusherAlpha;
 float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, slope;
 float accDirection, relativeWind;
 uint16_t heading;
@@ -2325,7 +2325,7 @@ void statusTask()
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff || alpha < stallAlpha) {
+     || vpMode.takeOff || alpha < vpParam.alphaMax) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.2e6) {
@@ -2679,7 +2679,6 @@ void configurationTask()
   throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
 
   outer_P = vpParam.o_P;
-  stallAlpha = vpParam.alphaMax;
   shakerAlpha = vpDerived.shakerAlpha;
   pusherAlpha = vpDerived.pusherAlpha;
   rudderMix = vpParam.r_Mix;
@@ -2734,14 +2733,6 @@ void configurationTask()
       vpFeature.pusher = false;
       break;
       
-    case 9:
-      // Max alpha
-
-      vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;
-      shakerAlpha = pusherAlpha = stallAlpha = testGain
-	= testGainLinear(vpParam.alphaMax+10/RADIAN, vpParam.alphaMax);
-      break;         
-
     case 10:
       // Aileron to rudder mix
 
