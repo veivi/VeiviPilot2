@@ -2865,9 +2865,11 @@ void gaugeTask()
       case 7:
 	consolePrint_P(PSTR(" aileStick = "));
 	consolePrint(aileStick);
-	consolePrint_P(PSTR(" elevStick = "));
+	consolePrint_P(PSTR(" elevStick(expo) = "));
 	consolePrint(elevStick);
-	consolePrint_P(PSTR(" thrStick = "));
+	consolePrint_P(PSTR("("));
+	consolePrint(elevStickExpo);
+	consolePrint_P(PSTR(") thrStick = "));
 	consolePrint(throttleStick);
 	consolePrint_P(PSTR(" rudderStick = "));
 	consolePrint(rudderStick);
