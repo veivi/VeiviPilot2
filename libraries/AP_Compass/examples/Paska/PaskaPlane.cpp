@@ -207,7 +207,7 @@ float controlCycle = 1.0/CONTROL_HZ;
 uint32_t idleMicros;
 float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 float testGain = 0;
-float iAS, dynPressure, alpha, aileStick, elevStick, throttleStick, rudderStick, tuningKnob;
+float iAS, dynPressure, alpha, aileStick, elevStick, elevStickExpo, throttleStick, rudderStick, tuningKnob;
 bool ailePilotInput, elevPilotInput, rudderPilotInput;
 uint32_t controlCycleEnded;
 float elevTrim, targetAlpha;
@@ -410,7 +410,7 @@ void logPosition(void)
 void logInput(void)
 {
   logGeneric(lc_ailestick, aileStick);
-  logGeneric(lc_elevstick, elevStick);
+  logGeneric(lc_elevstick, elevStickExpo);
   logGeneric(lc_thrstick, throttleStick);
   logGeneric(lc_rudstick, rudderStick);
 }
@@ -1930,7 +1930,9 @@ void receiverTask()
   
   if(inputValid(&elevInput))
     elevStick = applyNullZone(inputValue(&elevInput), &elevPilotInput);
-    
+
+  elevStickExpo = applyExpo(elevStick);
+  
   if(inputValid(&tuningKnobInput))
     tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
     
@@ -3138,11 +3140,11 @@ void controlTask()
   //
 
   const float shakerLimit = RATIO(1/2);
-  const float effStick = vpMode.radioFailSafe ? shakerLimit : elevStick;
-  const float stickForce = fmaxf(effStick-shakerLimit, 0)/(1-shakerLimit);
+  const float stickForce =
+    vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
     
-  elevOutput = clamp(effStick + elevTrim, -1, 1);
+  elevOutput = clamp(elevStickExpo + elevTrim, -1, 1);
   
   targetAlpha = fminf(elevPredictInverse(elevOutput), effMaxAlpha);
 
@@ -3159,10 +3161,10 @@ void controlTask()
       *outer_P;
 
   else if(vpFeature.pitchHold)
-    targetPitchRate = (0.1 + effStick/2 - pitchAngle)*outer_P;
+    targetPitchRate = (0.1 + elevStickExpo/2 - pitchAngle)*outer_P;
 
   else
-    targetPitchRate = effStick*PI/2;
+    targetPitchRate = elevStickExpo*PI/2;
 
   elevOutputFeedForward =
     mixValue(stickForce*RATIO(2/3), elevPredict(targetAlpha), elevOutput);

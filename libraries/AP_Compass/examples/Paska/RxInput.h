@@ -27,9 +27,11 @@ float inputValue(struct RxInputRecord *record);
 int8_t readSwitch(struct SwitchRecord *record);
 
 #define NULLZONE RATIO(5/100)
+#define EXPO 0.35
 
 float applyNullZone(float value, bool *pilotInput);
 float applyNullZone(float value);
+float applyExpo(float value);
 
 extern bool pciWarn;
 

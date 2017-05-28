@@ -144,3 +144,8 @@ float applyNullZone(float value)
   return applyNullZone(value, NULL);
 }
 
+float applyExpo(float value)
+{
+  return sign(value)*powf(fabsf(value), 1 + EXPO);
+}
+
