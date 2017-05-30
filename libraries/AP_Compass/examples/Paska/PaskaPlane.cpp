@@ -208,7 +208,7 @@ uint32_t idleMicros;
 float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 float testGain = 0;
 float iAS, dynPressure, alpha, aileStick, elevStick, elevStickExpo, throttleStick, rudderStick, tuningKnob;
-bool ailePilotInput, elevPilotInput, rudderPilotInput;
+float ailePilotInput, elevPilotInput, rudderPilotInput;
 uint32_t controlCycleEnded;
 float elevTrim, targetAlpha;
 Controller elevCtrl, pushCtrl, throttleCtrl;
@@ -1920,8 +1920,8 @@ bool inputDelayed;
 
 void configurationTask();
 
-#define NZ_BIG RATIO(7.5/100)
-#define NZ_SMALL RATIO(5/100)
+#define NZ_BIG RATIO(5/100)
+#define NZ_SMALL RATIO(3/100)
 
 void receiverTask()
 {
@@ -2538,7 +2538,7 @@ void configurationTask()
   
     failsafeDisable();
     
-    if(!vpMode.wingLeveler && !ailePilotInput) {
+    if(!vpMode.wingLeveler && ailePilotInput < RATIO(1/3)) {
       consoleNoteLn_P(PSTR("Wing leveler ENABLED"));
       vpMode.wingLeveler = true;
     } 
@@ -2601,7 +2601,7 @@ void configurationTask()
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && ailePilotInput) {
+  if(vpMode.wingLeveler && ailePilotInput > RATIO(1/3)) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -2760,7 +2760,7 @@ void configurationTask()
     case 13:
       // Disable stabilization for max roll rate test
 
-      if(ailePilotInput) {
+      if(ailePilotInput > 0.0) {
 	vpFeature.stabilizeBank = vpMode.bankLimiter
 	  = vpFeature.keepLevel = false;
       } else {
@@ -3365,7 +3365,8 @@ void trimTask()
     // Nose wheel
     //
     
-    if(rudderPilotInput && vpStatus.weightOnWheels && !vpStatus.positiveIAS) {
+    if(rudderPilotInput > 0.0 && vpStatus.weightOnWheels
+       && !vpStatus.positiveIAS) {
       vpParam.steerNeutral +=
 	sign(vpParam.steerDefl)*sign(rudderStick)*steerTrimRate/TRIM_HZ;
       vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
@@ -3376,7 +3377,7 @@ void trimTask()
     // Elevator
     //
   
-    if(elevPilotInput)
+    if(elevPilotInput > 0.0)
       elevTrim += sign(elevStick) * elevTrimRate / TRIM_HZ;
   }
 
