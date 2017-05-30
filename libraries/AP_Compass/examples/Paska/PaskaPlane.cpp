@@ -1339,7 +1339,7 @@ void executeCommand(char *buf)
       break;
 
     case c_init:
-      logInit();
+      // logInit();
       break;
 
     case c_stop:
@@ -3416,14 +3416,12 @@ void trimTask()
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
 
-bool logInitialized = false;
-
 void backgroundTask(uint32_t durationMicros)
 {
   uint32_t idleStart = hal.scheduler->micros();
   
-  if(!logInitialized)
-    logInitialized = logInit(2*durationMicros);
+  if(!logReady(false))
+    logInit(2*durationMicros);
   else
     hal.scheduler->delay(durationMicros/1000);
 
@@ -3455,7 +3453,7 @@ void heartBeatTask()
 
 void blinkTask()
 {
-  float ledRatio = vpMode.test ? 0.0 : !logInitialized ? 1.0 : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5 : alpha > 0.0 ? 0.90 : 0.10;
+  float ledRatio = vpMode.test ? 0.0 : !logReady(false) ? 1.0 : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5 : alpha > 0.0 ? 0.90 : 0.10;
   static int tick = 0;
   
   tick = (tick + 1) % (LED_TICK/LED_HZ);

@@ -28,6 +28,7 @@ bool logReady(bool verbose)
 
   if(verbose)
     consoleNoteLn_P(PSTR("Log not ready"));
+  
   return false;
 }
 
@@ -119,10 +120,6 @@ void logClear(void)
     consoleNote_P(PSTR("Log STAMP incremented to "));
     consolePrintLn(nvState.logStamp);
   }    
-}
-
-void logInit()
-{
 }
 
 void logTestSet(uint16_t ch)
