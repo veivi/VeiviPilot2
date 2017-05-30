@@ -1920,16 +1920,19 @@ bool inputDelayed;
 
 void configurationTask();
 
+#define NZ_BIG RATIO(7.5/100)
+#define NZ_SMALL RATIO(5/100)
+
 void receiverTask()
 {
   if(inputValid(&aileInput))
-    aileStick = applyNullZone(inputValue(&aileInput), &ailePilotInput);
+    aileStick = applyNullZone(inputValue(&aileInput), NZ_BIG, &ailePilotInput);
   
   if(inputValid(&rudderInput))
-    rudderStick = applyNullZone(inputValue(&rudderInput), &rudderPilotInput);
+    rudderStick = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &rudderPilotInput);
   
   if(inputValid(&elevInput))
-    elevStick = applyNullZone(inputValue(&elevInput), &elevPilotInput);
+    elevStick = applyNullZone(inputValue(&elevInput), NZ_SMALL, &elevPilotInput);
 
   elevStickExpo = applyExpo(elevStick);
   

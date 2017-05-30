@@ -123,15 +123,15 @@ int8_t readSwitch(struct SwitchRecord *record)
   return record->state;
 }
 
-float applyNullZone(float value, bool *pilotInput)
+float applyNullZone(float value, float nz, bool *pilotInput)
 {
   if(pilotInput)
     *pilotInput = true;
   
-  if(value < -NULLZONE)
-    return (value + NULLZONE) / (1.0 - NULLZONE);
-  else if(value > NULLZONE)
-    return (value - NULLZONE) / (1.0 - NULLZONE);
+  if(value < -nz)
+    return (value + nz) / (1.0 - nz);
+  else if(value > nz)
+    return (value - nz) / (1.0 - nz);
 
   if(pilotInput)
     *pilotInput = false;
@@ -139,9 +139,9 @@ float applyNullZone(float value, bool *pilotInput)
   return 0.0;
 }
 
-float applyNullZone(float value)
+float applyNullZone(float value, float nz)
 {
-  return applyNullZone(value, NULL);
+  return applyNullZone(value, nz, NULL);
 }
 
 float applyExpo(float value)
