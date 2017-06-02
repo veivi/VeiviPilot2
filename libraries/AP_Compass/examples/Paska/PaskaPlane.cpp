@@ -208,7 +208,7 @@ uint32_t idleMicros;
 float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 float testGain = 0;
 float iAS, dynPressure, alpha, aileStick, elevStick, elevStickExpo, throttleStick, rudderStick, tuningKnob;
-float ailePilotInput, elevPilotInput, rudderPilotInput;
+bool ailePilotInput, elevPilotInput, rudderPilotInput;
 uint32_t controlCycleEnded;
 float elevTrim, targetAlpha;
 Controller elevCtrl, pushCtrl, throttleCtrl;
@@ -2538,7 +2538,7 @@ void configurationTask()
   
     failsafeDisable();
     
-    if(!vpMode.wingLeveler && ailePilotInput < RATIO(1/3)) {
+    if(!vpMode.wingLeveler && !ailePilotInput) {
       consoleNoteLn_P(PSTR("Wing leveler ENABLED"));
       vpMode.wingLeveler = true;
     } 
@@ -2601,7 +2601,7 @@ void configurationTask()
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && ailePilotInput > RATIO(1/3)) {
+  if(vpMode.wingLeveler && ailePilotInput && bankAngle > 15/RADIAN) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -2760,7 +2760,7 @@ void configurationTask()
     case 13:
       // Disable stabilization for max roll rate test
 
-      if(ailePilotInput > 0.0) {
+      if(ailePilotInput) {
 	vpFeature.stabilizeBank = vpMode.bankLimiter
 	  = vpFeature.keepLevel = false;
       } else {
@@ -3365,7 +3365,7 @@ void trimTask()
     // Nose wheel
     //
     
-    if(rudderPilotInput > 0.0 && vpStatus.weightOnWheels
+    if(rudderPilotInput && vpStatus.weightOnWheels
        && !vpStatus.positiveIAS) {
       vpParam.steerNeutral +=
 	sign(vpParam.steerDefl)*sign(rudderStick)*steerTrimRate/TRIM_HZ;
@@ -3377,7 +3377,7 @@ void trimTask()
     // Elevator
     //
   
-    if(elevPilotInput > 0.0)
+    if(elevPilotInput)
       elevTrim += sign(elevStick) * elevTrimRate / TRIM_HZ;
   }
 
@@ -3411,8 +3411,7 @@ void trimTask()
       elevTrim = elevPredict(vpDerived.thresholdAlpha);
     else
       elevTrim = vpParam.takeoffTrim;      
-  }
-  else
+  } else
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
 

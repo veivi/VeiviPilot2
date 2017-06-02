@@ -123,15 +123,12 @@ int8_t readSwitch(struct SwitchRecord *record)
   return record->state;
 }
 
-float applyNullZone(float value, float nz, float *pilotInput)
+float applyNullZone(float value, float nz, bool *pilotInput)
 {
   const float zone = 1.0 - nz;
   
-  if(pilotInput) {
-    *pilotInput = (fabsf(value) - nz) / zone;
-    if(*pilotInput < 0.0)
-      *pilotInput = 0.0;
-  }
+  if(pilotInput)
+    *pilotInput = fabsf(value) > nz;
   
   if(value < -nz)
     return (value + nz) / zone;

@@ -28,7 +28,7 @@ int8_t readSwitch(struct SwitchRecord *record);
 
 #define EXPO 0.35
 
-float applyNullZone(float value, float nz, float *pilotInput);
+float applyNullZone(float value, float nz, bool *pilotInput);
 float applyNullZone(float value, float nz);
 float applyExpo(float value);
 
