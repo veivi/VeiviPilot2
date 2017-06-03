@@ -3309,27 +3309,40 @@ void actuatorTask()
 
   if(vpParam.elevon) {
     pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileRateLimiter.output()
+		   + RANGE*clamp(+ vpParam.aileDefl*aileRateLimiter.output()
 				 - vpParam.elevDefl*elevOutput
 				 + vpParam.aileNeutral, -1, 1));
 
     pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileRateLimiter.output()
+		   + RANGE*clamp(+ vpParam.aileDefl*aileRateLimiter.output()
 				 + vpParam.elevDefl*elevOutput 
 				 + vpParam.elevNeutral, -1, 1));
-  } else {
-    pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileRateLimiter.output()
-				 + vpParam.aileNeutral, -1, 1));
+  } else if(vpParam.veeTail) {
+    pwmOutputWrite(elevatorHandle, NEUTRAL
+		   + RANGE*clamp(+ vpParam.elevDefl*elevOutput
+				 + vpParam.rudderDefl*rudderOutput 
+				 + vpParam.elevNeutral, -1, 1));
 
+    pwmOutputWrite(rudderHandle, NEUTRAL
+		   + RANGE*clamp(- vpParam.elevDefl*elevOutput
+				 + vpParam.rudderDefl*rudderOutput
+				 + vpParam.rudderNeutral, -1, 1));
+  } else {
     pwmOutputWrite(elevatorHandle, NEUTRAL
 		   + RANGE*clamp(vpParam.elevDefl*elevOutput 
 				 + vpParam.elevNeutral, -1, 1));
   }
   
-  pwmOutputWrite(rudderHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.rudderNeutral + 
-			       vpParam.rudderDefl*rudderOutput, -1, 1));                        
+  if(!vpParam.veeTail)
+    pwmOutputWrite(rudderHandle, NEUTRAL
+		   + RANGE*clamp(vpParam.rudderNeutral + 
+				 vpParam.rudderDefl*rudderOutput, -1, 1));
+
+  if(!vpParam.elevon)
+    pwmOutputWrite(aileHandle, NEUTRAL
+		   + RANGE*clamp(vpParam.aileDefl*aileRateLimiter.output()
+				 + vpParam.aileNeutral, -1, 1));
+    
   pwmOutputWrite(steerHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.steerNeutral + 
 			       vpParam.steerDefl*steerOutput, -1, 1));                        
