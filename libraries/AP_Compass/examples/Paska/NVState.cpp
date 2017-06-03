@@ -56,6 +56,7 @@ const struct ParamRecord paramDefaults = {
   .elevon = 0,
   .veeTail = 0,
   .virtualOnly = true,
+  .haveWheels = true,
   .wowCalibrated = false
 };
 

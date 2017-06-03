@@ -1103,6 +1103,10 @@ void executeCommand(char *buf)
       case e_angle90:
 	*((float*) command.var[i]) = param[i]/90;
 	break;
+	
+      case e_bool:
+	*((bool*) command.var[i]) = param[i];
+	break;
       }
     }
   } else {
@@ -2376,7 +2380,7 @@ void statusTask()
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
-     || gearOutput == 1 || !vpStatus.upright
+     || !vpParam.haveWheels || gearOutput == 1 || !vpStatus.upright
      || iAS > vpDerived.stallIAS*2) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));

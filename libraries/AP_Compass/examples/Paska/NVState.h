@@ -41,6 +41,7 @@ struct ParamRecord {
   float offset;
   bool elevon, veeTail;
   bool virtualOnly;
+  bool haveWheels;
   bool wowCalibrated;
   };
 
