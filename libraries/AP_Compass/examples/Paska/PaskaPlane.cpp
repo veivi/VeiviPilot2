@@ -669,7 +669,7 @@ struct TakeoffTest {
   bool (*function)(bool);
 };
 
-const float toc_margin_c = 0.03;
+const float toc_margin_c = RATIO(3/100);
 
 bool toc_test_mode(bool reset)
 {
@@ -798,8 +798,8 @@ bool toc_test_rstick_range(bool reset)
 
 bool toc_test_rstick_neutral(bool reset)
 {
-  return ( fabsf(inputValue(&aileInput)) < toc_margin_c/2 )
-    && ( fabsf(inputValue(&elevInput)) < toc_margin_c/2 );
+  return ( fabsf(inputValue(&aileInput)) < toc_margin_c )
+    && ( fabsf(inputValue(&elevInput)) < toc_margin_c );
 }
 
 bool toc_test_rstick(bool reset)
@@ -816,8 +816,8 @@ bool toc_test_lstick_range(bool reset)
 
 bool toc_test_lstick_neutral(bool reset)
 {
-  return ( fabsf(inputValue(&rudderInput)) < toc_margin_c/2 )
-    && ( fabsf(inputValue(&throttleInput)) < toc_margin_c/2 );
+  return ( fabsf(inputValue(&rudderInput)) < toc_margin_c )
+    && ( fabsf(inputValue(&throttleInput)) < toc_margin_c );
 }
 
 bool toc_test_lstick(bool reset)
@@ -833,7 +833,7 @@ bool toc_test_tuning_range(bool reset)
 
 bool toc_test_tuning_zero(bool reset)
 {
-  return fabsf(inputValue(&tuningKnobInput)) < toc_margin_c/2;
+  return fabsf(inputValue(&tuningKnobInput)) < toc_margin_c;
 }
 
 bool toc_test_tuning(bool reset)
@@ -2605,7 +2605,7 @@ void configurationTask()
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && ailePilotInput && bankAngle > 15/RADIAN) {
+  if(vpMode.wingLeveler && ailePilotInput && fabsf(bankAngle) > 15/RADIAN) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -2650,7 +2650,7 @@ void configurationTask()
   }
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
-  else if(vpMode.wingLeveler && gearOutput == 0)
+  else if(vpParam.haveWheels && vpMode.wingLeveler && gearOutput == 0)
     vpFeature.stabilizeBank = false;
   
   // Disable alpha dependent stuff if the sensor fails
