@@ -151,7 +151,7 @@ struct PWMOutput pwmOutput[] = {
 #define ALPHA_HZ (CONTROL_HZ*10)
 #define AIRSPEED_HZ (CONTROL_HZ*5)
 #define BEEP_HZ 5
-#define TRIM_HZ 10
+#define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
 #define LED_TICK 100
 #define LOG_HZ_FAST CONTROL_HZ
@@ -2782,6 +2782,71 @@ void configurationTask()
   }
 }
 
+void trimTask()
+{
+  //
+  // Trim rate
+  //
+    
+  const float trimRateMin_c = 7.5/100, trimRateRange_c = 2*trimRateMin_c;
+  const float elevTrimRate = trimRateMin_c + fabsf(elevStick)*trimRateRange_c,
+    steerTrimRate = trimRateMin_c + fabsf(rudderStick)*trimRateRange_c;
+    
+  if(TRIMBUTTON.state() || vpMode.radioFailSafe) {
+    //
+    // Nose wheel
+    //
+    
+    if(rudderPilotInput && vpStatus.weightOnWheels
+       && !vpStatus.positiveIAS) {
+      vpParam.steerNeutral +=
+	sign(vpParam.steerDefl)*sign(rudderStick)*steerTrimRate/TRIM_HZ;
+      vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
+      paramsModified = true;
+    }
+
+    //
+    // Elevator
+    //
+  
+    if(elevPilotInput)
+      elevTrim += sign(elevStick) * elevTrimRate / TRIM_HZ;
+  }
+
+  //
+  // Adjust for alpha-elev predictor error when moving in/out of slow flight
+  //
+  
+  static bool prevMode;
+
+  if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable && prevMode != vpMode.slowFlight) {
+
+    const float predictError =
+      clamp(elevPredict(alpha) - elevOutput, -0.2, 0.2);
+      
+    if(vpMode.slowFlight)
+      elevTrim += predictError;
+    else
+      elevTrim -= predictError;
+  }
+
+  prevMode = vpMode.slowFlight;
+
+  //
+  // Trim limits
+  //
+  
+  if(vpMode.takeOff) {
+    // Takeoff mode enabled, trim is fixed
+    
+    if(vpMode.slowFlight)
+      elevTrim = elevPredict(vpDerived.thresholdAlpha);
+    else
+      elevTrim = vpParam.takeoffTrim;      
+  } else
+    elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
+}
+
 void gaugeTask()
 {
   if(gaugeCount > 0) {
@@ -3367,71 +3432,6 @@ void actuatorTask()
 		 NEUTRAL + 0.66*RANGE*(2*throttleCtrl.output() - 1));
 }
 
-void trimTask()
-{
-  //
-  // Trim rate
-  //
-    
-  const float trimRateMin_c = 7.5/100, trimRateRange_c = 2*trimRateMin_c;
-  const float elevTrimRate = trimRateMin_c + fabsf(elevStick)*trimRateRange_c,
-    steerTrimRate = trimRateMin_c + fabsf(rudderStick)*trimRateRange_c;
-    
-  if(TRIMBUTTON.state() || vpMode.radioFailSafe) {
-    //
-    // Nose wheel
-    //
-    
-    if(rudderPilotInput && vpStatus.weightOnWheels
-       && !vpStatus.positiveIAS) {
-      vpParam.steerNeutral +=
-	sign(vpParam.steerDefl)*sign(rudderStick)*steerTrimRate/TRIM_HZ;
-      vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
-      paramsModified = true;
-    }
-
-    //
-    // Elevator
-    //
-  
-    if(elevPilotInput)
-      elevTrim += sign(elevStick) * elevTrimRate / TRIM_HZ;
-  }
-
-  //
-  // Adjust for alpha-elev predictor error when moving in/out of slow flight
-  //
-  
-  static bool prevMode;
-
-  if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable && prevMode != vpMode.slowFlight) {
-
-    const float predictError =
-      clamp(elevPredict(alpha) - elevOutput, -0.2, 0.2);
-      
-    if(vpMode.slowFlight)
-      elevTrim += predictError;
-    else
-      elevTrim -= predictError;
-  }
-
-  prevMode = vpMode.slowFlight;
-
-  //
-  // Trim limits
-  //
-  
-  if(vpMode.takeOff) {
-    // Takeoff mode enabled, trim is fixed
-    
-    if(vpMode.slowFlight)
-      elevTrim = elevPredict(vpDerived.thresholdAlpha);
-    else
-      elevTrim = vpParam.takeoffTrim;      
-  } else
-    elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
-}
-
 void backgroundTask(uint32_t durationMicros)
 {
   uint32_t idleStart = hal.scheduler->micros();
@@ -3535,6 +3535,7 @@ void configTaskGroup()
 {
   statusTask();
   configurationTask();
+  trimTask();
 }
 
 struct Task taskList[] = {
@@ -3557,8 +3558,6 @@ struct Task taskList[] = {
     HZ_TO_PERIOD(CONTROL_HZ) },
   { sensorTaskSlow,
     HZ_TO_PERIOD(CONTROL_HZ/5) },
-  { trimTask,
-    HZ_TO_PERIOD(TRIM_HZ) },
   { configTaskGroup,
     HZ_TO_PERIOD(CONFIG_HZ) },
   { fastLogTask,
