@@ -2820,14 +2820,12 @@ void trimTask()
   static bool prevMode;
 
   if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable && prevMode != vpMode.slowFlight) {
-
-    const float predictError =
-      clamp(elevPredict(alpha) - elevOutput, -0.2, 0.2);
-      
     if(vpMode.slowFlight)
-      elevTrim += predictError;
+      // Moving into slow flight: maintain alpha with current stick
+      elevTrim = elevPredict(alpha) - elevStick;
     else
-      elevTrim -= predictError;
+      // Moving out of slow flight: maintain elevator position with current stick
+      elevTrim = elevOutput - elevStick;
   }
 
   prevMode = vpMode.slowFlight;
