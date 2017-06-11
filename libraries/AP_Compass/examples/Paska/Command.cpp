@@ -78,7 +78,6 @@ const struct Command commands[] PROGMEM = {
   { "loop", c_gauge },
   { "gauge", c_gauge },
   { "stamp", c_stamp },
-  { "backup", c_backup },
   { "arm", c_arm },
   { "disarm", c_disarm },
   { "test", c_test },

@@ -1202,7 +1202,7 @@ void executeCommand(char *buf)
     case c_store:
       consoleNoteLn_P(PSTR("Params & NV state stored"));
       storeNVState();
-      paramsModified = true;
+      backupParams();
       break;
 
     case c_defaults:
@@ -1242,14 +1242,6 @@ void executeCommand(char *buf)
 	vpStatus.fault = 0;
       break;
     
-    case c_backup:
-      for(int i = 0; i < maxModels(); i++) {
-	if(setModel(i, false))
-	  backupParams();
-      }
-      setModel(currentModel, false);
-      break;
-
     case c_update:
       if(!updateDescription) {
 	for(int i = 0; i < maxModels(); i++) {
@@ -2561,9 +2553,11 @@ void configurationTask()
   // Logging control
   //
   
-  if(vpStatus.fullStop)
+  if(vpStatus.fullStop || vpMode.loggingSuppressed)
     logDisable();
-  else if(vpStatus.aloft && vpStatus.positiveIAS && !vpMode.loggingSuppressed)
+  else if(vpMode.takeOff && throttleStick > 0.90)
+    logEnable();
+  else if(vpStatus.aloft && vpStatus.positiveIAS)
     logEnable();
     
   //

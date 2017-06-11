@@ -65,7 +65,6 @@ typedef enum {
   c_stamp,
   c_model,
   c_alpha,
-  c_backup,
   c_stabilizer_pid_zn,
   c_inner_pid_zn,
   c_outer_p,
