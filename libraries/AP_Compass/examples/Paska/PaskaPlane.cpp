@@ -210,7 +210,7 @@ float testGain = 0;
 float iAS, dynPressure, alpha, aileStick, elevStick, elevStickExpo, throttleStick, rudderStick, tuningKnob;
 bool ailePilotInput, elevPilotInput, rudderPilotInput;
 uint32_t controlCycleEnded;
-float elevTrim, targetAlpha, targetPressure;
+float elevTrim, targetAlpha, targetPressure, minThrottle;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float outer_P, rudderMix, shakerAlpha, pusherAlpha;
@@ -2472,11 +2472,13 @@ void configurationTask()
     // CONTINUOUS: Autothrottle engage
     //
     
-    if(vpMode.slowFlight && throttleStick < RATIO(1/2))
+    if(vpMode.slowFlight && throttleStick < RATIO(1/2)) {
+      minThrottle = 0;
       vpMode.autoThrottle = true;
-    else if(!vpMode.slowFlight && throttleStick > RATIO(1/2)
+    } else if(!vpMode.slowFlight && throttleStick > RATIO(1/2)
 	    && iAS > RATIO(3/2)*vpDerived.stallIAS) {
       targetPressure = dynamicPressure(iAS);
+      minThrottle = throttleStick/2;
       vpMode.autoThrottle = true;
     }
 
@@ -3369,7 +3371,7 @@ void controlTask()
   // Autothrottle
   //
   
-  throttleCtrl.limit(0, throttleStick);
+  throttleCtrl.limit(minThrottle, throttleStick);
     
   if(vpMode.autoThrottle) {
     float thrError = 1 - dynPressure/targetPressure;
