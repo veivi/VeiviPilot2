@@ -210,7 +210,7 @@ float testGain = 0;
 float iAS, dynPressure, alpha, aileStick, elevStick, elevStickExpo, throttleStick, rudderStick, tuningKnob;
 bool ailePilotInput, elevPilotInput, rudderPilotInput;
 uint32_t controlCycleEnded;
-float elevTrim, targetAlpha;
+float elevTrim, targetAlpha, targetPressure;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float outer_P, rudderMix, shakerAlpha, pusherAlpha;
@@ -1081,11 +1081,11 @@ void executeCommand(char *buf)
 	break;
       
       case e_uint16:
-	*((uint16_t*) command.var[i]) = (uint16_t) param[i];
+	*((uint16_t*) command.var[i]) = param[i];
 	break;
       
       case e_int8:
-	*((int8_t*) command.var[i]) = (uint8_t) param[i];
+	*((int8_t*) command.var[i]) = param[i];
 	break;
       
       case e_float:
@@ -1202,6 +1202,7 @@ void executeCommand(char *buf)
     case c_store:
       consoleNoteLn_P(PSTR("Params & NV state stored"));
       storeNVState();
+      storeParams();
       backupParams();
       break;
 
@@ -2450,29 +2451,37 @@ void configurationTask()
     } else if(!vpStatus.positiveIAS)
       logDisable();
     
-  } else if(GEARBUTTON.singlePulse() && !gearOutput && gearHandle) {
+  } else if(GEARBUTTON.singlePulse()) {
     //
-    // SINGLE PULSE: GEAR UP (and we believe we have retractable gear)
+    // SINGLE PULSE: GEAR TOGGLE
     //
-    
-    consoleNoteLn_P(PSTR("Gear UP"));
+
+    if(gearHandle) {
+      gearOutput = !gearOutput;
+
+      if(gearOutput)
+	consoleNoteLn_P(PSTR("Gear UP"));
+      else
+	consoleNoteLn_P(PSTR("Gear DOWN"));
+    }
     
     vpMode.autoThrottle = false;
-    gearOutput = 1;
 
-  } else if(GEARBUTTON.depressed()) {
-    if(gearOutput) {
-      //
-      // CONTINUOUS: GEAR DOWN
-      //
+  } else if(GEARBUTTON.depressed() && !vpMode.autoThrottle) {
+    //
+    // CONTINUOUS: Autothrottle engage
+    //
     
-      consoleNoteLn_P(PSTR("Gear DOWN"));
-      gearOutput = 0;
-      
-    } else if(vpMode.slowFlight && !vpMode.autoThrottle && throttleStick < 0.75) {
-      consoleNoteLn_P(PSTR("Autothrottle ENABLED"));
+    if(vpMode.slowFlight && throttleStick < RATIO(1/2))
+      vpMode.autoThrottle = true;
+    else if(!vpMode.slowFlight && throttleStick > RATIO(1/2)
+	    && iAS > RATIO(3/2)*vpDerived.stallIAS) {
+      targetPressure = dynamicPressure(iAS);
       vpMode.autoThrottle = true;
     }
+
+    if(vpMode.autoThrottle)
+      consoleNoteLn_P(PSTR("Autothrottle ENABLED"));
   }
 
   //
@@ -2544,7 +2553,7 @@ void configurationTask()
   // Autothrottle disable
   //
 
-  if(vpMode.autoThrottle && throttleStick > 0.75) {
+  if(vpMode.autoThrottle && vpMode.slowFlight == (throttleStick > RATIO(1/2))) {
     consoleNoteLn_P(PSTR("Autothrottle DISABLED"));
     vpMode.autoThrottle = false;
   }
@@ -2553,12 +2562,14 @@ void configurationTask()
   // Logging control
   //
   
-  if(vpStatus.fullStop || vpMode.loggingSuppressed)
+  if(vpMode.loggingSuppressed)
     logDisable();
   else if(vpMode.takeOff && throttleStick > 0.90)
     logEnable();
   else if(vpStatus.aloft && vpStatus.positiveIAS)
     logEnable();
+  else if(vpStatus.fullStop)
+    logDisable();
     
   //
   // Direct mode selector input
@@ -2679,7 +2690,11 @@ void configurationTask()
   aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
-  throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
+
+  if(vpMode.slowFlight)
+    throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
+  else
+    throttleCtrl.setZieglerNicholsPI(vpParam.cc_Ku, vpParam.cc_Tu);
 
   outer_P = vpParam.o_P;
   shakerAlpha = vpDerived.shakerAlpha;
@@ -3356,10 +3371,15 @@ void controlTask()
   
   throttleCtrl.limit(0, throttleStick);
     
-  if(vpMode.autoThrottle)
-    throttleCtrl.input(slope - vpParam.glideSlope*(1.5 - throttleStick) ,
-		       controlCycle);
-  else
+  if(vpMode.autoThrottle) {
+    float thrError = 1 - dynPressure/targetPressure;
+    
+    if(vpMode.slowFlight)
+      thrError = slope - vpParam.glideSlope*(RATIO(5/4) - throttleStick);
+
+    throttleCtrl.input(thrError, controlCycle);
+
+  } else
     throttleCtrl.reset(throttleStick, 0);
 }
 

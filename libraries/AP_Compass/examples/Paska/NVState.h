@@ -28,6 +28,7 @@ struct ParamRecord {
   float r_Mix;
   float p_Ku_C, p_Tu;
   float at_Ku, at_Tu;
+  float cc_Ku, cc_Tu;
   float ff_A, ff_B, ff_C;
   float maxPitch;
   float cL_max;

@@ -41,6 +41,7 @@ typedef enum {
   c_slope,
   c_tservo,
   c_at_zn,
+  c_cc_zn,
   c_offset,
 
   c_dump,

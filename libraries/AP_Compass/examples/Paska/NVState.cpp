@@ -39,7 +39,8 @@ const struct ParamRecord paramDefaults = {
   .s_Ku_C = 400, .s_Tu = 0.25, 
   .r_Mix = 0.1,
   .p_Ku_C = 100, .p_Tu = 1.0,
-  .at_Ku = 1, .at_Tu = 2.5,
+  .at_Ku = 1, .at_Tu = 2.0,
+  .cc_Ku = 3, .cc_Tu = 1.5,
   .ff_A = 0.0, .ff_B = 0.0, .ff_C = 0.0,
   .maxPitch = 45/RADIAN,
   .cL_max= 0.25,
@@ -241,6 +242,11 @@ void printParams()
   consolePrint(vpParam.at_Ku, 4);
   consolePrint_P(PSTR(" Tu = "));
   consolePrintLn(vpParam.at_Tu, 4);
+  consoleNoteLn_P(PSTR("  Auto cruise"));
+  consoleNote_P(PSTR("    Ku = "));
+  consolePrint(vpParam.cc_Ku, 4);
+  consolePrint_P(PSTR(" Tu = "));
+  consolePrintLn(vpParam.cc_Tu, 4);
   consoleNote_P(PSTR("  Climb pitch(max) = "));
   consolePrint(vpParam.maxPitch*RADIAN, 2);
   consolePrint_P(PSTR("  Glide slope = "));
@@ -320,6 +326,20 @@ void printParams()
   consolePrintLn(vpParam.servoSteer);
   consoleNote_P(PSTR("  Servo rate = "));
   consolePrintLn(vpParam.servoRate);
+  if(vpParam.elevon || vpParam.veeTail) {
+    consoleNote_P(PSTR("  Special wing configuration:"));
+    if(vpParam.elevon)
+      consolePrint_P(PSTR(" ELEVON"));  
+    if(vpParam.veeTail)
+      consolePrint_P(PSTR(" V-TAIL"));
+    consolePrintLn("");
+  } else
+    consoleNoteLn_P(PSTR("  Normal wing configuration"));
+    
+  consoleNote_P(PSTR("  We"));
+  if(!vpParam.haveWheels)
+    consolePrint_P(PSTR(" DO NOT"));  
+  consolePrintLn_P(PSTR(" have wheels"));
   consoleNote_P(PSTR("  Weight on wheels"));
   if(!vpParam.wowCalibrated)
     consolePrint_P(PSTR(" NOT"));  
@@ -343,6 +363,10 @@ static void backupParamEntry(const Command *e)
       
     case e_int8:
       consolePrint(*((int8_t*) e->var[i]));
+      break;
+      
+    case e_bool:
+      consolePrint(*((bool*) e->var[i]));
       break;
       
     case e_float:
@@ -387,8 +411,8 @@ void backupParams()
   consoleNoteLn("");
   consolePrintLn("");
 
-  consolePrint("model ");
-  consolePrintLn(nvState.model);
+  //  consolePrint("model ");
+  //  consolePrintLn(nvState.model);
 
   int i = 0;
   
