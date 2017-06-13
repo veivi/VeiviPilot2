@@ -2808,8 +2808,7 @@ void trimTask()
     // Nose wheel
     //
     
-    if(rudderPilotInput && vpStatus.weightOnWheels
-       && !vpStatus.positiveIAS) {
+    if(rudderPilotInput && !gearOutput && !vpStatus.positiveIAS) {
       vpParam.steerNeutral +=
 	sign(vpParam.steerDefl)*sign(rudderStick)*steerTrimRate/TRIM_HZ;
       vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
