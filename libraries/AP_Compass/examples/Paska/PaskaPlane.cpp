@@ -3374,10 +3374,12 @@ void controlTask()
   throttleCtrl.limit(minThrottle, throttleStick);
     
   if(vpMode.autoThrottle) {
-    float thrError = 1 - dynPressure/targetPressure;
+    float thrError = 0;
     
     if(vpMode.slowFlight)
-      thrError = slope - vpParam.glideSlope*(RATIO(5/4) - throttleStick);
+      thrError = slope - vpParam.glideSlope*(RATIO(3/2) - 3*throttleStick);
+    else
+      thrError = 1 - dynPressure/targetPressure;
 
     throttleCtrl.input(thrError, controlCycle);
 
