@@ -156,7 +156,8 @@ struct PWMOutput pwmOutput[] = {
 #define LED_TICK 100
 #define LOG_HZ_FAST CONTROL_HZ
 #define LOG_HZ_SLOW (CONTROL_HZ/3.0)
-#define LOG_HZ_SAVE 2
+#define LOG_HZ_COMMIT 3
+#define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
   
 struct Task {
@@ -2829,12 +2830,13 @@ void trimTask()
   
   static bool prevMode;
 
-  if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable && prevMode != vpMode.slowFlight) {
+  if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable
+     && prevMode != vpMode.slowFlight) {
     if(vpMode.slowFlight)
-      // Moving into slow flight: maintain alpha with current stick
+      // Into slow flight: maintain alpha with current stick
       elevTrim = elevPredict(alpha) - elevStick;
     else
-      // Moving out of slow flight: maintain elevator position with current stick
+      // Maintain elevator position with current stick
       elevTrim = elevOutput - elevStick;
   }
 
@@ -3580,9 +3582,9 @@ struct Task taskList[] = {
   { slowLogTask,
     HZ_TO_PERIOD(LOG_HZ_SLOW) },
   { logSaveTask,
-    HZ_TO_PERIOD(LOG_HZ_SAVE) },
+    HZ_TO_PERIOD(LOG_HZ_COMMIT) },
   { cacheTask,
-    HZ_TO_PERIOD(LOG_HZ_SAVE) },
+    HZ_TO_PERIOD(LOG_HZ_FLUSH) },
   { measurementTask,
     HZ_TO_PERIOD(1) },
   { heartBeatTask,
