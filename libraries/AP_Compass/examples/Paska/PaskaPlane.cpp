@@ -3227,8 +3227,11 @@ void controlTask()
   const float stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
-    
-  elevOutput = clamp(elevStickExpo + elevTrim, -1, 1);
+
+  const float effTrim =
+    fminf(elevTrim, vpStatus.weightOnWheels ? vpParam.takeoffTrim : 1);
+  
+  elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
   
   targetAlpha = fminf(elevPredictInverse(elevOutput), effMaxAlpha);
 
