@@ -3229,7 +3229,7 @@ void controlTask()
   const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
 
   const float effTrim =
-    fminf(elevTrim, vpStatus.weightOnWheels ? vpParam.takeoffTrim : 1);
+    fminf(elevTrim, vpStatus.positiveIAS ? 1 : vpParam.takeoffTrim);
   
   elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
   
