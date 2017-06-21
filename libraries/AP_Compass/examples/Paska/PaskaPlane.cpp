@@ -376,6 +376,7 @@ void logConfig(void)
   logGeneric(lc_mode, sum);
   
   bool status[] = { vpStatus.weightOnWheels,
+		    vpStatus.positiveIAS,
 		    vpStatus.alphaFailed,
 		    vpStatus.alphaUnreliable,
 		    vpStatus.pitotFailed,
