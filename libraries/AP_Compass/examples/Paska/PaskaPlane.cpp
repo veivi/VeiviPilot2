@@ -2255,7 +2255,7 @@ void statusTask()
     
     lastNegativeIAS = currentTime;
 
-  } else if(currentTime - lastNegativeIAS > 0.5e6 && !vpStatus.positiveIAS) {
+  } else if(currentTime - lastNegativeIAS > 1e6/5 && !vpStatus.positiveIAS) {
     consoleNoteLn_P(PSTR("We have POSITIVE AIRSPEED"));
     vpStatus.positiveIAS = true;
   }
