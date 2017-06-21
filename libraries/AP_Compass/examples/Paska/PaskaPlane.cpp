@@ -2655,7 +2655,7 @@ void configurationTask()
   
   if(vpParam.wowCalibrated) {
     if(vpStatus.weightOnWheels)
-      vpFeature.stabilizePitch = vpFeature.stabilizeBank = false;
+      vpFeature.stabilizeBank = false;
   }
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
