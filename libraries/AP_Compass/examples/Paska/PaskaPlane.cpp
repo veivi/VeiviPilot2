@@ -2248,7 +2248,8 @@ void statusTask()
 
   static uint32_t lastNegativeIAS, lastStall, lastAlphaLocked;
 
-  if(vpStatus.pitotBlocked || iasFilter.output() < vpDerived.stallIAS/2) {
+  if(vpStatus.pitotBlocked
+     || iasFilter.output() < vpDerived.stallIAS*RATIO(2/3)) {
     if(vpStatus.positiveIAS) {
       consoleNoteLn_P(PSTR("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
@@ -2653,13 +2654,13 @@ void configurationTask()
 
   // ... or weight is on wheels...
   
-  if(vpParam.wowCalibrated) {
-    if(vpStatus.weightOnWheels)
+  if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
       vpFeature.stabilizeBank = false;
-  }
+  
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
-  else if(vpParam.haveWheels && vpMode.wingLeveler && gearOutput == 0)
+  else if(!vpParam.wowCalibrated && vpParam.haveWheels
+	  && gearOutput == 0 && vpMode.wingLeveler)
     vpFeature.stabilizeBank = false;
   
   // Disable alpha dependent stuff if the sensor fails
