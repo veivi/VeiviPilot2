@@ -55,7 +55,7 @@ float dynamicPressure(float ias)
 
 float dynamicPressureInverse(float pressure)
 {
-    return sqrtf(2 * pressure / airDensity_c);
+  return sign(pressure)*sqrtf(fabsf(2 * pressure / airDensity_c));
 }
 
 float coeffOfLift(float aoa)

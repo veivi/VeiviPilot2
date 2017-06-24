@@ -365,7 +365,7 @@ void logConfig(void)
 		  vpMode.slowFlight,
 		  vpMode.bankLimiter,
 		  vpMode.wingLeveler,
-          vpMode.autoThrottle };
+		  vpMode.autoThrottle };
 
   float sum = 0;
   
@@ -2070,10 +2070,8 @@ void sensorTaskFast()
     
     dynPressure = dynamicPressure(iAS);
     
-  } else if(dynPressure > 0)
+  } else 
     iAS = dynamicPressureInverse(dynPressure);
-  else
-    iAS = 0;
 
   //
   // Derived values
