@@ -3282,8 +3282,12 @@ void controlTask()
       pushCtrl.reset(elevOutput - elevPredict(effMaxAlpha),
 		   effMaxAlpha - alpha);
   }
+
+  // Throttle mix
   
-  elevOutput = clamp(elevOutput, -1, 1);
+  elevOutput =
+    clamp(elevOutput +
+	  vpParam.t_Mix*powf(throttleCtrl.output(), vpParam.t_Expo), -1, 1);
 
   //
   // Aileron

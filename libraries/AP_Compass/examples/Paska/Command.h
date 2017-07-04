@@ -71,6 +71,7 @@ typedef enum {
   c_outer_p,
   c_pusher_pid_zn,
   c_rmix,
+  c_tmix,
   c_rattle,
   c_arm,
   c_disarm,

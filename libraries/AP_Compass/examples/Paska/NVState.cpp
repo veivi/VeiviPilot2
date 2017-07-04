@@ -42,6 +42,7 @@ const struct ParamRecord paramDefaults = {
   .at_Ku = 1, .at_Tu = 2.0,
   .cc_Ku = 3, .cc_Tu = 1.5,
   .ff_A = 0.0, .ff_B = 0.0, .ff_C = 0.0,
+  .t_Mix = 0.0, .t_Expo = 1.0,
   .maxPitch = 45/RADIAN,
   .cL_max= 0.25,
   .roll_C = 0.1,
@@ -226,6 +227,11 @@ void printParams()
   consolePrint(elevPredictInverse(-1.0)*RADIAN);
   consolePrint_P(PSTR(" ... "));
   consolePrint(elevPredictInverse(1.0)*RADIAN);
+  consolePrintLn_P(PSTR(")"));
+  consoleNote_P(PSTR("  Throttle-elev mix (expo) = "));
+  consolePrint(vpParam.t_Mix, 5);
+  consolePrint_P(PSTR(" ("));
+  consolePrint(vpParam.t_Expo, 5);
   consolePrintLn_P(PSTR(")"));
   consoleNoteLn_P(PSTR("  Pusher"));
   consoleNote_P(PSTR("    Ku*IAS^0.5 = "));
