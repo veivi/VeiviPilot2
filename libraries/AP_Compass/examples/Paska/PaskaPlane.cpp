@@ -226,6 +226,7 @@ uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, rollAccelLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
 float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0;
+float elevOutputFinal, aileOutputFinal, rudderOutputFinal;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
 bool beepGood;
 const int maxParams = 8;
@@ -419,11 +420,11 @@ void logInput(void)
 
 void logActuator(void)
 {
-  logGeneric(lc_aileron, aileRateLimiter.output());
+  logGeneric(lc_aileron, aileOutputFinal);
   logGeneric(lc_aileron_ff, aileOutputFeedForward);
-  logGeneric(lc_elevator, elevOutput);
+  logGeneric(lc_elevator, elevOutputFinal);
   logGeneric(lc_elevator_ff, elevOutputFeedForward);
-  logGeneric(lc_rudder, rudderOutput);
+  logGeneric(lc_rudder, rudderOutputFinal);
 }
 
 void logAttitude(void)
@@ -3283,12 +3284,6 @@ void controlTask()
 		   effMaxAlpha - alpha);
   }
 
-  // Throttle mix
-  
-  elevOutput =
-    clamp(elevOutput +
-	  vpParam.t_Mix*powf(throttleCtrl.output(), vpParam.t_Expo), -1, 1);
-
   //
   // Aileron
   //
@@ -3357,8 +3352,7 @@ void controlTask()
   // Rudder
   //
   
-  steerOutput = rudderStick;
-  rudderOutput = rudderStick + aileRateLimiter.output()*rudderMix;
+  steerOutput = rudderOutput = rudderStick;
 
   //
   // Flaps
@@ -3393,6 +3387,23 @@ void controlTask()
 
   } else
     throttleCtrl.reset(throttleStick, 0);
+
+  //
+  // Final mixing
+  //
+  //   Throttle to elevator
+  
+ elevOutputFinal =
+   clamp(elevOutput +
+	 vpParam.t_Mix*powf(throttleCtrl.output(), vpParam.t_Expo), -1, 1);
+
+  //   Aile rate limiter
+
+ aileOutputFinal = aileRateLimiter.output();
+
+  //   Aile to rudder
+  
+ rudderOutputFinal  = rudderOutput + aileOutputFinal*rudderMix;
 }
 
 void actuatorTask()
@@ -3402,38 +3413,38 @@ void actuatorTask()
 
   if(vpParam.elevon) {
     pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(+ vpParam.aileDefl*aileRateLimiter.output()
-				 - vpParam.elevDefl*elevOutput
+		   + RANGE*clamp(+ vpParam.aileDefl*aileOutputFinal
+				 - vpParam.elevDefl*elevOutputFinal
 				 + vpParam.aileNeutral, -1, 1));
 
     pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(+ vpParam.aileDefl*aileRateLimiter.output()
-				 + vpParam.elevDefl*elevOutput 
+		   + RANGE*clamp(+ vpParam.aileDefl*aileOutputFinal
+				 + vpParam.elevDefl*elevOutputFinal
 				 + vpParam.elevNeutral, -1, 1));
   } else if(vpParam.veeTail) {
     pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(+ vpParam.elevDefl*elevOutput
-				 + vpParam.rudderDefl*rudderOutput 
+		   + RANGE*clamp(+ vpParam.elevDefl*elevOutputFinal
+				 + vpParam.rudderDefl*rudderOutputFinal 
 				 + vpParam.elevNeutral, -1, 1));
 
     pwmOutputWrite(rudderHandle, NEUTRAL
-		   + RANGE*clamp(- vpParam.elevDefl*elevOutput
-				 + vpParam.rudderDefl*rudderOutput
+		   + RANGE*clamp(- vpParam.elevDefl*elevOutputFinal
+				 + vpParam.rudderDefl*rudderOutputFinal
 				 + vpParam.rudderNeutral, -1, 1));
   } else {
     pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.elevDefl*elevOutput 
+		   + RANGE*clamp(vpParam.elevDefl*elevOutputFinal 
 				 + vpParam.elevNeutral, -1, 1));
   }
   
   if(!vpParam.veeTail)
     pwmOutputWrite(rudderHandle, NEUTRAL
 		   + RANGE*clamp(vpParam.rudderNeutral + 
-				 vpParam.rudderDefl*rudderOutput, -1, 1));
+				 vpParam.rudderDefl*rudderOutputFinal, -1, 1));
 
   if(!vpParam.elevon)
     pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileRateLimiter.output()
+		   + RANGE*clamp(vpParam.aileDefl*aileOutputFinal
 				 + vpParam.aileNeutral, -1, 1));
     
   pwmOutputWrite(steerHandle, NEUTRAL
@@ -3525,10 +3536,10 @@ void beepTask()
 void simulatorLinkTask()
 {
   if(vpStatus.simulatorLink && vpStatus.armed) {
-    struct SimLinkControl control = { .aileron = aileRateLimiter.output(),
-				      .elevator = -elevOutput,
+    struct SimLinkControl control = { .aileron = aileOutputFinal,
+				      .elevator = -elevOutputFinal,
 				      .throttle = throttleCtrl.output(),
-				      .rudder = rudderOutput };
+				      .rudder = rudderOutputFinal };
 
     datagramTxStart(DG_SIMLINK);
     datagramTxOut((const uint8_t*) &control, sizeof(control));
