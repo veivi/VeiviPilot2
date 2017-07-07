@@ -155,7 +155,7 @@ struct PWMOutput pwmOutput[] = {
 #define LED_HZ 3
 #define LED_TICK 100
 #define LOG_HZ_FAST CONTROL_HZ
-#define LOG_HZ_SLOW (CONTROL_HZ/3.0)
+#define LOG_HZ_SLOW (CONTROL_HZ/4.0)
 #define LOG_HZ_COMMIT 3
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
@@ -214,7 +214,7 @@ uint32_t controlCycleEnded;
 float elevTrim, targetAlpha, targetPressure, minThrottle;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-float outer_P, rudderMix, shakerAlpha, pusherAlpha;
+float outer_P, rudderMix, throttleMix, shakerAlpha, pusherAlpha;
 float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, slope;
 float accDirection, relativeWind;
 uint16_t heading;
@@ -2704,6 +2704,7 @@ void configurationTask()
   shakerAlpha = vpDerived.shakerAlpha;
   pusherAlpha = vpDerived.pusherAlpha;
   rudderMix = vpParam.r_Mix;
+  throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
   rollAccelLimiter.setRate(4 * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
@@ -2785,6 +2786,13 @@ void configurationTask()
 	  = vpFeature.keepLevel = true;
       }
       break;
+      
+    case 14:
+      // Throttle to elev mix
+
+      throttleMix = testGain = testGainLinear(0, vpParam.t_Mix);
+      break;
+
     }
   } else { 
     // Track s_Ku until a test is activated
@@ -3395,7 +3403,7 @@ void controlTask()
   
  elevOutputFinal =
    clamp(elevOutput +
-	 vpParam.t_Mix*powf(throttleCtrl.output(), vpParam.t_Expo), -1, 1);
+	 throttleMix*powf(throttleCtrl.output(), vpParam.t_Expo), -1, 1);
 
   //   Aile rate limiter
 

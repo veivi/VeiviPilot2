@@ -142,7 +142,8 @@ static void logWithCh(int ch, uint16_t value)
 
   value = ENTRY_VALUE(value);    // Constrain to valid range
   
-  if(!logChannels[ch].tick && value == logChannels[ch].value)
+  if(!logChannels[ch].tick && value == logChannels[ch].value
+     && hal.scheduler->millis() < logChannels[ch].stamp + 5e3)
     // Repeat value, not stored
     
     return;
@@ -165,6 +166,7 @@ static void logWithCh(int ch, uint16_t value)
   }
     
   logChannels[ch].value = value;
+  logChannels[ch].stamp = hal.scheduler->millis();
   prevCh = ch;
 }
 

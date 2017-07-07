@@ -51,6 +51,7 @@ struct LogChannel {
   float small, large;
   bool tick;
   uint16_t value;
+  uint32_t stamp;
 };
 
 #define TOKEN_MASK (1U<<15)
