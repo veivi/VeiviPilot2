@@ -414,7 +414,7 @@ void logInput(void)
 {
   logGeneric(lc_ailestick, aileStick);
   logGeneric(lc_elevstick, elevStickExpo);
-  logGeneric(lc_thrstick, throttleStick);
+  logGeneric(lc_thrstick, throttleCtrl.output());
   logGeneric(lc_rudstick, rudderStick);
 }
 
