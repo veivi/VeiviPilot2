@@ -2615,7 +2615,7 @@ void configurationTask()
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && ailePilotInput && fabsf(bankAngle) > 15/RADIAN) {
+  if(vpMode.wingLeveler && ailePilotInput && fabsf(bankAngle) > 30/RADIAN) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -3318,7 +3318,7 @@ void controlTask()
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollRate = outer_P * (aileStick*maxBank - bankAngle);
+      targetRollRate = outer_P * (aileStick*60/RADIAN - bankAngle);
 
     else if(vpMode.bankLimiter) {
       // Weak leveling
