@@ -2474,13 +2474,14 @@ void configurationTask()
     // CONTINUOUS: Autothrottle engage
     //
     
-    if(vpMode.slowFlight && throttleStick < RATIO(1/2)) {
+    if(vpMode.slowFlight && throttleStick < RATIO(1/3)) {
       minThrottle = 0;
       vpMode.autoThrottle = true;
-    } else if(!vpMode.slowFlight && throttleStick > RATIO(1/2)
+      
+    } else if(!vpMode.slowFlight && throttleStick > RATIO(1/3)
 	    && iAS > RATIO(3/2)*vpDerived.stallIAS) {
       targetPressure = dynamicPressure(iAS);
-      minThrottle = throttleStick/2;
+      minThrottle = throttleStick/8;
       vpMode.autoThrottle = true;
     }
 
@@ -2557,7 +2558,7 @@ void configurationTask()
   // Autothrottle disable
   //
 
-  if(vpMode.autoThrottle && vpMode.slowFlight == (throttleStick > RATIO(1/2))) {
+  if(vpMode.autoThrottle && vpMode.slowFlight == (throttleStick > RATIO(1/3))) {
     consoleNoteLn_P(PSTR("Autothrottle DISABLED"));
     vpMode.autoThrottle = false;
   }
