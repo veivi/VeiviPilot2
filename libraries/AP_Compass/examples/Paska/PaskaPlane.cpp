@@ -2655,7 +2655,7 @@ void configurationTask()
   // ... or weight is on wheels...
   
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
-      vpFeature.stabilizeBank = false;
+      vpFeature.stabilizeBank = vpFeature.stabilizePitch = false;
   
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
@@ -3239,7 +3239,7 @@ void controlTask()
   const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
 
   const float effTrim =
-    fminf(elevTrim, vpMode.takeOff ? vpParam.takeoffTrim : 1);
+    fminf(elevTrim, !vpFeature.stabilizePitch ? vpParam.takeoffTrim : 1);
   
   elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
   
