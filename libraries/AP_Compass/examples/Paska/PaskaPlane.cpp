@@ -554,7 +554,7 @@ bool MS4525DO_pressure(int16_t *result)
   static uint32_t acc;
   static int accCount;
   static bool done = false;
-  const int log2CalibWindow = 8;
+  const int log2CalibWindow = 9;
   
   uint16_t raw = 0;
 
