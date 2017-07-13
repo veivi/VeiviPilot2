@@ -2388,14 +2388,14 @@ void statusTask()
 		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.5e6) {
+    else if(currentTime - lastWoW > 0.3e6) {
       consoleNoteLn_P(PSTR("Weight is probably OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.1e6) {
+    else if(currentTime - lastWoW > 0.2e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
