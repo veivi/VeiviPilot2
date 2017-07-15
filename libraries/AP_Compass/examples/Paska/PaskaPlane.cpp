@@ -2351,7 +2351,7 @@ void statusTask()
   
   static uint32_t lastUpright;
   
-  if(fabsf(bankAngle) < 12.5/RADIAN && fabsf(pitchAngle) < 12.5/RADIAN) {
+  if(fabsf(bankAngle) < 15/RADIAN && fabsf(pitchAngle) < 15/RADIAN) {
     vpStatus.upright = true;
     lastUpright = currentTime;
   } else {
@@ -2366,17 +2366,18 @@ void statusTask()
   //
 
   const float
-    lift = accZ * cos(pitchAngle) + accX * sin(pitchAngle),
+    weight = vpDerived.totalMass * G,
+    lift = vpDerived.totalMass * accZ * cos(pitchAngle),
     liftAvg = liftFilter.input(lift),
-    liftExpected = coeffOfLift(alpha) * dynPressure / vpDerived.totalMass,
-    liftMax = vpParam.cL_max * dynPressure / vpDerived.totalMass;
+    liftExpected = coeffOfLift(alpha) * dynPressure,
+    liftMax = vpParam.cL_max * dynPressure;
       
   static uint32_t lastWoW;
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
      || !vpParam.haveWheels || gearOutput == 1 || !vpStatus.upright
-     || iAS > vpDerived.stallIAS*2) {
+     || iAS > vpDerived.stallIAS*1.75) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
@@ -2384,7 +2385,7 @@ void statusTask()
       
     lastWoW = currentTime;
   } else if(iAS > vpDerived.stallIAS
-	    && (liftAvg < G/2 || liftAvg > 1.5*G
+	    && (liftAvg < weight/2 || liftAvg > 1.5*weight
 		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
@@ -2395,7 +2396,7 @@ void statusTask()
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.2e6) {
+    else if(currentTime - lastWoW > 0.5e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
