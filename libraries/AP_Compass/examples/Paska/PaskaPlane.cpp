@@ -3264,7 +3264,7 @@ void controlTask()
     targetPitchRate = elevStickExpo*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickForce*RATIO(2/3), elevPredict(targetAlpha), elevOutput);
+    mixValue(stickForce*RATIO(1/2), elevPredict(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
