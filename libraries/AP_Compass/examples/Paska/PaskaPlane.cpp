@@ -359,14 +359,14 @@ void logAlpha(void)
 
 void logConfig(void)
 {
-  bool mode[] = { vpMode.radioFailSafe,
-		  vpMode.sensorFailSafe,
-		  vpMode.alphaFailSafe,
-		  vpMode.takeOff,
-		  vpMode.slowFlight,
+  bool mode[] = { vpMode.slowFlight,
 		  vpMode.bankLimiter,
 		  vpMode.wingLeveler,
-		  vpMode.autoThrottle };
+		  vpMode.takeOff,
+		  vpMode.autoThrottle,
+		  vpMode.radioFailSafe,
+		  vpMode.sensorFailSafe,
+		  vpMode.alphaFailSafe };
 
   float sum = 0;
   
@@ -377,12 +377,12 @@ void logConfig(void)
   logGeneric(lc_mode, sum);
   
   bool status[] = { vpStatus.weightOnWheels,
+		    vpStatus.stall,
 		    vpStatus.positiveIAS,
 		    vpStatus.alphaFailed,
 		    vpStatus.alphaUnreliable,
 		    vpStatus.pitotFailed,
-		    vpStatus.pitotBlocked,
-		    vpStatus.stall };
+		    vpStatus.pitotBlocked };
   
   sum = 0;
   
@@ -738,12 +738,13 @@ bool toc_test_alpha_range(bool reset)
     }
   }
   
-  return (bigAlpha && zeroAlpha) || vpStatus.simulatorLink;
+  return (bigAlpha && zeroAlpha);
 }
 
 bool toc_test_alpha(bool reset)
 {
-  return toc_test_alpha_sensor(reset) && toc_test_alpha_range(reset);
+  return (toc_test_alpha_sensor(reset) && toc_test_alpha_range(reset))
+     || vpStatus.simulatorLink;
 }
 
 bool toc_test_pitot(bool reset)
@@ -1174,7 +1175,7 @@ void executeCommand(char *buf)
     case c_rollrate:
       if(numParams > 0) {
 	vpParam.roll_C
-	  = param[0]/RADIAN/powf(vpDerived.stallIAS, stabilityAileExp2_c);
+	  = param[0]/RADIAN/powf(vpDerived.minimumIAS, stabilityAileExp2_c);
 	consoleNote_P(PSTR("Roll rate K = "));
 	consolePrintLn(vpParam.roll_C);
 	storeNVState();
@@ -2228,7 +2229,7 @@ void statusTask()
   
   static uint32_t iasLastAlive;
 
-  if(iAS < vpDerived.stallIAS/3 || fabsf(iAS - iasFilterSlow.output()) > 0.5) {
+  if(iAS < vpDerived.minimumIAS/3 || fabsf(iAS - iasFilterSlow.output()) > 0.5) {
     if(vpStatus.pitotBlocked) {
       consoleNoteLn_P(PSTR("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
@@ -2247,8 +2248,12 @@ void statusTask()
 
   static uint32_t lastNegativeIAS, lastStall, lastAlphaLocked;
 
-  if(vpStatus.pitotBlocked
-     || iasFilter.output() < vpDerived.stallIAS*RATIO(2/3)) {
+  if(vpStatus.pitotFailed) {
+    if(!vpStatus.positiveIAS) {
+      consoleNoteLn_P(PSTR("Pitot failed, positive IAS ASSUMED"));
+      vpStatus.positiveIAS = true;
+    }
+  } else if(iasFilter.output() < vpDerived.minimumIAS) {
     if(vpStatus.positiveIAS) {
       consoleNoteLn_P(PSTR("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
@@ -2256,7 +2261,7 @@ void statusTask()
     
     lastNegativeIAS = currentTime;
 
-  } else if(currentTime - lastNegativeIAS > 1e6/5 && !vpStatus.positiveIAS) {
+  } else if(currentTime - lastNegativeIAS > 0.2e6 && !vpStatus.positiveIAS) {
     consoleNoteLn_P(PSTR("We have POSITIVE AIRSPEED"));
     vpStatus.positiveIAS = true;
   }
@@ -2271,7 +2276,8 @@ void statusTask()
 
   float turnRate = sqrt(square(rollRate) + square(pitchRate) + square(yawRate));
   
-  bool motionDetected = vpStatus.positiveIAS || turnRate > 10.0/RADIAN
+  bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
+    || turnRate > 10.0/RADIAN
     || fabsf(accTotal - accAvg.output()) > 0.5;
   
   static uint32_t lastMotion;
@@ -2377,14 +2383,14 @@ void statusTask()
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
      || !vpParam.haveWheels || gearOutput == 1 || !vpStatus.upright
-     || iAS > vpDerived.stallIAS*1.75) {
+     || iAS > vpDerived.minimumIAS*RATIO(3/2)) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
       
     lastWoW = currentTime;
-  } else if(iAS > vpDerived.stallIAS
+  } else if(vpStatus.positiveIAS
 	    && (liftAvg < weight/2 || liftAvg > 1.5*weight
 		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
@@ -2480,7 +2486,7 @@ void configurationTask()
       vpMode.autoThrottle = true;
       
     } else if(!vpMode.slowFlight && throttleStick > RATIO(1/3)
-	    && iAS > RATIO(3/2)*vpDerived.stallIAS) {
+	    && iAS > RATIO(3/2)*vpDerived.minimumIAS) {
       targetPressure = dynamicPressure(iAS);
       minThrottle = throttleStick/8;
       vpMode.autoThrottle = true;
@@ -2572,7 +2578,7 @@ void configurationTask()
     logDisable();
   else if(vpMode.takeOff && throttleStick > 0.90)
     logEnable();
-  else if(vpStatus.aloft && vpStatus.positiveIAS)
+  else if(vpStatus.aloft && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
     logEnable();
   else if(vpStatus.fullStop)
     logDisable();
@@ -2616,14 +2622,14 @@ void configurationTask()
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && ailePilotInput && fabsf(bankAngle) > 30/RADIAN) {
+  if(vpMode.wingLeveler && ailePilotInput && fabsf(bankAngle) > 15/RADIAN) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
 
   // TakeOff mode disabled when airspeed detected (or fails)
 
-  if(vpMode.takeOff && (vpStatus.pitotFailed || vpStatus.positiveIAS)) {
+  if(vpMode.takeOff && vpStatus.positiveIAS) {
     consoleNoteLn_P(PSTR("TakeOff COMPLETED"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
@@ -2648,22 +2654,27 @@ void configurationTask()
     vpFeature.pusher = vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.stabilizeBank = false;
 
-  /// ... or stalling...
-  
-  else if(vpStatus.stall)
-    vpFeature.stabilizeBank = vpFeature.keepLevel = false;
-
   // ... or weight is on wheels...
   
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
-      vpFeature.stabilizeBank = vpFeature.stabilizePitch = false;
-  
+    vpFeature.stabilizeBank = false;
+
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
   else if(!vpParam.wowCalibrated && vpParam.haveWheels
 	  && gearOutput == 0 && vpMode.wingLeveler)
     vpFeature.stabilizeBank = false;
   
+  // ... or we don't have positive airspeed
+
+  if(!vpStatus.positiveIAS)
+    vpFeature.stabilizePitch = false;
+  
+  // ... or stalling...
+  
+  if(vpStatus.stall)
+    vpFeature.stabilizeBank = vpFeature.keepLevel = false;
+
   // Disable alpha dependent stuff if the sensor fails
   
   if(vpStatus.alphaUnreliable)

@@ -261,8 +261,8 @@ void printParams()
   consolePrint(vpDerived.zeroLiftAlpha*RADIAN);
   consolePrint_P(PSTR(" ... "));
   consolePrint(vpParam.alphaMax*RADIAN);
-  consolePrint_P(PSTR(", stall IAS = "));
-  consolePrintLn(vpDerived.stallIAS);
+  consolePrint_P(PSTR(", minimum IAS = "));
+  consolePrintLn(vpDerived.minimumIAS);
   consoleNote_P(PSTR("  Threshold margin(%) = "));
   consolePrintLn(vpParam.thresholdMargin*100);
   consoleNote_P(PSTR("    Derived alpha(threshold, shake, push) = "));
@@ -449,7 +449,7 @@ void deriveParams()
 
   // Stall IAS
   
-  vpDerived.stallIAS =
+  vpDerived.minimumIAS =
     dynamicPressureInverse(G * vpDerived.totalMass / vpParam.cL_max);
   
   //

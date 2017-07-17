@@ -39,11 +39,11 @@ float ailePredictInverse(float pos)
 
 float scaleByIAS(float k, float expo)
 {
-  float effIAS = fmaxf(iasFilter.output(), vpDerived.stallIAS);
+  float effIAS = fmaxf(iasFilter.output(), vpDerived.minimumIAS);
   
   if(vpStatus.pitotFailed || vpStatus.pitotBlocked)
     // Failsafe value chosen to be ... on the safe side
-    effIAS = expo > 0 ? vpDerived.stallIAS : vpDerived.stallIAS * 3/2;
+    effIAS = expo > 0 ? vpDerived.minimumIAS : vpDerived.minimumIAS * 3/2;
   
   return k * powf(effIAS, expo);
 }
