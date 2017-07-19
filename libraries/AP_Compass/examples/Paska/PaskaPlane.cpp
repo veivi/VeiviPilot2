@@ -2008,13 +2008,13 @@ void sensorTaskFast()
   
   alpha = alphaFilter.output();
   
-  // Dynamic pressure, corrected for alpha (assuming zero setting angle)
+  // Dynamic pressure, corrected for alpha
   
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
   dynPressure = pressureBuffer.output() * factor_c
-    / cos(clamp(relativeWind, -vpParam.alphaMax, vpParam.alphaMax));
+    / cos(clamp(relativeWind, vpDerived.zeroLiftAlpha, vpParam.alphaMax));
   
   // Attitude
 
@@ -2246,7 +2246,7 @@ void statusTask()
   // Do we have positive airspeed?
   //
 
-  static uint32_t lastNegativeIAS, lastStall, lastAlphaLocked;
+  static uint32_t lastIAS, lastStall, lastAlphaLocked;
 
   if(vpStatus.pitotFailed) {
     if(!vpStatus.positiveIAS) {
@@ -2254,16 +2254,19 @@ void statusTask()
       vpStatus.positiveIAS = true;
     }
   } else if(iasFilter.output() < vpDerived.minimumIAS) {
-    if(vpStatus.positiveIAS) {
+    if(!vpStatus.positiveIAS)
+      lastIAS = currentTime;
+    else if(currentTime - lastIAS > 0.2e6) {
       consoleNoteLn_P(PSTR("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
-    
-    lastNegativeIAS = currentTime;
-
-  } else if(currentTime - lastNegativeIAS > 0.2e6 && !vpStatus.positiveIAS) {
-    consoleNoteLn_P(PSTR("We have POSITIVE AIRSPEED"));
-    vpStatus.positiveIAS = true;
+  } else {
+    if(vpStatus.positiveIAS)
+      lastIAS = currentTime;
+    else if(currentTime - lastIAS > 0.2e6) {
+      consoleNoteLn_P(PSTR("We have POSITIVE AIRSPEED"));
+      vpStatus.positiveIAS = true;
+    }
   }
 
   //
