@@ -2877,7 +2877,7 @@ void trimTask()
     const float takeoffTrim = 
         vpMode.slowFlight ? elevPredict(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
       
-    elevTrim = mixValue(dynPressure / dynamicPressure(vpDerived.minimumIAS), 0, takeoffTrim);
+    elevTrim = takeoffTrim * clamp(dynPressure / dynamicPressure(vpDerived.minimumIAS), 0, 1);
   } else
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
