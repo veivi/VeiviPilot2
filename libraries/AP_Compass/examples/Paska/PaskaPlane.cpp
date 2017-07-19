@@ -2874,10 +2874,10 @@ void trimTask()
   if(vpMode.takeOff) {
     // Takeoff mode enabled, trim is fixed
     
-    if(vpMode.slowFlight)
-      elevTrim = elevPredict(vpDerived.thresholdAlpha);
-    else
-      elevTrim = vpParam.takeoffTrim;      
+    const float takeoffTrim = 
+        vpMode.slowFlight ? elevPredict(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
+      
+    elevTrim = mixValue(dynPressure / dynamicPressure(vpDerived.minimumIAS), 0, takeoffTrim);
   } else
     elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
 }
