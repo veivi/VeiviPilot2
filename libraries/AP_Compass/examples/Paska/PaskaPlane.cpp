@@ -36,7 +36,7 @@ extern "C" {
 
 // #define USE_COMPASS  1
 
-const float alphaWindow_c = RATIO(1/30);
+const float alphaWindow_c = RATIO(1/20);
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;
@@ -2253,17 +2253,17 @@ void statusTask()
       consoleNoteLn_P(PSTR("Pitot failed, positive IAS ASSUMED"));
       vpStatus.positiveIAS = true;
     }
-  } else if(iasFilter.output() < vpDerived.minimumIAS) {
+  } else if(iasFilter.output() < vpDerived.minimumIAS*RATIO(2/3)) {
     if(!vpStatus.positiveIAS)
       lastIAS = currentTime;
-    else if(currentTime - lastIAS > 0.2e6) {
+    else if(currentTime - lastIAS > 0.3e6) {
       consoleNoteLn_P(PSTR("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
   } else {
     if(vpStatus.positiveIAS)
       lastIAS = currentTime;
-    else if(currentTime - lastIAS > 0.2e6) {
+    else if(currentTime - lastIAS > 0.3e6) {
       consoleNoteLn_P(PSTR("We have POSITIVE AIRSPEED"));
       vpStatus.positiveIAS = true;
     }
@@ -2632,7 +2632,8 @@ void configurationTask()
 
   // TakeOff mode disabled when airspeed detected (or fails)
 
-  if(vpMode.takeOff && vpStatus.positiveIAS) {
+  if(vpMode.takeOff && vpStatus.positiveIAS
+     && (iAS > vpDerived.minimumIAS || alpha > vpDerived.thresholdAlpha))  {
     consoleNoteLn_P(PSTR("TakeOff COMPLETED"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
@@ -3280,7 +3281,7 @@ void controlTask()
     targetPitchRate = elevStickExpo*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickForce*RATIO(1/2), elevPredict(targetAlpha), elevOutput);
+    mixValue(stickForce*RATIO(1/3), elevPredict(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
