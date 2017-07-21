@@ -36,7 +36,7 @@ extern "C" {
 
 // #define USE_COMPASS  1
 
-const float alphaWindow_c = RATIO(1/20);
+const float alphaWindow_c = RATIO(1/25);
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;
