@@ -2670,11 +2670,6 @@ void configurationTask()
 	  && gearOutput == 0 && vpMode.wingLeveler)
     vpFeature.stabilizeBank = false;
   
-  // ... or we don't have positive airspeed
-
-  if(!vpStatus.positiveIAS)
-    vpFeature.stabilizePitch = false;
-  
   // ... or stalling...
   
   if(vpStatus.stall)
