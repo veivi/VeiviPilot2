@@ -2720,7 +2720,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(4 * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(2.5*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -3250,8 +3250,8 @@ void controlTask()
     vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
 
-  const float effTrim =
-    fminf(elevTrim, !vpFeature.stabilizePitch ? vpParam.takeoffTrim : 1);
+  const float effTrim = vpMode.takeOff ? vpParam.takeoffTrim
+    : fminf(elevTrim, !vpFeature.stabilizePitch ? vpParam.takeoffTrim : 1);
   
   elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
   
