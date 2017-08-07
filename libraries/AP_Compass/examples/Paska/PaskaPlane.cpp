@@ -2705,7 +2705,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
 
@@ -2721,7 +2721,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(2.5*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(4*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
