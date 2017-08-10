@@ -2721,7 +2721,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(4*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(3*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -3371,10 +3371,15 @@ void controlTask()
   aileRateLimiter.input(clamp(aileOutput, -1, 1), controlCycle);
 
   //
-  // Rudder
+  // Rudder & nose wheel
   //
-  
-  steerOutput = rudderOutput = rudderStick;
+
+  rudderOutput = rudderStick;
+
+  if(gearHandle && gearOutput)
+    steerOutput = 0;
+  else
+    steerOutput = rudderStick;
 
   //
   // Flaps
