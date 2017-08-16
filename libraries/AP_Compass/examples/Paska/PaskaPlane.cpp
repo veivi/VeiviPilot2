@@ -215,7 +215,7 @@ uint32_t controlCycleEnded;
 float elevTrim, targetAlpha, targetPressure, minThrottle;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-float outer_P, rudderMix, throttleMix, shakerAlpha, pusherAlpha;
+float outer_P, rudderMix, throttleMix;
 float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, slope;
 float accDirection, relativeWind;
 uint16_t heading;
@@ -2340,7 +2340,8 @@ void statusTask()
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff || alpha < vpParam.alphaMax) {
+     || vpMode.takeOff
+     || alpha < vpParam.alphaMax/(1 + fminf(vpParam.stallMargin, 0))) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.2e6) {
@@ -2715,13 +2716,11 @@ void configurationTask()
     throttleCtrl.setZieglerNicholsPI(vpParam.cc_Ku, vpParam.cc_Tu);
 
   outer_P = vpParam.o_P;
-  shakerAlpha = vpDerived.shakerAlpha;
-  pusherAlpha = vpDerived.pusherAlpha;
   rudderMix = vpParam.r_Mix;
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(3*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(2*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -3249,8 +3248,8 @@ void controlTask()
   const float shakerLimit = RATIO(1/2);
   const float stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
-  const float effMaxAlpha = mixValue(stickForce, shakerAlpha, pusherAlpha);
-
+  const float effMaxAlpha
+    = mixValue(stickForce, vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   const float effTrim = vpMode.takeOff ? vpParam.takeoffTrim
     : fminf(elevTrim, !vpFeature.stabilizePitch ? vpParam.takeoffTrim : 1);
   

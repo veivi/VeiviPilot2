@@ -53,6 +53,7 @@ const struct ParamRecord paramDefaults = {
   .fuel = 0.5,
   .thrust = 0,
   .thresholdMargin = 0.15,
+  .stallMargin = 0,
   .glideSlope = 3.0/RADIAN,
   .offset = -0.4/RADIAN,
   .elevon = 0,
@@ -264,7 +265,9 @@ void printParams()
   consolePrint_P(PSTR(", minimum IAS = "));
   consolePrintLn(vpDerived.minimumIAS);
   consoleNote_P(PSTR("  Threshold margin(%) = "));
-  consolePrintLn(vpParam.thresholdMargin*100);
+  consolePrint(vpParam.thresholdMargin*100);
+  consolePrint_P(PSTR(" Stall margin(%) = "));
+  consolePrintLn(vpParam.stallMargin*100);
   consoleNote_P(PSTR("    Derived alpha(threshold, shake, push) = "));
   consolePrint(vpDerived.thresholdAlpha*RADIAN);
   consolePrint_P(PSTR(", "));
@@ -460,7 +463,8 @@ void deriveParams()
     coeffOfLiftInverse(vpParam.cL_max/square(1 + vpParam.thresholdMargin));
   vpDerived.shakerAlpha =
     coeffOfLiftInverse(vpParam.cL_max/square(1 + vpParam.thresholdMargin/2));
-  vpDerived.pusherAlpha = vpParam.alphaMax/(1 + vpParam.thresholdMargin/5);
+  vpDerived.pusherAlpha =
+    vpParam.alphaMax/(1 + fmaxf(vpParam.stallMargin, 0.0));
 
   //
   // Feedforward apex

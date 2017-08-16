@@ -38,7 +38,7 @@ struct ParamRecord {
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;
-  float thresholdMargin;
+  float thresholdMargin, stallMargin;
   float glideSlope;
   float offset;
   bool elevon, veeTail;

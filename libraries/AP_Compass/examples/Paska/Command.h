@@ -49,6 +49,7 @@ typedef enum {
   c_virtual,
   c_trim,
   c_stall,
+  c_smargin,
   c_peak,
   c_zl,
   c_col_ab,

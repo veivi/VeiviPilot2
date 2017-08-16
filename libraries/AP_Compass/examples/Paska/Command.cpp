@@ -52,6 +52,7 @@ const struct Command commands[] PROGMEM = {
   { "vtail", c_vtail, e_bool, &vpParam.veeTail },
   { "tservo", c_tservo, e_int8, &vpParam.servoThrottle },
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
+  { "smargin", c_smargin, e_percent, &vpParam.stallMargin },
   { "slope", c_slope, e_angle, &vpParam.glideSlope },
   { "offset", c_offset, e_angle, &vpParam.offset },
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
