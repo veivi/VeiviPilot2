@@ -2705,7 +2705,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
 
@@ -2773,7 +2773,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      rudderMix = testGain = testGainLinear(0.9, 0.0);
+      rudderMix = testGain = testGainLinear(0.5, 0.0);
       break;
 
     case 11:
