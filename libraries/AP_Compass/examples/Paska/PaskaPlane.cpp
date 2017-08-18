@@ -2772,7 +2772,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      rudderMix = testGain = testGainLinear(0.5, 0.0);
+      rudderMix = testGain = testGainLinear(0.8, 0.0);
       break;
 
     case 11:
