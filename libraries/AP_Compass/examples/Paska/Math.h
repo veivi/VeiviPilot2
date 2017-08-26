@@ -15,6 +15,7 @@ const float stabilityElevExp_c = -1.5;
 const float stabilityAileExp1_c = -1.5;
 const float stabilityAileExp2_c = 1.0;
 const float stabilityPusherExp_c = -0.5;
+const float controlAileExpo_c = 0.8;
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -38,10 +39,10 @@ float coeffOfLift(float aoa);
 float coeffOfLiftInverse(float col);
 float dynamicPressure(float ias);
 float dynamicPressureInverse(float pressure);
-float elevPredict(float x);
-float elevPredictInverse(float x);
-float ailePredict(float r);
-float ailePredictInverse(float x);
+float alphaPredict(float x);
+float alphaPredictInverse(float x);
+float rollRatePredict(float r);
+float rollRatePredictInverse(float x);
 float scaleByIAS(float k, float p);
 
 #endif

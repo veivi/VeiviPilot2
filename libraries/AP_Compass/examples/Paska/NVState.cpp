@@ -217,7 +217,7 @@ void printParams()
   consolePrint(vpParam.i_Tu, 4);
   consolePrint_P(PSTR(" Outer P = "));
   consolePrintLn(vpParam.o_P, 4);
-  consoleNoteLn_P(PSTR("  Alpha feedforward A+Bx+Cx^2"));
+  consoleNoteLn_P(PSTR("  Elev feedforward A+Bx+Cx^2"));
   consoleNote_P(PSTR("    "));
   consolePrint(vpParam.ff_A, 5);
   consolePrint_P(PSTR(" + "));
@@ -225,9 +225,9 @@ void printParams()
   consolePrint_P(PSTR(" x + "));
   consolePrint(vpParam.ff_C, 5);
   consolePrint_P(PSTR(" x^2  (eff alpha range = "));
-  consolePrint(elevPredictInverse(-1.0)*RADIAN);
+  consolePrint(alphaPredict(-1.0)*RADIAN);
   consolePrint_P(PSTR(" ... "));
-  consolePrint(elevPredictInverse(1.0)*RADIAN);
+  consolePrint(alphaPredict(1.0)*RADIAN);
   consolePrintLn_P(PSTR(")"));
   consoleNote_P(PSTR("  Throttle-elev mix (expo) = "));
   consolePrint(vpParam.t_Mix, 5);

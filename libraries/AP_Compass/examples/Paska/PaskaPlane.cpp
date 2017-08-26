@@ -1323,12 +1323,12 @@ void executeCommand(char *buf)
       consoleNoteLn_P(PSTR("Feed-forward curve"));
   
       for(float aR = -1; aR <= 1; aR += 0.07)
-	printCoeffElement(-1, 1, vpParam.alphaMax*aR*RADIAN, elevPredict(vpParam.alphaMax*aR));
+	printCoeffElement(-1, 1, vpParam.alphaMax*aR*RADIAN, alphaPredictInverse(vpParam.alphaMax*aR));
 
       consoleNoteLn_P(PSTR("Inverse feed-forward curve"));
   
       for(float e = 1; e >= -1; e -= 0.07)
-	printCoeffElement(-vpParam.alphaMax/2, vpParam.alphaMax, e, elevPredictInverse(e));
+	printCoeffElement(-vpParam.alphaMax/2, vpParam.alphaMax, e, alphaPredict(e));
 
       consoleNoteLn_P(PSTR("Coeff of lift"));
   
@@ -2706,7 +2706,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
 
@@ -2720,7 +2720,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(2*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(3*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -2856,7 +2856,7 @@ void trimTask()
      && prevMode != vpMode.slowFlight) {
     if(vpMode.slowFlight)
       // Into slow flight: maintain alpha with current stick
-      elevTrim = elevPredict(alpha) - elevStick;
+      elevTrim = alphaPredictInverse(alpha) - elevStick;
     else
       // Maintain elevator position with current stick
       elevTrim = elevOutput - elevStick;
@@ -2874,9 +2874,9 @@ void trimTask()
     // const float pRatio
     //  = clamp(dynPressure / dynamicPressure(vpDerived.minimumIAS), 0, 1);
       
-    elevTrim = vpMode.slowFlight ? elevPredict(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
+    elevTrim = vpMode.slowFlight ? alphaPredictInverse(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
   } else
-    elevTrim = clamp(elevTrim, 0, elevPredict(vpDerived.thresholdAlpha));
+    elevTrim = clamp(elevTrim, 0, alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
 void gaugeTask()
@@ -3255,7 +3255,7 @@ void controlTask()
   
   elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
   
-  targetAlpha = fminf(elevPredictInverse(elevOutput), effMaxAlpha);
+  targetAlpha = fminf(alphaPredict(elevOutput), effMaxAlpha);
 
   if(vpMode.radioFailSafe)
     targetAlpha = trimRateLimiter.input(targetAlpha, controlCycle);
@@ -3276,7 +3276,7 @@ void controlTask()
     targetPitchRate = elevStickExpo*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickForce*RATIO(1/2), elevPredict(targetAlpha), elevOutput);
+    mixValue(stickForce*RATIO(1/2), alphaPredictInverse(targetAlpha), elevOutput);
     
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
@@ -3299,9 +3299,9 @@ void controlTask()
         
       pushCtrl.input(effMaxAlpha - alpha, controlCycle);
       elevOutput = fminf(elevOutput,
-	  	       elevPredict(effMaxAlpha) + pushCtrl.output());
+	  	       alphaPredictInverse(effMaxAlpha) + pushCtrl.output());
     } else
-      pushCtrl.reset(elevOutput - elevPredict(effMaxAlpha),
+      pushCtrl.reset(elevOutput - alphaPredictInverse(effMaxAlpha),
 		   effMaxAlpha - alpha);
   }
 
@@ -3316,9 +3316,9 @@ void controlTask()
     if(vpStatus.stall)
       aileStick = 0;
   } else if(vpFeature.alphaHold)
-    maxBank /= 1 + elevPredictInverse(elevTrim) / vpDerived.thresholdAlpha / 2;
+    maxBank /= 1 + alphaPredict(elevTrim) / vpDerived.thresholdAlpha / 2;
   
-  float targetRollRate = ailePredictInverse(aileStick);
+  float targetRollRate = rollRatePredict(aileStick);
   
   // We accumulate individual contributions so start with 0
 
@@ -3361,7 +3361,7 @@ void controlTask()
 
   //   Apply controller output + feedforward
   
-  aileOutputFeedForward = ailePredict(targetRollRate);
+  aileOutputFeedForward = rollRatePredictInverse(targetRollRate);
   
   aileOutput += aileOutputFeedForward + aileCtrl.output();
 
@@ -3776,7 +3776,7 @@ void setup()
 
   elevCtrl.limit(RATIO(2/3));
   aileCtrl.limit(RATIO(2/3));
-  pushCtrl.limit(RATIO(-1/2), 1 - elevPredict(vpDerived.pusherAlpha));
+  pushCtrl.limit(RATIO(-1/2), 1 - alphaPredictInverse(vpDerived.pusherAlpha));
   flapRateLimiter.setRate(0.5/RADIAN);
   
   // Misc filters

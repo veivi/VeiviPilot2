@@ -4,8 +4,12 @@
 #include "Status.h"
 #include <math.h>
 
+float expo(float a, float b)
+{
+  return sign(a)*powf(fabsf(a), b);
+}    
 
-float elevPredict(float x)
+float alphaPredictInverse(float x)
 {
   const float a = vpParam.ff_C, b = vpParam.ff_B, c = vpParam.ff_A;
 
@@ -15,7 +19,7 @@ float elevPredict(float x)
     return clamp(a*square(x) + b*x + c, -1, 1);
 }
 
-float elevPredictInverse(float y)
+float alphaPredict(float y)
 {
   const float a = vpParam.ff_C, b = vpParam.ff_B, c = vpParam.ff_A;
   
@@ -27,14 +31,16 @@ float elevPredictInverse(float y)
     return clamp((-b+sqrt(square(b)-4*a*(c - y)))/(2*a), -vpParam.alphaMax, vpParam.alphaMax);;
 }
 
-float ailePredict(float rate)
+float rollRatePredict(float pos)
 {
-  return clamp(rate / scaleByIAS(vpParam.roll_C, stabilityAileExp2_c), -1, 1);
+  return expo(pos, controlAileExpo_c)
+    * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c);
 }
 
-float ailePredictInverse(float pos)
+float rollRatePredictInverse(float rate)
 {
-  return pos * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c);
+  return clamp(expo(rate/scaleByIAS(vpParam.roll_C, stabilityAileExp2_c),
+		    1/controlAileExpo_c), -1, 1);
 }
 
 float scaleByIAS(float k, float expo)
