@@ -27,8 +27,11 @@ const float airDensity_c = 1.225;
 
 const float G = 9.81, CIRCLE = 2*PI, RADIAN = 360/CIRCLE, FOOT = 12*25.4/1000, KNOT = 1852.0/60/60, PSF = 47.880259;
 
+const float servoOutputRange_c = RATIO(6/5);
+
 float sign(float x);
 float clamp(float value, float a, float b);
+float constrainServoOutput(float value);
 float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);
 uint8_t population(uint16_t a);

@@ -4,6 +4,11 @@
 #include "Status.h"
 #include <math.h>
 
+float constrainServoOutput(float value)
+{
+  return clamp(value, -servoOutputRange_c, servoOutputRange_c);
+}
+
 float expo(float a, float b)
 {
   return sign(a)*powf(fabsf(a), b);
