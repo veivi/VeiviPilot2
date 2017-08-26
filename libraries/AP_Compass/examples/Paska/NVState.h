@@ -45,6 +45,7 @@ struct ParamRecord {
   bool virtualOnly;
   bool haveWheels;
   bool wowCalibrated;
+  float expo;
   };
 
 struct DerivedParams {

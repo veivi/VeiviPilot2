@@ -15,7 +15,6 @@ const float stabilityElevExp_c = -1.5;
 const float stabilityAileExp1_c = -1.5;
 const float stabilityAileExp2_c = 1.0;
 const float stabilityPusherExp_c = -0.5;
-const float controlAileExpo_c = 0.8;
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -30,6 +29,7 @@ const float G = 9.81, CIRCLE = 2*PI, RADIAN = 360/CIRCLE, FOOT = 12*25.4/1000, K
 
 float sign(float x);
 float clamp(float value, float a, float b);
+float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);
 uint8_t population(uint16_t a);
 float randomNum(float small, float large);

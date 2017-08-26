@@ -226,7 +226,7 @@ RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, rollAccelLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
-float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0;
+float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, aileNeutral;
 float elevOutputFinal, aileOutputFinal, rudderOutputFinal;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
 bool beepGood;
@@ -2720,7 +2720,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(3*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(4*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -2795,8 +2795,8 @@ void configurationTask()
 	vpFeature.stabilizeBank = vpMode.bankLimiter
 	  = vpFeature.keepLevel = false;
       } else {
-	vpFeature.stabilizeBank = vpMode.bankLimiter
-	  = vpFeature.keepLevel = true;
+	vpFeature.stabilizeBank = vpFeature.keepLevel = true;
+	aileNeutral = aileOutput;
       }
       break;
       
@@ -2854,12 +2854,16 @@ void trimTask()
 
   if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable
      && prevMode != vpMode.slowFlight) {
-    if(vpMode.slowFlight)
+    if(vpMode.slowFlight) {
       // Into slow flight: maintain alpha with current stick
       elevTrim = alphaPredictInverse(alpha) - elevStick;
-    else
+    } else {
       // Maintain elevator position with current stick
       elevTrim = elevOutput - elevStick;
+    }
+    
+    consoleNote_P(PSTR("Elev trim adjusted to "));
+    consolePrintLn(elevTrim, 2);
   }
 
   prevMode = vpMode.slowFlight;
@@ -2874,9 +2878,11 @@ void trimTask()
     // const float pRatio
     //  = clamp(dynPressure / dynamicPressure(vpDerived.minimumIAS), 0, 1);
       
-    elevTrim = vpMode.slowFlight ? alphaPredictInverse(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
+    elevTrim = vpMode.slowFlight
+      ? alphaPredictInverse(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
   } else
-    elevTrim = clamp(elevTrim, 0, alphaPredictInverse(vpDerived.thresholdAlpha));
+    elevTrim =
+      clamp(elevTrim, 0, alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
 void gaugeTask()
@@ -3067,6 +3073,20 @@ void gaugeTask()
 	consolePrint_P(PSTR(" THR(auto) = "));
 	consolePrint(throttleCtrl.output(), 2);
 	break;
+	
+      case 14:
+       consolePrint_P(PSTR(" roll_k = "));
+       consolePrint(rollRate/expo(aileOutput-aileNeutral, vpParam.expo)/iAS, 3);
+       break;
+       
+      case 15:
+	consolePrint_P(PSTR(" elevOutput(trim) = "));
+	consolePrint(elevOutput, 3);
+	consolePrint_P(PSTR("("));
+	consolePrint(elevTrim, 3);
+	consolePrint_P(PSTR(")"));
+	break;
+
       }
     }
 
@@ -3250,8 +3270,7 @@ void controlTask()
     vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
     = mixValue(stickForce, vpDerived.shakerAlpha, vpDerived.pusherAlpha);
-  const float effTrim = vpMode.takeOff ? vpParam.takeoffTrim
-    : fminf(elevTrim, !vpFeature.stabilizePitch ? vpParam.takeoffTrim : 1);
+  const float effTrim = vpMode.takeOff ? vpParam.takeoffTrim : elevTrim;
   
   elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
   

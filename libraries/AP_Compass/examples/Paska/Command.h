@@ -43,6 +43,7 @@ typedef enum {
   c_at_zn,
   c_cc_zn,
   c_offset,
+  c_expo,
 
   c_dump,
   c_max,

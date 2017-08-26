@@ -33,14 +33,14 @@ float alphaPredict(float y)
 
 float rollRatePredict(float pos)
 {
-  return expo(pos, controlAileExpo_c)
+  return expo(pos, vpParam.expo)
     * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c);
 }
 
 float rollRatePredictInverse(float rate)
 {
   return clamp(expo(rate/scaleByIAS(vpParam.roll_C, stabilityAileExp2_c),
-		    1/controlAileExpo_c), -1, 1);
+		    1/vpParam.expo), -1, 1);
 }
 
 float scaleByIAS(float k, float expo)

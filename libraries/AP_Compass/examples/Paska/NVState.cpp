@@ -60,7 +60,8 @@ const struct ParamRecord paramDefaults = {
   .veeTail = 0,
   .virtualOnly = true,
   .haveWheels = true,
-  .wowCalibrated = false
+  .wowCalibrated = false,
+  .expo = 0.8
 };
 
 const struct NVStateRecord stateDefaults = {
@@ -282,8 +283,11 @@ void printParams()
   consolePrint_P(PSTR(" x  (max = "));
   consolePrint(vpParam.cL_max, 4);
   consolePrintLn(")");
-  consoleNote_P(PSTR("  Roll rate K = "));
-  consolePrintLn(vpParam.roll_C, 3);
+  consoleNote_P(PSTR("  Roll rate K (expo) = "));
+  consolePrint(vpParam.roll_C, 3);
+  consolePrint_P(PSTR(" ("));
+  consolePrint(vpParam.expo, 3);
+  consolePrintLn(")");
   consoleNoteLn_P(PSTR("  Elevator"));
   consoleNote_P(PSTR("    deflection = "));
   consolePrint(vpParam.elevDefl*90);
