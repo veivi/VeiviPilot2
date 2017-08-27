@@ -1923,7 +1923,7 @@ bool inputDelayed;
 
 void configurationTask();
 
-#define NZ_BIG RATIO(5/100)
+#define NZ_BIG RATIO(7.5/100)
 #define NZ_SMALL RATIO(3/100)
 
 void receiverTask()
@@ -2706,7 +2706,7 @@ void configurationTask()
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
   
-  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
+  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
 
@@ -2720,7 +2720,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(4*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
+  rollAccelLimiter.setRate(3*scaleByIAS(vpParam.roll_C, stabilityAileExp2_c));
 
   //
   // Apply test mode
@@ -3338,9 +3338,10 @@ void aileronModule()
       targetRollRate = outer_P * (aileStick*60/RADIAN - bankAngle);
 
     else if(vpMode.bankLimiter) {
-      // Weak leveling
-      
-      targetRollRate -= outer_P*clamp(bankAngle, -1.0/2/RADIAN, 1.0/2/RADIAN);
+
+      if(vpMode.slowFlight)
+	// Weak leveling
+	targetRollRate -= outer_P*clamp(bankAngle, -2.0/RADIAN, 2.0/RADIAN);
 
       // Bank limiter
       
@@ -3835,7 +3836,7 @@ void setup()
   elevCtrl.limit(RATIO(2/3));
   aileCtrl.limit(RATIO(2/3));
   pushCtrl.limit(RATIO(-1/2), 1 - alphaPredictInverse(vpDerived.pusherAlpha));
-  flapRateLimiter.setRate(0.5/RADIAN);
+  flapRateLimiter.setRate(1.0);
   
   // Misc filters
 
