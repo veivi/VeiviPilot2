@@ -4,6 +4,12 @@
 #include "Status.h"
 #include <math.h>
 
+float nominalPitchRate(float bank, float target)
+{
+  return square(sin(bank))*coeffOfLift(target)/vpDerived.totalMass
+    *iasFilter.output()/2;
+}
+
 float constrainServoOutput(float value)
 {
   return clamp(value, -servoOutputRange_c, servoOutputRange_c);

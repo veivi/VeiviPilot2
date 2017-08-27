@@ -1876,10 +1876,11 @@ void displayTask()
     print("TAKEOFF");
     setAttr(0);
   } else {
-    char buffer[] = { 'T', 'E', 'S', 'T', ' ',
-		      nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10),
-		      '0' + nvState.testNum % 10,
-		      '\0' };
+    char buffer[] =
+      { 'T', 'E', 'S', 'T', ' ',
+	(char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
+	(char) ('0' + nvState.testNum % 10),
+	'\0' };
     cursorMove(16-strlen(buffer), 0);
     setAttr(false);
     print(buffer);
@@ -3240,30 +3241,13 @@ void gpsTask()
   */
 }
 
-float nominalPitchRate(float bank, float target)
+//
+// Control modules
+//   Elevator
+//
+
+void elevatorModule()
 {
-  return square(sin(bank))*coeffOfLift(target)/vpDerived.totalMass
-    *iasFilter.output()/2;
-}
-
-void controlTask()
-{
-  // Cycle time bookkeeping 
-  
-  if(beepDuration > 0) {
-    // We're beeping, fuggetaboutit
-    controlCycleEnded = 0;
-  } else if(controlCycleEnded > 0) {
-    controlCycle = (currentTime - controlCycleEnded)/1.0e6;
-    cycleTimeMonitor(controlCycle);
-  }
-  
-  controlCycleEnded = currentTime;
-
-  //
-  // Elevator control
-  //
-
   const float shakerLimit = RATIO(1/2);
   const float stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
@@ -3322,18 +3306,14 @@ void controlTask()
       pushCtrl.reset(elevOutput - alphaPredictInverse(effMaxAlpha),
 		   effMaxAlpha - alpha);
   }
+}
 
-  //   Throttle to elev mixing & constraining
-  
-  elevOutput =
-    constrainServoOutput(elevOutput +
-			 throttleMix*powf(throttleCtrl.output(),
-					  vpParam.t_Expo));
+//
+//   Aileron
+//
 
-  //
-  // Aileron
-  //
-  
+void aileronModule()
+{
   float maxBank = 45/RADIAN;
 
   if(vpMode.radioFailSafe) {
@@ -3390,44 +3370,32 @@ void controlTask()
   
   aileOutput += aileOutputFeedForward + aileCtrl.output();
 
-  //   Constrain
+  //   Constrain & rate limit
   
   aileOutput
     = aileRateLimiter.input(constrainServoOutput(aileOutput), controlCycle);
+}
 
-  //
-  // Rudder & nose wheel
-  //
+//
+//   Rudder & nose wheel
+//
 
+void rudderModule()
+{
   rudderOutput = rudderStick;
 
   if(gearHandle && gearOutput)
     steerOutput = 0;
   else
     steerOutput = rudderStick;
+}
 
-  rudderOutput =
-    constrainServoOutput(rudderOutput + aileOutput*rudderMix);
+//
+//   Autothrottle
+//
   
-  //
-  // Flaps
-  //
-  
-  flapRateLimiter.input(flapOutput, controlCycle);
-
-  //
-  // Brake
-  //
-    
-  if(gearOutput == 1 || elevStick > 0)
-    brakeOutput = 0;
-  else
-    brakeOutput = -elevStick;
-
-  //
-  // Autothrottle
-  //
-  
+void throttleModule()
+{
   throttleCtrl.limit(minThrottle, throttleStick);
     
   if(vpMode.autoThrottle) {
@@ -3442,14 +3410,84 @@ void controlTask()
 
   } else
     throttleCtrl.reset(throttleStick, 0);
+}
 
+void ancillaryModule()
+{
+  //
+  // Flaps
+  //
+  
+  flapRateLimiter.input(flapOutput, controlCycle);
+
+  //
+  // Brake
+  //
+    
+  if(gearOutput == 1 || elevStick > 0)
+    brakeOutput = 0;
+  else
+    brakeOutput = -elevStick;
+}
+
+//
+// List of control modules in no particular order
+//
+
+void (*controlModules[])(void) = {
+  elevatorModule,
+  aileronModule,
+  rudderModule,
+  throttleModule,
+  ancillaryModule };
+
+//
+// Final mixing
+//
+
+void mixingTask()
+{
+  // Throttle to elev mix
+  
+  elevOutput =
+    constrainServoOutput(elevOutput +
+			 throttleMix*powf(throttleCtrl.output(),
+					  vpParam.t_Expo));
+
+  // Aile to rudder mix
+  
+  rudderOutput =
+    constrainServoOutput(rudderOutput + aileOutput*rudderMix);  
+}
+
+void controlTask()
+{
+  //
+  // Cycle time bookkeeping 
+  //
+  
+  if(beepDuration > 0) {
+    // We're beeping, fuggetaboutit
+    controlCycleEnded = 0;
+  } else if(controlCycleEnded > 0) {
+    controlCycle = (currentTime - controlCycleEnded)/1.0e6;
+    cycleTimeMonitor(controlCycle);
+  }
+  
+  controlCycleEnded = currentTime;
+
+  //
+  // Invoke individual control modules
+  //
+
+  for(uint8_t i = 0; i < sizeof(controlModules)/sizeof(void(*)()); i++)
+    (*controlModules[i])();
+  
   //
   // Final mixing
   //
-  //   Throttle to elevator
-
-  //   Aile to rudder
   
+  mixingTask();
 }
 
 void actuatorTask()
