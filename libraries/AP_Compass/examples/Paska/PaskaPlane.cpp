@@ -80,14 +80,14 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
 struct RxInputRecord aileInput, elevInput, throttleInput, rudderInput,
-  buttonInput, tuningKnobInput, auxInput, modeInput;
+  buttonInput, tuningKnobInput, flightModeInput, stabModeInput;
 struct RxInputRecord *ppmInputs[] = 
-  { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &modeInput, &auxInput };
+  { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &stabModeInput };
 
 Button rightDownButton(-1.0), rightUpButton(0.33),
   leftDownButton(-0.3), leftUpButton(1);
-struct SwitchRecord modeSelector = { &modeInput };
-int8_t modeSelectorValue;
+struct SwitchRecord flightModeSelector = { &flightModeInput }, stabModeSelector = { &stabModeInput };
+int8_t flightModeSelectorValue, stabModeSelectorValue;
 
 #define LEVELBUTTON rightUpButton
 #define FLAPBUTTON rightDownButton
@@ -178,6 +178,8 @@ struct ModeRecord {
   bool takeOff;
   bool wingLeveler;
   bool slowFlight;
+  bool progressiveFlight;
+  bool gusty;
   bool autoThrottle;
   bool loggingSuppressed;
 };
@@ -189,6 +191,8 @@ struct FeatureRecord {
   bool pitchHold;
   bool alphaHold;
   bool pusher;
+  bool aileFeedforward;
+  bool ailePID;
 };
 
 struct GPSFix {
@@ -1945,7 +1949,9 @@ void receiverTask()
   if(inputValid(&throttleInput))
     throttleStick = inputValue(&throttleInput);
 
-  modeSelectorValue = readSwitch(&modeSelector);
+  flightModeSelectorValue = readSwitch(&flightModeSelector);
+  
+  stabModeSelectorValue = readSwitch(&stabModeSelector);
   
   float buttonValue = inputValue(&buttonInput);
   
@@ -1960,7 +1966,7 @@ void receiverTask()
   
   if(LEVELBUTTON.state()
      && throttleStick < 0.1 && aileStick < -0.90 && elevStick > 0.90
-     && modeSelectorValue == -1) {
+     && flightModeSelectorValue == -1) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
       vpMode.radioFailSafe = true;
@@ -2593,7 +2599,7 @@ void configurationTask()
   // Direct mode selector input
   //
 
-  if(modeSelectorValue == -1) {
+  if(flightModeSelectorValue == -1) {
     if(!vpMode.slowFlight)
       consoleNoteLn_P(PSTR("Slow flight mode ENABLED"));
     vpMode.slowFlight = true;
@@ -2602,7 +2608,7 @@ void configurationTask()
     vpMode.slowFlight = false;
   }
 
-  if(modeSelectorValue == 0) {
+  if(flightModeSelectorValue == 0) {
     if(vpMode.bankLimiter)
       consoleNoteLn_P(PSTR("Bank limiter DISABLED"));
     
@@ -2613,6 +2619,28 @@ void configurationTask()
     vpMode.bankLimiter = true;
   }
 
+  //
+  // Stabilizer selector input
+  //
+
+  if(stabModeSelectorValue == 1) {
+    if(!vpMode.progressiveFlight)
+      consoleNoteLn_P(PSTR("Progressive aileron ENABLED"));
+    vpMode.progressiveFlight = true;
+  } else if(vpMode.progressiveFlight) {
+    consoleNoteLn_P(PSTR("Progressive aileron DISABLED"));
+    vpMode.progressiveFlight = false;
+  }
+  
+  if(stabModeSelectorValue == -1) {
+    if(!vpMode.gusty)
+      consoleNoteLn_P(PSTR("Gust mode ENABLED"));
+    vpMode.gusty = true;
+  } else if(vpMode.gusty) {
+    consoleNoteLn_P(PSTR("Gust mode DISABLED"));
+    vpMode.gusty = false;
+  }
+  
   //
   // Test mode control
   //
@@ -2654,6 +2682,8 @@ void configurationTask()
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;
   vpFeature.pitchHold = false;
+  vpFeature.aileFeedforward = vpMode.progressiveFlight;
+  vpFeature.ailePID = !vpMode.gusty;
 
   // Modify if taking off...
   
@@ -2705,8 +2735,12 @@ void configurationTask()
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
   float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
+
+  if(vpFeature.ailePID)
+    aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
+  else
+    aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
   
-  aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
 
@@ -3367,7 +3401,8 @@ void aileronModule()
 
   //   Apply controller output + feedforward
   
-  aileOutputFeedForward = rollRatePredictInverse(targetRollRate);
+  aileOutputFeedForward =
+    vpFeature.aileFeedforward ? rollRatePredictInverse(targetRollRate) : 0;
   
   aileOutput += aileOutputFeedForward + aileCtrl.output();
 
