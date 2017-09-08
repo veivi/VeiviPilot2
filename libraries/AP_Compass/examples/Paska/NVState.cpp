@@ -47,6 +47,7 @@ const struct ParamRecord paramDefaults = {
   .cL_max= 0.25,
   .roll_C = 0.1,
   .cL_B = 0.6,
+  .cL_C = 0.0,
   .servoRate = 60/0.09,
   .takeoffTrim = 0.25,
   .weightDry = 1,
@@ -275,12 +276,14 @@ void printParams()
   consolePrint(vpDerived.shakerAlpha*RADIAN);
   consolePrint_P(PSTR(", "));
   consolePrintLn(vpDerived.pusherAlpha*RADIAN);
-  consoleNoteLn_P(PSTR("  Coeff of lift A + Bx"));
+  consoleNoteLn_P(PSTR("  Coeff of lift A + Bx + Cx^2"));
   consoleNote_P(PSTR("    "));
   consolePrint(vpParam.cL_A, 4);
   consolePrint_P(PSTR(" + "));
   consolePrint(vpParam.cL_B, 4);
-  consolePrint_P(PSTR(" x  (max = "));
+  consolePrint_P(PSTR(" + "));
+  consolePrint(vpParam.cL_C, 4);
+  consolePrint_P(PSTR(" x^2  (max = "));
   consolePrint(vpParam.cL_max, 4);
   consolePrintLn(")");
   consoleNote_P(PSTR("  Roll rate K (expo) = "));

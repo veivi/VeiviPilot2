@@ -34,7 +34,7 @@ struct ParamRecord {
   float maxPitch;
   float cL_max;
   float roll_C;
-  float cL_B;
+  float cL_B, cL_C;
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;

@@ -1335,7 +1335,7 @@ void executeCommand(char *buf)
 
       consoleNoteLn_P(PSTR("Coeff of lift"));
   
-      for(float aR = -0.3; aR <= 1; aR += 0.07)
+      for(float aR = -0.3; aR <= 1.1; aR += 0.05)
 	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN,
 			  coeffOfLift(vpParam.alphaMax*aR)/vpParam.cL_max);
       break;

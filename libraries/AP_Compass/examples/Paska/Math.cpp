@@ -78,16 +78,29 @@ float dynamicPressureInverse(float pressure)
 float coeffOfLift(float aoa)
 {
   aoa = clamp(aoa, -vpParam.alphaMax, vpParam.alphaMax);
-  
-  const float i = (vpParam.cL_max - vpParam.cL_A)/vpParam.cL_B,
-    d = 2/(PI-2)*(vpParam.alphaMax - i),
-    w = d + vpParam.alphaMax - i;
 
-  if(i > vpParam.alphaMax || aoa < vpParam.alphaMax - w)
-    return fminf(vpParam.cL_A + aoa*vpParam.cL_B, vpParam.cL_max);
-  else
-    return vpParam.cL_A
-      + vpParam.cL_B*(i - d*(1 - sin(PI/2*(aoa - vpParam.alphaMax + w)/w)));
+  if(vpParam.cL_C == 0.0) {
+    //
+    // Linear straight segment, sinusoidal apex
+    //
+    
+    const float i = (vpParam.cL_max - vpParam.cL_A)/vpParam.cL_B,
+      d = 2/(PI-2)*(vpParam.alphaMax - i),
+      w = d + vpParam.alphaMax - i;
+
+    if(i > vpParam.alphaMax || aoa < vpParam.alphaMax - w)
+      return fminf(vpParam.cL_A + aoa*vpParam.cL_B, vpParam.cL_max);
+    else
+      return vpParam.cL_A
+	+ vpParam.cL_B*(i - d*(1 - sin(PI/2*(aoa - vpParam.alphaMax + w)/w)));
+  } else {
+    //
+    // Simple quadratic curve with flat top
+    //
+    
+    return fminf(vpParam.cL_A + aoa*vpParam.cL_B  + square(aoa)*vpParam.cL_C,
+		 vpParam.cL_max);
+  }
 }
 
 float coeffOfLiftInverse(float target)

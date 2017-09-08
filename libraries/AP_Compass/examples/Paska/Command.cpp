@@ -41,7 +41,7 @@ const struct Command commands[] PROGMEM = {
   { "gservo", c_gservo, e_int8, &vpParam.servoGear },  
   { "roll_k", c_roll_k, e_float, &vpParam.roll_C, &vpParam.expo },
   { "servorate", c_servorate, e_float, &vpParam.servoRate },
-  { "col_ab", c_col_ab, e_float, &vpParam.cL_A, &vpParam.cL_B },
+  { "col_ab", c_col_ab, e_float, &vpParam.cL_A, &vpParam.cL_B, &vpParam.cL_C },
   { "col_max", c_col_max, e_float, &vpParam.cL_max, &vpParam.alphaMax },
   { "climb", c_climb, e_angle, &vpParam.maxPitch },
   { "weight", c_weight, e_float, &vpParam.weightDry },
