@@ -142,6 +142,14 @@ struct PWMOutput pwmOutput[] = {
   (vpParam.servoSteer < 0 ? NULL : &pwmOutput[vpParam.servoSteer])
 #define throttleHandle \
   (vpParam.servoThrottle < 0 ? NULL : &pwmOutput[vpParam.servoThrottle])
+#define leftHandle \
+  (vpParam.servoLeft < 0 ? NULL : &pwmOutput[vpParam.servoLeft])
+#define rightHandle \
+  (vpParam.servoRight < 0 ? NULL : &pwmOutput[vpParam.servoRight])
+#define vertHandle \
+  (vpParam.servoVert < 0 ? NULL : &pwmOutput[vpParam.servoVert])
+#define horizHandle \
+  (vpParam.servoHoriz < 0 ? NULL : &pwmOutput[vpParam.servoHoriz])
 
 //
 // Periodic task stuff
@@ -230,7 +238,7 @@ RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
-float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, aileNeutral;
+float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
 bool beepGood;
 const int maxParams = 8;
@@ -3443,6 +3451,20 @@ void throttleModule()
     throttleCtrl.reset(throttleStick, 0);
 }
 
+//
+//   Thrust vectoring
+//
+
+void vectorModule()
+{
+  if(vpMode.slowFlight)
+    vertOutput = horizOutput = 0;
+  else {
+    vertOutput = elevStick;
+    horizOutput = rudderStick;
+  }
+}
+
 void ancillaryModule()
 {
   //
@@ -3470,6 +3492,7 @@ void (*controlModules[])(void) = {
   aileronModule,
   rudderModule,
   throttleModule,
+  vectorModule,
   ancillaryModule };
 
 //
@@ -3562,6 +3585,18 @@ void actuatorTask()
 		   + RANGE*clamp(vpParam.aileDefl*aileOutput
 				 + vpParam.aileNeutral, -1, 1));
     
+  pwmOutputWrite(leftHandle, NEUTRAL
+		 + RANGE*clamp(vpParam.canardNeutral + 
+			       vpParam.canardDefl*elevOutput, -1, 1));                        
+  pwmOutputWrite(rightHandle, NEUTRAL
+		 + RANGE*clamp(vpParam.canardNeutral - 
+			       vpParam.canardDefl*elevOutput, -1, 1));                        
+  pwmOutputWrite(vertHandle, NEUTRAL
+		 + RANGE*clamp(vpParam.vertNeutral + 
+			       vpParam.vertDefl*vertOutput, -1, 1));                        
+  pwmOutputWrite(horizHandle, NEUTRAL
+		 + RANGE*clamp(vpParam.horizNeutral + 
+			       vpParam.horizDefl*horizOutput, -1, 1));                        
   pwmOutputWrite(steerHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.steerNeutral + 
 			       vpParam.steerDefl*steerOutput, -1, 1));                        
@@ -3619,7 +3654,7 @@ void heartBeatTask()
 
 void blinkTask()
 {
-  float ledRatio = vpMode.test ? 0.0 : !logReady(false) ? 1.0 : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5 : alpha > 0.0 ? 0.90 : 0.10;
+  float ledRatio = vpMode.test ? 0.0 : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5 : alpha > 0.0 ? 0.90 : 0.10;
   static int tick = 0;
   
   tick = (tick + 1) % (LED_TICK/LED_HZ);
