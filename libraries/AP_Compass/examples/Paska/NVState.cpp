@@ -36,7 +36,7 @@ const struct ParamRecord paramDefaults = {
   .canardNeutral = 0, .canardDefl = 45.0/90,
   .vertNeutral = 0, .vertDefl = 45.0/90,
   .horizNeutral = 0, .horizDefl = 45.0/90,
-  .servoAile = 0, .servoElev = 1, .servoRudder = 2, .servoFlap = -1, .servoFlap2 = -1, .servoGear = -1, .servoBrake = -1, .servoSteer = -1, .servoThrottle = -1, .servoLeft = -1, .servoRight = -1, .servoVert = -1, .servoHoriz = -1,
+  .servoAile = 0, .servoElev = 1, .servoRudder = 2, .servoFlap = -1, .servoFlap2 = -1, .servoGear = -1, .servoBrake = -1, .servoSteer = -1, .servoThrottle = -1, .servoLeft = -1, .servoRight = -1, .servoVertLeft = -1, .servoVertRight = -1, .servoHoriz = -1,
   .cL_A = 0.05, .alphaMax = 12.0/RADIAN,
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
@@ -337,6 +337,16 @@ void printParams()
   consolePrint(vpParam.servoFlap);
   consolePrint_P(PSTR(", "));
   consolePrint(vpParam.servoFlap2);
+  consolePrint_P(PSTR(")  Can = ("));
+  consolePrint(vpParam.servoLeft);
+  consolePrint_P(PSTR(", "));
+  consolePrint(vpParam.servoRight);
+  consolePrint_P(PSTR(")  Vec = ("));
+  consolePrint(vpParam.servoVertLeft);
+  consolePrint_P(PSTR(", "));
+  consolePrint(vpParam.servoVertRight);
+  consolePrint_P(PSTR(", "));
+  consolePrint(vpParam.servoHoriz);
   consolePrint_P(PSTR(")  G = "));
   consolePrint(vpParam.servoGear);
   consolePrint_P(PSTR("  B = "));

@@ -109,7 +109,8 @@ struct PWMOutput pwmOutput[] = {
   { { PortH, 3 }, &hwTimer4, COMnA },
   { { PortE, 5 }, &hwTimer3, COMnC },
   { { PortE, 4 }, &hwTimer3, COMnB },
-  { { PortE, 3 }, &hwTimer3, COMnA }
+  { { PortE, 3 }, &hwTimer3, COMnA },
+  { { PortB, 7 }, &hwTimer1, COMnC }
 };
 
 //
@@ -146,8 +147,10 @@ struct PWMOutput pwmOutput[] = {
   (vpParam.servoLeft < 0 ? NULL : &pwmOutput[vpParam.servoLeft])
 #define rightHandle \
   (vpParam.servoRight < 0 ? NULL : &pwmOutput[vpParam.servoRight])
-#define vertHandle \
-  (vpParam.servoVert < 0 ? NULL : &pwmOutput[vpParam.servoVert])
+#define vertLeftHandle \
+  (vpParam.servoVertLeft < 0 ? NULL : &pwmOutput[vpParam.servoVertLeft])
+#define vertRightHandle \
+  (vpParam.servoVertRight < 0 ? NULL : &pwmOutput[vpParam.servoVertRight])
 #define horizHandle \
   (vpParam.servoHoriz < 0 ? NULL : &pwmOutput[vpParam.servoHoriz])
 
@@ -503,7 +506,7 @@ bool AS5048B_alpha(int16_t *result)
 // OLED display interface
 //
 
-#define SSD1306_ADDR 0x3C
+#define SSD1306_ADDR (0x78>>1)
 #define SSD1306_TOKEN_DATA     (1<<6)
 #define SSD1306_TOKEN_COMMAND  0
 
@@ -3591,8 +3594,11 @@ void actuatorTask()
   pwmOutputWrite(rightHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.canardNeutral - 
 			       vpParam.canardDefl*elevOutput, -1, 1));                        
-  pwmOutputWrite(vertHandle, NEUTRAL
+  pwmOutputWrite(vertLeftHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.vertNeutral + 
+			       vpParam.vertDefl*vertOutput, -1, 1));                        
+  pwmOutputWrite(vertRightHandle, NEUTRAL
+		 + RANGE*clamp(vpParam.vertNeutral - 
 			       vpParam.vertDefl*vertOutput, -1, 1));                        
   pwmOutputWrite(horizHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.horizNeutral + 
