@@ -2739,7 +2739,7 @@ void configurationTask()
   float scale = 1.0;
   
   if(vpMode.test && nvState.testNum == 0)
-    scale = testGainLinear(RATIO(1/3), RATIO(3/2));
+    scale = testGainLinear(RATIO(1/3), 1);
   
   // Default controller settings
 
@@ -3592,7 +3592,7 @@ void actuatorTask()
 		 + RANGE*clamp(vpParam.canardNeutral + 
 			       vpParam.canardDefl*elevOutput, -1, 1));                        
   pwmOutputWrite(rightHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.canardNeutral - 
+		 - RANGE*clamp(vpParam.canardNeutral + 
 			       vpParam.canardDefl*elevOutput, -1, 1));                        
   pwmOutputWrite(vertLeftHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.vertNeutral + 
