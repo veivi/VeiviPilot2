@@ -1348,7 +1348,7 @@ void executeCommand(char *buf)
   
       for(float aR = -0.3; aR <= 1.1; aR += 0.05)
 	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN,
-			  coeffOfLift(vpParam.alphaMax*aR)/vpParam.cL_max);
+			  coeffOfLift(vpParam.alphaMax*aR)/vpDerived.maxCoeffOfLift);
       break;
       
     case c_clear:
@@ -1373,7 +1373,7 @@ void executeCommand(char *buf)
 
     case c_zl:
       if(numParams > 0) {
-	vpParam.cL_B = vpParam.cL_max/(vpParam.alphaMax - param[0]/RADIAN);
+	vpParam.cL_B = vpDerived.maxCoeffOfLift/(vpParam.alphaMax - param[0]/RADIAN);
 	vpParam.cL_A = -vpParam.cL_B*param[0]/RADIAN;
       }
       break;
@@ -1381,12 +1381,12 @@ void executeCommand(char *buf)
     case c_peak:
       if(numParams > 0)
 	vpParam.cL_B =
-	  (1+param[0])*(vpParam.cL_max - vpParam.cL_A)/vpParam.alphaMax;
+	  (1+param[0])*(vpDerived.maxCoeffOfLift - vpParam.cL_A)/vpParam.alphaMax;
       break;
       
     case c_stall:
       if(numParams > 0) {
-	vpParam.cL_max = G * vpDerived.totalMass / dynamicPressure(param[0]);
+	vpParam.cL_apex = G * vpDerived.totalMass / dynamicPressure(param[0]);
 	if(numParams > 1)
 	  vpParam.alphaMax = param[1]/RADIAN;
       }
@@ -2177,7 +2177,7 @@ void measurementTask()
 //
 
 const int paramSteps = 20;
-const float testRange_c = 4;
+const float testRange_c = 5;
 
 static float testGainExpoGeneric(float range, float param)
 {
@@ -2399,7 +2399,7 @@ void statusTask()
     lift = vpDerived.totalMass * accZ * cos(pitchAngle),
     liftAvg = liftFilter.input(lift),
     liftExpected = coeffOfLift(alpha) * dynPressure,
-    liftMax = vpParam.cL_max * dynPressure;
+    liftMax = vpDerived.maxCoeffOfLift * dynPressure;
       
   static uint32_t lastWoW;
   
@@ -2736,7 +2736,7 @@ void configurationTask()
   
   // Safety scaling (test mode 0)
   
-  float scale = 1.0;
+  float scale = vpMode.gusty ? RATIO(2/3) : 1;
   
   if(vpMode.test && nvState.testNum == 0)
     scale = testGainLinear(RATIO(1/3), 1);

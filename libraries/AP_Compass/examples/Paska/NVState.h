@@ -35,9 +35,9 @@ struct ParamRecord {
   float ff_A, ff_B, ff_C;
   float t_Mix, t_Expo;
   float maxPitch;
-  float cL_max;
+  float cL_apex;
   float roll_C;
-  float cL_B, cL_C;
+  float cL_B, cL_C, cL_D, cL_E;
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;
@@ -53,7 +53,7 @@ struct ParamRecord {
 
 struct DerivedParams {
   float totalMass;
-  float minimumIAS, zeroLiftAlpha;
+  float minimumIAS, zeroLiftAlpha, maxCoeffOfLift;
   float thresholdAlpha, shakerAlpha, pusherAlpha;
   float apexAlpha, apexElev;
 };

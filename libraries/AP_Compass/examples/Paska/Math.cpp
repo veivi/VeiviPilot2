@@ -84,28 +84,28 @@ float coeffOfLift(float aoa)
     // Linear straight segment, sinusoidal apex
     //
     
-    const float i = (vpParam.cL_max - vpParam.cL_A)/vpParam.cL_B,
+    const float i = (vpParam.cL_apex - vpParam.cL_A)/vpParam.cL_B,
       d = 2/(PI-2)*(vpParam.alphaMax - i),
       w = d + vpParam.alphaMax - i;
 
     if(i > vpParam.alphaMax || aoa < vpParam.alphaMax - w)
-      return fminf(vpParam.cL_A + aoa*vpParam.cL_B, vpParam.cL_max);
+      return fminf(vpParam.cL_A + aoa*vpParam.cL_B, vpParam.cL_apex);
     else
       return vpParam.cL_A
 	+ vpParam.cL_B*(i - d*(1 - sin(PI/2*(aoa - vpParam.alphaMax + w)/w)));
   } else {
     //
-    // Simple quadratic curve with flat top
+    // Simple polynomial
     //
     
-    return fminf(vpParam.cL_A + aoa*vpParam.cL_B  + square(aoa)*vpParam.cL_C,
-		 vpParam.cL_max);
+    return vpParam.cL_A + aoa*vpParam.cL_B  + square(aoa)*vpParam.cL_C
+      + powf(aoa, 3)*vpParam.cL_D + powf(aoa, 4)*vpParam.cL_E;
   }
 }
 
 float coeffOfLiftInverse(float target)
 {
-  float left = vpDerived.zeroLiftAlpha, right = vpParam.alphaMax;
+  float left = -vpParam.alphaMax, right = vpParam.alphaMax;
   float center, approx;
 
   int i = 0;
@@ -119,10 +119,10 @@ float coeffOfLiftInverse(float target)
     else
       left = center;
 
-    if(i++ > 1<<5) {
+    if(i++ > 1<<8) {
       consoleNote_P(PSTR("Inverse cL not defined for "));
       consolePrintLn(target);
-      return 0/0.0;
+      return -1e6;
     }
   } while(fabs(approx - target) > 0.0003);
 

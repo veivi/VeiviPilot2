@@ -47,10 +47,10 @@ const struct ParamRecord paramDefaults = {
   .ff_A = 0.0, .ff_B = 0.0, .ff_C = 0.0,
   .t_Mix = 0.0, .t_Expo = 1.0,
   .maxPitch = 45/RADIAN,
-  .cL_max= 0.25,
+  .cL_apex= 0.25,
   .roll_C = 0.1,
   .cL_B = 0.6,
-  .cL_C = 0.0,
+  .cL_C = 0.0, .cL_D = 0.0, .cL_E = 0.0,
   .servoRate = 60/0.09,
   .takeoffTrim = 0.25,
   .weightDry = 1,
@@ -284,10 +284,14 @@ void printParams()
   consolePrint(vpParam.cL_A, 4);
   consolePrint_P(PSTR(" + "));
   consolePrint(vpParam.cL_B, 4);
-  consolePrint_P(PSTR(" + "));
+  consolePrint_P(PSTR(" x + "));
   consolePrint(vpParam.cL_C, 4);
-  consolePrint_P(PSTR(" x^2  (max = "));
-  consolePrint(vpParam.cL_max, 4);
+  consolePrint_P(PSTR(" x^2 + "));
+  consolePrint(vpParam.cL_D, 4);
+  consolePrint_P(PSTR(" x^3 + "));
+  consolePrint(vpParam.cL_E, 4);
+  consolePrint_P(PSTR(" x^4  (max = "));
+  consolePrint(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
   consoleNote_P(PSTR("  Roll rate K (expo) = "));
   consolePrint(vpParam.roll_C, 3);
@@ -306,6 +310,20 @@ void printParams()
   consolePrint(vpParam.aileDefl*90);
   consolePrint_P(PSTR(" neutral = "));
   consolePrintLn(vpParam.aileNeutral*90);
+  consoleNoteLn_P(PSTR("  Canard"));
+  consoleNote_P(PSTR("    deflection = "));
+  consolePrint(vpParam.canardDefl*90);
+  consolePrint_P(PSTR(" neutral = "));
+  consolePrintLn(vpParam.canardNeutral*90);
+  consoleNoteLn_P(PSTR("  Vector "));
+  consoleNote_P(PSTR("    vertical deflection = "));
+  consolePrint(vpParam.vertDefl*90);
+  consolePrint_P(PSTR(" neutral = "));
+  consolePrintLn(vpParam.vertNeutral*90);
+  consoleNote_P(PSTR("    horizontal deflection = "));
+  consolePrint(vpParam.horizDefl*90);
+  consolePrint_P(PSTR(" neutral = "));
+  consolePrintLn(vpParam.horizNeutral*90);
   consoleNoteLn_P(PSTR("  Rudder"));
   consoleNote_P(PSTR("    deflection = "));
   consolePrint(vpParam.rudderDefl*90);
@@ -465,24 +483,28 @@ void deriveParams()
   // Total mass
 
   vpDerived.totalMass = vpParam.weightDry + vpParam.fuel;
+
+  // Max CoL
+
+  vpDerived.maxCoeffOfLift = coeffOfLift(vpParam.alphaMax);
   
   // Zero lift alpha
   
-  vpDerived.zeroLiftAlpha = -vpParam.cL_A/vpParam.cL_B;
+  vpDerived.zeroLiftAlpha = coeffOfLiftInverse(0);
 
   // Stall IAS
   
   vpDerived.minimumIAS =
-    dynamicPressureInverse(G * vpDerived.totalMass / vpParam.cL_max);
+    dynamicPressureInverse(G * vpDerived.totalMass / vpDerived.maxCoeffOfLift);
   
   //
   // Effective alpha limits
   //
   
   vpDerived.thresholdAlpha =
-    coeffOfLiftInverse(vpParam.cL_max/square(1 + vpParam.thresholdMargin));
+    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin));
   vpDerived.shakerAlpha =
-    coeffOfLiftInverse(vpParam.cL_max/square(1 + vpParam.thresholdMargin/2));
+    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin/2));
   vpDerived.pusherAlpha =
     vpParam.alphaMax/(1 + fmaxf(vpParam.stallMargin, 0.0));
 
