@@ -1346,7 +1346,7 @@ void executeCommand(char *buf)
 
       consoleNoteLn_P(PSTR("Coeff of lift"));
   
-      for(float aR = -0.3; aR <= 1.1; aR += 0.05)
+      for(float aR = -0.3; aR <= 1.02; aR += 0.05)
 	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN,
 			  coeffOfLift(vpParam.alphaMax*aR)/vpDerived.maxCoeffOfLift);
       break;
@@ -1711,7 +1711,7 @@ const uint8_t fontData[] PROGMEM = {
 0x2, 0x4, 0x8, 0xF0, 0x8, 0x4, 0x2, 0x0,  // Char 'Y'
 0x82, 0xC2, 0xA2, 0x92, 0x8A, 0x86, 0x82, 0x20,  // Char 'Z'
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
-0, 0, 0, 0, 0, 0, 0, 0, // NULL
+0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x0,  // Char '\'
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x0,  // Char '_'
@@ -1746,7 +1746,7 @@ const uint8_t fontData[] PROGMEM = {
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
-0, 0, 0, 0, 0, 0, 0, 0 // NULL
+0, 0, 0, 0, 0, 0, 0, 0, // NULL
 };
 
 void displayRefreshRow()
@@ -1892,9 +1892,11 @@ void displayTask()
     setAttr(0);
   } else {
     char buffer[] =
-      { 'T', 'E', 'S', 'T', ' ',
+      { 'T', ' ',
 	(char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
 	(char) ('0' + nvState.testNum % 10),
+	' ',
+	alpha < 0 ? '/' : '\\',
 	'\0' };
     cursorMove(16-strlen(buffer), 0);
     setAttr(false);
@@ -3515,6 +3517,7 @@ void mixingTask()
   
   rudderOutput =
     constrainServoOutput(rudderOutput + aileOutput*rudderMix);  
+  // constrainServoOutput(rudderOutput + aileOutput*rudderMix*coeffOfLift(alpha)/vpDerived.maxCoeffOfLift);  
 }
 
 void controlTask()
