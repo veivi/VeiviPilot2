@@ -1892,8 +1892,7 @@ void displayTask()
     setAttr(0);
   } else {
     char buffer[] =
-      { 'T', ' ',
-	(char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
+      { (char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
 	(char) ('0' + nvState.testNum % 10),
 	' ',
 	alpha < 0 ? '/' : '\\',
@@ -2928,7 +2927,9 @@ void trimTask()
       ? alphaPredictInverse(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
   } else
     elevTrim =
-      clamp(elevTrim, 0, alphaPredictInverse(vpDerived.thresholdAlpha));
+      clamp(elevTrim,
+	    alphaPredictInverse(vpDerived.zeroLiftAlpha),
+	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
 void gaugeTask()
