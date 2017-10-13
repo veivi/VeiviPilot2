@@ -241,7 +241,7 @@ RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
-float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral;
+float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral, pusherOutput;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
 bool beepGood;
 const int maxParams = 8;
@@ -3326,7 +3326,9 @@ void elevatorModule()
 
   elevOutputFeedForward =
     mixValue(stickForce*RATIO(1/2), alphaPredictInverse(targetAlpha), elevOutput);
-    
+
+  pusherOutput = 0;
+  
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
     
@@ -3347,8 +3349,14 @@ void elevatorModule()
       // Pusher active
         
       pushCtrl.input(effMaxAlpha - alpha, controlCycle);
-      elevOutput = fminf(elevOutput,
-	  	       alphaPredictInverse(effMaxAlpha) + pushCtrl.output());
+
+      pusherOutput =
+	alphaPredictInverse(effMaxAlpha) + pushCtrl.output() - elevOutput;
+
+      if(pusherOutput > 0)
+	pusherOutput = 0;
+    
+      elevOutput += pusherOutput;
     } else
       pushCtrl.reset(elevOutput - alphaPredictInverse(effMaxAlpha),
 		   effMaxAlpha - alpha);
@@ -3466,7 +3474,7 @@ void vectorModule()
   if(vpMode.slowFlight)
     vertOutput = horizOutput = 0;
   else {
-    vertOutput = elevStick;
+    vertOutput = elevStick + pusherOutput;
     horizOutput = rudderStick;
   }
 }
