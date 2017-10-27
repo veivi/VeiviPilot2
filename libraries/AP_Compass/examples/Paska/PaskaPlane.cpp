@@ -78,15 +78,31 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 // RC input
 //
 
+#define SIXCHANNEL  1
+
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
-struct RxInputRecord aileInput, elevInput, throttleInput, rudderInput,
-  buttonInput, tuningKnobInput, flightModeInput, stabModeInput;
+struct RxInputRecord aileInput, elevInput, throttleInput,
+  buttonInput, tuningKnobInput, flightModeInput;
+
+#ifndef SIXCHANNEL
+struct RxInputRecord rudderInput, stabModeInput;
+#endif
+
+#ifdef SIXCHANNEL
+struct RxInputRecord *ppmInputs[] = 
+  { &aileInput, &elevInput, &throttleInput, &buttonInput, &tuningKnobInput, &flightModeInput };
+#else
 struct RxInputRecord *ppmInputs[] = 
   { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &stabModeInput };
+#endif
 
 Button rightDownButton(-1.0), rightUpButton(0.33),
   leftDownButton(-0.3), leftUpButton(1);
-struct SwitchRecord flightModeSelector = { &flightModeInput }, stabModeSelector = { &stabModeInput };
+struct SwitchRecord flightModeSelector = { &flightModeInput };
+#ifndef SIXCHANNEL
+struct SwitchRecord stabModeSelector = { &stabModeInput };
+#endif
+
 int8_t flightModeSelectorValue, stabModeSelectorValue;
 
 #define LEVELBUTTON rightUpButton
@@ -829,15 +845,26 @@ bool toc_test_rstick(bool reset)
 
 bool toc_test_lstick_range(bool reset)
 {
-  static struct TOCRangeTestState stateThr, stateRudder;
-  return toc_test_range_generic(&stateThr, reset, &throttleInput, 0, 1)
-    && toc_test_range_generic(&stateRudder, reset, &rudderInput, -1, 1);
+  static struct TOCRangeTestState stateThr;
+  bool status =  toc_test_range_generic(&stateThr, reset, &throttleInput, -1, 0);
+
+#ifndef SIXCHANNEL
+  static struct stateRudder;
+  status &&= toc_test_range_generic(&stateRudder, reset, &rudderInput, -1, 1);
+#endif
+
+  return status;
 }
 
 bool toc_test_lstick_neutral(bool reset)
 {
-  return ( fabsf(inputValue(&rudderInput)) < toc_margin_c )
-    && ( fabsf(inputValue(&throttleInput)) < toc_margin_c );
+  bool status = fabsf(inputValue(&throttleInput)) < toc_margin_c;
+    
+#ifndef SIXCHANNEL
+  status &&= fabsf(inputValue(&rudderInput)) < toc_margin_c;
+#endif
+  
+  return status;
 }
 
 bool toc_test_lstick(bool reset)
@@ -1946,9 +1973,13 @@ void receiverTask()
 {
   if(inputValid(&aileInput))
     aileStick = applyNullZone(inputValue(&aileInput), NZ_BIG, &ailePilotInput);
-  
+
+#ifndef SIXCHANNEL
   if(inputValid(&rudderInput))
     rudderStick = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &rudderPilotInput);
+#else
+  rudderStick = 0;
+#endif
   
   if(inputValid(&elevInput))
     elevStick = applyNullZone(inputValue(&elevInput), NZ_SMALL, &elevPilotInput);
@@ -1959,11 +1990,15 @@ void receiverTask()
     tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
     
   if(inputValid(&throttleInput))
-    throttleStick = inputValue(&throttleInput);
+    throttleStick = -inputValue(&throttleInput);
 
   flightModeSelectorValue = readSwitch(&flightModeSelector);
-  
+
+#ifndef SIXCHANNEL
   stabModeSelectorValue = readSwitch(&stabModeSelector);
+#else
+  stabModeSelectorValue = 1;
+#endif
   
   float buttonValue = inputValue(&buttonInput);
   

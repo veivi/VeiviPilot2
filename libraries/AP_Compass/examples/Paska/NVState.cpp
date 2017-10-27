@@ -351,6 +351,8 @@ void printParams()
   consolePrint(vpParam.servoElev);
   consolePrint_P(PSTR("  R = "));
   consolePrint(vpParam.servoRudder);
+  consolePrint_P(PSTR("  T = "));
+  consolePrint(vpParam.servoThrottle);
   consolePrint_P(PSTR("  F = ("));
   consolePrint(vpParam.servoFlap);
   consolePrint_P(PSTR(", "));
