@@ -1922,7 +1922,7 @@ void displayTask()
       { (char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
 	(char) ('0' + nvState.testNum % 10),
 	' ',
-	alpha < 0 ? '/' : '\\',
+	alpha > 0 ? '/' : '\\',
 	'\0' };
     cursorMove(16-strlen(buffer), 0);
     setAttr(false);
@@ -2371,7 +2371,7 @@ void statusTask()
       disagreement = MIN(diff, 2*PI - diff);
 
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-       || disagreement > 15.0/RADIAN) {
+       || (fabs(alpha) < 90/RADIAN && disagreement > 15/RADIAN)) {
       if(!vpStatus.alphaUnreliable)
 	lastAlphaLocked = currentTime;
       else if(currentTime - lastAlphaLocked > 0.1e6) {
@@ -3951,7 +3951,6 @@ void setup()
 
   // Static controller settings
 
-  elevCtrl.limit(RATIO(2/3));
   aileCtrl.limit(RATIO(2/3));
   pushCtrl.limit(RATIO(-1/2), 1 - alphaPredictInverse(vpDerived.pusherAlpha));
   flapRateLimiter.setRate(1.0);
