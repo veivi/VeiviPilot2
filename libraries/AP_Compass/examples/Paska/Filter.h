@@ -17,7 +17,7 @@ class RunningAvgFilter {
   int ptr;
 };
 
-const int DelayMax = 4;
+const int DelayMax = 10;
 
 class DelayLine {
   public:

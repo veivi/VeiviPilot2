@@ -78,7 +78,8 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 // RC input
 //
 
-#define SIXCHANNEL  1
+// #define SIXCHANNEL  1
+#define THROTTLE_SIGN -1
 
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
 struct RxInputRecord aileInput, elevInput, throttleInput,
@@ -742,7 +743,7 @@ bool toc_test_fdr(bool reset)
 
 bool toc_test_alpha_sensor(bool reset)
 {
-  return !vpStatus.alphaUnreliable && alphaEntropyAcc.output() > 50;
+  return !vpStatus.alphaFailed && alphaEntropyAcc.output() > 50;
 }
 
 bool toc_test_alpha_range(bool reset)
@@ -846,11 +847,12 @@ bool toc_test_rstick(bool reset)
 bool toc_test_lstick_range(bool reset)
 {
   static struct TOCRangeTestState stateThr;
-  bool status =  toc_test_range_generic(&stateThr, reset, &throttleInput, -1, 0);
+  bool status = toc_test_range_generic(&stateThr, reset, &throttleInput, 0, 1);
 
 #ifndef SIXCHANNEL
-  static struct stateRudder;
-  status &&= toc_test_range_generic(&stateRudder, reset, &rudderInput, -1, 1);
+  static struct TOCRangeTestState stateRudder;
+  bool status2 = toc_test_range_generic(&stateRudder, reset, &rudderInput, -1, 1);
+  status = status && status2;
 #endif
 
   return status;
@@ -861,7 +863,7 @@ bool toc_test_lstick_neutral(bool reset)
   bool status = fabsf(inputValue(&throttleInput)) < toc_margin_c;
     
 #ifndef SIXCHANNEL
-  status &&= fabsf(inputValue(&rudderInput)) < toc_margin_c;
+  status = status && fabsf(inputValue(&rudderInput)) < toc_margin_c;
 #endif
   
   return status;
@@ -1960,7 +1962,7 @@ void airspeedTask()
 
 DelayLine elevDelay, aileDelay;
 Derivator elevDeriv, aileDeriv;
-const float maxSlope_c = 0.6*CONTROL_HZ, abruptDelay_c = 0.1;
+const float maxSlope_c = 0.6*CONTROL_HZ, abruptDelay_c = 0.15;
 uint32_t lastAbruptInput;
 bool inputDelayed;
 
@@ -1990,7 +1992,7 @@ void receiverTask()
     tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
     
   if(inputValid(&throttleInput))
-    throttleStick = -inputValue(&throttleInput);
+    throttleStick = inputValue(&throttleInput);
 
   flightModeSelectorValue = readSwitch(&flightModeSelector);
 
@@ -3667,7 +3669,7 @@ void actuatorTask()
 			       + vpParam.brakeNeutral, -1, 1));
   
   pwmOutputWrite(throttleHandle,
-		 NEUTRAL + 0.66*RANGE*(2*throttleCtrl.output() - 1));
+		 NEUTRAL + THROTTLE_SIGN*0.66*RANGE*(2*throttleCtrl.output() - 1));
 }
 
 void backgroundTask(uint32_t durationMicros)
