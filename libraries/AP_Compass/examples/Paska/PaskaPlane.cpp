@@ -35,6 +35,7 @@ extern "C" {
 //
 //
 
+#define SIXCHANNEL 1
 // #define USE_COMPASS  1
 
 const float alphaWindow_c = RATIO(1/25);
@@ -75,19 +76,15 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 #define RED_LED led[2]
 
 //
-// RC input
+// RC interface
 //
 
-// #define SIXCHANNEL  1
-#define THROTTLE_SIGN -1
+#define THROTTLE_SIGN 1
 
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
 struct RxInputRecord aileInput, elevInput, throttleInput,
   buttonInput, tuningKnobInput, flightModeInput;
-
-#ifndef SIXCHANNEL
 struct RxInputRecord rudderInput, stabModeInput;
-#endif
 
 #ifdef SIXCHANNEL
 struct RxInputRecord *ppmInputs[] = 
@@ -1430,7 +1427,9 @@ void executeCommand(char *buf)
       consoleNote_P(PSTR("Idle avg = "));
       consolePrintLn(idleAvg*100,1);
       consoleNote_P(PSTR("PPM frequency = "));
-      consolePrintLn(ppmFreq);
+      consolePrint(ppmFreq);
+      consolePrint_P(PSTR(" channels = "));
+      consolePrintLn(ppmNumChannels);
       consoleNote_P(PSTR("Sim link frequency = "));
       consolePrintLn(simInputFreq);
       consoleNote_P(PSTR("Alpha = "));
@@ -3337,9 +3336,9 @@ void elevatorModule()
     vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
     = mixValue(stickForce, vpDerived.shakerAlpha, vpDerived.pusherAlpha);
-  const float effTrim = vpMode.takeOff ? vpParam.takeoffTrim : elevTrim;
   
-  elevOutput = clamp(elevStickExpo + effTrim, -1, 1);
+  elevOutput =
+    applyTrim(elevStickExpo, vpMode.takeOff ? vpParam.takeoffTrim : elevTrim);
   
   targetAlpha = fminf(alphaPredict(elevOutput), effMaxAlpha);
 

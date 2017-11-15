@@ -103,7 +103,7 @@ extern "C" ISR(TIMER5_CAPT_vect)
       ppmWarnShort = true;
     else
       handlePPMInput(_pulse_capt, channel_ctr);
- 
+
     channel_ctr = 0;
   } else if (channel_ctr < numInputs)
     _pulse_capt[channel_ctr++] = pulse_width;

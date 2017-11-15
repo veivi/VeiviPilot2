@@ -31,6 +31,7 @@ int8_t readSwitch(struct SwitchRecord *record);
 float applyNullZone(float value, float nz, bool *pilotInput);
 float applyNullZone(float value, float nz);
 float applyExpo(float value);
+float applyTrim(float value, float trim);
 
 extern bool pciWarn;
 
