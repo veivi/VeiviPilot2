@@ -1130,6 +1130,10 @@ void executeCommand(char *buf)
 	*((uint16_t*) command.var[i]) = param[i];
 	break;
       
+      case e_int16:
+	*((int16_t*) command.var[i]) = param[i];
+	break;
+      
       case e_int8:
 	*((int8_t*) command.var[i]) = param[i];
 	break;
@@ -2647,7 +2651,8 @@ void configurationTask()
   // Direct mode selector input
   //
 
-  if(flightModeSelectorValue == -1) {
+  if(flightModeSelectorValue == -1
+     || (vpParam.floor > 0 && altitude < vpParam.floor)) {
     if(!vpMode.slowFlight)
       consoleNoteLn_P(PSTR("Slow flight mode ENABLED"));
     vpMode.slowFlight = true;
@@ -2728,7 +2733,8 @@ void configurationTask()
   vpFeature.stabilizeBank = true;
   vpFeature.keepLevel = vpMode.wingLeveler;
   vpFeature.pusher = !vpMode.slowFlight;
-  vpFeature.stabilizePitch = vpFeature.alphaHold = vpMode.slowFlight;
+  vpFeature.stabilizePitch = vpFeature.alphaHold =
+    vpMode.slowFlight && fabs(bankAngle) < 60/RADIAN;
   vpFeature.pitchHold = false;
   vpFeature.aileFeedforward = vpMode.progressiveFlight;
   vpFeature.ailePID = !vpMode.gusty;
@@ -3350,7 +3356,7 @@ void elevatorModule()
   if(vpFeature.alphaHold)
     targetPitchRate = nominalPitchRate(bankAngle, targetAlpha)
       + clamp(targetAlpha - alpha,
-	      -30/RADIAN - pitchAngle,
+	      -15/RADIAN - pitchAngle,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - pitchAngle)
       *outer_P;
 

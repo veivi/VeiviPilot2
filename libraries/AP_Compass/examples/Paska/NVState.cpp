@@ -65,7 +65,8 @@ const struct ParamRecord paramDefaults = {
   .virtualOnly = true,
   .haveWheels = true,
   .wowCalibrated = false,
-  .expo = 0.8
+  .expo = 0.8,
+  .floor = -1
 };
 
 const struct NVStateRecord stateDefaults = {
@@ -262,7 +263,9 @@ void printParams()
   consoleNote_P(PSTR("  Climb pitch(max) = "));
   consolePrint(vpParam.maxPitch*RADIAN, 2);
   consolePrint_P(PSTR("  Glide slope = "));
-  consolePrintLn(vpParam.glideSlope*RADIAN, 2);
+  consolePrint(vpParam.glideSlope*RADIAN, 2);
+  consolePrint_P(PSTR("  alt(floor) = "));
+  consolePrintLn(vpParam.floor);
   consoleNote_P(PSTR("  Alpha range = "));
   consolePrint(vpDerived.zeroLiftAlpha*RADIAN);
   consolePrint_P(PSTR(" ... "));
@@ -408,6 +411,10 @@ static void backupParamEntry(const Command *e)
       
     case e_uint16:
       consolePrint(*((uint16_t*) e->var[i]));
+      break;
+      
+    case e_int16:
+      consolePrint(*((int16_t*) e->var[i]));
       break;
       
     case e_int8:

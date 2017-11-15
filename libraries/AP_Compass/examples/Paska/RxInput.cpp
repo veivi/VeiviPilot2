@@ -151,7 +151,7 @@ float applyExpo(float value)
 float applyTrim(float value, float trim)
 {
   if(sign(value) != sign(trim))
-    value *= 1 + fabs(trim);
+    value *= 1 + fabs(trim)*RATIO(2/3);
 
   return clamp(value + trim, -1, 1);
 }
