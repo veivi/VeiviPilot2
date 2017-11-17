@@ -84,12 +84,13 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
 struct RxInputRecord aileInput, elevInput, throttleInput,
   buttonInput, tuningKnobInput, flightModeInput;
-struct RxInputRecord rudderInput, stabModeInput;
 
 #ifdef SIXCHANNEL
 struct RxInputRecord *ppmInputs[] = 
   { &aileInput, &elevInput, &throttleInput, &buttonInput, &tuningKnobInput, &flightModeInput };
 #else
+struct RxInputRecord rudderInput, stabModeInput;
+
 struct RxInputRecord *ppmInputs[] = 
   { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &stabModeInput };
 #endif
@@ -1965,14 +1966,14 @@ void airspeedTask()
 
 DelayLine elevDelay, aileDelay;
 Derivator elevDeriv, aileDeriv;
-const float maxSlope_c = 0.6*CONTROL_HZ, abruptDelay_c = 0.15;
+const float maxSlope_c = 0.75*CONTROL_HZ, abruptDelay_c = 0.15;
 uint32_t lastAbruptInput;
 bool inputDelayed;
 
 void configurationTask();
 
-#define NZ_BIG RATIO(7.5/100)
-#define NZ_SMALL RATIO(3/100)
+#define NZ_BIG RATIO(10/100)
+#define NZ_SMALL RATIO(5/100)
 
 void receiverTask()
 {
@@ -2416,6 +2417,20 @@ void statusTask()
   }
 
   //
+  // Below floor?
+  //
+  
+  if(altitude > vpParam.floor + 5 || vpParam.floor < 1) {
+    if(vpStatus.belowFloor)
+      consoleNoteLn_P(PSTR("We're ABOVE floor"));
+    
+    vpStatus.belowFloor = false;
+  } else if(altitude < vpParam.floor && !vpStatus.belowFloor) {
+    vpStatus.belowFloor = true;
+    consoleNoteLn_P(PSTR("We're BELOW floor altitude"));
+  }
+
+  //
   // Attitude is upright?
   //
   
@@ -2651,25 +2666,26 @@ void configurationTask()
   // Direct mode selector input
   //
 
-  if(flightModeSelectorValue == -1
-     || (vpParam.floor > 0 && altitude < vpParam.floor)) {
+  if(flightModeSelectorValue == -1 || vpStatus.belowFloor) {
     if(!vpMode.slowFlight)
       consoleNoteLn_P(PSTR("Slow flight mode ENABLED"));
-    vpMode.slowFlight = true;
-  } else if(vpMode.slowFlight) {
-    consoleNoteLn_P(PSTR("Slow flight mode DISABLED"));
-    vpMode.slowFlight = false;
-  }
+    vpMode.slowFlight = vpMode.bankLimiter = true;
+  } else {
+    if(vpMode.slowFlight) {
+      consoleNoteLn_P(PSTR("Slow flight mode DISABLED"));
+      vpMode.slowFlight = false;
+    }
 
-  if(flightModeSelectorValue == 0) {
-    if(vpMode.bankLimiter)
-      consoleNoteLn_P(PSTR("Bank limiter DISABLED"));
+    if(flightModeSelectorValue == 0) {
+      if(vpMode.bankLimiter)
+	consoleNoteLn_P(PSTR("Bank limiter DISABLED"));
     
-    vpMode.bankLimiter = false;
+      vpMode.bankLimiter = false;
     
-  } else if(!vpMode.bankLimiter) {
-    consoleNoteLn_P(PSTR("Bank limiter ENABLED"));
-    vpMode.bankLimiter = true;
+    } else if(!vpMode.bankLimiter) {
+      consoleNoteLn_P(PSTR("Bank limiter ENABLED"));
+      vpMode.bankLimiter = true;
+    }
   }
 
   //

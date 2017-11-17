@@ -23,6 +23,7 @@ struct StatusRecord {
   bool alphaFailed;
   bool alphaUnreliable;
   bool upright;
+  bool belowFloor;
 };
 
 extern struct StatusRecord vpStatus;
