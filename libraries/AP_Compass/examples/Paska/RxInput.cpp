@@ -148,10 +148,9 @@ float applyExpo(float value)
   return sign(value)*powf(fabsf(value), 1 + EXPO);
 }
 
-float applyTrim(float value, float trim)
+float applyExpoTrim(float value, float trim)
 {
-  if(sign(value) != sign(trim))
-    value *= 1 + fabs(trim)*RATIO(2/3);
+  const float boost = sign(value) == sign(trim) ? 0 : fabs(value * trim);
 
-  return clamp(value + trim, -1, 1);
+  return clamp(applyExpo(value) * (1 + boost) + trim, -1, 1);
 }

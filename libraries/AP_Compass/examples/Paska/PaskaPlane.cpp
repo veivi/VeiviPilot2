@@ -3344,7 +3344,7 @@ void elevatorModule()
     = mixValue(stickForce, vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
   elevOutput =
-    applyTrim(elevStickExpo, vpMode.takeOff ? vpParam.takeoffTrim : elevTrim);
+    applyExpoTrim(elevStick, vpMode.takeOff ? vpParam.takeoffTrim : elevTrim);
   
   targetAlpha = fminf(alphaPredict(elevOutput), effMaxAlpha);
 
