@@ -56,6 +56,7 @@ typedef enum {
   c_offset,
   c_floor,
 
+  c_scale,
   c_dump,
   c_max,
   c_virtual,

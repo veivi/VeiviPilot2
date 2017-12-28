@@ -1293,6 +1293,22 @@ void executeCommand(char *buf)
       else
 	vpStatus.fault = 0;
       break;
+
+    case c_scale:
+      if(numParams > 0) {
+	vpParam.i_Ku_C *= param[0];
+	vpParam.i_Tu *= param[0];
+	vpParam.s_Ku_C *= param[0];
+	vpParam.s_Tu *= param[0];
+ 	vpParam.p_Ku_C *= param[0];
+	vpParam.p_Tu *= param[0];
+	vpParam.cL_A *= param[0];
+	vpParam.cL_B *= param[0];
+	vpParam.cL_C *= param[0];
+	vpParam.cL_D *= param[0];
+	vpParam.cL_E *= param[0];
+      }
+      break;
     
     case c_update:
       if(!updateDescription) {

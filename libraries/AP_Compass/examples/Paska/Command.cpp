@@ -73,6 +73,7 @@ const struct Command commands[] PROGMEM = {
   { "peak", c_peak },
   { "max", c_max },
   { "zl", c_zl },
+  { "scale", c_scale },
   { "update", c_update },
   { "beep", c_beep },
   { "trim", c_trim },
