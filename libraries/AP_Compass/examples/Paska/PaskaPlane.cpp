@@ -246,7 +246,7 @@ float elevTrim, targetAlpha, targetPressure, minThrottle;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float outer_P, rudderMix, throttleMix;
-float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, slope;
+float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, pusherPitchRate, yawRate, slope;
 float accDirection, relativeWind;
 uint16_t heading;
 NewI2C I2c = NewI2C();
@@ -1300,8 +1300,6 @@ void executeCommand(char *buf)
 	vpParam.i_Tu *= param[0];
 	vpParam.s_Ku_C *= param[0];
 	vpParam.s_Tu *= param[0];
- 	vpParam.p_Ku_C *= param[0];
-	vpParam.p_Tu *= param[0];
 	vpParam.cL_A *= param[0];
 	vpParam.cL_B *= param[0];
 	vpParam.cL_C *= param[0];
@@ -2260,7 +2258,7 @@ float testGainLinear(float start, float stop)
   return start + q*(stop - start);
 }
 
-float s_Ku_ref, i_Ku_ref, p_Ku_ref;
+float s_Ku_ref, i_Ku_ref;
 
 const float minAlpha = -2.0/RADIAN;
 const float origoAlpha = -5.0/RADIAN;
@@ -2820,7 +2818,6 @@ void configurationTask()
 
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
-  float p_Ku = scaleByIAS(vpParam.p_Ku_C, stabilityPusherExp_c);
 
   if(vpFeature.ailePID)
     aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
@@ -2828,7 +2825,7 @@ void configurationTask()
     aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
   
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
-  pushCtrl.setZieglerNicholsPID(p_Ku*scale, vpParam.p_Tu);
+  pushCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
 
   if(vpMode.slowFlight)
     throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
@@ -2876,12 +2873,6 @@ void configurationTask()
       outer_P = testGain = testGainExpo(vpParam.o_P);
       break;
                
-    case 5:
-      // Pusher gain
-
-      pushCtrl.setPID(testGain = testGainExpo(p_Ku_ref), 0, 0);
-      break;
-
     case 8:
       // Stall behavior test
       
@@ -2931,7 +2922,6 @@ void configurationTask()
     
     s_Ku_ref = s_Ku;
     i_Ku_ref = i_Ku;
-    p_Ku_ref = p_Ku;
   }
 }
 
@@ -3044,10 +3034,12 @@ void gaugeTask()
 	consolePrint(targetAlpha*RADIAN);
 	consolePrint_P(PSTR(")"));
 	consoleTab(25);
-	consolePrint_P(PSTR(" pitchRate(target) = "));
+	consolePrint_P(PSTR(" pitchRate(target,push) = "));
 	consolePrint(pitchRate*RADIAN, 1);
 	consolePrint_P(PSTR(" ("));
 	consolePrint(targetPitchRate*RADIAN);
+	consolePrint_P(PSTR(","));
+	consolePrint(pusherPitchRate*RADIAN);
 	consolePrint_P(PSTR(")"));
 	break;
 	
@@ -3386,7 +3378,7 @@ void elevatorModule()
     trimRateLimiter.reset(targetAlpha);
     
   if(vpFeature.alphaHold)
-    targetPitchRate = nominalPitchRate(bankAngle, pitchAngle, targetAlpha)
+    targetPitchRate = nominalPitchRateLevel(bankAngle, targetAlpha)
       + clamp(targetAlpha - alpha,
 	      -15/RADIAN - pitchAngle,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - pitchAngle)
@@ -3399,10 +3391,13 @@ void elevatorModule()
     targetPitchRate = elevStickExpo*PI/2;
 
   elevOutputFeedForward =
-    mixValue(stickForce*RATIO(1/2), alphaPredictInverse(targetAlpha), elevOutput);
+    mixValue(stickForce/2, alphaPredictInverse(targetAlpha), elevOutput);
 
   pusherOutput = 0;
   
+  pusherPitchRate = nominalPitchRate(bankAngle, pitchAngle, targetAlpha)
+    + (targetAlpha - alpha)*outer_P;
+
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
     
@@ -3422,17 +3417,13 @@ void elevatorModule()
     if(vpFeature.pusher) {
       // Pusher active
         
-      pushCtrl.input(effMaxAlpha - alpha, controlCycle);
+      pushCtrl.input(pusherPitchRate - pitchRate, controlCycle);
 
-      pusherOutput =
-	alphaPredictInverse(effMaxAlpha) + pushCtrl.output() - elevOutput;
+      pusherOutput = fminf(pushCtrl.output() - elevOutput, 0);
 
-      if(pusherOutput > 0)
-	pusherOutput = 0;
-    
       elevOutput += pusherOutput;
     } else
-      pushCtrl.reset(elevOutput - alphaPredictInverse(effMaxAlpha),
+      pushCtrl.reset(elevOutput - elevOutputFeedForward, 
 		   effMaxAlpha - alpha);
   }
 }
@@ -3991,7 +3982,7 @@ void setup()
   // Static controller settings
 
   aileCtrl.limit(RATIO(2/3));
-  pushCtrl.limit(RATIO(-1/2), 1 - alphaPredictInverse(vpDerived.pusherAlpha));
+  //   pushCtrl.limit(RATIO(-1/2), 1 - alphaPredictInverse(vpDerived.pusherAlpha));
   flapRateLimiter.setRate(1.0);
   
   // Misc filters

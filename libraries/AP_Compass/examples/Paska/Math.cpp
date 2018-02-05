@@ -4,14 +4,19 @@
 #include "Status.h"
 #include <math.h>
 
-float nominalPitchRate(float bank, float pitch, float target)
+float nominalPitchRateLevel(float bank, float target)
 {
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
 
   return
     dynPressure * CoL * square(sin(bank)) / m / iAS;
-    
-  // ( dynPressure * CoL / m - G * cos(bank) * cos(pitch-target) ) / iAS; 
+}
+
+float nominalPitchRate(float bank, float pitch, float target)
+{
+  const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
+
+  return ( dynPressure * CoL / m - G * cos(bank) * cos(pitch-target) ) / iAS; 
 }
 
 float constrainServoOutput(float value)

@@ -33,6 +33,7 @@ const float servoOutputRange_c = RATIO(6/5);
 float sign(float x);
 float clamp(float value, float a, float b);
 float nominalPitchRate(float bank, float pitch, float target);
+float nominalPitchRateLevel(float bank, float target);
 float constrainServoOutput(float value);
 float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);
