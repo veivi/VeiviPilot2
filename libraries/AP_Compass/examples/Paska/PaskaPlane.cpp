@@ -214,7 +214,6 @@ struct FeatureRecord {
   bool keepLevel;
   bool stabilizeBank;
   bool stabilizePitch;
-  bool pitchHold;
   bool alphaHold;
   bool pusher;
   bool aileFeedforward;
@@ -2765,7 +2764,6 @@ void configurationTask()
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold =
     vpMode.slowFlight && fabs(bankAngle) < 60/RADIAN;
-  vpFeature.pitchHold = false;
   vpFeature.aileFeedforward = vpMode.progressiveFlight;
   vpFeature.ailePID = !vpMode.gusty;
 
@@ -2800,11 +2798,11 @@ void configurationTask()
 
   if(vpMode.sensorFailSafe)
     vpFeature.stabilizePitch = vpFeature.stabilizeBank
-      = vpFeature.pitchHold = vpFeature.alphaHold = vpFeature.pusher
+      = vpFeature.alphaHold = vpFeature.pusher
       = vpMode.bankLimiter = vpFeature.keepLevel = vpMode.takeOff = false;
 
   else if(vpMode.alphaFailSafe)
-    vpFeature.stabilizePitch = vpFeature.pitchHold = vpFeature.alphaHold
+    vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.pusher = vpMode.takeOff = false;
   
   // Safety scaling (test mode 0)
@@ -3384,9 +3382,6 @@ void elevatorModule()
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - pitchAngle)
       *outer_P;
 
-  else if(vpFeature.pitchHold)
-    targetPitchRate = (0.1 + elevStickExpo/2 - pitchAngle)*outer_P;
-
   else
     targetPitchRate = elevStickExpo*PI/2;
 
@@ -3396,7 +3391,7 @@ void elevatorModule()
   pusherOutput = 0;
   
   pusherPitchRate = nominalPitchRate(bankAngle, pitchAngle, targetAlpha)
-    + (targetAlpha - alpha)*outer_P;
+    + (effMaxAlpha - alpha)*outer_P;
 
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
@@ -3423,8 +3418,7 @@ void elevatorModule()
 
       elevOutput += pusherOutput;
     } else
-      pushCtrl.reset(elevOutput - elevOutputFeedForward, 
-		   effMaxAlpha - alpha);
+      pushCtrl.reset(elevOutput, 0.0);
   }
 }
 
