@@ -245,7 +245,7 @@ float elevTrim, targetAlpha, targetPressure, minThrottle;
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 float outer_P, rudderMix, throttleMix;
-float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, pusherPitchRate, yawRate, slope;
+float accX, accY, accZ, accTotal, altitude,  bankAngle, pitchAngle, rollRate, pitchRate, targetPitchRate, yawRate, slope;
 float accDirection, relativeWind;
 uint16_t heading;
 NewI2C I2c = NewI2C();
@@ -3032,12 +3032,10 @@ void gaugeTask()
 	consolePrint(targetAlpha*RADIAN);
 	consolePrint_P(PSTR(")"));
 	consoleTab(25);
-	consolePrint_P(PSTR(" pitchRate(target,push) = "));
+	consolePrint_P(PSTR(" pitchRate(target) = "));
 	consolePrint(pitchRate*RADIAN, 1);
 	consolePrint_P(PSTR(" ("));
 	consolePrint(targetPitchRate*RADIAN);
-	consolePrint_P(PSTR(","));
-	consolePrint(pusherPitchRate*RADIAN);
 	consolePrint_P(PSTR(")"));
 	break;
 	
@@ -3388,9 +3386,6 @@ void elevatorModule()
   elevOutputFeedForward =
     mixValue(stickForce/2, alphaPredictInverse(targetAlpha), elevOutput);
 
-  pusherPitchRate = nominalPitchRate(bankAngle, pitchAngle, targetAlpha)
-    + (effMaxAlpha - alpha)*outer_P;
-
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(targetPitchRate - pitchRate, controlCycle);
     
@@ -3410,7 +3405,10 @@ void elevatorModule()
     if(vpFeature.pusher) {
       // Pusher active
         
-      pushCtrl.input(pusherPitchRate - pitchRate, controlCycle);
+      const float target = nominalPitchRate(bankAngle, pitchAngle, targetAlpha)
+	+ (effMaxAlpha - alpha)*outer_P;
+
+      pushCtrl.input(target - pitchRate, controlCycle);
 
       elevOutput += pushCtrl.output();
     } else
