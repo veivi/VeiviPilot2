@@ -4,19 +4,24 @@
 #include "Status.h"
 #include <math.h>
 
+float effIAS()
+{
+  return fmaxf(iAS, vpDerived.minimumIAS);
+}
+
 float nominalPitchRateLevel(float bank, float target)
 {
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
-
-  return
-    dynPressure * CoL * square(sin(bank)) / m / iAS;
+  
+  return 1/effIAS() * dynPressure * CoL * square(sin(bank)) / m;
 }
 
 float nominalPitchRate(float bank, float pitch, float target)
 {
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
 
-  return ( dynPressure * CoL / m - G * cos(bank) * cos(pitch-target) ) / iAS; 
+  return
+    1/effIAS() * (dynPressure * CoL / m - G * cos(bank) * cos(pitch-target)); 
 }
 
 float constrainServoOutput(float value)
