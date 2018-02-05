@@ -22,6 +22,7 @@ const float stabilityPusherExp_c = -0.5;
 #define RATIO(v) (v ## .0f)
 
 extern Damper iasFilter;
+extern float iAS;
 
 const float airDensity_c = 1.225;
 
@@ -31,7 +32,7 @@ const float servoOutputRange_c = RATIO(6/5);
 
 float sign(float x);
 float clamp(float value, float a, float b);
-float nominalPitchRate(float bank, float target);
+float nominalPitchRate(float bank, float pitch, float target);
 float constrainServoOutput(float value);
 float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);

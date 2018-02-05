@@ -3002,7 +3002,7 @@ void trimTask()
   } else
     elevTrim =
       clamp(elevTrim,
-	    alphaPredictInverse(vpDerived.zeroLiftAlpha),
+	    fminf(0, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
 	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
@@ -3386,7 +3386,7 @@ void elevatorModule()
     trimRateLimiter.reset(targetAlpha);
     
   if(vpFeature.alphaHold)
-    targetPitchRate = nominalPitchRate(bankAngle, targetAlpha)
+    targetPitchRate = nominalPitchRate(bankAngle, pitchAngle, targetAlpha)
       + clamp(targetAlpha - alpha,
 	      -15/RADIAN - pitchAngle,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - pitchAngle)

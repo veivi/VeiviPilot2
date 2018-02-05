@@ -4,10 +4,15 @@
 #include "Status.h"
 #include <math.h>
 
-float nominalPitchRate(float bank, float target)
+float nominalPitchRate(float bank, float pitch, float target)
 {
-  return square(sin(bank))*coeffOfLift(target)/vpDerived.totalMass
-    *iasFilter.output()/2;
+  const float CoL = coeffOfLift(target),
+    rho = airDensity_c, m = vpDerived.totalMass;
+
+  return
+    rho * iAS * square(sin(bank)) * CoL / m / 2;
+    
+  // rho * iAS * CoL / m / 2 - G/iAS * cos(bank) * cos(pitch-target); 
 }
 
 float constrainServoOutput(float value)
