@@ -6,13 +6,12 @@
 
 float nominalPitchRate(float bank, float pitch, float target)
 {
-  const float CoL = coeffOfLift(target),
-    rho = airDensity_c, m = vpDerived.totalMass;
+  const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
 
   return
-    rho * iAS * square(sin(bank)) * CoL / m / 2;
+    dynPressure * CoL * square(sin(bank)) / m / iAS;
     
-  // rho * iAS * CoL / m / 2 - G/iAS * cos(bank) * cos(pitch-target); 
+  // ( dynPressure * CoL / m - G * cos(bank) * cos(pitch-target) ) / iAS; 
 }
 
 float constrainServoOutput(float value)

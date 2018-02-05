@@ -22,7 +22,7 @@ const float stabilityPusherExp_c = -0.5;
 #define RATIO(v) (v ## .0f)
 
 extern Damper iasFilter;
-extern float iAS;
+extern float iAS, dynPressure;
 
 const float airDensity_c = 1.225;
 
