@@ -35,7 +35,7 @@ extern "C" {
 //
 //
 
-#define SIXCHANNEL 1
+// #define SIXCHANNEL 1
 // #define USE_COMPASS  1
 
 const float alphaWindow_c = RATIO(1/25);
@@ -2796,12 +2796,14 @@ void configurationTask()
 
   // Failsafe overrides
 
-  if(vpMode.sensorFailSafe)
+  if(vpMode.sensorFailSafe) {
     vpFeature.stabilizePitch = vpFeature.stabilizeBank
       = vpFeature.alphaHold = vpFeature.pusher
       = vpMode.bankLimiter = vpFeature.keepLevel = vpMode.takeOff = false;
-
-  else if(vpMode.alphaFailSafe)
+    
+    vpFeature.aileFeedforward = true;
+    
+  } else if(vpMode.alphaFailSafe)
     vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.pusher = vpMode.takeOff = false;
   
