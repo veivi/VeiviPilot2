@@ -54,7 +54,7 @@ struct ParamRecord {
 
 struct DerivedParams {
   float totalMass;
-  float minimumIAS, zeroLiftAlpha, maxCoeffOfLift;
+  float minimumIAS, minimumDynP, zeroLiftAlpha, maxCoeffOfLift;
   float thresholdAlpha, shakerAlpha, pusherAlpha;
   float apexAlpha, apexElev;
 };

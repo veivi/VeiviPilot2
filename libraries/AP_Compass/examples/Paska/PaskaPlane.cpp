@@ -35,7 +35,7 @@ extern "C" {
 //
 //
 
-// #define SIXCHANNEL 1
+#define SIXCHANNEL 1
 // #define USE_COMPASS  1
 
 const float alphaWindow_c = RATIO(1/25);

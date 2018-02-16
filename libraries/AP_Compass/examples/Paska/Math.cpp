@@ -9,11 +9,16 @@ float effIAS()
   return fmaxf(iAS, vpDerived.minimumIAS);
 }
 
+float effDP()
+{
+  return fmaxf(dynPressure, vpDerived.minimumDynP);
+}
+
 float nominalPitchRateLevel(float bank, float target)
 {
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
   
-  return 1/effIAS() * dynPressure * CoL * square(sin(bank)) / m;
+  return 1/effIAS() * effDP() * CoL * square(sin(bank)) / m;
 }
 
 float nominalPitchRate(float bank, float pitch, float target)
@@ -21,7 +26,7 @@ float nominalPitchRate(float bank, float pitch, float target)
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
 
   return
-    1/effIAS() * (dynPressure * CoL / m - G * cos(bank) * cos(pitch-target)); 
+    1/effIAS() * (effDP() * CoL / m - G * cos(bank) * cos(pitch-target)); 
 }
 
 float constrainServoOutput(float value)
