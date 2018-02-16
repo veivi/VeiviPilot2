@@ -3412,11 +3412,11 @@ void elevatorModule()
 
       pushCtrl.input(target - pitchRate, controlCycle);
 
-      pusherOutput = fminf(0, pushCtrl.output() - elevOutput);
-      
-      elevOutput += pusherOutput;
     } else
       pushCtrl.reset(elevOutput, 0.0);
+
+    pusherOutput = fminf(0, pushCtrl.output() - elevOutput);
+    elevOutput += pusherOutput;
   }
 }
 
