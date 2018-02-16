@@ -255,7 +255,7 @@ RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
-float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral;
+float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral, pusherOutput;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
 bool beepGood;
 const int maxParams = 8;
@@ -3412,9 +3412,11 @@ void elevatorModule()
 
       pushCtrl.input(target - pitchRate, controlCycle);
 
-      elevOutput += pushCtrl.output();
+      pusherOutput = fminf(0, pushCtrl.output() - elevOutput);
+      
+      elevOutput += pusherOutput;
     } else
-      pushCtrl.reset(0, 0.0);
+      pushCtrl.reset(elevOutput, 0.0);
   }
 }
 
@@ -3529,7 +3531,7 @@ void vectorModule()
   if(vpMode.slowFlight)
     vertOutput = horizOutput = 0;
   else {
-    vertOutput = elevStick + pushCtrl.output();
+    vertOutput = elevStick + pusherOutput;
     horizOutput = rudderStick;
   }
 }
@@ -3972,7 +3974,7 @@ void setup()
   // Static controller settings
 
   aileCtrl.limit(RATIO(2/3));
-  pushCtrl.limit(-1, 0); // 1 - alphaPredictInverse(vpDerived.pusherAlpha));
+  pushCtrl.limit(0, 1); // 1 - alphaPredictInverse(vpDerived.pusherAlpha));
   flapRateLimiter.setRate(1.0);
   
   // Misc filters
