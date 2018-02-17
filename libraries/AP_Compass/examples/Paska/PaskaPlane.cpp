@@ -37,8 +37,7 @@ extern "C" {
 
 #define SIXCHANNEL 1
 // #define USE_COMPASS  1
-
-const float pusherMargin_c = 0.1; // We don't want it to ever "pull" much
+// #define HARD_PUSHER 1 // Uncomment to select "hard" pusher
 
 const float alphaWindow_c = RATIO(1/25);
 
@@ -257,7 +256,7 @@ RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 uint32_t simTimeStamp;
 RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
-float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral;
+float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral, pusherOutput;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
 bool beepGood;
 const int maxParams = 8;
@@ -3406,8 +3405,14 @@ void elevatorModule()
       
     // Pusher
 
-    pushCtrl.limit(-1, elevOutput + pusherMargin_c); 
-      
+#ifdef HARD_PUSHER
+    pushCtrl.limit(0, elevOutput);
+#else
+    pushCtrl.limit(-elevOutput, 0);
+#endif
+
+    pusherOutput = 0;
+    
     if(vpFeature.pusher) {
       // Pusher active
         
@@ -3416,9 +3421,19 @@ void elevatorModule()
 
       pushCtrl.input(target - pitchRate, controlCycle);
 
-      elevOutput = fminf(elevOutput, pushCtrl.output());
+#ifdef HARD_PUSHER
+      pusherOutput = fminf(pushCtrl.output() - elevOutput, 0);
+#else
+      pusherOutput = pushCtrl.output();
+#endif
+
+      elevOutput += pusherOutput;
     } else
+#ifdef HARD_PUSHER
       pushCtrl.reset(elevOutput, 0.0);
+#else
+      pushCtrl.reset(0, 0.0);
+#endif
   }
 }
 
@@ -3533,7 +3548,6 @@ void vectorModule()
   if(vpMode.slowFlight)
     vertOutput = horizOutput = 0;
   else {
-    const float pusherOutput = fminf(pushCtrl.output() - elevOutput, 0);
     vertOutput = elevStick + pusherOutput;
     horizOutput = rudderStick;
   }

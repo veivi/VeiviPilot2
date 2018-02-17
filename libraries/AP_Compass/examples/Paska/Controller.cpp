@@ -36,6 +36,8 @@ void Controller::reset(float value, float err) {
 void Controller::limit(float a, float b) {
   rangeMin = a;
   rangeMax = b;
+  if(rangeMin > rangeMax)
+    rangeMin = rangeMax;
 }
 
 void Controller::limit(float r) {
