@@ -38,6 +38,8 @@ extern "C" {
 #define SIXCHANNEL 1
 // #define USE_COMPASS  1
 
+const float pusherMargin_c = 0.1; // We don't want it to ever "pull" much
+
 const float alphaWindow_c = RATIO(1/25);
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -3404,7 +3406,7 @@ void elevatorModule()
       
     // Pusher
 
-    pushCtrl.limit(-1, elevOutput); // We don't want it to ever "pull"
+    pushCtrl.limit(-1, elevOutput + pusherMargin_c); 
       
     if(vpFeature.pusher) {
       // Pusher active
@@ -3531,7 +3533,7 @@ void vectorModule()
   if(vpMode.slowFlight)
     vertOutput = horizOutput = 0;
   else {
-    const float pusherOutput = pushCtrl.output() - elevOutput;
+    const float pusherOutput = fminf(pushCtrl.output() - elevOutput, 0);
     vertOutput = elevStick + pusherOutput;
     horizOutput = rudderStick;
   }
