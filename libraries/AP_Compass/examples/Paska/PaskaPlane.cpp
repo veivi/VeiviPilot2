@@ -32,14 +32,22 @@ extern "C" {
 }
 
 //
-//
+// Options
 //
 
 #define SIXCHANNEL 1
-// #define USE_COMPASS  1
 // #define HARD_PUSHER 1 // Uncomment to select "hard" pusher
+// #define USE_COMPASS  1
+
+//
+// Constants
+//
 
 const float alphaWindow_c = RATIO(1/25);
+
+//
+// Ok let's do some magic stuff!
+//
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;
