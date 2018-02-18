@@ -196,7 +196,6 @@ struct Task {
 
 struct ModeRecord {
   bool test;
-  bool rattle;
   bool alphaFailSafe;
   bool sensorFailSafe;
   bool radioFailSafe;
@@ -1151,13 +1150,7 @@ void executeCommand(char *buf)
       break;
       
     case c_arm:
-      vpMode.rattle = false;
       vpStatus.armed = true;
-      break;
-    
-    case c_rattle:
-      vpMode.rattle = true;
-      vpStatus.armed = false;
       break;
     
     case c_disarm:
