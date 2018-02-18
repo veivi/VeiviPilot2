@@ -262,7 +262,7 @@ I2CDevice alphaDevice(&I2c, 0, "alpha"), pitotDevice(&I2c, 0, "pitot");
 I2CDevice eepromDevice(&I2c, 0, "EEPROM"), displayDevice(&I2c, 0, "display");
 bool paramsModified = false;
 float rollBias, aileBias, alphaBias, pitchBias;
-float sampleRate = LOG_HZ_SLOW;
+float sampleRate = LOG_HZ_SLOW, fieldStrength;
 
 //
 // Datagram protocol integration
@@ -481,6 +481,17 @@ bool AS5048B_alpha(int16_t *result)
   
   if(success && result)
     *result = (int16_t) (raw - vpParam.alphaRef);
+  
+  return success;
+}
+
+bool AS5048B_field(uint16_t *result)
+{
+  uint16_t raw = 0;
+  bool success = AS5048B_read(AS5048B_MAGNMSB_REG, &raw);
+  
+  if(success && result)
+    *result = raw;
   
   return success;
 }
@@ -709,7 +720,8 @@ bool toc_test_fdr(bool reset)
 
 bool toc_test_alpha_sensor(bool reset)
 {
-  return !vpStatus.alphaFailed && alphaEntropyAcc.output() > 50;
+  return !vpStatus.alphaFailed && alphaEntropyAcc.output() > 50
+    && fieldStrength > 0.15 && fieldStrength < 0.80;
 }
 
 bool toc_test_alpha_range(bool reset)
@@ -1406,6 +1418,9 @@ void executeCommand(char *buf)
       consolePrintLn(simInputFreq);
       consoleNote_P(PSTR("Alpha = "));
       consolePrint(alpha*RADIAN);
+      consolePrint_P(PSTR(" (field = "));
+      consolePrint(fieldStrength*100);
+      consolePrint_P(PSTR("%)"));
       if(vpStatus.alphaFailed)
 	consolePrintLn_P(PSTR(" FAIL"));
       else
@@ -2126,6 +2141,15 @@ void sensorTaskSlow()
 #ifdef USE_COMPASS
   compass.read();
 #endif
+
+  // Alpha sensor field strength
+
+  uint16_t raw = 0;
+  
+  if(!alphaDevice.hasFailed()
+     && !alphaDevice.handleStatus(!AS5048B_field(&raw))) {
+    fieldStrength = (float) raw / (1L<<16);
+  }
 }
 
 void fastLogTask()
@@ -2210,9 +2234,6 @@ float testGainLinear(float start, float stop)
 }
 
 float s_Ku_ref, i_Ku_ref;
-
-const float minAlpha = -2.0/RADIAN;
-const float origoAlpha = -5.0/RADIAN;
 
 static void failsafeDisable()
 {
@@ -2955,16 +2976,19 @@ void gaugeTask()
       case 1:
 	consolePrint_P(PSTR(" alpha = "));
 	consolePrint(alpha*RADIAN, 1);
-	consoleTab(15);
+	consolePrint_P(PSTR(" ("));
+	consolePrint(fieldStrength*100, 1);
+	consolePrint_P(PSTR("%)"));
+	consoleTab(25);
 	consolePrint_P(PSTR(" IAS,K(m/s) = "));
 	consolePrint((int) (iAS/KNOT));
 	consolePrint_P(PSTR(" ("));
 	consolePrint(iAS, 1);
 	consolePrint_P(PSTR(")"));
-	consoleTab(40);
+	consoleTab(50);
 	consolePrint_P(PSTR(" hdg = "));
 	consolePrint(heading);
-	consoleTab(60);
+	consoleTab(65);
 	consolePrint_P(PSTR(" alt = "));
 
 	tmp = altitude/FOOT;
