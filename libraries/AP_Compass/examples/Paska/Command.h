@@ -101,7 +101,6 @@ typedef enum {
   c_servorate,
   c_calibrate,
   c_takeoff,
-  c_beep,
   c_ping,
   c_update,
   c_tab_col,

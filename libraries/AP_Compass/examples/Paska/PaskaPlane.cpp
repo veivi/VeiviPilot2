@@ -138,14 +138,6 @@ struct PWMOutput pwmOutput[] = {
 };
 
 //
-// Piezo
-//
-
-// const struct PinDescriptor piezo =  { PortE, 3 };
-
-// #define PIEZO pwmOutput[4]
-
-//
 // Function to servo output mapping
 //
 
@@ -186,7 +178,6 @@ struct PWMOutput pwmOutput[] = {
 #define CONFIG_HZ (CONTROL_HZ/4.0)
 #define ALPHA_HZ (CONTROL_HZ*10)
 #define AIRSPEED_HZ (CONTROL_HZ*5)
-#define BEEP_HZ 5
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
 #define LED_TICK 100
@@ -266,9 +257,8 @@ RateLimiter aileRateLimiter, flapRateLimiter, trimRateLimiter;
 uint8_t flapOutput, gearOutput;
 float elevOutput, elevOutputFeedForward, aileOutput = 0, aileOutputFeedForward, brakeOutput = 0, rudderOutput = 0, steerOutput = 0, vertOutput = 0, horizOutput = 0, aileNeutral, pusherOutput;
 uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
-bool beepGood;
 const int maxParams = 8;
-int beepDuration, gaugeCount, gaugeVariable[maxParams];
+int gaugeCount, gaugeVariable[maxParams];
 I2CDevice alphaDevice(&I2c, 0, "alpha"), pitotDevice(&I2c, 0, "pitot");
 I2CDevice eepromDevice(&I2c, 0, "EEPROM"), displayDevice(&I2c, 0, "display");
 bool paramsModified = false;
@@ -355,35 +345,6 @@ void delayMicros(int x)
 {
   uint32_t current = hal.scheduler->micros();
   while(hal.scheduler->micros() < current+x);
-}
-
-void beepPrim(int hz, long millis)
-{/*
-  for(long i = 0; i < hz*millis/1000; i++) {
-    setPinState(&PIEZO.pin, 1);
-    delayMicros(1e6/hz/2);
-    setPinState(&PIEZO.pin, 0);
-    delayMicros(1e6/hz/2);
-    }*/
-}
-
-void beep(float dur, bool good)
-{
-  if(!vpStatus.silent) {
-    beepGood = good;
-    beepDuration = dur*BEEP_HZ;
-  } else
-    beepDuration = 0;
-}
-
-void goodBeep(float dur)
-{
-  beep(dur, true);
-}
-
-void badBeep(float dur)
-{
-  beep(dur, false);
 }
 
 //
@@ -1343,15 +1304,6 @@ void executeCommand(char *buf)
       consolePrintLn(nvState.logStamp);  
       break;
 
-    case c_beep:
-      if(numParams > 0) {
-	if(numParams > 1)
-	  beepPrim(param[0], 1e3*param[1]);
-	else
-	  beepPrim(param[0], 1e3);
-      }
-      break;
-
     case c_model:
       if(numParams > 0) {
 	if(param[0] > maxModels()-1)
@@ -2204,9 +2156,7 @@ void measurementTask()
  
   // Idle measurement
 
-  if(!beepDuration)
-    idleAvg = 7*idleAvg/8 + (float) idleMicros/1e6/8;
-  
+  idleAvg = 7*idleAvg/8 + (float) idleMicros/1e6/8;
   idleMicros = 0;
 
   // PPM monitoring
@@ -2520,7 +2470,6 @@ void configurationTask()
      && aileStick < -0.90 && elevStick > 0.90) {
     consoleNoteLn_P(PSTR("We're now ARMED"));
     vpStatus.armed = true;
-    badBeep(1);
     leftDownButton.reset();
     rightUpButton.reset();
     rightDownButton.reset();
@@ -2641,12 +2590,10 @@ void configurationTask()
       if(tocTestStatus(tocReportConsole)) {
 	consoleNoteLn_P(PSTR("T/o configuration is GOOD"));
 	vpStatus.aloft = false;
-	goodBeep(1);
       } else {
 	consolePrintLn("");
 	consoleNoteLn_P(PSTR("T/o configuration test FAILED"));
 	vpMode.takeOff = prevMode;
-	badBeep(2);
       }
     }
   } else if(LEVELBUTTON.depressed()) {
@@ -3617,10 +3564,7 @@ void controlTask()
   // Cycle time bookkeeping 
   //
   
-  if(beepDuration > 0) {
-    // We're beeping, fuggetaboutit
-    controlCycleEnded = 0;
-  } else if(controlCycleEnded > 0) {
+  if(controlCycleEnded > 0) {
     controlCycle = (currentTime - controlCycleEnded)/1.0e6;
     cycleTimeMonitor(controlCycle);
   }
@@ -3762,27 +3706,6 @@ void blinkTask()
   setPinState(&RED_LED, tick < ledRatio*LED_TICK/LED_HZ ? 0 : 1);
 }
 
-void beepTask()
-{
-  static int phase = 0;
-
-  if(beepDuration > 0) {
-    if(beepGood)
-      beepPrim(800, 1e3/BEEP_HZ);
-    else {
-      if(phase < 2) {
-	beepPrim(phase < 1 ? 950 : 750, 1e3/BEEP_HZ);
-	phase++;
-      } else
-	phase = 0;
-    }
-
-    beepDuration--;
-    controlCycleEnded = 0;
-  } else
-    phase = 0;
-}
-
 void simulatorLinkTask()
 {
   if(vpStatus.simulatorLink && vpStatus.armed) {
@@ -3859,8 +3782,6 @@ struct Task taskList[] = {
     HZ_TO_PERIOD(HEARTBEAT_HZ) },
   { gaugeTask,
     HZ_TO_PERIOD(10) },
-  { beepTask,
-    HZ_TO_PERIOD(BEEP_HZ) },
   { NULL } };
 
 int scheduler()
@@ -3991,11 +3912,6 @@ void setup()
   setPinState(&GREEN_LED, 1);
   setPinState(&BLUE_LED, 1);
 
-  // Piezo element
-  
-  //  setPinState(&PIEZO.pin, 0);
-  //  configureOutput(&PIEZO.pin);
-
   // Static controller settings
 
   aileCtrl.limit(RATIO(2/3));
@@ -4019,7 +3935,6 @@ void setup()
   consoleNote_P(PSTR("Initialized, "));
   consolePrint((unsigned long) hal.util->available_memory());
   consolePrintLn_P(PSTR(" bytes free."));
-  goodBeep(0.5);
   
   datagramTxStart(DG_INITIALIZED);
   datagramTxEnd();
