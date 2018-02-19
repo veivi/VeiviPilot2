@@ -36,6 +36,7 @@ extern "C" {
 //
 
 #define RX_CHANNELS          6
+#define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 // #define USE_COMPASS  1
 
@@ -87,8 +88,6 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 //
 // RC interface
 //
-
-#define THROTTLE_SIGN 1
 
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
 struct RxInputRecord aileInput, elevInput, throttleInput,
@@ -774,7 +773,7 @@ bool toc_test_pitot(bool reset)
 
 bool toc_test_attitude(bool reset)
 {
-  return fabsf(pitchAngle) < 10.0/RADIAN && fabsf(bankAngle) < 2.5/RADIAN;
+  return fabsf(pitchAngle) < 10/RADIAN && fabsf(bankAngle) < 5/RADIAN;
 }
 
 bool toc_test_gyro(bool reset)
