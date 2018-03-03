@@ -27,16 +27,16 @@ const struct ParamRecord paramDefaults = {
   .i2c_clkDiv = 12,
   .i2c_5048B = 0x40, .i2c_24L256 = 0x50, 
   .alphaRef = 0,
-  .aileNeutral = 0, .aileDefl = -45.0/90,
+  .aileNeutral = 0, .aile2Neutral = 0, .aileDefl = -45.0/90,
   .elevNeutral = 0, .elevDefl = 45.0/90,
-  .flapNeutral = 0, .flap2Neutral = -15.0/90, .flapStep = -15.0/90,
+  .flapNeutral = 0, .flap2Neutral = 0, .flapDefl = 45.0/90,
   .rudderNeutral = 0, .rudderDefl = 45.0/90,
   .steerNeutral = 0, .steerDefl = 45.0/90,
   .brakeNeutral = 0, .brakeDefl = 45.0/90,
   .canardNeutral = 0, .canardDefl = 45.0/90,
   .vertNeutral = 0, .vertDefl = 45.0/90,
   .horizNeutral = 0, .horizDefl = 45.0/90,
-  .servoAile = 0, .servoElev = 1, .servoRudder = 2, .servoFlap = -1, .servoFlap2 = -1, .servoGear = -1, .servoBrake = -1, .servoSteer = -1, .servoThrottle = -1, .servoLeft = -1, .servoRight = -1, .servoVertLeft = -1, .servoVertRight = -1, .servoHoriz = -1,
+  .servoAile = 0, .servoAile2 = 0, .servoElev = 1, .servoRudder = 2, .servoFlap = -1, .servoFlap2 = -1, .servoGear = -1, .servoBrake = -1, .servoSteer = -1, .servoThrottle = -1, .servoLeft = -1, .servoRight = -1, .servoVertLeft = -1, .servoVertRight = -1, .servoHoriz = -1,
   .cL_A = 0.05, .alphaMax = 12.0/RADIAN,
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
@@ -61,6 +61,7 @@ const struct ParamRecord paramDefaults = {
   .offset = -0.4/RADIAN,
   .elevon = 0,
   .veeTail = 0,
+  .flaperon = 0,
   .virtualOnly = true,
   .haveWheels = true,
   .wowCalibrated = false,
@@ -306,7 +307,10 @@ void printParams()
   consoleNote_P(PSTR("    deflection = "));
   consolePrint(vpParam.aileDefl*90);
   consolePrint_P(PSTR(" neutral = "));
-  consolePrintLn(vpParam.aileNeutral*90);
+  consolePrint(vpParam.aileNeutral*90);
+  consolePrint_P(PSTR(" ("));
+  consolePrint(vpParam.aile2Neutral*90);
+  consolePrintLn_P(PSTR(")"));
   consoleNoteLn_P(PSTR("  Canard"));
   consoleNote_P(PSTR("    deflection = "));
   consolePrint(vpParam.canardDefl*90);
@@ -334,8 +338,8 @@ void printParams()
   consolePrint_P(PSTR(" neutral = "));
   consolePrintLn(vpParam.steerNeutral*90);
   consoleNoteLn_P(PSTR("  Flap"));
-  consoleNote_P(PSTR("    step = "));
-  consolePrint(vpParam.flapStep*90);
+  consoleNote_P(PSTR("    defl = "));
+  consolePrint(vpParam.flapDefl*90);
   consolePrint_P(PSTR(" neutral = "));
   consolePrint(vpParam.flapNeutral*90);
   consolePrint_P(PSTR(" ("));
@@ -344,6 +348,8 @@ void printParams()
   consoleNoteLn_P(PSTR("  Servo channels"));
   consoleNote_P(PSTR("    A = "));
   consolePrint(vpParam.servoAile);
+  consolePrint_P(PSTR(", "));
+  consolePrint(vpParam.servoAile2);
   consolePrint_P(PSTR("  E = "));
   consolePrint(vpParam.servoElev);
   consolePrint_P(PSTR("  R = "));
@@ -382,6 +388,9 @@ void printParams()
   } else
     consoleNoteLn_P(PSTR("  Normal wing configuration"));
     
+  if(vpParam.flaperon)
+    consoleNoteLn_P(PSTR("    Flaperon ENABLED"));
+
   consoleNote_P(PSTR("  We"));
   if(!vpParam.haveWheels)
     consolePrint_P(PSTR(" DO NOT"));  

@@ -35,7 +35,7 @@ extern "C" {
 // Configuration
 //
 
-#define RX_CHANNELS          6
+#define RX_CHANNELS          8
 #define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 // #define USE_COMPASS  1
@@ -45,6 +45,7 @@ extern "C" {
 //
 
 const float alphaWindow_c = RATIO(1/25);
+const int flapSteps_c = 2;
 
 //
 // Ok let's do some magic stuff!
@@ -142,6 +143,8 @@ struct PWMOutput pwmOutput[] = {
 
 #define aileHandle \
   (vpParam.servoAile < 0 ? NULL : &pwmOutput[vpParam.servoAile])
+#define aile2Handle \
+  (vpParam.servoAile < 0 ? NULL : &pwmOutput[vpParam.servoAile2])
 #define elevatorHandle \
   (vpParam.servoElev < 0 ? NULL : &pwmOutput[vpParam.servoElev])
 #define flapHandle \
@@ -2571,7 +2574,7 @@ void configurationTask()
     consoleNote_P(PSTR("Flaps RETRACTED to "));
     consolePrintLn(--flapOutput);
 
-  } else if(FLAPBUTTON.depressed() && flapOutput < 3) {
+  } else if(FLAPBUTTON.depressed() && flapOutput < flapSteps_c) {
     //
     // CONTINUOUS: FLAPS DOWN one step
     //
@@ -3530,7 +3533,7 @@ void ancillaryModule()
   // Flaps
   //
   
-  flapRateLimiter.input(flapOutput, controlCycle);
+  flapRateLimiter.input((float) flapOutput/flapSteps_c, controlCycle);
 
   //
   // Brake
@@ -3637,11 +3640,21 @@ void actuatorTask()
 		   + RANGE*clamp(vpParam.rudderNeutral + 
 				 vpParam.rudderDefl*rudderOutput, -1, 1));
 
-  if(!vpParam.elevon)
+  if(!vpParam.elevon) {
+    float flap = 0;
+
+    if(vpParam.flaperon)
+      flap = vpParam.flapDefl*flapRateLimiter.output();
+    
     pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileOutput
+		   + RANGE*clamp(vpParam.aileDefl*aileOutput + flap
 				 + vpParam.aileNeutral, -1, 1));
     
+    pwmOutputWrite(aile2Handle, NEUTRAL
+		   + RANGE*clamp(vpParam.aileDefl*aileOutput - flap
+				 + vpParam.aile2Neutral, -1, 1));
+  }
+  
   pwmOutputWrite(leftHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.canardNeutral + 
 			       vpParam.canardDefl*elevOutput, -1, 1));                        
@@ -3662,10 +3675,10 @@ void actuatorTask()
 			       vpParam.steerDefl*steerOutput, -1, 1));                        
   pwmOutputWrite(flapHandle, NEUTRAL
 		 + RANGE*clamp(vpParam.flapNeutral 
-			       + vpParam.flapStep*flapRateLimiter.output(), -1, 1));                              
+			       + vpParam.flapDefl*flapRateLimiter.output(), -1, 1));                              
   pwmOutputWrite(flap2Handle, NEUTRAL
 		 + RANGE*clamp(vpParam.flap2Neutral 
-			       - vpParam.flapStep*flapRateLimiter.output(), -1, 1));                              
+			       - vpParam.flapDefl*flapRateLimiter.output(), -1, 1));                              
 
   pwmOutputWrite(gearHandle, NEUTRAL - RANGE*(gearOutput*2-1)*0.6);
 

@@ -15,16 +15,16 @@ struct ParamRecord {
   uint8_t i2c_clkDiv;
   uint8_t i2c_5048B, i2c_24L256;
   uint16_t alphaRef;
-  float aileNeutral, aileDefl;
+  float aileNeutral, aile2Neutral, aileDefl;
   float elevNeutral, elevDefl;
-  float flapNeutral, flap2Neutral, flapStep;
+  float flapNeutral, flap2Neutral, flapDefl;
   float rudderNeutral, rudderDefl;
   float steerNeutral, steerDefl;
   float brakeNeutral, brakeDefl;
   float canardNeutral, canardDefl;
   float vertNeutral, vertDefl;
   float horizNeutral, horizDefl;
-  int8_t servoAile, servoElev, servoRudder, servoFlap, servoFlap2, servoGear, servoBrake, servoSteer, servoThrottle, servoLeft, servoRight, servoVertLeft, servoVertRight, servoHoriz;
+  int8_t servoAile, servoAile2, servoElev, servoRudder, servoFlap, servoFlap2, servoGear, servoBrake, servoSteer, servoThrottle, servoLeft, servoRight, servoVertLeft, servoVertRight, servoHoriz;
   float cL_A, alphaMax;
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;
@@ -44,7 +44,7 @@ struct ParamRecord {
   float thresholdMargin, stallMargin;
   float glideSlope;
   float offset;
-  bool elevon, veeTail;
+  bool elevon, veeTail, flaperon;
   bool virtualOnly;
   bool haveWheels;
   bool wowCalibrated;
