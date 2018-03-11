@@ -6,6 +6,25 @@
 
 #define NAME_LEN     8
 #define MAX_CH       8
+#define MAX_SERVO    10
+
+typedef enum {
+  fn_null,
+  fn_aileron,
+  fn_elevator,
+  fn_rudder,
+  fn_throttle,
+  fn_gear,
+  fn_steering,
+  fn_brake,
+  fn_leftaileron, fn_rightaileron,
+  fn_leftcanard, fn_rightcanard,
+  fn_leftelevon, fn_rightelevon,
+  fn_lefttail, fn_righttail,
+  fn_leftflap, fn_rightflap,
+  fn_leftthrustvert, fn_rightthrustvert,
+  fn_thrusthoriz
+} function_t;
 
 // Parameters and non-volatile state
 
@@ -25,6 +44,7 @@ struct ParamRecord {
   float vertNeutral, vertDefl;
   float horizNeutral, horizDefl;
   int8_t servoAile, servoAile2, servoElev, servoRudder, servoFlap, servoFlap2, servoGear, servoBrake, servoSteer, servoThrottle, servoLeft, servoRight, servoVertLeft, servoVertRight, servoHoriz;
+  uint8_t functionMap[MAX_SERVO]; 
   float cL_A, alphaMax;
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;

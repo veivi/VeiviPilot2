@@ -68,6 +68,7 @@ const struct Command commands[] PROGMEM = {
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
   { "wheels", c_wheels, e_bool, &vpParam.haveWheels },
   { "floor", c_floor, e_int16, &vpParam.floor },
+  { "map", c_map, e_map, &vpParam.functionMap },
   { "stall", c_stall },
   { "peak", c_peak },
   { "max", c_max },
@@ -105,6 +106,7 @@ const struct Command commands[] PROGMEM = {
   { "gear", c_gear },
   { "fault", c_fault },
   { "bias", c_bias },
+  { "function", c_function },
   { "", c_invalid }
 };
 

@@ -37,6 +37,7 @@ const struct ParamRecord paramDefaults = {
   .vertNeutral = 0, .vertDefl = 45.0/90,
   .horizNeutral = 0, .horizDefl = 45.0/90,
   .servoAile = 0, .servoAile2 = 0, .servoElev = 1, .servoRudder = 2, .servoFlap = -1, .servoFlap2 = -1, .servoGear = -1, .servoBrake = -1, .servoSteer = -1, .servoThrottle = -1, .servoLeft = -1, .servoRight = -1, .servoVertLeft = -1, .servoVertRight = -1, .servoHoriz = -1,
+  .functionMap = {0},
   .cL_A = 0.05, .alphaMax = 12.0/RADIAN,
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
@@ -443,6 +444,12 @@ static void backupParamEntry(const Command *e)
     case e_angle90:
       consolePrint(*((float*) e->var[i])*90);
       break;
+
+    case e_map:
+      for(int j = 0; j < MAX_SERVO; j++) {
+	consolePrint(((uint8_t*) e->var[i])[j]);
+	consolePrint(" ");
+      }
     }
   }
 

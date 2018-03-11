@@ -109,11 +109,13 @@ typedef enum {
   c_fault,
   c_bias,
   c_wow,
-  c_wheels
+  c_wheels,
+  c_map,
+  c_function
 } token_t;
 
 typedef enum
-  { e_int8, e_uint16, e_int16, e_angle, e_angle90, e_percent, e_float, e_string, e_bool } varType_t;
+  { e_int8, e_uint16, e_int16, e_angle, e_angle90, e_percent, e_float, e_string, e_bool, e_map } varType_t;
 
 struct Command {
   char name[MAX_NAME_LEN];

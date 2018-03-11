@@ -21,6 +21,7 @@ struct LogChannel logChannels[] = {
    [lc_elevator] = { lc_elevator, "ELEV", -1.5, 1.5 },
    [lc_elevator_ff] = { lc_elevator_ff, "ELFF", -1.5, 1.5 },
    [lc_rudder] = { lc_rudder, "RUDR", -1.5, 1.5 },
+   [lc_flap] = { lc_flap, "FLAP", 0, 1 },
    [lc_mode] = { lc_mode, "MODE", 0, 1 },
    [lc_status] = { lc_status, "STAT", 0, 1 },
    [lc_target] = { lc_target, "TARG", -180, 180 },
