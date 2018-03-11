@@ -1476,9 +1476,72 @@ void executeCommand(char *buf)
       break;
 
     case c_function:
-      if(numParams > 1) {
+      if(numParams > 1 && param[0] >= 0 && param[0] < MAX_SERVO) {
+	function_t fn = fn_invalid;
+	
+	switch(paramText[1][0]) {
+	case 'a':
+	  fn = fn_leftaileron;
+	  break;
+	case 'A':
+	  fn = fn_rightaileron;
+	  break;
+	case 'c':
+	  fn = fn_leftcanard;
+	  break;
+	case 'C':
+	  fn = fn_rightcanard;
+	  break;
+	case 'v':
+	  fn = fn_leftelevon;
+	  break;
+	case 'V':
+	  fn = fn_rightelevon;
+	  break;
+	case 'f':
+	  fn = fn_leftflap;
+	  break;
+	case 'F':
+	  fn = fn_rightflap;
+	  break;
+	case 't':
+	  fn = fn_lefttail;
+	  break;
+	case 'T':
+	  fn = fn_righttail;
+	  break;
+	case 'y':
+	  fn = fn_leftthrustvert;
+	  break;
+	case 'Y':
+	  fn = fn_rightthrustvert;
+	  break;
+	case 'x':
+	  fn = fn_thrusthoriz;
+	  break;
+	case 'e':
+	  fn = fn_elevator;
+	  break;
+	case 'r':
+	  fn = fn_rudder;
+	  break;
+	case 'g':
+	  fn = fn_gear;
+	  break;
+	case 'b':
+	  fn = fn_brake;
+	  break;
+	case 's':
+	  fn = fn_steering;
+	  break;
+	}
+
+	if(fn != fn_invalid)
+	  vpParam.functionMap[(uint8_t) param[0]] = fn;
+	else
+	  consoleNoteLn_P(PSTR("Invalid function"));
       } else
-	consoleNoteLn_P(PSTR("usage: function <servo> <fn>"));
+	consoleNoteLn_P(PSTR("<servo> <fn>"));
       break;
 
     default:

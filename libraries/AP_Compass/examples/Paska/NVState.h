@@ -23,7 +23,8 @@ typedef enum {
   fn_lefttail, fn_righttail,
   fn_leftflap, fn_rightflap,
   fn_leftthrustvert, fn_rightthrustvert,
-  fn_thrusthoriz
+  fn_thrusthoriz,
+  fn_invalid
 } function_t;
 
 // Parameters and non-volatile state
