@@ -59,7 +59,7 @@ uint16_t constrain_period(uint16_t p) {
 
 void pwmOutputWrite(struct PWMOutput *output, uint16_t value)
 {
-  if(!output)
+  if(!output || !output->timer)
     return;
   
   *(output->timer->OCR[output->pwmCh]) = constrain_period(value) << 1;

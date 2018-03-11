@@ -125,7 +125,7 @@ int8_t flightModeSelectorValue, stabModeSelectorValue;
 #define NEUTRAL 1500
 #define RANGE 500
 
-struct PWMOutput pwmOutput[] = {
+struct PWMOutput pwmOutput[MAX_SERVO] = {
   { { PortB, 6 }, &hwTimer1, COMnB },
   { { PortB, 5 }, &hwTimer1, COMnA },
   { { PortH, 5 }, &hwTimer4, COMnC },
@@ -136,41 +136,6 @@ struct PWMOutput pwmOutput[] = {
   { { PortE, 3 }, &hwTimer3, COMnA },
   { { PortB, 7 }, &hwTimer1, COMnC }
 };
-
-//
-// Function to servo output mapping
-//
-
-#define aileHandle \
-  (vpParam.servoAile < 0 ? NULL : &pwmOutput[vpParam.servoAile])
-#define aile2Handle \
-  (vpParam.servoAile < 0 ? NULL : &pwmOutput[vpParam.servoAile2])
-#define elevatorHandle \
-  (vpParam.servoElev < 0 ? NULL : &pwmOutput[vpParam.servoElev])
-#define flapHandle \
-  (vpParam.servoFlap < 0 ? NULL : &pwmOutput[vpParam.servoFlap])
-#define flap2Handle \
-  (vpParam.servoFlap2 < 0 ? NULL : &pwmOutput[vpParam.servoFlap2])
-#define gearHandle \
-  (vpParam.servoGear < 0 ? NULL : &pwmOutput[vpParam.servoGear])
-#define brakeHandle \
-  (vpParam.servoBrake < 0 ? NULL : &pwmOutput[vpParam.servoBrake])
-#define rudderHandle \
-  (vpParam.servoRudder < 0 ? NULL : &pwmOutput[vpParam.servoRudder])
-#define steerHandle \
-  (vpParam.servoSteer < 0 ? NULL : &pwmOutput[vpParam.servoSteer])
-#define throttleHandle \
-  (vpParam.servoThrottle < 0 ? NULL : &pwmOutput[vpParam.servoThrottle])
-#define leftHandle \
-  (vpParam.servoLeft < 0 ? NULL : &pwmOutput[vpParam.servoLeft])
-#define rightHandle \
-  (vpParam.servoRight < 0 ? NULL : &pwmOutput[vpParam.servoRight])
-#define vertLeftHandle \
-  (vpParam.servoVertLeft < 0 ? NULL : &pwmOutput[vpParam.servoVertLeft])
-#define vertRightHandle \
-  (vpParam.servoVertRight < 0 ? NULL : &pwmOutput[vpParam.servoVertRight])
-#define horizHandle \
-  (vpParam.servoHoriz < 0 ? NULL : &pwmOutput[vpParam.servoHoriz])
 
 //
 // Periodic task stuff
@@ -1480,10 +1445,10 @@ void executeCommand(char *buf)
 	function_t fn = fn_invalid;
 	
 	switch(paramText[1][0]) {
-	case 'a':
+	case 'L':
 	  fn = fn_leftaileron;
 	  break;
-	case 'A':
+	case 'R':
 	  fn = fn_rightaileron;
 	  break;
 	case 'c':
@@ -1519,6 +1484,9 @@ void executeCommand(char *buf)
 	case 'x':
 	  fn = fn_thrusthoriz;
 	  break;
+	case 'a':
+	  fn = fn_aileron;
+	  break;
 	case 'e':
 	  fn = fn_elevator;
 	  break;
@@ -1534,14 +1502,97 @@ void executeCommand(char *buf)
 	case 's':
 	  fn = fn_steering;
 	  break;
+	case 'p':
+	  fn = fn_throttle;
+	  break;
+	case '-':
+	  fn = fn_null;
+	  break;
 	}
 
 	if(fn != fn_invalid)
 	  vpParam.functionMap[(uint8_t) param[0]] = fn;
 	else
 	  consoleNoteLn_P(PSTR("Invalid function"));
-      } else
-	consoleNoteLn_P(PSTR("<servo> <fn>"));
+      } else {
+	consoleNoteLn_P(PSTR("SERVO  FUNCTION"));
+	consoleNoteLn_P(PSTR("---------------------"));
+
+	for(int i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
+	  consoleNote_P(PSTR("  "));
+	  consolePrint(i);
+	  consoleTab(10);
+
+	  switch(vpParam.functionMap[i]) {
+	  case fn_leftaileron:
+	    consolePrintLn_P(PSTR("aileron (left)"));
+	    break;
+	  case fn_rightaileron:
+	    consolePrintLn_P(PSTR("aileron (right)"));
+	    break;
+	  case fn_leftflap:
+	    consolePrintLn_P(PSTR("flap (left)"));
+	    break;
+	  case fn_rightflap:
+	    consolePrintLn_P(PSTR("flap (right)"));
+	    break;
+	  case fn_leftcanard:
+	    consolePrintLn_P(PSTR("canard (left)"));
+	    break;
+	  case fn_rightcanard:
+	    consolePrintLn_P(PSTR("canard (right)"));
+	    break;
+	  case fn_lefttail:
+	    consolePrintLn_P(PSTR("tail (left)"));
+	    break;
+	  case fn_righttail:
+	    consolePrintLn_P(PSTR("tail (right)"));
+	    break;
+	  case fn_leftthrustvert:
+	    consolePrintLn_P(PSTR("vertical thrust (left)"));
+	    break;
+	  case fn_rightthrustvert:
+	    consolePrintLn_P(PSTR("vertical thrust (right)"));
+	    break;
+	  case fn_leftelevon:
+	    consolePrintLn_P(PSTR("elevon (left)"));
+	    break;
+	  case fn_rightelevon:
+	    consolePrintLn_P(PSTR("elevon (right)"));
+	    break;
+	  case fn_aileron:
+	    consolePrintLn_P(PSTR("aileron"));
+	    break;
+	  case fn_elevator:
+	    consolePrintLn_P(PSTR("elevator"));
+	    break;
+	  case fn_rudder:
+	    consolePrintLn_P(PSTR("rudder"));
+	    break;
+	  case fn_throttle:
+	    consolePrintLn_P(PSTR("throttle"));
+	    break;
+	  case fn_gear:
+	    consolePrintLn_P(PSTR("landing gear"));
+	    break;
+	  case fn_steering:
+	    consolePrintLn_P(PSTR("nose wheel"));
+	    break;
+	  case fn_brake:
+	    consolePrintLn_P(PSTR("brake"));
+	    break;
+	  case fn_thrusthoriz:
+	    consolePrintLn_P(PSTR("horizontal thrust"));
+	    break;
+	  case fn_null:
+	    consolePrintLn_P(PSTR("---"));
+	    break;
+	  default:
+	    consolePrintLn_P(PSTR("<invalid>"));
+	    break;
+	  }
+	}
+      }
       break;
 
     default:
@@ -2524,7 +2575,7 @@ void statusTask()
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
-     || !vpParam.haveWheels || gearSel == 1 || !vpStatus.upright
+     || !vpParam.haveGear || gearSel == 1 || !vpStatus.upright
      || iAS > vpDerived.minimumIAS*RATIO(3/2)) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
@@ -2606,7 +2657,7 @@ void configurationTask()
     // SINGLE PULSE: GEAR TOGGLE
     //
 
-    if(gearHandle) {
+    if(vpDerived.haveRetracts) {
       gearSel = !gearSel;
 
       if(gearSel)
@@ -2641,21 +2692,23 @@ void configurationTask()
   // FLAP BUTTON
   //
 
-  if(FLAPBUTTON.singlePulse() && flapSel > 0) {
-    //
-    // SINGLE PULSE: FLAPS UP one step
-    //
+  if(vpDerived.haveFlaps) {
+    if(FLAPBUTTON.singlePulse() && flapSel > 0) {
+      //
+      // SINGLE PULSE: FLAPS UP one step
+      //
     
-    consoleNote_P(PSTR("Flaps RETRACTED to "));
-    consolePrintLn(--flapSel);
+      consoleNote_P(PSTR("Flaps RETRACTED to "));
+      consolePrintLn(--flapSel);
 
-  } else if(FLAPBUTTON.depressed() && flapSel < flapSteps_c) {
-    //
-    // CONTINUOUS: FLAPS DOWN one step
-    //
+    } else if(FLAPBUTTON.depressed() && flapSel < flapSteps_c) {
+      //
+      // CONTINUOUS: FLAPS DOWN one step
+      //
     
-    consoleNote_P(PSTR("Flaps EXTENDED to "));
-    consolePrintLn(++flapSel);
+      consoleNote_P(PSTR("Flaps EXTENDED to "));
+      consolePrintLn(++flapSel);
+    }
   }
 
   //
@@ -2827,7 +2880,7 @@ void configurationTask()
 
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
-  else if(!vpParam.wowCalibrated && vpParam.haveWheels
+  else if(!vpParam.wowCalibrated && vpParam.haveGear
 	  && gearSel == 0 && vpMode.wingLeveler)
     vpFeature.stabilizeBank = false;
   
@@ -3560,7 +3613,7 @@ void rudderModule()
 {
   rudderOutput = rudderStick;
 
-  if(gearHandle && gearSel)
+  if(vpDerived.haveRetracts && gearSel)
     steerOutput = 0;
   else
     steerOutput = rudderStick;
@@ -3700,18 +3753,24 @@ float rightElevonFn()
     + vpParam.elevNeutral;
 }
 
+float aileronFn()
+{
+    return vpParam.aileDefl*aileOutput + vpParam.aileNeutral;
+}
+
+float flaperonFn()
+{
+  return vpParam.flaperon ? vpParam.flapDefl*flapActuator.output() : 0;
+}
+
 float leftAileronFn()
 {
-    return vpParam.aileDefl*aileOutput
-      + vpParam.flaperon ? vpParam.flapDefl*flapActuator.output() : 0
-      + vpParam.aileNeutral;
+  return aileronFn() + flaperonFn();
 }
 
 float rightAileronFn()
 {
-    return vpParam.aileDefl*aileOutput
-      - vpParam.flaperon ? vpParam.flapDefl*flapActuator.output() : 0
-      + vpParam.aileNeutral;
+  return aileronFn() - flaperonFn();
 }
 
 float rudderFn()
@@ -3721,15 +3780,13 @@ float rudderFn()
 
 float leftTailFn()
 {
-  return vpParam.elevDefl*elevOutput
-    + vpParam.rudderDefl*rudderOutput 
+  return vpParam.elevDefl*elevOutput + vpParam.rudderDefl*rudderOutput 
     + vpParam.elevNeutral;
 }
 
 float rightTailFn()
 {
-  return -vpParam.elevDefl*elevOutput
-    + vpParam.rudderDefl*rudderOutput
+  return -vpParam.elevDefl*elevOutput + vpParam.rudderDefl*rudderOutput
     + vpParam.rudderNeutral;
 }
 
@@ -3775,7 +3832,7 @@ float rightFlapFn()
 
 float gearFn()
 {
-  return RATIO(2/3)*(gearSel*2-1);
+  return -RATIO(2/3)*(gearSel*2-1);
 }
 
 float brakeFn()
@@ -3790,7 +3847,7 @@ float throttleFn()
 
 float (*functionTable[])(void) = {
   [fn_null] = NULL,
-  [fn_aileron] = leftAileronFn,
+  [fn_aileron] = aileronFn,
   [fn_elevator] = elevatorFn,
   [fn_rudder] = rudderFn,
   [fn_throttle] = throttleFn,
@@ -3817,94 +3874,11 @@ void actuatorTask()
   if(!vpStatus.armed)
     return;
 
-  for(unsigned int i = 0; i < MAX_SERVO
-	&& i < sizeof(pwmOutput)/sizeof(struct PWMOutput); i++)
+  for(unsigned int i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++)
     if(functionTable[vpParam.functionMap[i]])
       pwmOutputWrite(&pwmOutput[i], NEUTRAL
 		     + RANGE*clamp(functionTable[vpParam.functionMap[i]](),
 				   -1, 1));
-
-  /*
-  if(vpParam.elevon) {
-    pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(+ vpParam.aileDefl*aileOutput
-				 - vpParam.elevDefl*elevOutput
-				 + vpParam.aileNeutral, -1, 1));
-
-    pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(+ vpParam.aileDefl*aileOutput
-				 + vpParam.elevDefl*elevOutput
-				 + vpParam.elevNeutral, -1, 1));
-  } else if(vpParam.veeTail) {
-    pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(+ vpParam.elevDefl*elevOutput
-				 + vpParam.rudderDefl*rudderOutput 
-				 + vpParam.elevNeutral, -1, 1));
-
-    pwmOutputWrite(rudderHandle, NEUTRAL
-		   + RANGE*clamp(- vpParam.elevDefl*elevOutput
-				 + vpParam.rudderDefl*rudderOutput
-				 + vpParam.rudderNeutral, -1, 1));
-  } else {
-    pwmOutputWrite(elevatorHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.elevDefl*elevOutput 
-				 + vpParam.elevNeutral, -1, 1));
-  }
-  
-  if(!vpParam.veeTail)
-    pwmOutputWrite(rudderHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.rudderNeutral + 
-				 vpParam.rudderDefl*rudderOutput, -1, 1));
-
-  if(!vpParam.elevon) {
-    float flap = 0;
-
-    if(vpParam.flaperon)
-      flap = vpParam.flapDefl*flapActuator.output();
-    
-    pwmOutputWrite(aileHandle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileOutput + flap
-				 + vpParam.aileNeutral, -1, 1));
-    
-    pwmOutputWrite(aile2Handle, NEUTRAL
-		   + RANGE*clamp(vpParam.aileDefl*aileOutput - flap
-				 + vpParam.aile2Neutral, -1, 1));
-  }
-  
-  pwmOutputWrite(leftHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.canardNeutral + 
-			       vpParam.canardDefl*elevOutput, -1, 1));                        
-  pwmOutputWrite(rightHandle, NEUTRAL
-		 - RANGE*clamp(vpParam.canardNeutral + 
-			       vpParam.canardDefl*elevOutput, -1, 1));                        
-  pwmOutputWrite(vertLeftHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.vertNeutral + 
-			       vpParam.vertDefl*vertOutput, -1, 1));                        
-  pwmOutputWrite(vertRightHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.vertNeutral - 
-			       vpParam.vertDefl*vertOutput, -1, 1));                        
-  pwmOutputWrite(horizHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.horizNeutral + 
-			       vpParam.horizDefl*horizOutput, -1, 1));                        
-  pwmOutputWrite(steerHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.steerNeutral + 
-			       vpParam.steerDefl*steerOutput, -1, 1));                        
-  pwmOutputWrite(flapHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.flapNeutral 
-			       + vpParam.flapDefl*flapActuator.output(), -1, 1));                              
-  pwmOutputWrite(flap2Handle, NEUTRAL
-		 + RANGE*clamp(vpParam.flap2Neutral 
-			       - vpParam.flapDefl*flapActuator.output(), -1, 1));                              
-
-  pwmOutputWrite(gearHandle, NEUTRAL - RANGE*(gearSel*2-1)*0.6);
-
-  pwmOutputWrite(brakeHandle, NEUTRAL
-		 + RANGE*clamp(vpParam.brakeDefl*brakeOutput 
-			       + vpParam.brakeNeutral, -1, 1));
-  
-  pwmOutputWrite(throttleHandle,
-		 NEUTRAL + THROTTLE_SIGN*0.66*RANGE*(2*throttleCtrl.output() - 1));
-  */
 }
 
 void backgroundTask(uint32_t durationMicros)

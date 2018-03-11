@@ -44,13 +44,11 @@ struct ParamRecord {
   float canardNeutral, canardDefl;
   float vertNeutral, vertDefl;
   float horizNeutral, horizDefl;
-  int8_t servoAile, servoAile2, servoElev, servoRudder, servoFlap, servoFlap2, servoGear, servoBrake, servoSteer, servoThrottle, servoLeft, servoRight, servoVertLeft, servoVertRight, servoHoriz;
   uint8_t functionMap[MAX_SERVO]; 
   float cL_A, alphaMax;
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;
   float r_Mix;
-  //  float p_Ku_C, p_Tu;
   float at_Ku, at_Tu;
   float cc_Ku, cc_Tu;
   float ff_A, ff_B, ff_C;
@@ -65,15 +63,16 @@ struct ParamRecord {
   float thresholdMargin, stallMargin;
   float glideSlope;
   float offset;
-  bool elevon, veeTail, flaperon;
+  bool flaperon;
   bool virtualOnly;
-  bool haveWheels;
+  bool haveGear;
   bool wowCalibrated;
   float expo;
   int16_t floor;
   };
 
 struct DerivedParams {
+  bool haveRetracts, haveFlaps;
   float totalMass;
   float minimumIAS, minimumDynP, zeroLiftAlpha, maxCoeffOfLift;
   float thresholdAlpha, shakerAlpha, pusherAlpha;

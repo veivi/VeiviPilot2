@@ -36,7 +36,6 @@ const struct ParamRecord paramDefaults = {
   .canardNeutral = 0, .canardDefl = 45.0/90,
   .vertNeutral = 0, .vertDefl = 45.0/90,
   .horizNeutral = 0, .horizDefl = 45.0/90,
-  .servoAile = 0, .servoAile2 = 0, .servoElev = 1, .servoRudder = 2, .servoFlap = -1, .servoFlap2 = -1, .servoGear = -1, .servoBrake = -1, .servoSteer = -1, .servoThrottle = -1, .servoLeft = -1, .servoRight = -1, .servoVertLeft = -1, .servoVertRight = -1, .servoHoriz = -1,
   .functionMap = {0},
   .cL_A = 0.05, .alphaMax = 12.0/RADIAN,
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
@@ -60,11 +59,9 @@ const struct ParamRecord paramDefaults = {
   .stallMargin = 0,
   .glideSlope = 3.0/RADIAN,
   .offset = -0.4/RADIAN,
-  .elevon = 0,
-  .veeTail = 0,
   .flaperon = 0,
   .virtualOnly = true,
-  .haveWheels = true,
+  .haveGear = true,
   .wowCalibrated = false,
   .expo = 0.8,
   .floor = -1
@@ -346,60 +343,31 @@ void printParams()
   consolePrint_P(PSTR(" ("));
   consolePrint(vpParam.flap2Neutral*90);
   consolePrintLn_P(PSTR(")"));
-  consoleNoteLn_P(PSTR("  Servo channels"));
-  consoleNote_P(PSTR("    A = "));
-  consolePrint(vpParam.servoAile);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpParam.servoAile2);
-  consolePrint_P(PSTR("  E = "));
-  consolePrint(vpParam.servoElev);
-  consolePrint_P(PSTR("  R = "));
-  consolePrint(vpParam.servoRudder);
-  consolePrint_P(PSTR("  T = "));
-  consolePrint(vpParam.servoThrottle);
-  consolePrint_P(PSTR("  F = ("));
-  consolePrint(vpParam.servoFlap);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpParam.servoFlap2);
-  consolePrint_P(PSTR(")  Can = ("));
-  consolePrint(vpParam.servoLeft);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpParam.servoRight);
-  consolePrint_P(PSTR(")  Vec = ("));
-  consolePrint(vpParam.servoVertLeft);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpParam.servoVertRight);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpParam.servoHoriz);
-  consolePrint_P(PSTR(")  G = "));
-  consolePrint(vpParam.servoGear);
-  consolePrint_P(PSTR("  B = "));
-  consolePrint(vpParam.servoBrake);
-  consolePrint_P(PSTR("  S = "));
-  consolePrintLn(vpParam.servoSteer);
   consoleNote_P(PSTR("  Servo rate = "));
   consolePrintLn(vpParam.servoRate);
-  if(vpParam.elevon || vpParam.veeTail) {
-    consoleNote_P(PSTR("  Special wing configuration:"));
-    if(vpParam.elevon)
-      consolePrint_P(PSTR(" ELEVON"));  
-    if(vpParam.veeTail)
-      consolePrint_P(PSTR(" V-TAIL"));
-    consolePrintLn("");
-  } else
-    consoleNoteLn_P(PSTR("  Normal wing configuration"));
-    
   if(vpParam.flaperon)
-    consoleNoteLn_P(PSTR("    Flaperon ENABLED"));
+    consoleNoteLn_P(PSTR("  Flaperon ENABLED"));
 
   consoleNote_P(PSTR("  We"));
-  if(!vpParam.haveWheels)
+  if(!vpParam.haveGear)
     consolePrint_P(PSTR(" DO NOT"));  
-  consolePrintLn_P(PSTR(" have wheels"));
-  consoleNote_P(PSTR("  Weight on wheels"));
-  if(!vpParam.wowCalibrated)
-    consolePrint_P(PSTR(" NOT"));  
-  consolePrintLn_P(PSTR(" CALIBRATED"));
+  consolePrint_P(PSTR(" have"));
+
+  if(vpParam.haveGear) {
+    if(vpDerived.haveRetracts)
+      consolePrint_P(PSTR(" RETRACTABLE"));
+    else
+      consolePrint_P(PSTR(" FIXED"));
+  }
+  
+  consolePrintLn_P(PSTR(" landing GEAR"));
+  if(vpParam.haveGear) {
+    consoleNote_P(PSTR("    Weight on wheels"));
+    if(!vpParam.wowCalibrated)
+      consolePrint_P(PSTR(" NOT"));  
+    consolePrintLn_P(PSTR(" CALIBRATED"));
+  } else
+    vpParam.wowCalibrated = false;
 }
 
 static void backupParamEntry(const Command *e)
@@ -499,6 +467,26 @@ void backupParams()
 
 void deriveParams()
 {
+  // Do we have rectracts and/or flaps?
+
+  vpDerived.haveRetracts = false;
+  vpDerived.haveFlaps = vpParam.flaperon;
+
+  if(vpParam.haveGear) {
+    for(int i = 0; i < MAX_SERVO; i++)
+      if(vpParam.functionMap[i] == fn_gear) {
+	vpDerived.haveRetracts = true;
+	break;
+      }
+  }
+
+  for(int i = 0; i < MAX_SERVO; i++)
+    if(vpParam.functionMap[i] == fn_leftflap
+       || vpParam.functionMap[i] == fn_rightflap) {
+      vpDerived.haveFlaps = true;
+      break;
+    }
+
   // Total mass
 
   vpDerived.totalMass = vpParam.weightDry + vpParam.fuel;
