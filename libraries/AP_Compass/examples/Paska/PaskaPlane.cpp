@@ -35,7 +35,7 @@ extern "C" {
 // Configuration
 //
 
-#define RX_CHANNELS          8
+#define RX_CHANNELS          6
 #define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 // #define USE_COMPASS  1
@@ -4004,7 +4004,7 @@ struct Task taskList[] = {
     HZ_TO_PERIOD(10) },
   { NULL } };
 
-int scheduler()
+bool scheduler()
 {
   struct Task *task = taskList;
   
@@ -4016,7 +4016,7 @@ int scheduler()
       
       if(task->period > 0)
         // Staggered execution for all but the critical tasks
-        return 1;
+        return true;
     }
     
     task++;
@@ -4024,18 +4024,11 @@ int scheduler()
 
   // Nothing to do right now
   
-  return 0;
+  return false;
 }
 
 void setup()
 {
-  // PWM output
-
-  // consoleNoteLn_P(PSTR("Initializing PWM output"));
-
-  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
-  pwmOutputInitList(pwmOutput, sizeof(pwmOutput)/sizeof(struct PWMOutput));
-
   // HAL
 
   hal.init(0, NULL);
@@ -4043,10 +4036,16 @@ void setup()
   // initialise serial port
   
   cliSerial = hal.console;
-
   vpStatus.consoleLink = true;
   
   consoleNoteLn_P(PSTR("Project | Alpha"));   
+
+  // PWM output
+
+  consoleNoteLn_P(PSTR("Initializing PWM output"));
+
+  pwmOutputInitList(pwmOutput, sizeof(pwmOutput)/sizeof(struct PWMOutput));
+  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
 
   // I2C
   
