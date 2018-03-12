@@ -40,8 +40,6 @@ void pwmOutputInit(struct PWMOutput *output)
   setPinState(&output->pin, 0);
   configureOutput(&output->pin);
   pwmDisable(output);
-  // pwmOutputWrite(output, 1500);
-  // pwmEnable(output);
   output->active = false;
 }
 
