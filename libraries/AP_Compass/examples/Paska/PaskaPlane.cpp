@@ -556,73 +556,6 @@ bool MS4525DO_pressure(int16_t *result)
 }
 
 //
-// Cycle time monitoring
-//
-
-const int cycleTimeSampleWindow_c = CONTROL_HZ;
-Damper cycleTimeAcc(cycleTimeSampleWindow_c);
-float cycleTimeMin = -1.0, cycleTimeMax = -1.0;
-RunningAvgFilter cycleTimeAverage(cycleTimeSampleWindow_c);
-Damper cycleTimeSampleFraction(CONTROL_HZ, 1.0);
-int cycleTimeSampleCount = 0;
-bool cycleTimeSampleAvailable = false;
-
-void cycleTimeSampleReset(void)
-{
-  cycleTimeSampleCount = 0;
-  cycleTimeSampleAvailable = false;
-  cycleTimeSampleFraction.reset(1.0);
-}
-  
-void cycleTimeSample(float value)
-{
-  if(randomNum(0, 1) < cycleTimeSampleFraction.output()) {
-    cycleTimeAverage.input(value);
-    cycleTimeSampleFraction.input(1.0/100);
-
-    if(cycleTimeSampleCount < cycleTimeSampleWindow_c)
-      cycleTimeSampleCount++;
-    else if(!cycleTimeSampleAvailable) {
-      consoleNoteLn_P(PSTR("Cycle time sample available"));
-      cycleTimeSampleAvailable = true;
-    }
-  }
-}
-  
-void cycleTimeMonitorReset(void)
-{
-  cycleTimeSampleReset();
-  cycleTimeMin = cycleTimeMax = -1;
-  consoleNoteLn_P(PSTR("Cycle time monitor RESET"));
-}
-  
-void cycleTimeMonitor(float value)
-{
-  //
-  // Track min and max
-  //
-  
-  if(cycleTimeMin < 0.0) {
-    cycleTimeMin = cycleTimeMax = value;
-  } else {
-    cycleTimeMin = fminf(cycleTimeMin, value);
-    cycleTimeMax = fmaxf(cycleTimeMax, value);
-  }
-
-  //
-  // Cumulative average
-  //
-  
-  cycleTimeAcc.input(value);
-
-  //
-  // Random sampling for statistics
-  //
-
-  cycleTimeSample(value);  
-}
-
-//
 // Takeoff configuration test
 //
 
@@ -635,7 +568,6 @@ typedef enum {
   toc_pitot,
   toc_lstick,
   toc_rstick,
-  toc_timing,
   toc_tuning,
   toc_button,
   toc_fdr,
@@ -667,13 +599,6 @@ bool toc_test_link(bool reset)
 bool toc_test_ram(bool reset)
 {
   return hal.util->available_memory() > (1<<9);
-}
-
-bool toc_test_timing(bool reset)
-{
-  return cycleTimeSampleAvailable
-    && (cycleTimeMin >= 1.0/CONTROL_HZ)
-    && (cycleTimeAverage.output() < 1.2/CONTROL_HZ);
 }
 
 bool toc_test_load(bool reset)
@@ -863,7 +788,6 @@ const struct TakeoffTest tocTest[] PROGMEM =
     [toc_pitot] = { "PITOT", toc_test_pitot },
     [toc_lstick] = { "LSTK", toc_test_lstick },
     [toc_rstick] = { "RSTK", toc_test_rstick },
-    [toc_timing] = { "TIMNG", toc_test_timing },
     [toc_tuning] = { "TUNE", toc_test_tuning },
     [toc_button] = { "BUTN", toc_test_button },
     [toc_fdr] = { "FDR", toc_test_fdr },
@@ -1405,15 +1329,6 @@ void executeCommand(char *buf)
       consolePrint_P(PSTR("  IAS = "));
       consolePrintLn(iasEntropyAcc.output());
 
-      consoleNoteLn_P(PSTR("Cycle time (ms)"));
-      consoleNote_P(PSTR("  min        = "));
-      consolePrintLn(cycleTimeMin*1e3);
-      consoleNote_P(PSTR("  max        = "));
-      consolePrintLn(cycleTimeMax*1e3);
-      consoleNote_P(PSTR("  mean       = "));
-      consolePrintLn(cycleTimeAverage.output()*1e3);
-      consoleNote_P(PSTR("  cum. value = "));
-      consolePrintLn(cycleTimeAcc.output()*1e3);
       consoleNote_P(PSTR("Warning flags :"));
       if(pciWarn)
 	consolePrint_P(PSTR(" SPURIOUS_PCINT"));
@@ -1436,7 +1351,6 @@ void executeCommand(char *buf)
       
     case c_reset:
       pciWarn = ppmWarnShort = ppmWarnSlow = false;
-      cycleTimeMonitorReset();
       consoleNoteLn_P(PSTR("Warning flags reset"));
       break;
 
@@ -3144,15 +3058,6 @@ void gaugeTask()
 	consolePrint_P(PSTR(")"));
 	break;
 	
-      case 3:
-	consolePrint_P(PSTR(" Cycle time (min, mean, max) = "));
-	consolePrint(cycleTimeMin*1e3);
-	consolePrint_P(PSTR(", "));
-	consolePrint(cycleTimeAverage.output()*1e3);
-	consolePrint_P(PSTR(", "));
-	consolePrint(cycleTimeMax*1e3);
-	break;
-	
       case 4:
 	consolePrint_P(PSTR(" bank = "));
 	consolePrint(bankAngle*RADIAN, 2);
@@ -3711,10 +3616,8 @@ void controlTask()
   // Cycle time bookkeeping 
   //
   
-  if(controlCycleEnded > 0) {
+  if(controlCycleEnded > 0)
     controlCycle = (currentTime - controlCycleEnded)/1.0e6;
-    cycleTimeMonitor(controlCycle);
-  }
   
   controlCycleEnded = currentTime;
 
@@ -4068,10 +3971,6 @@ void setup()
   // Param record
   
   setModel(nvState.model, true);
-
-  // Set I2C speed
-  
-  TWBR = vpParam.i2c_clkDiv;
                 
   // RC input
   
@@ -4111,7 +4010,7 @@ void setup()
   
     ahrs.set_compass(&compass);
   
-    compass.set_and_save_offsets(0,0,0,0); // set offsets to account for surrounding interference
+    compass.set_and_save_offsets(0,0,0,0);
     compass.set_declination(ToRad(0.0f));
     
   } else {
@@ -4134,16 +4033,12 @@ void setup()
   // Static controller settings
 
   aileCtrl.limit(RATIO(2/3));
-  flapActuator.setRate(1.0);
+  flapActuator.setRate(0.5);
   
   // Misc filters
 
   accAvg.reset(G);
-  trimRateLimiter.setRate(1.2/RADIAN);
-
-  // Cycle time monitor
-  
-  cycleTimeMonitorReset();
+  trimRateLimiter.setRate(3/RADIAN);
 
   // Initial gear state is DOWN
   

@@ -6,19 +6,20 @@ static uint16_t crcState;
 static int datagramSize = 0;
 static int datagrams, datagramsGood;
 
+const uint8_t FLAG = 0xAB;
+
 static void outputBreak()
 {
-  datagramSerialOut((const uint8_t) 0x00);
-  datagramSerialOut((const uint8_t) 0x00);
-  datagramSerialFlush();
+  datagramSerialOut(FLAG);
+  datagramSerialOut(FLAG);
 }
 
 void datagramTxOutByte(const uint8_t c)
 {
   datagramSerialOut(c);
-    
-  if(c == 0x00)
-    datagramSerialOut((const uint8_t) 0xFF);
+
+  if(c == FLAG)
+    datagramSerialOut(~FLAG);
 
   crcState = crc16_update(crcState, c);
 }
@@ -41,6 +42,7 @@ void datagramTxEnd(void)
   uint16_t buf = crcState;
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
+  datagramSerialFlush();
 }
 
 static void storeByte(const uint8_t c)
@@ -57,7 +59,7 @@ static bool datagramRxEnd(void)
         datagrams++;
         uint16_t crcReceived = *((uint16_t*) &datagramRxStore[datagramSize-2]);
         uint16_t crc = crc16(0xFFFF, datagramRxStore, datagramSize - 2);
-        success = crc == crcReceived;
+        success = (crc == crcReceived);
         
         if(success) {
             datagramsGood++;
@@ -73,29 +75,31 @@ static bool datagramRxEnd(void)
 
 bool datagramRxInputChar(const uint8_t c)
 {
-    static uint8_t prev;
-    static bool busy = false;
-    bool success = false;
+  static bool busy = false;
+  static int flagCntRx;
+  bool success = false;
 
-    if(prev == 0x00 && c == 0x00) {
-        if(busy)
-            success = datagramRxEnd();
-        
-        busy = false;
-    } else if(busy) {
-        if(prev == 0x00)
-            storeByte(0x00);
-        else if(c != 0x00)
-            storeByte(c);
-    } else if(c != 0x00) {
-        busy = true;
-        datagramSize = 0;
-        storeByte(c);
+  if(c != FLAG) {
+    if(busy) {
+      if(flagCntRx)
+	storeByte(FLAG);
+      else
+	storeByte(c);
+    } else {
+      busy = true;
+      datagramSize = 0;
+      storeByte(c);
     }
     
-    prev = c;
-    
-    return success;
+    flagCntRx = 0;
+  } else if(++flagCntRx > 1) {
+    if(busy)
+      success = datagramRxEnd();
+        
+    busy = false;
+  }
+  
+  return success;
 }
 
 
