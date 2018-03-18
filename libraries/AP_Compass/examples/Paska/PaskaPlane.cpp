@@ -1480,6 +1480,8 @@ Derivator elevDeriv, aileDeriv;
 const float maxSlope_c = 0.75*CONTROL_HZ, abruptDelay_c = 0.15;
 uint32_t lastAbruptInput;
 bool inputDelayed;
+Derivator buttonSlope;
+float lazyButtonValue;
 
 void configurationTask();
 
@@ -1516,13 +1518,20 @@ void receiverTask()
 #else
   stabModeSelectorValue = 1;
 #endif
-  
+
+  // Button input
+
   float buttonValue = inputValue(&buttonInput);
   
-  LEVELBUTTON.input(buttonValue);
-  FLAPBUTTON.input(buttonValue);
-  TRIMBUTTON.input(buttonValue);
-  GEARBUTTON.input(buttonValue);
+  buttonSlope.input(buttonValue, 1);
+
+  if(fabs(buttonSlope.output()) < 0.03)
+    lazyButtonValue = buttonValue;
+     
+  LEVELBUTTON.input(lazyButtonValue);
+  FLAPBUTTON.input(lazyButtonValue);
+  TRIMBUTTON.input(lazyButtonValue);
+  GEARBUTTON.input(lazyButtonValue);
 
   //
   // Receiver fail detection
