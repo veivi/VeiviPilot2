@@ -1,10 +1,9 @@
+#include <string.h>
 #include "Storage.h"
 #include "NewI2C.h"
 #include "Console.h"
-#include <AP_HAL/AP_HAL.h>
-
-extern const AP_HAL::HAL& hal;
-
+#include "Time.h"
+  
 #define CACHE_PAGE (1L<<7)
 #define PAGE_MASK ~(CACHE_PAGE-1)
 #define EEPROM_I2C_ADDR 80
@@ -18,50 +17,42 @@ bool cacheFlag[CACHE_PAGE];
 bool cacheValid, cacheModified;
 uint32_t cacheTag;
 uint32_t writeBytesCum;
-			
-void waitEEPROM(uint32_t addr);
-void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes);
-bool readEEPROM(uint32_t addr, uint8_t *data, int size);
-void cacheFlush(void);
-void cacheWrite(uint32_t addr, const uint8_t *value, int size);
-void cacheRead(uint32_t addr, uint8_t *value, int size);
 
 void waitEEPROM(uint32_t addr)
 {
-  if(hal.scheduler->micros() - lastWriteTime > EXT_EEPROM_LATENCY)
+  if(currentMicros() - lastWriteTime > EXT_EEPROM_LATENCY)
     // We're cool
     return;
     
   // Write latency not met, wait for acknowledge
 
-  eepromDevice.handleStatus
-    (I2c.wait((uint8_t) (EEPROM_I2C_ADDR
-			 + (uint8_t) ((addr>>16) & 0x7))) != 0);
+  eepromDevice.invoke
+    (I2c.wait((uint8_t) (EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 }
 
 void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes) 
 {
-  if(eepromDevice.hasFailed())
+  if(!eepromDevice.online())
     return;
     
   waitEEPROM(addr);
-  eepromDevice.handleStatus
+  eepromDevice.invoke
     (I2c.write(  (uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
 		 (uint16_t) (addr & 0xFFFFL), 
-		 data, bytes) != 0);
+		 data, bytes));
 
-  lastWriteTime = hal.scheduler->micros();
+  lastWriteTime = currentMicros();
 }
  
 bool readEEPROM(uint32_t addr, uint8_t *data, int size) 
 {
-  if(eepromDevice.hasFailed())
-    return true;
+  if(!eepromDevice.online())
+    return false;
     
   waitEEPROM(addr);
 
-  return eepromDevice.handleStatus
-    (I2c.read((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size) != 0);
+  return eepromDevice.invoke
+    (I2c.read((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
 }
 
 void cacheFlush(void)
@@ -169,7 +160,7 @@ int32_t cacheReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
     cacheAlloc(addr);
   
   if(!cacheValid) {
-    if(readEEPROM(cacheTag, cacheData, CACHE_PAGE))
+    if(!readEEPROM(cacheTag, cacheData, CACHE_PAGE))
       memset(cacheData, 0xFF, sizeof(cacheData));
 
     cacheValid = true;

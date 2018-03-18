@@ -1,11 +1,10 @@
+#include <stdlib.h>
 #include "NewI2C.h"
 #include "Console.h"
 #include <avr/io.h>
-#include <AP_HAL/AP_HAL.h>
+#include "Time.h"
 
-#define BACKOFF (1.0e6)
-
-extern const AP_HAL::HAL& hal;
+#define BACKOFF (0.5e3)
 
 #define START           0x08
 #define REPEATED_START  0x10
@@ -26,30 +25,25 @@ extern const AP_HAL::HAL& hal;
 
 uint16_t NewI2C::timeOutDelay = 0;
 
-static uint32_t millis()
-{
-  return hal.scheduler->millis();
-}
-
-I2CDevice::I2CDevice(NewI2C *interface, uint8_t addr, const char *dname)
+I2CDevice::I2CDevice(const char *dname)
 {
   name = dname;
   backoff = BACKOFF;
 }
 
-bool I2CDevice::hasFailed()
+bool I2CDevice::online()
 {
-  return failed && currentTime < failedAt+backoff;
+  return !failed || currentMillis() < failedAt+backoff;
 }
 
-bool I2CDevice::status()
+bool I2CDevice::warning()
 {
   return warn || failed;
 }
 
-bool I2CDevice::handleStatus(bool fail)
+bool I2CDevice::invoke(uint8_t status)
 {
-  if(fail) {
+  if(status) {
     warn = true;
     
     consoleNote_P(PSTR("Bad "));
@@ -64,7 +58,7 @@ bool I2CDevice::handleStatus(bool fail)
       failed = true;
     }
     
-    failedAt = currentTime;
+    failedAt = currentMillis();
   } else {    
     if(failCount > 0) {
       consoleNote("");
@@ -76,7 +70,7 @@ bool I2CDevice::handleStatus(bool fail)
     }
   }
   
-  return fail;
+  return status == 0;
 }
 
 ////////////// Public Methods ////////////////////////////////////////
@@ -169,7 +163,7 @@ void NewI2C::pullup(uint8_t activate)
 
 uint8_t NewI2C::wait(uint8_t address)
 {
-  unsigned long startingTime = millis();
+  unsigned long startingTime = currentMillis();
   
   while(1) {
     returnStatus = 0;
@@ -187,7 +181,7 @@ uint8_t NewI2C::wait(uint8_t address)
         return(returnStatus);
     }
 
-    if(timeOutDelay > 0 && millis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -355,11 +349,11 @@ uint8_t NewI2C::read(uint8_t address, const uint8_t *addrArray, uint8_t addrSize
 
 uint8_t NewI2C::start()
 {
-  unsigned long startingTime = millis();
+  unsigned long startingTime = currentMillis();
   TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
   while (!(TWCR & (1<<TWINT)))
   {
-    if(timeOutDelay > 0 && millis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -382,11 +376,11 @@ uint8_t NewI2C::start()
 uint8_t NewI2C::transmitByte(uint8_t contents)
 {
   TWDR = contents;
-  unsigned long startingTime = millis();
+  unsigned long startingTime = currentMillis();
   TWCR = (1<<TWINT) | (1<<TWEN);
   while (!(TWCR & (1<<TWINT)))
   {
-    if(timeOutDelay > 0 && millis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -412,7 +406,7 @@ uint8_t NewI2C::transmitByte(uint8_t contents)
 
 uint8_t NewI2C::receiveByte(bool ack)
 {
-  unsigned long startingTime = millis();
+  unsigned long startingTime = currentMillis();
   if(ack)
   {
     TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
@@ -424,7 +418,7 @@ uint8_t NewI2C::receiveByte(bool ack)
   }
   while (!(TWCR & (1<<TWINT)))
   {
-    if(timeOutDelay > 0 && millis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -441,11 +435,11 @@ uint8_t NewI2C::receiveByte(bool ack)
 
 uint8_t NewI2C::stop()
 {
-  unsigned long startingTime = millis();
+  unsigned long startingTime = currentMillis();
   TWCR = (1<<TWINT)|(1<<TWEN)| (1<<TWSTO);
   while ((TWCR & (1<<TWSTO)))
   {
-    if(timeOutDelay > 0 && millis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);

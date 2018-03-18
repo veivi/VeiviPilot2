@@ -3,8 +3,6 @@
 
 #include <avr/io.h>
 
-bool handleFailure(const char *name, bool fail, bool *warn, bool *failed, int *count);
-
 typedef struct {
     const uint8_t *data;
     uint8_t size;
@@ -44,19 +42,19 @@ class NewI2C
 
 class I2CDevice {
  public:
-  I2CDevice(NewI2C *interface, uint8_t addr, const char *name);
-  bool handleStatus(bool);
-  bool hasFailed();
-  bool status();
+  I2CDevice(const char *name);
+  bool invoke(uint8_t status);
+  bool online();
+  bool warning();
 
  private:
   bool warn, failed;
   int failCount;
   uint32_t failedAt, backoff;
   const char *name;
-  //  NewI2C *interface;
-  //  uint8_t addr;
 };
+
+extern NewI2C I2c;
 
 #endif
 

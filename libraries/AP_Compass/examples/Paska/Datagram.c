@@ -76,12 +76,12 @@ static bool datagramRxEnd(void)
 bool datagramRxInputChar(const uint8_t c)
 {
   static bool busy = false;
-  static int flagCntRx;
+  static int flagCnt;
   bool success = false;
 
   if(c != FLAG) {
     if(busy) {
-      if(flagCntRx)
+      if(flagCnt)
 	storeByte(FLAG);
       else
 	storeByte(c);
@@ -91,8 +91,8 @@ bool datagramRxInputChar(const uint8_t c)
       storeByte(c);
     }
     
-    flagCntRx = 0;
-  } else if(++flagCntRx > 1) {
+    flagCnt = 0;
+  } else if(++flagCnt > 1) {
     if(busy)
       success = datagramRxEnd();
         

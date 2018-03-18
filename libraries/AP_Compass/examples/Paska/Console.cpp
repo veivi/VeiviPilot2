@@ -1,15 +1,15 @@
-#include <AP_HAL/AP_HAL.h>
-#define CONSOLE_PRIVATE_H
-#include "Console.h"
-#include "Status.h"
 #include <stdarg.h>
 #include <math.h>
+#include "Status.h"
 
 extern "C" {
 #include "Datagram.h"
+#include "System.h"
 }
 
-extern const AP_HAL::HAL& hal;
+#define CONSOLE_PRIVATE_H
+
+#include "Console.h"
 
 #define BUF_SIZE (1<<6)
 
@@ -156,14 +156,9 @@ void consolePrint_P(const prog_char_t *s)
 }
 
 #define printDigit(d) consoleOut('0'+d)
-// #define USE_PRINTF
 
 void consolePrint(float v, int p)
 {
-#ifdef USE_PRINTF
-  const char fmt[] = {'%', '.', '0'+p, 'f', '\0'};
-  hal.console->printf(fmt, (double) v);
-#else
   if(v < 0.0) {
     consoleOut('-');
     v = -v;
@@ -186,7 +181,6 @@ void consolePrint(float v, int p)
       p--;
     }
   }
-#endif  
 }
 
 void consolePrint(const char c)

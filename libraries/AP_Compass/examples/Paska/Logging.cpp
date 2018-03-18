@@ -1,15 +1,13 @@
 #include <stdarg.h>
-#include <AP_HAL/AP_HAL.h>
 #include "Logging.h"
 #include "NVState.h"
 #include "Math.h"
+#include "Time.h"
 
 extern "C" {
 #include "Datagram.h"
 #include "CRC16.h"
 }
-
-extern const AP_HAL::HAL& hal;
 
 typedef enum { invalid_c, find_stamp_c, find_start_c, ready_c, stop_c, run_c, failed_c } logState_t;
 
@@ -143,7 +141,7 @@ static void logWithCh(int ch, uint16_t value)
   value = ENTRY_VALUE(value);    // Constrain to valid range
   
   if(!logChannels[ch].tick && value == logChannels[ch].value
-     && hal.scheduler->millis() < logChannels[ch].stamp + 5e3)
+     && currentMillis() < logChannels[ch].stamp + 5e3)
     // Repeat value, not stored
     
     return;
@@ -166,7 +164,7 @@ static void logWithCh(int ch, uint16_t value)
   }
     
   logChannels[ch].value = value;
-  logChannels[ch].stamp = hal.scheduler->millis();
+  logChannels[ch].stamp = currentMillis();
   prevCh = ch;
 }
 
@@ -270,7 +268,7 @@ void logDumpBinary(void)
 
 bool logInit(uint32_t maxDuration)
 {
-  uint32_t current = hal.scheduler->micros();
+  uint32_t current = currentMicros();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;
   static bool endFound = false;
   uint32_t eepromSize = 0;
@@ -280,10 +278,10 @@ bool logInit(uint32_t maxDuration)
   case invalid_c:
     logSize = 0;
     
-    while(!readEEPROM(eepromSize+(1<<10)-1, &dummy, 1))
+    while(readEEPROM(eepromSize+(1<<10)-1, &dummy, 1))
       eepromSize += 1<<10;
     
-    if(!readEEPROM(eepromSize-1, &dummy, 1)) {
+    if(readEEPROM(eepromSize-1, &dummy, 1)) {
       consoleNote_P(PSTR("EEPROM size = "));
       consolePrint(eepromSize/(1<<10));
       consolePrintLn("k bytes");
@@ -335,7 +333,7 @@ bool logInit(uint32_t maxDuration)
       
       searchPtr++;
       
-      if(hal.scheduler->micros() - current > maxDuration)
+      if(currentMicros() - current > maxDuration)
         // Stop for now
         return false;
     }
@@ -379,7 +377,7 @@ bool logInit(uint32_t maxDuration)
       
       searchPtr++;
       
-      if(hal.scheduler->micros() - current > maxDuration)
+      if(currentMicros() - current > maxDuration)
         // Stop for now
         return false;
     }
