@@ -31,9 +31,9 @@ struct FeatureRecord {
 
 struct FlightState {
   float IAS, dynP, alpha;
-  float accX, accY, accZ, acc, alt, bank, pitch, rollRate, pitchRate, yawRate, slope;
+  float accX, accY, accZ, acc, alt, bank, pitch, rollR, pitchR, yawR;
   uint16_t heading;
-  float accDir, relWind;
+  float accDir, relWind, slope;
 };
 
 struct InputState {
@@ -43,7 +43,7 @@ struct InputState {
 
 struct ControlState {
   float testGain;
-  float elevTrim, targetAlpha, targetPressure, targetPitchRate, minThrottle;
+  float elevTrim, targetAlpha, targetPressure, targetPitchR, minThrottle;
   float elevPredict, ailePredict, aileNeutral, pusher;
 };
 

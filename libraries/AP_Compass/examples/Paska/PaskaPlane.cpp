@@ -289,7 +289,7 @@ void logConfig(void)
   logGeneric(lc_status, sum);
   
   logGeneric(lc_target, vpControl.targetAlpha*RADIAN);
-  logGeneric(lc_target_pr, vpControl.targetPitchRate*RADIAN);
+  logGeneric(lc_target_pr, vpControl.targetPitchR*RADIAN);
   logGeneric(lc_trim, vpControl.elevTrim*100);
 
   if(vpMode.test) {
@@ -324,18 +324,18 @@ void logActuator(void)
   logGeneric(lc_flap, flapActuator.output());
 }
 
-void logAttitude(void)
+void logFlight(void)
 {
   logGeneric(lc_dynpressure, vpFlight.dynP);
   logGeneric(lc_accx, vpFlight.accX);
   logGeneric(lc_accy, vpFlight.accY);
   logGeneric(lc_accz, vpFlight.accZ);
   logGeneric(lc_roll, vpFlight.bank*RADIAN);
-  logGeneric(lc_rollrate, vpFlight.rollRate*RADIAN);
+  logGeneric(lc_rollrate, vpFlight.rollR*RADIAN);
   logGeneric(lc_pitch, vpFlight.pitch*RADIAN);
-  logGeneric(lc_pitchrate, vpFlight.pitchRate*RADIAN);
+  logGeneric(lc_pitchrate, vpFlight.pitchR*RADIAN);
   logGeneric(lc_heading, vpFlight.heading);
-  logGeneric(lc_yawrate, vpFlight.yawRate*RADIAN);
+  logGeneric(lc_yawrate, vpFlight.yawR*RADIAN);
 }
 
 //
@@ -455,9 +455,9 @@ bool toc_test_attitude(bool reset)
 
 bool toc_test_gyro(bool reset)
 {
-  return (fabsf(vpFlight.pitchRate) < 1.0/RADIAN
-	  && fabsf(vpFlight.rollRate) < 1.0/RADIAN
-	  && fabsf(vpFlight.yawRate) < 1.0/RADIAN);
+  return (fabsf(vpFlight.pitchR) < 1.0/RADIAN
+	  && fabsf(vpFlight.rollR) < 1.0/RADIAN
+	  && fabsf(vpFlight.yawR) < 1.0/RADIAN);
 }
 
 struct TOCRangeTestState {
@@ -1523,9 +1523,9 @@ void sensorTaskFast()
   
   Vector3f gyro = ins.get_gyro();
   
-  vpFlight.rollRate = gyro.x;
-  vpFlight.pitchRate = gyro.y;
-  vpFlight.yawRate = gyro.z;
+  vpFlight.rollR = gyro.x;
+  vpFlight.pitchR = gyro.y;
+  vpFlight.yawR = gyro.z;
 
   // Acceleration
   
@@ -1553,9 +1553,9 @@ void sensorTaskFast()
   if(vpStatus.simulatorLink) {
     vpFlight.alpha = sensorData.alpha/RADIAN;
     vpFlight.IAS = sensorData.ias*1852/60/60;
-    vpFlight.rollRate = sensorData.rrate;
-    vpFlight.pitchRate = sensorData.prate;
-    vpFlight.yawRate = sensorData.yrate;
+    vpFlight.rollR = sensorData.rrate;
+    vpFlight.pitchR = sensorData.prate;
+    vpFlight.yawR = sensorData.yrate;
     vpFlight.bank = sensorData.roll/RADIAN;
     vpFlight.pitch = sensorData.pitch/RADIAN;
     vpFlight.heading = (int) (sensorData.heading + 0.5);
@@ -1609,7 +1609,7 @@ void fastLogTask()
 void slowLogTask()
 {
   logAlpha();  
-  logAttitude();
+  logFlight();
   logInput();
   logActuator();
   logConfig();
@@ -1773,7 +1773,7 @@ void statusTask()
   
   accAvg.input(vpFlight.acc);
 
-  float turnRate = sqrt(square(vpFlight.rollRate) + square(vpFlight.pitchRate) + square(vpFlight.yawRate));
+  float turnRate = sqrt(square(vpFlight.rollR) + square(vpFlight.pitchR) + square(vpFlight.yawR));
   
   bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
     || turnRate > 10.0/RADIAN
@@ -2458,10 +2458,10 @@ void gaugeTask()
 	consolePrint(vpControl.targetAlpha*RADIAN);
 	consolePrint_P(PSTR(")"));
 	consoleTab(25);
-	consolePrint_P(PSTR(" vpFlight.pitchRate(target) = "));
-	consolePrint(vpFlight.pitchRate*RADIAN, 1);
+	consolePrint_P(PSTR(" vpFlight.pitchR(target) = "));
+	consolePrint(vpFlight.pitchR*RADIAN, 1);
 	consolePrint_P(PSTR(" ("));
-	consolePrint(vpControl.targetPitchRate*RADIAN);
+	consolePrint(vpControl.targetPitchR*RADIAN);
 	consolePrint_P(PSTR(")"));
 	break;
 	
@@ -2480,11 +2480,11 @@ void gaugeTask()
 
       case 5:
 	consolePrint_P(PSTR(" rollRate = "));
-	consolePrint(vpFlight.rollRate*RADIAN, 1);
+	consolePrint(vpFlight.rollR*RADIAN, 1);
 	consolePrint_P(PSTR(" pitchRate = "));
-	consolePrint(vpFlight.pitchRate*RADIAN, 1);
+	consolePrint(vpFlight.pitchR*RADIAN, 1);
 	consolePrint_P(PSTR(" yawRate = "));
-	consolePrint(vpFlight.yawRate*RADIAN, 1);
+	consolePrint(vpFlight.yawR*RADIAN, 1);
 	break;
 
       case 6:
@@ -2602,7 +2602,7 @@ void gaugeTask()
 	
       case 14:
        consolePrint_P(PSTR(" roll_k = "));
-       consolePrint(vpFlight.rollRate/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.IAS, 3);
+       consolePrint(vpFlight.rollR/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.IAS, 3);
        break;
        
       case 15:
@@ -2791,20 +2791,20 @@ void elevatorModule()
     trimRateLimiter.reset(vpControl.targetAlpha);
     
   if(vpFeature.alphaHold)
-    vpControl.targetPitchRate = nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
+    vpControl.targetPitchR = nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -15/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
       *outer_P;
 
   else
-    vpControl.targetPitchRate = vpInput.elevExpo*PI/2;
+    vpControl.targetPitchR = vpInput.elevExpo*PI/2;
 
   vpControl.elevPredict =
     mixValue(stickForce/2, alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
 
   if(vpFeature.stabilizePitch) {
-    elevCtrl.input(vpControl.targetPitchRate - vpFlight.pitchRate, controlCycle);
+    elevCtrl.input(vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
     
     vpOutput.elev = elevCtrl.output();
 
@@ -2833,7 +2833,7 @@ void elevatorModule()
       const float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, vpControl.targetAlpha)
 	+ (effMaxAlpha - vpFlight.alpha)*outer_P;
 
-      pushCtrl.input(target - vpFlight.pitchRate, controlCycle);
+      pushCtrl.input(target - vpFlight.pitchR, controlCycle);
 
 #ifdef HARD_PUSHER
       vpControl.pusher = fminf(pushCtrl.output() - vpOutput.elev, 0);
@@ -2866,7 +2866,7 @@ void aileronModule()
   } else if(vpFeature.alphaHold)
     maxBank /= 1 + alphaPredict(vpControl.elevTrim) / vpDerived.thresholdAlpha / 2;
   
-  float targetRollRate = rollRatePredict(vpInput.aile);
+  float targetRollR = rollRatePredict(vpInput.aile);
   
   // We accumulate individual contributions so start with 0
 
@@ -2878,22 +2878,22 @@ void aileronModule()
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollRate = outer_P * (vpInput.aile*60/RADIAN - vpFlight.bank);
+      targetRollR = outer_P * (vpInput.aile*60/RADIAN - vpFlight.bank);
 
     else if(vpMode.bankLimiter) {
 
       if(vpMode.slowFlight)
 	// Weak leveling
-	targetRollRate -= outer_P*clamp(vpFlight.bank, -2.0/RADIAN, 2.0/RADIAN);
+	targetRollR -= outer_P*clamp(vpFlight.bank, -2.0/RADIAN, 2.0/RADIAN);
 
       // Bank limiter
       
-      targetRollRate =
-	clamp(targetRollRate,
+      targetRollR =
+	clamp(targetRollR,
 	      (-maxBank - vpFlight.bank)*outer_P, (maxBank - vpFlight.bank)*outer_P);
     }
 
-    aileCtrl.input(targetRollRate - vpFlight.rollRate, controlCycle);
+    aileCtrl.input(targetRollR - vpFlight.rollR, controlCycle);
   } else {
     // Stabilization disabled
     
@@ -2901,13 +2901,13 @@ void aileronModule()
     
     if(vpFeature.keepLevel)
       // Simple proportional wing leveler
-      vpOutput.aile -= vpFlight.bank + vpFlight.rollRate/32;
+      vpOutput.aile -= vpFlight.bank + vpFlight.rollR/32;
   }
 
   //   Apply controller output + feedforward
   
   vpControl.ailePredict =
-    vpFeature.aileFeedforward ? rollRatePredictInverse(targetRollRate) : 0;
+    vpFeature.aileFeedforward ? rollRatePredictInverse(targetRollR) : 0;
   
   vpOutput.aile += vpControl.ailePredict + aileCtrl.output();
 
