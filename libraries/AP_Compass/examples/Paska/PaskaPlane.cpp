@@ -67,20 +67,6 @@ static Compass compass;
 #endif
 
 //
-// HW timer declarations
-//
-
-const struct HWTimer hwTimer1 =
-       { &TCCR1A, &TCCR1B, &ICR1, { &OCR1A, &OCR1B, &OCR1C } };
-const struct HWTimer hwTimer3 =
-       { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C } };
-const struct HWTimer hwTimer4 =
-       { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C } };
-
-const struct HWTimer *hwTimers[] = 
-  { &hwTimer1, &hwTimer3, &hwTimer4 };
-
-//
 // LED output
 //
 
@@ -91,7 +77,7 @@ const struct PinDescriptor led[] = {{ PortA, 3 }, { PortA, 4 }, { PortA, 5 }};
 #define RED_LED led[2]
 
 //
-// RC interface
+// RC input
 //
 
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
@@ -108,8 +94,10 @@ struct RxInputRecord *ppmInputs[] =
   { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &stabModeInput };
 #endif
 
-Button rightDownButton(-1.0), rightUpButton(0.33),
-  leftDownButton(-0.3), leftUpButton(1);
+//
+// Mode selector inputs
+//
+
 struct SwitchRecord flightModeSelector = { &flightModeInput };
 #if RX_CHANNELS >= 8
 struct SwitchRecord stabModeSelector = { &stabModeInput };
@@ -117,29 +105,17 @@ struct SwitchRecord stabModeSelector = { &stabModeInput };
 
 int8_t flightModeSelectorValue, stabModeSelectorValue;
 
+//
+// Buttons
+//
+
+Button rightDownButton(-1.0), rightUpButton(0.33),
+  leftDownButton(-0.3), leftUpButton(1);
+
 #define LEVELBUTTON rightUpButton
 #define FLAPBUTTON rightDownButton
 #define TRIMBUTTON leftUpButton
 #define GEARBUTTON leftDownButton
-
-//
-// Servo PWM output
-//
-
-#define NEUTRAL 1500
-#define RANGE 500
-
-struct PWMOutput pwmOutput[MAX_SERVO] = {
-  { { PortB, 6 }, &hwTimer1, COMnB },
-  { { PortB, 5 }, &hwTimer1, COMnA },
-  { { PortH, 5 }, &hwTimer4, COMnC },
-  { { PortH, 4 }, &hwTimer4, COMnB },
-  { { PortH, 3 }, &hwTimer4, COMnA },
-  { { PortE, 5 }, &hwTimer3, COMnC },
-  { { PortE, 4 }, &hwTimer3, COMnB },
-  { { PortE, 3 }, &hwTimer3, COMnA },
-  { { PortB, 7 }, &hwTimer1, COMnC }
-};
 
 //
 // Periodic task stuff
@@ -1282,7 +1258,7 @@ void executeCommand(char *buf)
 	consoleNoteLn_P(PSTR("SERVO  FUNCTION"));
 	consoleNoteLn_P(PSTR("---------------------"));
 
-	for(int i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
+	for(int i = 0; i < MAX_SERVO; i++) {
 	  consoleNote_P(PSTR("  "));
 	  consolePrint(i);
 	  consoleTab(10);
@@ -3272,21 +3248,19 @@ void actuatorTask()
   if(!vpStatus.armed)
     return;
 
-  for(unsigned int i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++)
+  for(unsigned int i = 0; i < MAX_SERVO; i++)
     if(functionTable[vpParam.functionMap[i]])
-      pwmOutputWrite(&pwmOutput[i], NEUTRAL
-		     + RANGE*clamp(functionTable[vpParam.functionMap[i]](),
-				   -1, 1));
+      pwmOutputWrite(i, clamp(functionTable[vpParam.functionMap[i]](), -1, 1));
 }
 
-void backgroundTask(uint32_t durationMicros)
+void backgroundTask(uint32_t duration)
 {
   uint32_t idleStart = currentMicros();
   
   if(!logReady(false))
-    logInit(2*durationMicros);
+    logInit(duration);
   else
-    delayMicros(durationMicros);
+    delayMicros(duration*1e3);
 
   idleMicros += currentMicros() - idleStart;
 }
@@ -3441,9 +3415,7 @@ void setup()
   // PWM output
 
   consoleNoteLn_P(PSTR("Initializing PWM output"));
-
-  pwmOutputInitList(pwmOutput, sizeof(pwmOutput)/sizeof(struct PWMOutput));
-  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
+  pwmOutputInit();
 
   // I2C
   
@@ -3452,7 +3424,7 @@ void setup()
   I2c.begin();
   I2c.setSpeed(true);
   I2c.pullup(false);
-  I2c.timeOut(2+EXT_EEPROM_LATENCY/1000);
+  I2c.timeOut(2+EXT_EEPROM_LATENCY);
 
   consolePrintLn_P(PSTR("done. "));
   
@@ -3558,7 +3530,7 @@ void loop()
   if(!scheduler())
     // Idle
       
-    backgroundTask(1000);
+    backgroundTask(1);
 }
 
 AP_HAL_MAIN();

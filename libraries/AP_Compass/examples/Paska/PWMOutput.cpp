@@ -1,10 +1,38 @@
+#include <stdlib.h>
 #include "PWMOutput.h"
+#include "NVState.h"
 #include <avr/io.h>
 
 #define PWM_HZ 50
 #define TIMER_HZ (16e6/8)
 
 static const uint8_t outputModeMask[] = { 1<<COM1A1, 1<<COM1B1, 1<<COM1C1 };
+
+//
+// HW timer declarations
+//
+
+const struct HWTimer hwTimer1 =
+       { &TCCR1A, &TCCR1B, &ICR1, { &OCR1A, &OCR1B, &OCR1C } };
+const struct HWTimer hwTimer3 =
+       { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C } };
+const struct HWTimer hwTimer4 =
+       { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C } };
+
+const struct HWTimer *hwTimers[] = 
+  { &hwTimer1, &hwTimer3, &hwTimer4 };
+
+struct PWMOutput pwmOutput[MAX_SERVO] = {
+  { { PortB, 6 }, &hwTimer1, COMnB },
+  { { PortB, 5 }, &hwTimer1, COMnA },
+  { { PortH, 5 }, &hwTimer4, COMnC },
+  { { PortH, 4 }, &hwTimer4, COMnB },
+  { { PortH, 3 }, &hwTimer4, COMnA },
+  { { PortE, 5 }, &hwTimer3, COMnC },
+  { { PortE, 4 }, &hwTimer3, COMnB },
+  { { PortE, 3 }, &hwTimer3, COMnA },
+  { { PortB, 7 }, &hwTimer1, COMnC }
+};
 
 void pwmTimerInit(const struct HWTimer *timer[], int num)
 {
@@ -35,18 +63,16 @@ void pwmDisable(const struct PWMOutput *output)
    *(output->timer->TCCRA) &= ~outputModeMask[output->pwmCh];
 }
 
-void pwmOutputInit(struct PWMOutput *output)
+void pwmOutputInit(void)
 {
-  setPinState(&output->pin, 0);
-  configureOutput(&output->pin);
-  pwmDisable(output);
-  output->active = false;
-}
+  for(int i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
+    setPinState(&pwmOutput[i].pin, 0);
+    configureOutput(&pwmOutput[i].pin);
+    pwmDisable(&pwmOutput[i]);
+    pwmOutput[i].active = false;
+  }
 
-void pwmOutputInitList(struct PWMOutput output[], int num)
-{
-   for(int i = 0; i < num; i++)
-      pwmOutputInit(&output[i]);
+  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
 }
 
 uint16_t constrain_period(uint16_t p) {
@@ -57,11 +83,21 @@ uint16_t constrain_period(uint16_t p) {
     else return p;
 }
 
-void pwmOutputWrite(struct PWMOutput *output, uint16_t value)
+#define NEUTRAL 1500
+#define RANGE 500
+
+void pwmOutputWrite(int i, float fvalue)
 {
+  struct PWMOutput *output = NULL;
+
+  if(i >= 0 && i < MAX_SERVO)
+    output = &pwmOutput[i];
+    
   if(!output || !output->timer)
     return;
-  
+
+  uint16_t value = NEUTRAL + RANGE*fvalue;
+
   *(output->timer->OCR[output->pwmCh]) = constrain_period(value) << 1;
 
   if(!output->active) {

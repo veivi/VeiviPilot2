@@ -18,11 +18,7 @@ struct PWMOutput {
   bool active;
 };
 
-void pwmTimerInit(const struct HWTimer *timer[], int num);
-void pwmEnable(const struct PWMOutput *output);
-void pwmDisable(const struct PWMOutput *output);
-void pwmOutputInit(struct PWMOutput *output);
-void pwmOutputInitList(struct PWMOutput output[], int num);
-void pwmOutputWrite(struct PWMOutput *output, uint16_t value);
+void pwmOutputInit(void);
+void pwmOutputWrite(int i, float value);
 
 

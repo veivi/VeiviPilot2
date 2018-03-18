@@ -2,7 +2,7 @@
 #include "NewI2C.h"
 #include "Status.h"
 
-#define EXT_EEPROM_LATENCY 6000
+#define EXT_EEPROM_LATENCY 6    // ms
 
 extern uint32_t writeBytesCum;
 

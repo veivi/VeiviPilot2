@@ -268,7 +268,7 @@ void logDumpBinary(void)
 
 bool logInit(uint32_t maxDuration)
 {
-  uint32_t current = currentMicros();
+  uint32_t current = currentMillis();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;
   static bool endFound = false;
   uint32_t eepromSize = 0;
@@ -333,7 +333,7 @@ bool logInit(uint32_t maxDuration)
       
       searchPtr++;
       
-      if(currentMicros() - current > maxDuration)
+      if(currentMillis() - current > maxDuration)
         // Stop for now
         return false;
     }
@@ -377,7 +377,7 @@ bool logInit(uint32_t maxDuration)
       
       searchPtr++;
       
-      if(currentMicros() - current > maxDuration)
+      if(currentMillis() - current > maxDuration)
         // Stop for now
         return false;
     }

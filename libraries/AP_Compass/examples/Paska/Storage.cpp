@@ -20,7 +20,7 @@ uint32_t writeBytesCum;
 
 void waitEEPROM(uint32_t addr)
 {
-  if(currentMicros() - lastWriteTime > EXT_EEPROM_LATENCY)
+  if(currentMillis() - lastWriteTime > EXT_EEPROM_LATENCY)
     // We're cool
     return;
     
@@ -41,7 +41,7 @@ void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes)
 		 (uint16_t) (addr & 0xFFFFL), 
 		 data, bytes));
 
-  lastWriteTime = currentMicros();
+  lastWriteTime = currentMillis();
 }
  
 bool readEEPROM(uint32_t addr, uint8_t *data, int size) 
