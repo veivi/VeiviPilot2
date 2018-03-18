@@ -94,7 +94,6 @@ typedef enum {
   c_gear,
   c_delete,
   c_fault,
-  c_bias,
   c_wow,
   c_wheels,
   c_map,

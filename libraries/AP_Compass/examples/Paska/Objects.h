@@ -36,6 +36,34 @@ struct FeatureRecord {
   bool ailePID;
 };
 
+struct InputState {
+  float aile, elev, elevExpo, throttle, rudder, tuningKnob;
+  bool ailePilotInput, elevPilotInput, rudderPilotInput;
+};
+
+struct ControlState {
+  float testGain;
+  float elevTrim, targetAlpha, targetPressure, targetPitchRate, minThrottle;
+  float elevPredict, ailePredict, aileNeutral, pusher;
+};
+
+struct OutputState {
+  float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz;
+};
+
+extern struct ModeRecord vpMode;
+extern struct FeatureRecord vpFeature;
+extern struct StatusRecord vpStatus;
+extern struct FlightState vpFlight;
+extern struct InputState vpInput;
+extern struct ControlState vpControl;
+extern struct OutputState vpOutput;
+
+extern float controlCycle;
+extern float outer_P, rudderMix, throttleMix;
+extern uint8_t flapSel, gearSel;
+extern const float sampleRate;
+
 struct GPSFix {
   float altitude;
   float track;
@@ -44,25 +72,6 @@ struct GPSFix {
   float speed;
 };
 
-extern struct ModeRecord vpMode;
-extern struct FeatureRecord vpFeature;
-extern struct StatusRecord vpStatus;
-extern struct FlightState vpFlight;
 // struct GPSFix gpsFix;
-
-extern uint32_t lastPPMWarn;
-extern float controlCycle;
-extern uint32_t idleMicros;
-extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
-extern float testGain;
-extern float aileStick, elevStick, elevStickExpo, throttleStick, rudderStick, tuningKnob;
-extern bool ailePilotInput, elevPilotInput, rudderPilotInput;
-
-extern float elevTrim, targetAlpha, targetPressure, targetPitchRate, minThrottle;
-extern float outer_P, rudderMix, throttleMix;
-extern uint8_t flapSel, gearSel;
-extern float elevOutput, elevOutputFeedForward, aileOutput, aileOutputFeedForward, brakeOutput, rudderOutput, steerOutput, vertOutput, horizOutput, aileNeutral, pusherOutput;
-extern float rollBias, aileBias, alphaBias, pitchBias;
-extern float sampleRate, fieldStrength;
 
 #endif

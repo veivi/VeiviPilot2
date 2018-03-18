@@ -89,7 +89,6 @@ const struct Command commands[] PROGMEM = {
   { "curve", c_curve },
   { "gear", c_gear },
   { "fault", c_fault },
-  { "bias", c_bias },
   { "function", c_function },
   { "", c_invalid }
 };

@@ -142,22 +142,30 @@ struct Task {
 
 #define HZ_TO_PERIOD(f) ((uint32_t) (1.0e6/(f)))
 
-uint32_t controlCycleEnded;
-uint32_t simTimeStamp;
-uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
-const int maxParams = MAX_SERVO;
-int gaugeCount, gaugeVariable[maxParams];
-bool paramsModified = false;
-float sampleRate = LOG_HZ_SLOW;
+const float sampleRate = LOG_HZ_SLOW;
 
+NewI2C I2c = NewI2C();
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-NewI2C I2c = NewI2C();
 Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2*CONTROL_HZ), iasEntropyAcc(CONFIG_HZ), alphaEntropyAcc(CONFIG_HZ);
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(alphaWindow_c*ALPHA_HZ);
 RateLimiter aileRateLimiter, flapActuator, trimRateLimiter;
 I2CDevice alphaDevice("alpha"), pitotDevice("pitot"), eepromDevice("EEPROM"), displayDevice("display");
+
+//
+// Misc local variables
+//
+
+static uint32_t simTimeStamp;
+static uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
+const int maxParams = MAX_SERVO;
+static uint8_t gaugeCount, gaugeVariable[maxParams];
+static bool paramsModified = false;
+static uint32_t idleMicros;
+static float idleAvg, logBandWidth, ppmFreq, simInputFreq;
+static uint32_t lastPPMWarn;
+static float fieldStrength;
 
 //
 // Datagram protocol integration
@@ -280,12 +288,12 @@ void logConfig(void)
   
   logGeneric(lc_status, sum);
   
-  logGeneric(lc_target, targetAlpha*RADIAN);
-  logGeneric(lc_target_pr, targetPitchRate*RADIAN);
-  logGeneric(lc_trim, elevTrim*100);
+  logGeneric(lc_target, vpControl.targetAlpha*RADIAN);
+  logGeneric(lc_target_pr, vpControl.targetPitchRate*RADIAN);
+  logGeneric(lc_trim, vpControl.elevTrim*100);
 
   if(vpMode.test) {
-    logGeneric(lc_gain, testGain);
+    logGeneric(lc_gain, vpControl.testGain);
     logGeneric(lc_test, nvState.testNum);
   } else {
     logGeneric(lc_gain, 0);
@@ -300,19 +308,19 @@ void logPosition(void)
   
 void logInput(void)
 {
-  logGeneric(lc_ailestick, aileStick);
-  logGeneric(lc_elevstick, elevStickExpo);
+  logGeneric(lc_ailestick, vpInput.aile);
+  logGeneric(lc_elevstick, vpInput.elevExpo);
   logGeneric(lc_thrstick, throttleCtrl.output());
-  logGeneric(lc_rudstick, rudderStick);
+  logGeneric(lc_rudstick, vpInput.rudder);
 }
 
 void logActuator(void)
 {
-  logGeneric(lc_aileron, aileOutput);
-  logGeneric(lc_aileron_ff, aileOutputFeedForward);
-  logGeneric(lc_elevator, elevOutput);
-  logGeneric(lc_elevator_ff, elevOutputFeedForward);
-  logGeneric(lc_rudder, rudderOutput);
+  logGeneric(lc_aileron, vpOutput.aile);
+  logGeneric(lc_aileron_ff, vpControl.ailePredict);
+  logGeneric(lc_elevator, vpOutput.elev);
+  logGeneric(lc_elevator_ff, vpControl.elevPredict);
+  logGeneric(lc_rudder, vpOutput.rudder);
   logGeneric(lc_flap, flapActuator.output());
 }
 
@@ -912,27 +920,6 @@ void executeCommand(char *buf)
       logDumpBinary();
       break;
 
-    case c_bias:
-      if(numParams > 1)
-	switch((int) param[0]) {
-	case 0:
-	  rollBias = param[1]/RADIAN;
-	  break;
-
-	case 1:
-	  aileBias = param[1]/100;
-	  break;
-	  
-	case 2:
-	  pitchBias = param[1]/RADIAN;
-	  break;
-	  
-	case 3:
-	  alphaBias = param[1]/RADIAN;
-	  break;
-	}
-      break;
-      
     case c_fault:
       if(numParams > 0)
 	vpStatus.fault = param[0];
@@ -995,9 +982,9 @@ void executeCommand(char *buf)
     
     case c_trim:
       if(numParams > 0)
-	elevTrim = param[0]/100;
+	vpControl.elevTrim = param[0]/100;
       consoleNote_P(PSTR("Current elev trim(%) = "));
-      consolePrintLn(elevTrim*100); 
+      consolePrintLn(vpControl.elevTrim*100); 
       break;
       
     case c_params:
@@ -1416,25 +1403,25 @@ void configurationTask();
 void receiverTask()
 {
   if(inputValid(&aileInput))
-    aileStick = applyNullZone(inputValue(&aileInput), NZ_BIG, &ailePilotInput);
+    vpInput.aile = applyNullZone(inputValue(&aileInput), NZ_BIG, &vpInput.ailePilotInput);
 
 #if RX_CHANNELS >= 8
   if(inputValid(&rudderInput))
-    rudderStick = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &rudderPilotInput);
+    vpInput.rudder = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &vpInput.rudderPilotInput);
 #else
-  rudderStick = 0;
+  vpInput.rudder = 0;
 #endif
   
   if(inputValid(&elevInput))
-    elevStick = applyNullZone(inputValue(&elevInput), NZ_SMALL, &elevPilotInput);
+    vpInput.elev = applyNullZone(inputValue(&elevInput), NZ_SMALL, &vpInput.elevPilotInput);
 
-  elevStickExpo = applyExpo(elevStick);
+  vpInput.elevExpo = applyExpo(vpInput.elev);
   
   if(inputValid(&tuningKnobInput))
-    tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
+    vpInput.tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
     
   if(inputValid(&throttleInput))
-    throttleStick = inputValue(&throttleInput);
+    vpInput.throttle = inputValue(&throttleInput);
 
   flightModeSelectorValue = readSwitch(&flightModeSelector);
 
@@ -1463,7 +1450,7 @@ void receiverTask()
   //
   
   if(LEVELBUTTON.state()
-     && throttleStick < 0.1 && aileStick < -0.90 && elevStick > 0.90
+     && vpInput.throttle < 0.1 && vpInput.aile < -0.90 && vpInput.elev > 0.90
      && flightModeSelectorValue == -1) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
@@ -1480,8 +1467,8 @@ void receiverTask()
   // Delay the controls just to make sure we always detect the failsafe
   // mode before doing anything abrupt
 
-  elevDeriv.input(elevStick, controlCycle);
-  aileDeriv.input(aileStick, controlCycle);
+  elevDeriv.input(vpInput.elev, controlCycle);
+  aileDeriv.input(vpInput.aile, controlCycle);
 
   if(elevDeriv.output() > maxSlope_c || aileDeriv.output() > maxSlope_c) {
     // We're seeing an abrupt change, apply delay from now on
@@ -1504,8 +1491,8 @@ void receiverTask()
     inputDelayed = false;
   }
   
-  elevStick = elevDelay.input(elevStick);
-  aileStick = aileDelay.input(aileStick);
+  vpInput.elev = elevDelay.input(vpInput.elev);
+  vpInput.aile = aileDelay.input(vpInput.aile);
 }
 
 void sensorTaskFast()
@@ -1564,13 +1551,13 @@ void sensorTaskFast()
   // Simulator link overrides
   
   if(vpStatus.simulatorLink) {
-    vpFlight.alpha = sensorData.alpha/RADIAN + alphaBias;
+    vpFlight.alpha = sensorData.alpha/RADIAN;
     vpFlight.iAS = sensorData.ias*1852/60/60;
     vpFlight.rollRate = sensorData.rrate;
     vpFlight.pitchRate = sensorData.prate;
     vpFlight.yawRate = sensorData.yrate;
-    vpFlight.bank = sensorData.roll/RADIAN + rollBias;
-    vpFlight.pitch = sensorData.pitch/RADIAN + pitchBias;
+    vpFlight.bank = sensorData.roll/RADIAN;
+    vpFlight.pitch = sensorData.pitch/RADIAN;
     vpFlight.heading = (int) (sensorData.heading + 0.5);
     vpFlight.accX = sensorData.accx*FOOT;
     vpFlight.accY = sensorData.accy*FOOT;
@@ -1680,18 +1667,18 @@ static float testGainExpoGeneric(float range, float param)
 
 float testGainExpo(float range)
 {
-  return testGainExpoGeneric(range, tuningKnob);
+  return testGainExpoGeneric(range, vpInput.tuningKnob);
 }
 
 float testGainExpoReversed(float range)
 {
-  return testGainExpoGeneric(range, 1 - tuningKnob);
+  return testGainExpoGeneric(range, 1 - vpInput.tuningKnob);
 }
 
 float testGainLinear(float start, float stop)
 {
   static float state;
-  float q = quantize(tuningKnob, &state, paramSteps);
+  float q = quantize(vpInput.tuningKnob, &state, paramSteps);
   return start + q*(stop - start);
 }
 
@@ -1943,7 +1930,7 @@ void configurationTask()
   //
   
   if(leftUpButton.doublePulse() && !vpStatus.armed
-     && aileStick < -0.90 && elevStick > 0.90) {
+     && vpInput.aile < -0.90 && vpInput.elev > 0.90) {
     consoleNoteLn_P(PSTR("We're now ARMED"));
     vpStatus.armed = true;
     leftDownButton.reset();
@@ -2007,14 +1994,14 @@ void configurationTask()
     // CONTINUOUS: Autothrottle engage
     //
     
-    if(vpMode.slowFlight && throttleStick < RATIO(1/3)) {
-      minThrottle = 0;
+    if(vpMode.slowFlight && vpInput.throttle < RATIO(1/3)) {
+      vpControl.minThrottle = 0;
       vpMode.autoThrottle = true;
       
-    } else if(!vpMode.slowFlight && throttleStick > RATIO(1/3)
+    } else if(!vpMode.slowFlight && vpInput.throttle > RATIO(1/3)
 	    && vpFlight.iAS > RATIO(3/2)*vpDerived.minimumIAS) {
-      targetPressure = dynamicPressure(vpFlight.iAS);
-      minThrottle = throttleStick/8;
+      vpControl.targetPressure = dynamicPressure(vpFlight.iAS);
+      vpControl.minThrottle = vpInput.throttle/8;
       vpMode.autoThrottle = true;
     }
 
@@ -2081,7 +2068,7 @@ void configurationTask()
   
     failsafeDisable();
     
-    if(!vpMode.wingLeveler && !ailePilotInput) {
+    if(!vpMode.wingLeveler && !vpInput.ailePilotInput) {
       consoleNoteLn_P(PSTR("Wing leveler ENABLED"));
       vpMode.wingLeveler = true;
     } 
@@ -2091,7 +2078,7 @@ void configurationTask()
   // Autothrottle disable
   //
 
-  if(vpMode.autoThrottle && vpMode.slowFlight == (throttleStick > RATIO(1/3))) {
+  if(vpMode.autoThrottle && vpMode.slowFlight == (vpInput.throttle > RATIO(1/3))) {
     consoleNoteLn_P(PSTR("Autothrottle DISABLED"));
     vpMode.autoThrottle = false;
   }
@@ -2102,7 +2089,7 @@ void configurationTask()
   
   if(vpMode.loggingSuppressed)
     logDisable();
-  else if(vpMode.takeOff && throttleStick > 0.90)
+  else if(vpMode.takeOff && vpInput.throttle > 0.90)
     logEnable();
   else if(vpStatus.aloft && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
     logEnable();
@@ -2161,18 +2148,18 @@ void configurationTask()
   // Test mode control
   //
 
-  if(!vpMode.test && tuningKnob > 0.5) {
+  if(!vpMode.test && vpInput.tuningKnob > 0.5) {
     vpMode.test = true;
     consoleNoteLn_P(PSTR("Test mode ENABLED"));
 
-  } else if(vpMode.test && tuningKnob < 0) {
+  } else if(vpMode.test && vpInput.tuningKnob < 0) {
     vpMode.test = false;
     consoleNoteLn_P(PSTR("Test mode DISABLED"));
   }
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && ailePilotInput && fabsf(vpFlight.bank) > 15/RADIAN) {
+  if(vpMode.wingLeveler && vpInput.ailePilotInput && fabsf(vpFlight.bank) > 15/RADIAN) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -2282,7 +2269,7 @@ void configurationTask()
       // Wing stabilizer gain
          
       vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;
-      aileCtrl.setPID(testGain = testGainExpo(s_Ku_ref), 0, 0);
+      aileCtrl.setPID(vpControl.testGain = testGainExpo(s_Ku_ref), 0, 0);
       break;
             
     case 2:
@@ -2290,21 +2277,21 @@ void configurationTask()
          
       vpFeature.stabilizePitch = true;
       vpFeature.alphaHold = false;
-      elevCtrl.setPID(testGain = testGainExpo(i_Ku_ref), 0, 0);
+      elevCtrl.setPID(vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
       break;
          
     case 3:
       // Elevator stabilizer gain, outer loop enabled
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      elevCtrl.setPID(testGain = testGainExpo(i_Ku_ref), 0, 0);
+      elevCtrl.setPID(vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
       break;
          
     case 4:
       // Auto alpha outer loop gain
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      outer_P = testGain = testGainExpo(vpParam.o_P);
+      outer_P = vpControl.testGain = testGainExpo(vpParam.o_P);
       break;
                
     case 8:
@@ -2316,38 +2303,38 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      rudderMix = testGain = testGainLinear(0.8, 0.0);
+      rudderMix = vpControl.testGain = testGainLinear(0.8, 0.0);
       break;
 
     case 11:
       // Autothrottle gain (Z-N)
       
-      throttleCtrl.setPID(testGain = testGainExpo(vpParam.at_Ku), 0, 0);
+      throttleCtrl.setPID(vpControl.testGain = testGainExpo(vpParam.at_Ku), 0, 0);
       break;
       
     case 12:
       // Autothrottle gain (empirical)
       
       throttleCtrl.setZieglerNicholsPI
-	(testGain = testGainExpo(vpParam.at_Ku), vpParam.at_Tu);
+	(vpControl.testGain = testGainExpo(vpParam.at_Ku), vpParam.at_Tu);
       break;
 
     case 13:
       // Disable stabilization for max roll rate test
 
-      if(ailePilotInput) {
+      if(vpInput.ailePilotInput) {
 	vpFeature.stabilizeBank = vpMode.bankLimiter
 	  = vpFeature.keepLevel = false;
       } else {
 	vpFeature.stabilizeBank = vpFeature.keepLevel = true;
-	aileNeutral = aileOutput;
+	vpControl.aileNeutral = vpOutput.aile;
       }
       break;
       
     case 14:
       // Throttle to elev mix
 
-      throttleMix = testGain = testGainLinear(0, vpParam.t_Mix);
+      throttleMix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix);
       break;
 
     }
@@ -2366,17 +2353,17 @@ void trimTask()
   //
     
   const float trimRateMin_c = 7.5/100, trimRateRange_c = 2*trimRateMin_c;
-  const float elevTrimRate = trimRateMin_c + fabsf(elevStick)*trimRateRange_c,
-    steerTrimRate = trimRateMin_c + fabsf(rudderStick)*trimRateRange_c;
+  const float elevTrimRate = trimRateMin_c + fabsf(vpInput.elev)*trimRateRange_c,
+    steerTrimRate = trimRateMin_c + fabsf(vpInput.rudder)*trimRateRange_c;
     
   if(TRIMBUTTON.state() || vpMode.radioFailSafe) {
     //
     // Nose wheel
     //
     
-    if(rudderPilotInput && !gearSel && !vpStatus.positiveIAS) {
+    if(vpInput.rudderPilotInput && !gearSel && !vpStatus.positiveIAS) {
       vpParam.steerNeutral +=
-	sign(vpParam.steerDefl)*sign(rudderStick)*steerTrimRate/TRIM_HZ;
+	sign(vpParam.steerDefl)*sign(vpInput.rudder)*steerTrimRate/TRIM_HZ;
       vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
       paramsModified = true;
     }
@@ -2385,8 +2372,8 @@ void trimTask()
     // Elevator
     //
   
-    if(elevPilotInput)
-      elevTrim += sign(elevStick) * elevTrimRate / TRIM_HZ;
+    if(vpInput.elevPilotInput)
+      vpControl.elevTrim += sign(vpInput.elev) * elevTrimRate / TRIM_HZ;
   }
 
   //
@@ -2399,14 +2386,14 @@ void trimTask()
      && prevMode != vpMode.slowFlight) {
     if(vpMode.slowFlight) {
       // Into slow flight: maintain alpha with current stick
-      elevTrim = alphaPredictInverse(vpFlight.alpha) - elevStick;
+      vpControl.elevTrim = alphaPredictInverse(vpFlight.alpha) - vpInput.elev;
     } else {
       // Maintain elevator position with current stick
-      elevTrim = elevOutput - elevStick;
+      vpControl.elevTrim = vpOutput.elev - vpInput.elev;
     }
     
     consoleNote_P(PSTR("Elev trim adjusted to "));
-    consolePrintLn(elevTrim, 2);
+    consolePrintLn(vpControl.elevTrim, 2);
   }
 
   prevMode = vpMode.slowFlight;
@@ -2421,11 +2408,11 @@ void trimTask()
     // const float pRatio
     //  = clamp(dynPressure / dynamicPressure(vpDerived.minimumIAS), 0, 1);
       
-    elevTrim = vpMode.slowFlight
+    vpControl.elevTrim = vpMode.slowFlight
       ? alphaPredictInverse(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
   } else
-    elevTrim =
-      clamp(elevTrim,
+    vpControl.elevTrim =
+      clamp(vpControl.elevTrim,
 	    fminf(0, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
 	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
@@ -2468,13 +2455,13 @@ void gaugeTask()
 	consolePrint_P(PSTR(" alpha(target) = "));
 	consolePrint(vpFlight.alpha*RADIAN);
 	consolePrint_P(PSTR(" ("));
-	consolePrint(targetAlpha*RADIAN);
+	consolePrint(vpControl.targetAlpha*RADIAN);
 	consolePrint_P(PSTR(")"));
 	consoleTab(25);
 	consolePrint_P(PSTR(" vpFlight.pitchRate(target) = "));
 	consolePrint(vpFlight.pitchRate*RADIAN, 1);
 	consolePrint_P(PSTR(" ("));
-	consolePrint(targetPitchRate*RADIAN);
+	consolePrint(vpControl.targetPitchRate*RADIAN);
 	consolePrint_P(PSTR(")"));
 	break;
 	
@@ -2513,28 +2500,28 @@ void gaugeTask()
 
       case 7:
 	consolePrint_P(PSTR(" aileStick = "));
-	consolePrint(aileStick);
+	consolePrint(vpInput.aile);
 	consolePrint_P(PSTR(" elevStick(expo) = "));
-	consolePrint(elevStick);
+	consolePrint(vpInput.elev);
 	consolePrint_P(PSTR("("));
-	consolePrint(elevStickExpo);
+	consolePrint(vpInput.elevExpo);
 	consolePrint_P(PSTR(") thrStick = "));
-	consolePrint(throttleStick);
+	consolePrint(vpInput.throttle);
 	consolePrint_P(PSTR(" rudderStick = "));
-	consolePrint(rudderStick);
+	consolePrint(vpInput.rudder);
 	consolePrint_P(PSTR(" knob = "));
-	consolePrint(tuningKnob);
+	consolePrint(vpInput.tuningKnob);
 	break;
 
       case 8:
 	consolePrint_P(PSTR(" aileOut(c) = "));
-	consolePrint(aileOutput);
+	consolePrint(vpOutput.aile);
 	consolePrint_P(PSTR(" ("));
 	consolePrint(aileCtrl.output());
 	consolePrint_P(PSTR(") elevOut = "));
-	consolePrint(elevOutput);
+	consolePrint(vpOutput.elev);
 	consolePrint_P(PSTR(" rudderOut = "));
-	consolePrint(rudderOutput);
+	consolePrint(vpOutput.rudder);
 	break;
 
       case 9:
@@ -2550,7 +2537,7 @@ void gaugeTask()
 	for(float j = 0; j < 2; j += 0.5) {
 	  if(j > 0)
 	    consolePrint(", ");
-	  consolePrint(testGain*powf(vpFlight.iAS, j));
+	  consolePrint(vpControl.testGain*powf(vpFlight.iAS, j));
 	}
 	break;
 	
@@ -2615,14 +2602,14 @@ void gaugeTask()
 	
       case 14:
        consolePrint_P(PSTR(" roll_k = "));
-       consolePrint(vpFlight.rollRate/expo(aileOutput-aileNeutral, vpParam.expo)/vpFlight.iAS, 3);
+       consolePrint(vpFlight.rollRate/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.iAS, 3);
        break;
        
       case 15:
 	consolePrint_P(PSTR(" elevOutput(trim) = "));
-	consolePrint(elevOutput, 3);
+	consolePrint(vpOutput.elev, 3);
 	consolePrint_P(PSTR("("));
-	consolePrint(elevTrim, 3);
+	consolePrint(vpControl.elevTrim, 3);
 	consolePrint_P(PSTR(")"));
 	break;
 
@@ -2789,75 +2776,75 @@ void elevatorModule()
 {
   const float shakerLimit = RATIO(1/2);
   const float stickForce =
-    vpMode.radioFailSafe ? 0 : fmaxf(elevStick-shakerLimit, 0)/(1-shakerLimit);
+    vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
     = mixValue(stickForce, vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
-  elevOutput =
-    applyExpoTrim(elevStick, vpMode.takeOff ? vpParam.takeoffTrim : elevTrim);
+  vpOutput.elev =
+    applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
   
-  targetAlpha = fminf(alphaPredict(elevOutput), effMaxAlpha);
+  vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
 
   if(vpMode.radioFailSafe)
-    targetAlpha = trimRateLimiter.input(targetAlpha, controlCycle);
+    vpControl.targetAlpha = trimRateLimiter.input(vpControl.targetAlpha, controlCycle);
   else
-    trimRateLimiter.reset(targetAlpha);
+    trimRateLimiter.reset(vpControl.targetAlpha);
     
   if(vpFeature.alphaHold)
-    targetPitchRate = nominalPitchRateLevel(vpFlight.bank, targetAlpha)
-      + clamp(targetAlpha - vpFlight.alpha,
+    vpControl.targetPitchRate = nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
+      + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -15/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
       *outer_P;
 
   else
-    targetPitchRate = elevStickExpo*PI/2;
+    vpControl.targetPitchRate = vpInput.elevExpo*PI/2;
 
-  elevOutputFeedForward =
-    mixValue(stickForce/2, alphaPredictInverse(targetAlpha), elevOutput);
+  vpControl.elevPredict =
+    mixValue(stickForce/2, alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
 
   if(vpFeature.stabilizePitch) {
-    elevCtrl.input(targetPitchRate - vpFlight.pitchRate, controlCycle);
+    elevCtrl.input(vpControl.targetPitchRate - vpFlight.pitchRate, controlCycle);
     
-    elevOutput = elevCtrl.output();
+    vpOutput.elev = elevCtrl.output();
 
     if(vpFeature.alphaHold)
-      elevOutput += elevOutputFeedForward;
+      vpOutput.elev += vpControl.elevPredict;
   } else {
 
     if(vpMode.radioFailSafe)
-      elevOutput = elevOutputFeedForward;
+      vpOutput.elev = vpControl.elevPredict;
     
-    elevCtrl.reset(elevOutput - elevOutputFeedForward, 0.0);
+    elevCtrl.reset(vpOutput.elev - vpControl.elevPredict, 0.0);
       
     // Pusher
 
 #ifdef HARD_PUSHER
-    pushCtrl.limit(0, elevOutput);
+    pushCtrl.limit(0, vpOutput.elev);
 #else
-    pushCtrl.limit(-elevOutput, 0);
+    pushCtrl.limit(-vpOutput.elev, 0);
 #endif
 
-    pusherOutput = 0;
+    vpControl.pusher = 0;
     
     if(vpFeature.pusher) {
       // Pusher active
         
-      const float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, targetAlpha)
+      const float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, vpControl.targetAlpha)
 	+ (effMaxAlpha - vpFlight.alpha)*outer_P;
 
       pushCtrl.input(target - vpFlight.pitchRate, controlCycle);
 
 #ifdef HARD_PUSHER
-      pusherOutput = fminf(pushCtrl.output() - elevOutput, 0);
+      vpControl.pusher = fminf(pushCtrl.output() - vpOutput.elev, 0);
 #else
-      pusherOutput = pushCtrl.output();
+      vpControl.pusher = pushCtrl.output();
 #endif
 
-      elevOutput += pusherOutput;
+      vpOutput.elev += vpControl.pusher;
     } else
 #ifdef HARD_PUSHER
-      pushCtrl.reset(elevOutput, 0.0);
+      pushCtrl.reset(vpOutput.elev, 0.0);
 #else
       pushCtrl.reset(0, 0.0);
 #endif
@@ -2875,15 +2862,15 @@ void aileronModule()
   if(vpMode.radioFailSafe) {
     maxBank = 15/RADIAN;
     if(vpStatus.stall)
-      aileStick = 0;
+      vpInput.aile = 0;
   } else if(vpFeature.alphaHold)
-    maxBank /= 1 + alphaPredict(elevTrim) / vpDerived.thresholdAlpha / 2;
+    maxBank /= 1 + alphaPredict(vpControl.elevTrim) / vpDerived.thresholdAlpha / 2;
   
-  float targetRollRate = rollRatePredict(aileStick);
+  float targetRollRate = rollRatePredict(vpInput.aile);
   
   // We accumulate individual contributions so start with 0
 
-  aileOutput = vpStatus.simulatorLink ? aileBias : 0;
+  vpOutput.aile = 0;
   
   if(vpFeature.stabilizeBank) {
     // Stabilization is enabled
@@ -2891,7 +2878,7 @@ void aileronModule()
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollRate = outer_P * (aileStick*60/RADIAN - vpFlight.bank);
+      targetRollRate = outer_P * (vpInput.aile*60/RADIAN - vpFlight.bank);
 
     else if(vpMode.bankLimiter) {
 
@@ -2914,20 +2901,20 @@ void aileronModule()
     
     if(vpFeature.keepLevel)
       // Simple proportional wing leveler
-      aileOutput -= vpFlight.bank + vpFlight.rollRate/32;
+      vpOutput.aile -= vpFlight.bank + vpFlight.rollRate/32;
   }
 
   //   Apply controller output + feedforward
   
-  aileOutputFeedForward =
+  vpControl.ailePredict =
     vpFeature.aileFeedforward ? rollRatePredictInverse(targetRollRate) : 0;
   
-  aileOutput += aileOutputFeedForward + aileCtrl.output();
+  vpOutput.aile += vpControl.ailePredict + aileCtrl.output();
 
   //   Constrain & rate limit
   
-  aileOutput
-    = aileRateLimiter.input(constrainServoOutput(aileOutput), controlCycle);
+  vpOutput.aile
+    = aileRateLimiter.input(constrainServoOutput(vpOutput.aile), controlCycle);
 }
 
 //
@@ -2936,12 +2923,12 @@ void aileronModule()
 
 void rudderModule()
 {
-  rudderOutput = rudderStick;
+  vpOutput.rudder = vpInput.rudder;
 
   if(vpDerived.haveRetracts && gearSel)
-    steerOutput = 0;
+    vpOutput.steer = 0;
   else
-    steerOutput = rudderStick;
+    vpOutput.steer = vpInput.rudder;
 }
 
 //
@@ -2950,20 +2937,20 @@ void rudderModule()
   
 void throttleModule()
 {
-  throttleCtrl.limit(minThrottle, throttleStick);
+  throttleCtrl.limit(vpControl.minThrottle, vpInput.throttle);
     
   if(vpMode.autoThrottle) {
     float thrError = 0;
     
     if(vpMode.slowFlight)
-      thrError = vpFlight.slope - vpParam.glideSlope*(RATIO(3/2) - 3*throttleStick);
+      thrError = vpFlight.slope - vpParam.glideSlope*(RATIO(3/2) - 3*vpInput.throttle);
     else
-      thrError = 1 - vpFlight.dynP/targetPressure;
+      thrError = 1 - vpFlight.dynP/vpControl.targetPressure;
 
     throttleCtrl.input(thrError, controlCycle);
 
   } else
-    throttleCtrl.reset(throttleStick, 0);
+    throttleCtrl.reset(vpInput.throttle, 0);
 }
 
 //
@@ -2973,10 +2960,10 @@ void throttleModule()
 void vectorModule()
 {
   if(vpMode.slowFlight)
-    vertOutput = horizOutput = 0;
+    vpOutput.thrustVert = vpOutput.thrustHoriz = 0;
   else {
-    vertOutput = elevStick + pusherOutput;
-    horizOutput = rudderStick;
+    vpOutput.thrustVert = vpInput.elev + vpControl.pusher;
+    vpOutput.thrustHoriz = vpInput.rudder;
   }
 }
 
@@ -2992,10 +2979,10 @@ void ancillaryModule()
   // Brake
   //
     
-  if(gearSel == 1 || elevStick > 0)
-    brakeOutput = 0;
+  if(gearSel == 1 || vpInput.elev > 0)
+    vpOutput.brake = 0;
   else
-    brakeOutput = -elevStick;
+    vpOutput.brake = -vpInput.elev;
 }
 
 //
@@ -3018,15 +3005,15 @@ void mixingTask()
 {
   // Throttle to elev mix
   
-  elevOutput =
-    constrainServoOutput(elevOutput +
+  vpOutput.elev =
+    constrainServoOutput(vpOutput.elev +
 			 throttleMix*powf(throttleCtrl.output(),
 					  vpParam.t_Expo));
 
   // Aile to rudder mix
   
-  rudderOutput =
-    constrainServoOutput(rudderOutput + aileOutput*rudderMix);  
+  vpOutput.rudder =
+    constrainServoOutput(vpOutput.rudder + vpOutput.aile*rudderMix);  
   // constrainServoOutput(rudderOutput + aileOutput*rudderMix*coeffOfLift(alpha)/vpDerived.maxCoeffOfLift);  
 }
 
@@ -3036,6 +3023,8 @@ void controlTask()
   // Cycle time bookkeeping 
   //
   
+  static uint32_t controlCycleEnded;
+ 
   if(controlCycleEnded > 0)
     controlCycle = (currentTime - controlCycleEnded)/1.0e6;
   
@@ -3061,24 +3050,24 @@ void controlTask()
 
 float elevatorFn()
 {
-  return vpParam.elevDefl*elevOutput + vpParam.elevNeutral;
+  return vpParam.elevDefl*vpOutput.elev + vpParam.elevNeutral;
 }
 
 float leftElevonFn()
 {
-    return vpParam.aileDefl*aileOutput - vpParam.elevDefl*elevOutput
+    return vpParam.aileDefl*vpOutput.aile - vpParam.elevDefl*vpOutput.elev
       + vpParam.aileNeutral;
 }
 
 float rightElevonFn()
 {
-  return vpParam.aileDefl*aileOutput + vpParam.elevDefl*elevOutput
+  return vpParam.aileDefl*vpOutput.aile + vpParam.elevDefl*vpOutput.elev
     + vpParam.elevNeutral;
 }
 
 float aileronFn()
 {
-    return vpParam.aileDefl*aileOutput + vpParam.aileNeutral;
+    return vpParam.aileDefl*vpOutput.aile + vpParam.aileNeutral;
 }
 
 float flaperonFn()
@@ -3098,24 +3087,24 @@ float rightAileronFn()
 
 float rudderFn()
 {
-  return vpParam.rudderNeutral + vpParam.rudderDefl*rudderOutput;
+  return vpParam.rudderNeutral + vpParam.rudderDefl*vpOutput.rudder;
 }
 
 float leftTailFn()
 {
-  return vpParam.elevDefl*elevOutput + vpParam.rudderDefl*rudderOutput 
+  return vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder 
     + vpParam.elevNeutral;
 }
 
 float rightTailFn()
 {
-  return -vpParam.elevDefl*elevOutput + vpParam.rudderDefl*rudderOutput
+  return -vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder
     + vpParam.rudderNeutral;
 }
 
 float leftCanardFn()
 {
-  return vpParam.canardNeutral + vpParam.canardDefl*elevOutput;
+  return vpParam.canardNeutral + vpParam.canardDefl*vpOutput.elev;
 }
 
 float rightCanardFn()
@@ -3125,22 +3114,22 @@ float rightCanardFn()
 
 float leftThrustVertFn()
 {
-  return vpParam.vertNeutral + vpParam.vertDefl*vertOutput;
+  return vpParam.vertNeutral + vpParam.vertDefl*vpOutput.thrustVert;
 }
 
 float rightThrustVertFn()
 {
-  return vpParam.vertNeutral - vpParam.vertDefl*vertOutput;
+  return vpParam.vertNeutral - vpParam.vertDefl*vpOutput.thrustVert;
 }
 
 float thrustHorizFn()
 {
-  return vpParam.horizNeutral + vpParam.horizDefl*horizOutput;
+  return vpParam.horizNeutral + vpParam.horizDefl*vpOutput.thrustHoriz;
 }
 
 float steeringFn()
 {
-  return vpParam.steerNeutral + vpParam.steerDefl*steerOutput;
+  return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
 }
 
 float leftFlapFn()
@@ -3160,7 +3149,7 @@ float gearFn()
 
 float brakeFn()
 {
-  return vpParam.brakeDefl*brakeOutput + vpParam.brakeNeutral;
+  return vpParam.brakeDefl*vpOutput.brake + vpParam.brakeNeutral;
 }
 
 float throttleFn()
@@ -3250,10 +3239,10 @@ void blinkTask()
 void simulatorLinkTask()
 {
   if(vpStatus.simulatorLink && vpStatus.armed) {
-    struct SimLinkControl control = { .aileron = aileOutput,
-				      .elevator = -elevOutput,
+    struct SimLinkControl control = { .aileron = vpOutput.aile,
+				      .elevator = -vpOutput.elev,
 				      .throttle = throttleCtrl.output(),
-				      .rudder = rudderOutput };
+				      .rudder = vpOutput.rudder };
 
     datagramTxStart(DG_SIMLINK);
     datagramTxOut((const uint8_t*) &control, sizeof(control));
