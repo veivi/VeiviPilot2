@@ -410,16 +410,16 @@ void logAttitude(void)
 //
 
 typedef enum {
-  toc_attitude,
-  toc_gyro,
   toc_alpha,
-  toc_mode,
-  toc_link,
   toc_pitot,
+  toc_link,
   toc_lstick,
   toc_rstick,
   toc_tuning,
   toc_button,
+  toc_attitude,
+  toc_gyro,
+  toc_mode,
   toc_fdr,
   toc_ram,
   toc_load,
@@ -630,16 +630,16 @@ bool toc_test_button(bool reset)
 
 const struct TakeoffTest tocTest[] PROGMEM =
   {
+    [toc_alpha] = { "ALPHA", toc_test_alpha },
+    [toc_pitot] = { "PITOT", toc_test_pitot },
+    [toc_link] = { "LINK", toc_test_link },
+    [toc_lstick] = { "LSTIK", toc_test_lstick },
+    [toc_rstick] = { "RSTIK", toc_test_rstick },
+    [toc_tuning] = { "TUNE", toc_test_tuning },
+    [toc_button] = { "BUTTN", toc_test_button },
     [toc_attitude] = { "ATTI", toc_test_attitude },
     [toc_gyro] = { "GYRO", toc_test_gyro },
-    [toc_alpha] = { "ALPHA", toc_test_alpha },
     [toc_mode] = { "MODE", toc_test_mode },
-    [toc_link] = { "LINK", toc_test_link },
-    [toc_pitot] = { "PITOT", toc_test_pitot },
-    [toc_lstick] = { "LSTK", toc_test_lstick },
-    [toc_rstick] = { "RSTK", toc_test_rstick },
-    [toc_tuning] = { "TUNE", toc_test_tuning },
-    [toc_button] = { "BUTN", toc_test_button },
     [toc_fdr] = { "FDR", toc_test_fdr },
     [toc_ram] = { "RAM", toc_test_ram },
     [toc_load] = { "LOAD", toc_test_load }
@@ -1397,7 +1397,7 @@ void alphaTask()
 
 void tocReportDisplay(bool result, int i, const char *s)
 {
-  obdMove((i % 3)*5, i/3 + 2);
+  obdMove((i % 3)*6, i/3 + 2);
   
   if(!result) {
     obdPrint(s, true);
