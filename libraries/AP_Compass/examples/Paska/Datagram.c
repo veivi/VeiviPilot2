@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "Datagram.h"
 #include "CRC16.h"
+#include "System.h"
 
 static uint16_t crcState;
 static int datagramSize = 0;
@@ -30,9 +31,13 @@ void datagramTxOut(const uint8_t *data, int l)
     datagramTxOutByte(*data++);
 }
 
+static uint32_t lastTx;
+
 void datagramTxStart(uint8_t dg)
 {
-  outputBreak();
+  if(currentTime - lastTx > 0.1e6)
+    outputBreak();
+  
   crcState = 0xFFFF;
   datagramTxOutByte((const uint8_t) dg);
 }
@@ -43,6 +48,7 @@ void datagramTxEnd(void)
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
   datagramSerialFlush();
+  lastTx = currentTime;
 }
 
 static void storeByte(const uint8_t c)
