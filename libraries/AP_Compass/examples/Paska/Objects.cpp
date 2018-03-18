@@ -12,3 +12,4 @@ struct OutputState vpOutput;
 float controlCycle;
 float outer_P, rudderMix, throttleMix;
 uint8_t flapSel, gearSel;
+float idleAvg, logBandWidth, ppmFreq, simInputFreq;

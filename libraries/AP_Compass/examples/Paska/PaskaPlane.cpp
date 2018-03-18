@@ -163,7 +163,6 @@ const int maxParams = MAX_SERVO;
 static uint8_t gaugeCount, gaugeVariable[maxParams];
 static bool paramsModified = false;
 static uint32_t idleMicros;
-static float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 static uint32_t lastPPMWarn;
 static float fieldStrength;
 

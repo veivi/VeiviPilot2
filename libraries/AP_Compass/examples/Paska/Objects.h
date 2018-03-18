@@ -63,6 +63,7 @@ extern float controlCycle;
 extern float outer_P, rudderMix, throttleMix;
 extern uint8_t flapSel, gearSel;
 extern const float sampleRate;
+extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 
 struct GPSFix {
   float altitude;
