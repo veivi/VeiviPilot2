@@ -88,7 +88,6 @@ typedef enum {
   c_calibrate,
   c_takeoff,
   c_ping,
-  c_update,
   c_curve,
   c_climb,
   c_gear,

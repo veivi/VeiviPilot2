@@ -58,7 +58,6 @@ const struct Command commands[] PROGMEM = {
   { "max", c_max },
   { "zl", c_zl },
   { "scale", c_scale },
-  { "update", c_update },
   { "trim", c_trim },
   { "ping", c_ping },
   { "model", c_model },

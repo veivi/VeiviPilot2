@@ -636,30 +636,6 @@ bool tocTestStatus(void (*reportFn)(bool, int, const char*))
 // Command interpreter
 //
 
-const prog_char_t *applyParamUpdate()
-{
-  /*
-  vpParam.i_Ku_C /= 2*PI;
-  vpParam.s_Ku_C /= 2*PI;
-  vpParam.p_Ku_C /= 2*PI;
-  vpParam.o_P /= 2*PI;
-  return PSTR("i_Ku, s_Ku, p_Ku, o_P scaled by 1/2/PI");
-  */
-  /*  
-  vpParam.ff_B *= RADIAN;
-  return PSTR("ff_B scaled by RADIAN");
-  */
-  /*
-  vpParam.cL_A *= vpDerived.totalMass;
-  vpParam.cL_B *= vpDerived.totalMass;
-  vpParam.cL_max *= vpDerived.totalMass;
-  
-  return PSTR("CoL scaled by mass (now indicates F instead of a)");
-  */
-  
-  return NULL;
-}
-
 char *parse(char *ptr)
 {
   while(*ptr && !isblank(*ptr))
@@ -824,7 +800,6 @@ void executeCommand(char *buf)
     // Complex
     //
 
-    int currentModel = nvState.model;
     float offset = 0.0;
     
     switch(command.token) {
@@ -940,24 +915,6 @@ void executeCommand(char *buf)
       }
       break;
     
-    case c_update:
-      if(!updateDescription) {
-	for(int i = 0; i < maxModels(); i++) {
-	  if(setModel(i, false)) {
-	    updateDescription = applyParamUpdate();
-	    storeParams();
-	  }
-	}
-	
-	setModel(currentModel, false);
-	
-	if(updateDescription) {
-	  consoleNote_P(PSTR("Param update applied : "));
-	  consolePrintLn_P(updateDescription);
-	}
-      }
-      break;
-      
     case c_stamp:
       if(numParams > 0) {
 	nvState.logStamp = param[0];
