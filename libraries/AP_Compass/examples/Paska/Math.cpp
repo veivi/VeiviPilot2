@@ -2,16 +2,17 @@
 #include "NVState.h"
 #include "Console.h"
 #include "Status.h"
+#include "Objects.h"
 #include <math.h>
 
 float effIAS()
 {
-  return fmaxf(iAS, vpDerived.minimumIAS);
+  return fmaxf(vpFlight.iAS, vpDerived.minimumIAS);
 }
 
 float effDP()
 {
-  return fmaxf(dynPressure, vpDerived.minimumDynP);
+  return fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
 }
 
 float nominalPitchRateLevel(float bank, float target)
