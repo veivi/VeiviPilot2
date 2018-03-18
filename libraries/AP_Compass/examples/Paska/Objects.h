@@ -4,13 +4,6 @@
 #include <stdint.h>
 #include "Status.h"
 
-struct FlightState {
-  float iAS, dynP, alpha;
-  float accX, accY, accZ, acc, alt, bank, pitch, rollRate, pitchRate, targetPitchRate, yawRate, slope;
-  uint16_t heading;
-  float accDir, relWind;
-};
-
 struct ModeRecord {
   bool test;
   bool alphaFailSafe;
@@ -34,6 +27,13 @@ struct FeatureRecord {
   bool pusher;
   bool aileFeedforward;
   bool ailePID;
+};
+
+struct FlightState {
+  float IAS, dynP, alpha;
+  float accX, accY, accZ, acc, alt, bank, pitch, rollRate, pitchRate, yawRate, slope;
+  uint16_t heading;
+  float accDir, relWind;
 };
 
 struct InputState {

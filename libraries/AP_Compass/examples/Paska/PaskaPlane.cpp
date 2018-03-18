@@ -444,7 +444,7 @@ bool toc_test_pitot(bool reset)
     positiveIAS = true;
   
   return (!vpStatus.pitotFailed && iasEntropyAcc.output() > 50
-	  && !vpStatus.pitotBlocked && positiveIAS && vpFlight.iAS < 5)
+	  && !vpStatus.pitotBlocked && positiveIAS && vpFlight.IAS < 5)
     || vpStatus.simulatorLink;
 }
 
@@ -1552,7 +1552,7 @@ void sensorTaskFast()
   
   if(vpStatus.simulatorLink) {
     vpFlight.alpha = sensorData.alpha/RADIAN;
-    vpFlight.iAS = sensorData.ias*1852/60/60;
+    vpFlight.IAS = sensorData.ias*1852/60/60;
     vpFlight.rollRate = sensorData.rrate;
     vpFlight.pitchRate = sensorData.prate;
     vpFlight.yawRate = sensorData.yrate;
@@ -1563,17 +1563,17 @@ void sensorTaskFast()
     vpFlight.accY = sensorData.accy*FOOT;
     vpFlight.accZ = -sensorData.accz*FOOT;
     
-    vpFlight.dynP = dynamicPressure(vpFlight.iAS);
+    vpFlight.dynP = dynamicPressure(vpFlight.IAS);
     
   } else 
-    vpFlight.iAS = dynamicPressureInverse(vpFlight.dynP);
+    vpFlight.IAS = dynamicPressureInverse(vpFlight.dynP);
 
   //
   // Derived values
   //
     
-  iasFilter.input(vpFlight.iAS);
-  iasFilterSlow.input(vpFlight.iAS);
+  iasFilter.input(vpFlight.IAS);
+  iasFilterSlow.input(vpFlight.IAS);
   vpFlight.slope = vpFlight.alpha - vpParam.offset - vpFlight.pitch;
 }
 
@@ -1725,7 +1725,7 @@ void statusTask()
   
   static uint32_t iasLastAlive;
 
-  if(vpFlight.iAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.iAS - iasFilterSlow.output()) > 0.5) {
+  if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - iasFilterSlow.output()) > 0.5) {
     if(vpStatus.pitotBlocked) {
       consoleNoteLn_P(PSTR("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
@@ -1897,7 +1897,7 @@ void statusTask()
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
      || !vpParam.haveGear || gearSel == 1 || !vpStatus.upright
-     || vpFlight.iAS > vpDerived.minimumIAS*RATIO(3/2)) {
+     || vpFlight.IAS > vpDerived.minimumIAS*RATIO(3/2)) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
@@ -1999,8 +1999,8 @@ void configurationTask()
       vpMode.autoThrottle = true;
       
     } else if(!vpMode.slowFlight && vpInput.throttle > RATIO(1/3)
-	    && vpFlight.iAS > RATIO(3/2)*vpDerived.minimumIAS) {
-      vpControl.targetPressure = dynamicPressure(vpFlight.iAS);
+	    && vpFlight.IAS > RATIO(3/2)*vpDerived.minimumIAS) {
+      vpControl.targetPressure = dynamicPressure(vpFlight.IAS);
       vpControl.minThrottle = vpInput.throttle/8;
       vpMode.autoThrottle = true;
     }
@@ -2167,7 +2167,7 @@ void configurationTask()
   // TakeOff mode disabled when airspeed detected (or fails)
 
   if(vpMode.takeOff && vpStatus.positiveIAS
-     && (vpFlight.iAS > vpDerived.minimumIAS || vpFlight.alpha > vpDerived.thresholdAlpha))  {
+     && (vpFlight.IAS > vpDerived.minimumIAS || vpFlight.alpha > vpDerived.thresholdAlpha))  {
     consoleNoteLn_P(PSTR("TakeOff COMPLETED"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
@@ -2432,9 +2432,9 @@ void gaugeTask()
 	consolePrint_P(PSTR("%)"));
 	consoleTab(25);
 	consolePrint_P(PSTR(" IAS,K(m/s) = "));
-	consolePrint((int) (vpFlight.iAS/KNOT));
+	consolePrint((int) (vpFlight.IAS/KNOT));
 	consolePrint_P(PSTR(" ("));
-	consolePrint(vpFlight.iAS, 1);
+	consolePrint(vpFlight.IAS, 1);
 	consolePrint_P(PSTR(")"));
 	consoleTab(50);
 	consolePrint_P(PSTR(" hdg = "));
@@ -2537,7 +2537,7 @@ void gaugeTask()
 	for(float j = 0; j < 2; j += 0.5) {
 	  if(j > 0)
 	    consolePrint(", ");
-	  consolePrint(vpControl.testGain*powf(vpFlight.iAS, j));
+	  consolePrint(vpControl.testGain*powf(vpFlight.IAS, j));
 	}
 	break;
 	
@@ -2588,9 +2588,9 @@ void gaugeTask()
 	consolePrint(vpFlight.alpha*RADIAN, 1);
 	consoleTab(15);
 	consolePrint_P(PSTR(" IAS,K(m/s) = "));
-	consolePrint((int) (vpFlight.iAS/KNOT));
+	consolePrint((int) (vpFlight.IAS/KNOT));
 	consolePrint_P(PSTR(" ("));
-	consolePrint(vpFlight.iAS, 1);
+	consolePrint(vpFlight.IAS, 1);
 	consolePrint_P(PSTR(")"));
 	consoleTab(40);
 	consolePrint_P(PSTR(" slope = "));
@@ -2602,7 +2602,7 @@ void gaugeTask()
 	
       case 14:
        consolePrint_P(PSTR(" roll_k = "));
-       consolePrint(vpFlight.rollRate/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.iAS, 3);
+       consolePrint(vpFlight.rollRate/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.IAS, 3);
        break;
        
       case 15:

@@ -7,7 +7,7 @@
 
 float effIAS()
 {
-  return fmaxf(vpFlight.iAS, vpDerived.minimumIAS);
+  return fmaxf(vpFlight.IAS, vpDerived.minimumIAS);
 }
 
 float effDP()
