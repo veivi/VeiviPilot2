@@ -32,7 +32,7 @@ extern Button rightDownButton, rightUpButton, leftDownButton, leftUpButton;
 
 struct RxInputRecord {
   struct PinDescriptor pin;
-  bool freqOnly, alive;
+  bool_t freqOnly, alive;
   int32_t pulseMin, pulseMax, pulseCenter;
   int32_t pulseStart;
   int32_t pulseCount;
@@ -47,18 +47,18 @@ struct SwitchRecord {
 };
 
 void rxInputInit(struct RxInputRecord *record);
-bool inputValid(struct RxInputRecord *record);
+bool_t inputValid(struct RxInputRecord *record);
 float inputValue(struct RxInputRecord *record);
 int8_t readSwitch(struct SwitchRecord *record);
 
 #define EXPO 0.3
 
-float applyNullZone(float value, float nz, bool *pilotInput);
+float applyNullZone(float value, float nz, bool_t *pilotInput);
 float applyNullZone(float value, float nz);
 float applyExpo(float value);
 float applyExpoTrim(float value, float trim);
 
-extern bool pciWarn;
+extern bool_t pciWarn;
 
 // pin change int callback
 

@@ -2,6 +2,7 @@
 #include "NVState.h"
 #include "AlphaPilot.h"
 
+/*
 struct ModeRecord vpMode;
 struct FeatureRecord vpFeature;
 struct StatusRecord vpStatus;
@@ -10,6 +11,7 @@ struct InputState vpInput;
 struct ControlState vpControl;
 struct OutputState vpOutput;
 // struct GPSFix gpsFix;
+*/
 
 float controlCycle;
 float outer_P, rudderMix, throttleMix;

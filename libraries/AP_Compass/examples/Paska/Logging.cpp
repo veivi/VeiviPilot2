@@ -15,12 +15,12 @@ typedef enum { invalid_c, find_stamp_c, find_start_c, ready_c, stop_c, run_c, fa
 logState_t logState;
 int32_t logPtr, logLen, logSize;
 uint16_t logEndStamp;
-bool logEnabled = false;
+bool_t logEnabled = false;
 long logBytesCum;
 
 #define logOffset nvState.logPartition
 
-bool logReady(bool verbose)
+bool_t logReady(bool_t verbose)
 {
   if(logState == stop_c || logState == run_c)
     return true;
@@ -31,7 +31,7 @@ bool logReady(bool verbose)
   return false;
 }
 
-bool logReady(void)
+bool_t logReady(void)
 {
   return logReady(true);
 }
@@ -105,7 +105,7 @@ static void logEnter(uint16_t value)
 
 void logClear(void)
 {
-  bool wasNotEmpty = logLen > 0;
+  bool_t wasNotEmpty = logLen > 0;
   
   consoleNoteLn_P(PSTR("Log being CLEARED"));
   
@@ -134,26 +134,20 @@ void logTestSet(uint16_t ch)
 
 static int prevCh = -1;
 
-static void logWithCh(int ch, uint16_t value)
+static void logWithCh(ChannelId_t ch, uint16_t value)
 {
   if(logState != run_c)
     return;
 
   value = ENTRY_VALUE(value);    // Constrain to valid range
   
-  if(!logChannels[ch].tick && value == logChannels[ch].value
+  if(ch != lc_alpha && value == logChannels[ch].value
      && currentMillis() < logChannels[ch].stamp + 5e3)
     // Repeat value, not stored
     
     return;
             
-  if(ch == prevCh) {
-    // Same channel as previous, store as delta
-    
-    logEnter(ENTRY_TOKEN(t_delta)
-	     | (DELTA_MASK & ((value - logChannels[ch].value)>>1)));
-    
-  } else if(prevCh > -1 && ch == prevCh + 1) {
+  if(prevCh > -1 && ch == prevCh + 1) {
     // Channel prediction good, just store value
     
     logEnter(value);
@@ -169,13 +163,18 @@ static void logWithCh(int ch, uint16_t value)
   prevCh = ch;
 }
 
-void logGeneric(int ch, float value)
+void logFloat(ChannelId_t ch, float value)
 {
   float small = logChannels[ch].small, large = logChannels[ch].large;
   
   logWithCh(ch, (uint16_t)
 	    clamp((float) VALUE_MASK*((value-small)/(large-small)),
 		  0, VALUE_MASK));
+}
+
+void logInteger(ChannelId_t ch, uint16_t value)
+{
+  logWithCh(ch, value & VALUE_MASK);
 }
 
 void logMark(void)
@@ -265,11 +264,11 @@ void logDumpBinary(void)
   datagramTxEnd();
 }
 
-bool logInit(uint32_t maxDuration)
+bool_t logInit(uint32_t maxDuration)
 {
   uint32_t current = currentMillis();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;
-  static bool endFound = false;
+  static bool_t endFound = false;
   uint32_t eepromSize = 0;
   uint8_t dummy;
   
@@ -412,7 +411,7 @@ bool logInit(uint32_t maxDuration)
   return false;
 }
 
-void logSave(void (*logStartCB)())
+void logSave()
 {
   if(logState == stop_c && logEnabled) {
     logState = run_c;
@@ -420,7 +419,7 @@ void logSave(void (*logStartCB)())
     for(int i = 0; i < 4; i++)
       logMark();
 
-    (*logStartCB)();
+    logTask();
 
     consoleNoteLn_P(PSTR("Logging STARTED"));
       
@@ -439,18 +438,46 @@ void logSave(void (*logStartCB)())
   }
 }
 
+void logObjects()
+{
+  for(int i = 0; i < lc_channels; i++) {
+    switch(logChannels[i].type) {
+    case lt_real:
+      logFloat((ChannelId_t) i, *((float*) logChannels[i].object));
+      break;
+      
+    case lt_angle:
+      logFloat((ChannelId_t) i, *((float*) logChannels[i].object)*RADIAN);
+      break;
+      
+    case lt_percent:
+      logFloat((ChannelId_t) i, *((float*) logChannels[i].object)*100);
+      break;
+      
+    case lt_integer:
+      logInteger((ChannelId_t) i, *((uint16_t*) logChannels[i].object));
+      break;
+    }
+  }
+}
+
 //
 // Log interface
 //
 
-void logAlpha(void)
+static uint16_t encode(bool_t vec[], int num)
 {
-  logGeneric(lc_alpha, vpFlight.alpha*RADIAN);
+  uint16_t result = 0;
+
+  while(num-- > 0)
+    result = (result<<1) | (vec[num] ? 1 : 0);
+
+  return result;
 }
 
-void logConfig(void)
+void logTask()
 {
-  bool mode[] = { vpMode.slowFlight,
+  bool_t mode[] = { vpMode.slowFlight,
 		  vpMode.bankLimiter,
 		  vpMode.wingLeveler,
 		  vpMode.takeOff,
@@ -459,15 +486,7 @@ void logConfig(void)
 		  vpMode.sensorFailSafe,
 		  vpMode.alphaFailSafe };
 
-  float sum = 0;
-  
-  for(uint16_t i = 0; i < sizeof(mode)/sizeof(bool); i++)
-    if(mode[i])
-      sum += 1.0/(2<<i);
-  
-  logGeneric(lc_mode, sum);
-  
-  bool status[] = { vpStatus.weightOnWheels,
+  bool_t status[] = { vpStatus.weightOnWheels,
 		    vpStatus.positiveIAS,
 		    gearSel == 1,
 		    vpStatus.stall,
@@ -476,76 +495,10 @@ void logConfig(void)
 		    vpStatus.pitotFailed,
 		    vpStatus.pitotBlocked };
   
-  sum = 0;
-  
-  for(uint16_t i = 0; i < sizeof(status)/sizeof(bool); i++)
-    if(status[i])
-      sum += 1.0/(2<<i);
-  
-  logGeneric(lc_status, sum);
-  
-  logGeneric(lc_target, vpControl.targetAlpha*RADIAN);
-  logGeneric(lc_target_pr, vpControl.targetPitchR*RADIAN);
-  logGeneric(lc_trim, vpControl.elevTrim*100);
+  modeEncoded = encode(mode, sizeof(mode)/sizeof(bool_t));
+  statusEncoded = encode(status, sizeof(status)/sizeof(bool_t));
+  flapEncoded = flapActuator.output();
+  testEncoded = vpMode.test ? nvState.testNum : 0;
 
-  if(vpMode.test) {
-    logGeneric(lc_gain, vpControl.testGain);
-    logGeneric(lc_test, nvState.testNum);
-  } else {
-    logGeneric(lc_gain, 0);
-    logGeneric(lc_test, 0);
-  }
+  logObjects();
 }
-
-void logPosition(void)
-{
-  logGeneric(lc_alt, vpFlight.alt);
-}
-  
-void logInput(void)
-{
-  logGeneric(lc_ailestick, vpInput.aile);
-  logGeneric(lc_elevstick, vpInput.elevExpo);
-  logGeneric(lc_thrstick, throttleCtrl.output());
-  logGeneric(lc_rudstick, vpInput.rudder);
-}
-
-void logActuator(void)
-{
-  logGeneric(lc_aileron, vpOutput.aile);
-  logGeneric(lc_aileron_ff, vpControl.ailePredict);
-  logGeneric(lc_elevator, vpOutput.elev);
-  logGeneric(lc_elevator_ff, vpControl.elevPredict);
-  logGeneric(lc_rudder, vpOutput.rudder);
-  logGeneric(lc_flap, flapActuator.output());
-}
-
-void logFlight(void)
-{
-  logGeneric(lc_dynpressure, vpFlight.dynP);
-  logGeneric(lc_accx, vpFlight.accX);
-  logGeneric(lc_accy, vpFlight.accY);
-  logGeneric(lc_accz, vpFlight.accZ);
-  logGeneric(lc_roll, vpFlight.bank*RADIAN);
-  logGeneric(lc_rollrate, vpFlight.rollR*RADIAN);
-  logGeneric(lc_pitch, vpFlight.pitch*RADIAN);
-  logGeneric(lc_pitchrate, vpFlight.pitchR*RADIAN);
-  logGeneric(lc_heading, vpFlight.heading);
-  logGeneric(lc_yawrate, vpFlight.yawR*RADIAN);
-}
-
-void fastLogTask()
-{
-  //  logAlpha();  
-}
-
-void slowLogTask()
-{
-  logAlpha();  
-  logFlight();
-  logInput();
-  logActuator();
-  logConfig();
-  logPosition();
-}
-

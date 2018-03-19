@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include "Status.h"
+#include "Objects.h"
 
 extern "C" {
 #include "Datagram.h"

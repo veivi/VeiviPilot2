@@ -7,6 +7,10 @@
 #include <AP_Math/AP_Math.h>
 #include "Filter.h"
 
+extern "C" {
+#include "CoreObjects.h"
+}
+
 //
 //
 //

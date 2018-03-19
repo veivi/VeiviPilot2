@@ -46,18 +46,25 @@ typedef enum {  lc_alpha,
                 lc_alt,
                 lc_channels } ChannelId_t;
 
+typedef enum {
+  lt_integer,
+  lt_real,
+  lt_percent,
+  lt_angle
+} ChannelType_t;
+
 struct LogChannel {
   ChannelId_t ch;
   const char *name;
+  ChannelType_t type;
   float small, large;
-  bool tick;
+  void *object;
   uint16_t value;
   uint32_t stamp;
 };
 
 #define TOKEN_MASK (1U<<15)
 #define VALUE_MASK (TOKEN_MASK-1)
-#define DELTA_MASK (VALUE_MASK>>1)
 #define BYTE_MASK ((1<<8)-1)
 #define ENTRY_TOKEN(t) (TOKEN_MASK | (t))
 #define ENTRY_VALUE(v) (((uint16_t) v) & VALUE_MASK)
@@ -66,12 +73,13 @@ struct LogChannel {
 typedef enum { t_stamp,
                t_mark, 
                t_channel = t_stamp + BYTE_MASK + 1,
-               t_start = t_channel + BYTE_MASK + 1, 
-               t_delta = t_stamp + DELTA_MASK + 1
+               t_start = t_channel + BYTE_MASK + 1
             } LogToken_t;
 
 extern struct LogChannel logChannels[];
 extern uint8_t logTest;
+extern float flapEncoded;
+extern uint16_t modeEncoded, statusEncoded, testEncoded;
 
 #endif
 

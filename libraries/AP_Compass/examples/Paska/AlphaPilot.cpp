@@ -1976,17 +1976,6 @@ void simulatorLinkTask()
   }
 }
 
-static void logStartCallback()
-{
-  fastLogTask();
-  slowLogTask();
-}
-
-void logSaveTask()
-{
-  logSave(logStartCallback);
-}
-
 void controlTaskGroup()
 {
   sensorTaskFast();
@@ -2024,11 +2013,9 @@ struct Task alphaPilotTasks[] = {
     HZ_TO_PERIOD(CONTROL_HZ/5) },
   { configTaskGroup,
     HZ_TO_PERIOD(CONFIG_HZ) },
-  { fastLogTask,
-    HZ_TO_PERIOD(LOG_HZ_FAST) },
-  { slowLogTask,
+  { logTask,
     HZ_TO_PERIOD(LOG_HZ_SLOW) },
-  { logSaveTask,
+  { logSave,
     HZ_TO_PERIOD(LOG_HZ_COMMIT) },
   { cacheTask,
     HZ_TO_PERIOD(LOG_HZ_FLUSH) },

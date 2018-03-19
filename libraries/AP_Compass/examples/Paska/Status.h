@@ -7,25 +7,4 @@
 
 #include "NewI2C.h"
 
-struct StatusRecord {
-  bool armed;
-  bool consoleLink;
-  bool simulatorLink;
-  bool silent;
-  bool positiveIAS;
-  bool fullStop;
-  bool pitotFailed;
-  bool pitotBlocked;
-  bool stall;
-  bool weightOnWheels;
-  bool aloft;
-  int fault;
-  bool alphaFailed;
-  bool alphaUnreliable;
-  bool upright;
-  bool belowFloor;
-};
-
-extern struct StatusRecord vpStatus;
-
 #endif
