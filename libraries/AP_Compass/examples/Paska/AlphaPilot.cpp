@@ -5,7 +5,6 @@
 #include <math.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include "Status.h"
 #include "Filter.h"
 #include "Math.h"
 #include "Console.h"

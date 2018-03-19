@@ -5,32 +5,17 @@
 #include <math.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include "Status.h"
-#include "Filter.h"
 #include "Math.h"
 #include "Console.h"
 #include "Controller.h"
-#include "NewI2C.h"
-#include "Storage.h"
-#include "Interrupt.h"
-#include "RxInput.h"
 #include "Logging.h"
-#include "NVState.h"
 #include "PWMOutput.h"
 #include "PPM.h"
-#include "Command.h"
-#include "Button.h"
+#include "NVState.h"
 #include "Time.h"
-#include "AS5048B.h"
-#include "MS4525.h"
-#include "SSD1306.h"
+#include "Command.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
-#include <AP_Progmem/AP_Progmem.h>
-#include <AP_HAL/AP_HAL.h>
-#include <AP_HAL_AVR/AP_HAL_AVR.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
-#include <AP_AHRS/AP_AHRS.h>
 
 extern "C" {
 #include "CRC16.h"

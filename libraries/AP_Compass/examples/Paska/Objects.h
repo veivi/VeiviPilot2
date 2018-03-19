@@ -2,9 +2,9 @@
 #define OBJECTS_H
 
 #include <stdint.h>
-#include "Status.h"
 #include "Controller.h"
 #include "Filter.h"
+#include "NewI2C.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
