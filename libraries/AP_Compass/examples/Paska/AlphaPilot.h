@@ -1,3 +1,6 @@
+#ifndef ALPHAPILOT_H
+#define ALPHAPILOT_H
+
 #include "Math.h"
 
 //
@@ -41,3 +44,5 @@ struct Task {
 #define HZ_TO_PERIOD(f) ((uint32_t) (1.0e6/(f)))
 
 extern struct Task alphaPilotTasks[];
+
+#endif

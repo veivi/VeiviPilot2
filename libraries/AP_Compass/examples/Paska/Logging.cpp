@@ -3,6 +3,7 @@
 #include "NVState.h"
 #include "Math.h"
 #include "Time.h"
+#include "Objects.h"
 
 extern "C" {
 #include "Datagram.h"
@@ -212,8 +213,6 @@ void logDisable()
   
   consoleNoteLn_P(PSTR("Logging DISABLED"));
 }
-
-extern float sampleRate;
 
 void logDumpBinary(void)
 {
@@ -439,3 +438,114 @@ void logSave(void (*logStartCB)())
     }
   }
 }
+
+//
+// Log interface
+//
+
+void logAlpha(void)
+{
+  logGeneric(lc_alpha, vpFlight.alpha*RADIAN);
+}
+
+void logConfig(void)
+{
+  bool mode[] = { vpMode.slowFlight,
+		  vpMode.bankLimiter,
+		  vpMode.wingLeveler,
+		  vpMode.takeOff,
+		  vpMode.autoThrottle,
+		  vpMode.radioFailSafe,
+		  vpMode.sensorFailSafe,
+		  vpMode.alphaFailSafe };
+
+  float sum = 0;
+  
+  for(uint16_t i = 0; i < sizeof(mode)/sizeof(bool); i++)
+    if(mode[i])
+      sum += 1.0/(2<<i);
+  
+  logGeneric(lc_mode, sum);
+  
+  bool status[] = { vpStatus.weightOnWheels,
+		    vpStatus.positiveIAS,
+		    gearSel == 1,
+		    vpStatus.stall,
+		    vpStatus.alphaFailed,
+		    vpStatus.alphaUnreliable,
+		    vpStatus.pitotFailed,
+		    vpStatus.pitotBlocked };
+  
+  sum = 0;
+  
+  for(uint16_t i = 0; i < sizeof(status)/sizeof(bool); i++)
+    if(status[i])
+      sum += 1.0/(2<<i);
+  
+  logGeneric(lc_status, sum);
+  
+  logGeneric(lc_target, vpControl.targetAlpha*RADIAN);
+  logGeneric(lc_target_pr, vpControl.targetPitchR*RADIAN);
+  logGeneric(lc_trim, vpControl.elevTrim*100);
+
+  if(vpMode.test) {
+    logGeneric(lc_gain, vpControl.testGain);
+    logGeneric(lc_test, nvState.testNum);
+  } else {
+    logGeneric(lc_gain, 0);
+    logGeneric(lc_test, 0);
+  }
+}
+
+void logPosition(void)
+{
+  logGeneric(lc_alt, vpFlight.alt);
+}
+  
+void logInput(void)
+{
+  logGeneric(lc_ailestick, vpInput.aile);
+  logGeneric(lc_elevstick, vpInput.elevExpo);
+  logGeneric(lc_thrstick, throttleCtrl.output());
+  logGeneric(lc_rudstick, vpInput.rudder);
+}
+
+void logActuator(void)
+{
+  logGeneric(lc_aileron, vpOutput.aile);
+  logGeneric(lc_aileron_ff, vpControl.ailePredict);
+  logGeneric(lc_elevator, vpOutput.elev);
+  logGeneric(lc_elevator_ff, vpControl.elevPredict);
+  logGeneric(lc_rudder, vpOutput.rudder);
+  logGeneric(lc_flap, flapActuator.output());
+}
+
+void logFlight(void)
+{
+  logGeneric(lc_dynpressure, vpFlight.dynP);
+  logGeneric(lc_accx, vpFlight.accX);
+  logGeneric(lc_accy, vpFlight.accY);
+  logGeneric(lc_accz, vpFlight.accZ);
+  logGeneric(lc_roll, vpFlight.bank*RADIAN);
+  logGeneric(lc_rollrate, vpFlight.rollR*RADIAN);
+  logGeneric(lc_pitch, vpFlight.pitch*RADIAN);
+  logGeneric(lc_pitchrate, vpFlight.pitchR*RADIAN);
+  logGeneric(lc_heading, vpFlight.heading);
+  logGeneric(lc_yawrate, vpFlight.yawR*RADIAN);
+}
+
+void fastLogTask()
+{
+  //  logAlpha();  
+}
+
+void slowLogTask()
+{
+  logAlpha();  
+  logFlight();
+  logInput();
+  logActuator();
+  logConfig();
+  logPosition();
+}
+

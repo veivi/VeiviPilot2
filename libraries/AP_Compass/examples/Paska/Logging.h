@@ -31,4 +31,7 @@ void logDisable();
 
 void logSave(void (*logStartCB)());
   
+void fastLogTask();
+void slowLogTask();
+
 #endif

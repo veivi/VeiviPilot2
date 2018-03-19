@@ -2,8 +2,33 @@
 #define RXINPUT_H
 
 #include <math.h>
+#include "AlphaPilot.h"
 #include "InputOutput.h"
 #include "Math.h"
+#include "Button.h"
+
+extern struct RxInputRecord aileInput, elevInput, throttleInput,
+  buttonInput, tuningKnobInput, flightModeInput, rudderInput, stabModeInput;
+
+extern struct RxInputRecord *ppmInputs[];
+
+//
+// Mode selector inputs
+//
+
+extern struct SwitchRecord flightModeSelector, stabModeSelector;
+extern int8_t flightModeSelectorValue, stabModeSelectorValue;
+
+//
+// Buttons
+//
+
+extern Button rightDownButton, rightUpButton, leftDownButton, leftUpButton;
+
+#define LEVELBUTTON rightUpButton
+#define FLAPBUTTON rightDownButton
+#define TRIMBUTTON leftUpButton
+#define GEARBUTTON leftDownButton
 
 struct RxInputRecord {
   struct PinDescriptor pin;

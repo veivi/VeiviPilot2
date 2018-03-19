@@ -1,10 +1,44 @@
 #include "RxInput.h"
 #include "Interrupt.h"
 #include "Console.h"
+#include "Objects.h"
 #include <avr/io.h>
-#include <AP_HAL/AP_HAL.h>
 
-extern const AP_HAL::HAL& hal;
+//
+// RC input
+//
+
+struct RxInputRecord aileInput, elevInput, throttleInput,
+  buttonInput, tuningKnobInput, flightModeInput, rudderInput, stabModeInput;
+
+#if RX_CHANNELS < 8
+struct RxInputRecord *ppmInputs[] = 
+  { &aileInput, &elevInput, &throttleInput, &buttonInput, &tuningKnobInput, &flightModeInput, NULL };
+#else
+struct RxInputRecord *ppmInputs[] = 
+  { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &stabModeInput, NULL };
+#endif
+
+//
+// Mode selector inputs
+//
+
+struct SwitchRecord flightModeSelector = { &flightModeInput };
+struct SwitchRecord stabModeSelector = { &stabModeInput };
+
+int8_t flightModeSelectorValue, stabModeSelectorValue;
+
+//
+// Buttons
+//
+
+Button rightDownButton(-1.0), rightUpButton(0.33),
+  leftDownButton(-0.3), leftUpButton(1);
+
+#define LEVELBUTTON rightUpButton
+#define FLAPBUTTON rightDownButton
+#define TRIMBUTTON leftUpButton
+#define GEARBUTTON leftDownButton
 
 struct RxInputRecord *rxInputIndex0[8], *rxInputIndex1[8], *rxInputIndex2[8];
 struct RxInputRecord **rxInputIndexList[] = { rxInputIndex0, rxInputIndex1, rxInputIndex2 };
