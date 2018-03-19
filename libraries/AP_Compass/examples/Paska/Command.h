@@ -109,6 +109,8 @@ struct Command {
   void *var[MAX_VARS];
 };
 
+void executeCommand(char *buf);
+
 extern const struct Command commands[];
 
 #endif

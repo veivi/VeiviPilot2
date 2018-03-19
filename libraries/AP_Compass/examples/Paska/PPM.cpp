@@ -1,11 +1,12 @@
 #include "PPM.h"
 #include "Interrupt.h"
 #include "Math.h"
-#include <AP_HAL/AP_HAL.h>
+#include "NVState.h"
+#include "Time.h"
 #include <avr/interrupt.h>
 
-extern const AP_HAL::HAL& hal;
-
+struct PinDescriptor ppmInputPin = { PortL, 1 }; 
+  
 #define AVR_RC_INPUT_MAX_CHANNELS 10
 #define AVR_RC_INPUT_MIN_CHANNELS 6
 
@@ -21,12 +22,11 @@ extern const AP_HAL::HAL& hal;
 static uint16_t _pulse_capt[AVR_RC_INPUT_MAX_CHANNELS];
 
 uint8_t ppmNumChannels;
-uint32_t ppmFrames;
 bool ppmWarnShort, ppmWarnSlow;
 
 static struct RxInputRecord **inputRecords;
 static int numInputs;
-
+static uint32_t ppmFrames;
 static bool calibrating;
 
 void calibStart()
@@ -57,7 +57,7 @@ void calibStop(int32_t *min, int32_t *center, int32_t *max)
 static void handlePPMInput(const uint16_t *pulse, int numCh)
 {
   static uint32_t prev;
-  uint32_t current = hal.scheduler->micros(), cycle = current - prev;
+  uint32_t current = currentMicros(), cycle = current - prev;
 
   if(prev > 0 && cycle > 30000)
     ppmWarnSlow = true;
@@ -111,12 +111,16 @@ extern "C" ISR(TIMER5_CAPT_vect)
   icr5_prev = icr5_current;
 }
 
-void ppmInputInit(struct RxInputRecord *inputs[], int num, const int32_t *min, const int32_t *center, const int32_t *max)
+void ppmInputInitPrim(struct RxInputRecord *inputs[], const int32_t *min, const int32_t *center, const int32_t *max)
 {
   inputRecords = inputs;
-  numInputs = MIN(num, AVR_RC_INPUT_MAX_CHANNELS);
   
-  for(uint8_t i = 0; i < num; i++) {
+  numInputs = 0;
+
+  while(inputs[numInputs] && numInputs < AVR_RC_INPUT_MAX_CHANNELS)
+    numInputs++;
+  
+  for(uint8_t i = 0; i < numInputs; i++) {
     inputs[i]->pulseMin = min[i];
     inputs[i]->pulseCenter = center[i];
     inputs[i]->pulseMax = max[i];
@@ -128,4 +132,24 @@ void ppmInputInit(struct RxInputRecord *inputs[], int num, const int32_t *min, c
   TIMSK5 |= 1<<ICIE5;
      
   PERMIT;
+}
+
+void ppmInputInit(const int32_t *min, const int32_t *center, const int32_t *max)
+{
+  configureInput(&ppmInputPin, true);
+  ppmInputInitPrim(ppmInputs, min, center, max);
+}
+
+float ppmFrameRate()
+{
+  static uint32_t prevMeasurement;
+  
+  FORBID;
+  float result = 1.0e6 * ppmFrames / (currentMicros() - prevMeasurement);
+  ppmFrames = 0;
+  PERMIT;
+
+  prevMeasurement = currentMicros();
+
+  return result;
 }

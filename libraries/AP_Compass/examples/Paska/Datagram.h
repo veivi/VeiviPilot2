@@ -1,3 +1,6 @@
+#ifndef DATAGRAM_H
+#define DATAGRAM_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -36,5 +39,4 @@ struct SimLinkControl {
   float aileron, elevator, throttle, rudder;
 };
 
-
-  
+#endif

@@ -1,3 +1,6 @@
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
+
 #include <stdint.h>
 #include "Filter.h"
 #include "Console.h"
@@ -25,3 +28,4 @@ class UnbiasedController : public Controller {
 };
 
 const float gainTweak_c = 0.80;
+#endif

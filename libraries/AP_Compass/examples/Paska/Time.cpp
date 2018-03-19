@@ -1,7 +1,5 @@
-#include <AP_HAL/AP_HAL.h>
+#include "Objects.h"
 #include "Time.h"
-
-extern const AP_HAL::HAL& hal;
 
 uint32_t currentMicros()
 {
