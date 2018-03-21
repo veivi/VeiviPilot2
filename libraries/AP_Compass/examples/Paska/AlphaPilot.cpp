@@ -1958,6 +1958,7 @@ void blinkTask()
 
   const struct PinDescriptor led = { PortA, 5 };
 
+  configureOutput(&led);
   setPinState(&led, tick < ledRatio*LED_TICK/LED_HZ ? 0 : 1);
 }
 

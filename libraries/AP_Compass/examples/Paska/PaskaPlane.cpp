@@ -114,9 +114,7 @@ bool scheduler()
       task->code();
       task->lastExecuted = currentTime;
       
-      if(task->period > 0)
-        // Staggered execution for all but the critical tasks
-        return true;
+      return true; // We had something to do
     }
     
     task++;
@@ -212,16 +210,6 @@ void setup()
   }
 #endif
 
-  // LED output
-  /*
-  configureOutput(&RED_LED);
-  configureOutput(&GREEN_LED);
-  configureOutput(&BLUE_LED);
-
-  setPinState(&RED_LED, 1);
-  setPinState(&GREEN_LED, 1);
-  setPinState(&BLUE_LED, 1);
-  */
   // Static controller settings
 
   aileCtrl.limit(RATIO(2/3));

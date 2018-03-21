@@ -143,7 +143,7 @@ static void logWithCh(ChannelId_t ch, uint16_t value)
   
   if(ch != lc_alpha && value == logChannels[ch].value
      && currentMillis() < logChannels[ch].stamp + 5e3)
-    // Repeat value, not stored
+    // Repeat and recent value, not stored
     
     return;
             
