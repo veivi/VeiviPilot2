@@ -28,7 +28,7 @@
 #define TRIM    &vpControl.elevTrim
 #define GAIN    &vpControl.testGain
 #define TEST    &testEncoded
-#define ALT    &vpFlight.alt
+#define ALTI    &vpFlight.alt
 #else
 #define ALPHA NULL
 #define DYNP NULL
@@ -54,7 +54,7 @@
 #define TRIM NULL
 #define GAIN NULL
 #define TEST NULL
-#define ALT NULL
+#define ALTI NULL
 #endif
 
 uint8_t logTest;
@@ -63,7 +63,8 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 
 struct LogChannel logChannels[] = {
   [lc_alpha] = { lc_alpha, "ALPH", lt_angle, -180, 180, ALPHA },
-  [lc_dynpressure] = { lc_dynpressure, "PRES", lt_real, -100, 10000, DYNP },
+  [lc_dynp] = { lc_dynp, "PRES", lt_real, -100, 10000, DYNP },
+  [lc_alti] = { lc_alti, "ALTI", lt_real, -10, 500, ALTI },
   [lc_accx] = { lc_accx, "ACCX", lt_real, -150, 150, ACCX },
   [lc_accy] = { lc_accy, "ACCY", lt_real, -150, 150, ACCY },
   [lc_accz] = { lc_accz, "ACCZ", lt_real, -150, 150, ACCZ },
@@ -73,18 +74,17 @@ struct LogChannel logChannels[] = {
   [lc_pitchrate] = { lc_pitchrate, "PRTE", lt_angle, -720, 720, PITCHR },
   [lc_heading] = { lc_heading, "HEAD", lt_integer, 0, 359, HEADING },
   [lc_yawrate] = { lc_yawrate, "YRTE", lt_angle, -720, 720, YAWR },
-  [lc_ailestick] = { lc_ailestick, "ASTK", lt_real, -1, 1, AILESTK },
-  [lc_elevstick] = { lc_elevstick, "ESTK", lt_real, -1, 1, ELEVSTK },
-  [lc_thrstick] = { lc_thrstick, "THRO", lt_real, 0, 1, THROSTK },
-  [lc_rudstick] = { lc_rudstick, "RSTK", lt_real, -1, 1, RUDSTK },
   [lc_aileron] = { lc_aileron, "AILE", lt_real, -1.5, 1.5, AILE },
   [lc_elevator] = { lc_elevator, "ELEV", lt_real, -1.5, 1.5, ELEV },
   [lc_rudder] = { lc_rudder, "RUDR", lt_real, -1.5, 1.5, RUDDER },
   [lc_flap] = { lc_flap, "FLAP", lt_percent, 0, 100, FLAP },
+  [lc_ailestick] = { lc_ailestick, "ASTK", lt_real, -1, 1, AILESTK },
+  [lc_elevstick] = { lc_elevstick, "ESTK", lt_real, -1, 1, ELEVSTK },
+  [lc_thrstick] = { lc_thrstick, "THRO", lt_real, 0, 1, THROSTK },
+  [lc_rudstick] = { lc_rudstick, "RSTK", lt_real, -1, 1, RUDSTK },
   [lc_mode] = { lc_mode, "MODE", lt_integer, 0, 1, MODE },
   [lc_status] = { lc_status, "STAT", lt_integer, 0, 1, STATUS },
   [lc_trim] = { lc_trim, "TRIM", lt_percent, -100, 100, TRIM },
-  [lc_gain] = { lc_gain, "GAIN", lt_real, 0, 50, GAIN },
   [lc_test] = { lc_test, "TEST", lt_integer, 0, 1, TEST },
-  [lc_alt] = { lc_alt, "ALTI", lt_real, -10, 500, ALT } };
+  [lc_gain] = { lc_gain, "GAIN", lt_real, 0, 50, GAIN } };
 
