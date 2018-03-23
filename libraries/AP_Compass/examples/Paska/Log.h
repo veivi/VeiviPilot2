@@ -22,19 +22,19 @@ typedef enum {  lc_alpha,
 		lc_accy,
 		lc_accz,
                 lc_roll, 
-                lc_rollrate, 
+                lc_rollr, 
                 lc_pitch, 
-                lc_pitchrate, 
-                lc_heading, 
-		lc_yawrate,
-                lc_aileron,
-                lc_elevator,
+                lc_pitchr, 
+                lc_head, 
+		lc_yawr,
+                lc_aile,
+                lc_elev,
 		lc_rudder,
 		lc_flap,
-                lc_ailestick, 
-                lc_elevstick,
-		lc_thrstick,
-		lc_rudstick,
+                lc_ailestk, 
+                lc_elevstk,
+		lc_thrstk,
+		lc_rudstk,
                 lc_mode, 
                 lc_status, 
                 lc_trim, 
@@ -50,7 +50,6 @@ typedef enum {
 } ChannelType_t;
 
 struct LogChannel {
-  ChannelId_t ch;
   const char *name;
   ChannelType_t type;
   float small, large;
