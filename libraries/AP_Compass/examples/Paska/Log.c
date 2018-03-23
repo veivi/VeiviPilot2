@@ -4,6 +4,9 @@
 #ifdef CONFIG_HAL_BOARD
 #include "CoreObjects.h"
 
+float flapEncoded;
+uint16_t modeEncoded, statusEncoded, testEncoded;
+
 #define ALPHA &vpFlight.alpha
 #define DYNP &vpFlight.dynP
 #define ACCX   &vpFlight.accX
@@ -56,10 +59,6 @@
 #define TEST NULL
 #define ALTI NULL
 #endif
-
-uint8_t logTest;
-float flapEncoded;
-uint16_t modeEncoded, statusEncoded, testEncoded;
 
 struct LogChannel logChannels[] = {
   [lc_alpha] = { lc_alpha, "ALPH", lt_angle, -180, 180, ALPHA },

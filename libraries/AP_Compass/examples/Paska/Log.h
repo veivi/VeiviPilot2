@@ -73,7 +73,6 @@ typedef enum { t_stamp,
             } LogToken_t;
 
 extern struct LogChannel logChannels[];
-extern uint8_t logTest;
 extern float flapEncoded;
 extern uint16_t modeEncoded, statusEncoded, testEncoded;
 
