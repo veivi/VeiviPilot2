@@ -134,16 +134,15 @@ void logTestSet(uint16_t ch)
 
 static int prevCh = -1;
 
-static void logWithCh(ChannelId_t ch, uint16_t value)
+static void logWithCh(ChannelId_t ch, uint16_t value, bool force)
 {
   if(logState != run_c)
     return;
 
   value = ENTRY_VALUE(value);    // Constrain to valid range
   
-  if(ch != lc_alpha && value == logChannels[ch].value
-     && currentMillis() < logChannels[ch].stamp + 5e3)
-    // Repeat and recent value, not stored
+  if(ch != lc_alpha && value == logChannels[ch].value && !force)
+    // Repeat, non-alpha and recent value, not stored
     
     return;
             
@@ -159,22 +158,21 @@ static void logWithCh(ChannelId_t ch, uint16_t value)
   }
     
   logChannels[ch].value = value;
-  logChannels[ch].stamp = currentMillis();
   prevCh = ch;
 }
 
-void logFloat(ChannelId_t ch, float value)
+void logFloat(ChannelId_t ch, float value, bool force)
 {
   float small = logChannels[ch].small, large = logChannels[ch].large;
   
   logWithCh(ch, (uint16_t)
 	    clamp((float) VALUE_MASK*((value-small)/(large-small)),
-		  0, VALUE_MASK));
+		  0, VALUE_MASK), force);
 }
 
-void logInteger(ChannelId_t ch, uint16_t value)
+void logInteger(ChannelId_t ch, uint16_t value, bool force)
 {
-  logWithCh(ch, value & VALUE_MASK);
+  logWithCh(ch, value & VALUE_MASK, force);
 }
 
 void logMark(void)
@@ -438,24 +436,33 @@ void logSave()
   }
 }
 
+uint32_t previousForced;
+
 void logObjects()
 {
+  bool force = false;
+  
+  if(currentMillis() > previousForced+5e3) {
+    previousForced = currentMillis();
+    force = true;
+  }
+  
   for(int i = 0; i < lc_channels; i++) {
     switch(logChannels[i].type) {
     case lt_real:
-      logFloat((ChannelId_t) i, *((float*) logChannels[i].object));
+      logFloat((ChannelId_t) i, *((float*) logChannels[i].object), force);
       break;
       
     case lt_angle:
-      logFloat((ChannelId_t) i, *((float*) logChannels[i].object)*RADIAN);
+      logFloat((ChannelId_t) i, *((float*) logChannels[i].object)*RADIAN, force);
       break;
       
     case lt_percent:
-      logFloat((ChannelId_t) i, *((float*) logChannels[i].object)*100);
+      logFloat((ChannelId_t) i, *((float*) logChannels[i].object)*100, force);
       break;
       
     case lt_integer:
-      logInteger((ChannelId_t) i, *((uint16_t*) logChannels[i].object));
+      logInteger((ChannelId_t) i, *((uint16_t*) logChannels[i].object), force);
       break;
     }
   }

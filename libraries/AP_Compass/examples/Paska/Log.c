@@ -7,31 +7,31 @@
 float flapEncoded;
 uint16_t modeEncoded, statusEncoded, testEncoded;
 
-#define ALPHA &vpFlight.alpha
-#define DYNP &vpFlight.dynP
-#define ACCX   &vpFlight.accX
-#define ACCY    &vpFlight.accY,
-#define ACCZ    &vpFlight.accZ
-#define BANK    &vpFlight.bank
+#define ALPHA    &vpFlight.alpha
+#define DYNP     &vpFlight.dynP
+#define ACCX     &vpFlight.accX
+#define ACCY     &vpFlight.accY,
+#define ACCZ     &vpFlight.accZ
+#define BANK     &vpFlight.bank
 #define ROLLR    &vpFlight.rollR
 #define PITCH    &vpFlight.pitch
-#define PITCHR    &vpFlight.pitchR
-#define HEADING    &vpFlight.heading
-#define YAWR    &vpFlight.yawR
-#define AILESTK    &vpInput.aile
-#define ELEVSTK    &vpInput.elev
-#define THROSTK    &vpInput.throttle
-#define RUDSTK    &vpInput.rudder
-#define AILE    &vpOutput.aile
-#define ELEV    &vpOutput.elev
-#define RUDDER    &vpOutput.rudder
-#define FLAP    &flapEncoded
-#define MODE    &modeEncoded
-#define STATUS    &statusEncoded
-#define TRIM    &vpControl.elevTrim
-#define GAIN    &vpControl.testGain
-#define TEST    &testEncoded
-#define ALTI    &vpFlight.alt
+#define PITCHR   &vpFlight.pitchR
+#define HEADING  &vpFlight.heading
+#define YAWR     &vpFlight.yawR
+#define AILESTK  &vpInput.aile
+#define ELEVSTK  &vpInput.elev
+#define THROSTK  &vpInput.throttle
+#define RUDSTK   &vpInput.rudder
+#define AILE     &vpOutput.aile
+#define ELEV     &vpOutput.elev
+#define RUDDER   &vpOutput.rudder
+#define FLAP     &flapEncoded
+#define MODE     &modeEncoded
+#define STATUS   &statusEncoded
+#define TRIM     &vpControl.elevTrim
+#define GAIN     &vpControl.testGain
+#define TEST     &testEncoded
+#define ALTI     &vpFlight.alt
 #else
 #define ALPHA NULL
 #define DYNP NULL

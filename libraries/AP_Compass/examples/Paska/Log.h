@@ -50,12 +50,11 @@ typedef enum {
 } ChannelType_t;
 
 struct LogChannel {
-  const char *name;
+  const char name[5];
   ChannelType_t type;
   float small, large;
   void *object;
   uint16_t value;
-  uint32_t stamp;
 };
 
 #define TOKEN_MASK (1U<<15)
