@@ -442,7 +442,7 @@ void logObjects()
 {
   bool force = false;
   
-  if(currentMillis() > previousForced+5e3) {
+  if(currentMillis() > previousForced+10e3) {
     previousForced = currentMillis();
     force = true;
   }

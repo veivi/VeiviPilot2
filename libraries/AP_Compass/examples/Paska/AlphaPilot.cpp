@@ -1348,6 +1348,10 @@ void gaugeTask()
 	consolePrint_P(PSTR(")"));
 	break;
 
+      case 20:
+	consolePrint_P(PSTR(" log bw = "));
+	consolePrint((int) logBandWidth);
+	break;
       }
     }
 
