@@ -33,7 +33,7 @@ I2CDevice::I2CDevice(const char *dname)
 
 bool I2CDevice::online()
 {
-  return !failed || currentMillis() < failedAt+backoff;
+  return !failed || currentMillis() > failedAt+backoff;
 }
 
 bool I2CDevice::warning()

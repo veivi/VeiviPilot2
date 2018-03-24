@@ -195,9 +195,6 @@ void logEnable()
   
   prevCh = -1;  
   
-  for(int i = 0; i < 3; i++)
-    logMark();
-  
   consoleNoteLn_P(PSTR("Logging ENABLED"));
 }
 
