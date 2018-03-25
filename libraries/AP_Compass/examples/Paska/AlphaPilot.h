@@ -11,13 +11,7 @@
 #define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 // #define USE_COMPASS  1
-
-//
-// Constants
-//
-
-#define ALPHAWINDOW   RATIO(1/25)
-#define FLAP_STEPS    2
+#define FLAP_STEPS           2
 
 //
 // Periodic task timing
@@ -36,6 +30,12 @@
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
   
+//
+// Constants
+//
+
+#define ALPHAWINDOW   RATIO(1/25)
+
 struct Task {
   void (*code)(void);
   uint32_t period, lastExecuted;

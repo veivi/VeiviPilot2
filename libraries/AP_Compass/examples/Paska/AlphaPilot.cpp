@@ -3,30 +3,25 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include "Filter.h"
+#include "Time.h"
 #include "Math.h"
 #include "Console.h"
+#include "Filter.h"
 #include "Controller.h"
 #include "NewI2C.h"
-#include "Storage.h"
-#include "Interrupt.h"
 #include "RxInput.h"
+#include "Button.h"
+#include "PPM.h"
 #include "Logging.h"
 #include "NVState.h"
 #include "PWMOutput.h"
-#include "PPM.h"
 #include "Command.h"
-#include "Button.h"
-#include "Time.h"
 #include "AS5048B.h"
 #include "MS4525.h"
 #include "SSD1306.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
 #include "TOCTest.h"
-#include <AP_Progmem/AP_Progmem.h>
 
 //
 // Misc local variables
@@ -121,7 +116,7 @@ void displayTask()
   obdMove(0,7);
   obdPrint("T/O/C ");
 
-  if(status)
+  if(!status)
     obdPrint("WARNING", (count>>2) & 1);
   else
     obdPrint("GOOD   ");
@@ -158,13 +153,6 @@ void receiverTask()
   if(inputValid(&aileInput))
     vpInput.aile = applyNullZone(inputValue(&aileInput), NZ_BIG, &vpInput.ailePilotInput);
 
-#if RX_CHANNELS >= 8
-  if(inputValid(&rudderInput))
-    vpInput.rudder = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &vpInput.rudderPilotInput);
-#else
-  vpInput.rudder = 0;
-#endif
-  
   if(inputValid(&elevInput))
     vpInput.elev = applyNullZone(inputValue(&elevInput), NZ_SMALL, &vpInput.elevPilotInput);
 
@@ -179,8 +167,12 @@ void receiverTask()
   flightModeSelectorValue = readSwitch(&flightModeSelector);
 
 #if RX_CHANNELS >= 8
+  if(inputValid(&rudderInput))
+    vpInput.rudder = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &vpInput.rudderPilotInput);
+  
   stabModeSelectorValue = readSwitch(&stabModeSelector);
 #else
+  vpInput.rudder = 0;
   stabModeSelectorValue = 1;
 #endif
 
