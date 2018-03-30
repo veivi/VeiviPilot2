@@ -194,8 +194,8 @@ void receiverTask()
   // Receiver fail detection
   //
   
-  if(LEVELBUTTON.state() && flightModeSelectorValue == -1
-     && vpInput.throttle < 0.25
+  if((LEVELBUTTON.state() || stabModeSelectorValue == -1)
+     && flightModeSelectorValue == -1 && vpInput.throttle < 0.25
      && vpInput.aile < -0.75 && vpInput.elev > 0.75) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
