@@ -862,19 +862,6 @@ void configurationTask()
     vpMode.progressiveFlight = false;
   }
   
-  vpMode.gusty = false;
-
-  /*
-  if(stabModeSelectorValue == -1) {
-    if(!vpMode.gusty)
-      consoleNoteLn_P(PSTR("Gust mode ENABLED"));
-    vpMode.gusty = true;
-  } else if(vpMode.gusty) {
-    consoleNoteLn_P(PSTR("Gust mode DISABLED"));
-    vpMode.gusty = false;
-  }
-  */
-  
   //
   // Test mode control
   //
@@ -917,7 +904,7 @@ void configurationTask()
   vpFeature.stabilizePitch = vpFeature.alphaHold =
     vpMode.slowFlight && fabs(vpFlight.bank) < 60/RADIAN;
   vpFeature.aileFeedforward = vpMode.progressiveFlight;
-  vpFeature.ailePID = !vpMode.gusty;
+  vpFeature.ailePID = true;
 
   // Modify if taking off...
   
@@ -961,7 +948,7 @@ void configurationTask()
   
   // Safety scaling (test mode 0)
   
-  float scale = vpMode.gusty ? RATIO(2/3) : 1;
+  float scale = 1;
   
   if(vpMode.test && nvState.testNum == 0)
     scale = testGainLinear(RATIO(1/3), 1);

@@ -34,7 +34,6 @@ struct ModeRecord {
   bool_t wingLeveler;
   bool_t slowFlight;
   bool_t progressiveFlight;
-  bool_t gusty;
   bool_t autoThrottle;
   bool_t loggingSuppressed;
 };
