@@ -212,7 +212,7 @@ const struct TakeoffTest tocTest[] PROGMEM =
     [toc_attitude] = { "ATTI", toc_test_attitude },
     [toc_gyro] = { "GYRO", toc_test_gyro },
     [toc_mode] = { "MODE", toc_test_mode },
-    [toc_fdr] = { "FDR", toc_test_fdr },
+    [toc_fdr] = { "DATA", toc_test_fdr },
     [toc_ram] = { "RAM", toc_test_ram },
     [toc_load] = { "LOAD", toc_test_load }
   };
