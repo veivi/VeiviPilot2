@@ -862,6 +862,9 @@ void configurationTask()
     vpMode.progressiveFlight = false;
   }
   
+  vpMode.gusty = false;
+
+  /*
   if(stabModeSelectorValue == -1) {
     if(!vpMode.gusty)
       consoleNoteLn_P(PSTR("Gust mode ENABLED"));
@@ -870,6 +873,7 @@ void configurationTask()
     consoleNoteLn_P(PSTR("Gust mode DISABLED"));
     vpMode.gusty = false;
   }
+  */
   
   //
   // Test mode control
@@ -1670,7 +1674,10 @@ void throttleModule()
 {
   throttleCtrl.limit(vpControl.minThrottle, vpInput.throttle);
     
-  if(vpMode.autoThrottle) {
+  if(vpMode.radioFailSafe)
+    throttleCtrl.reset(0, 0);
+  
+  else if(vpMode.autoThrottle) {
     float thrError = 0;
     
     if(vpMode.slowFlight)
@@ -1680,7 +1687,7 @@ void throttleModule()
 
     throttleCtrl.input(thrError, controlCycle);
 
-  } else
+  } else 
     throttleCtrl.reset(vpInput.throttle, 0);
 }
 
