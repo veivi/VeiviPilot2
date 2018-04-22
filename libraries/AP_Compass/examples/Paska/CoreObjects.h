@@ -7,6 +7,7 @@ typedef uint8_t bool_t;
 
 struct StatusRecord {
   bool_t armed;
+  bool_t configGood;
   bool_t consoleLink;
   bool_t simulatorLink;
   bool_t silent;

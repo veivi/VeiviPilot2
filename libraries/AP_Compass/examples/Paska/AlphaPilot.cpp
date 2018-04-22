@@ -778,8 +778,10 @@ void configurationTask()
 	consoleNoteLn_P(PSTR("TakeOff mode ENABLED"));
 	vpMode.takeOff = true;
       }
-	
-      if(tocTestStatus(tocReportConsole)) {
+
+      vpStatus.configGood = tocTestStatus(tocReportConsole);
+      
+      if(vpStatus.configGood) {
 	consoleNoteLn_P(PSTR("T/o configuration is GOOD"));
 	vpStatus.aloft = false;
       } else {
@@ -1661,7 +1663,7 @@ void throttleModule()
 {
   throttleCtrl.limit(vpControl.minThrottle, vpInput.throttle);
     
-  if(vpMode.radioFailSafe)
+  if(!vpStatus.configGood || vpMode.radioFailSafe)
     throttleCtrl.reset(0, 0);
   
   else if(vpMode.autoThrottle) {
