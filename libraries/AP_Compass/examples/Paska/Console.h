@@ -9,6 +9,8 @@ void consolePrint(const char c);
 void consoleTab(int i);
 void consoleNote_P(const prog_char_t *s);
 void consoleNote(const char *s);
+void consolePanic_P(const prog_char_t *s);
+void consolePanic(const char *s);
 void consoleNoteLn_P(const prog_char_t *s);
 void consoleNoteLn(const char *s);
 void consolePrint_P(const prog_char_t *s);

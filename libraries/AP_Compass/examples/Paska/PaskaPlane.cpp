@@ -156,7 +156,8 @@ void setup()
   
   // Read the non-volatile state
 
-  readNVState();
+  if(!readNVState())
+    consolePanic_P(PSTR("NV State read failed."));
     
   consoleNote_P(PSTR("Current model is "));
   consolePrintLn(nvState.model);

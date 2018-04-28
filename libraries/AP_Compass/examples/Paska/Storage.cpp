@@ -160,9 +160,11 @@ int32_t cacheReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
     cacheAlloc(addr);
   
   if(!cacheValid) {
-    if(!readEEPROM(cacheTag, cacheData, CACHE_PAGE))
+    if(!readEEPROM(cacheTag, cacheData, CACHE_PAGE)) {
       memset(cacheData, 0xFF, sizeof(cacheData));
-
+      return -1;
+    }
+    
     cacheValid = true;
   }
 
@@ -176,15 +178,20 @@ int32_t cacheReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
   return size;
 }
 
-void cacheRead(uint32_t addr, uint8_t *value, int32_t size) 
+bool cacheRead(uint32_t addr, uint8_t *value, int32_t size) 
 {
   while(size > 0) {
     uint8_t *buffer = NULL;
     int good = cacheReadIndirect(addr, &buffer, size);
+
+    if(good < 0)
+      return false;
     
     memcpy(value, buffer, good);
     value += good;
     addr += good;
     size -= good;
   }
+
+  return true;
 }

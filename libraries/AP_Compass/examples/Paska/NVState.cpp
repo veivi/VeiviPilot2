@@ -171,9 +171,10 @@ void storeData(const uint8_t *data, int size)
   cacheFlush();
 }
 
-void readNVState(void)
+bool readNVState(void)
 {
-  cacheRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState));
+  if(!cacheRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState)))
+    return false;
   
   consoleNote_P(PSTR("  State record CRC = "));
   consolePrint(nvState.crc);
@@ -183,6 +184,8 @@ void readNVState(void)
     defaultState();
   } else
     consolePrintLn_P(PSTR(" OK"));
+
+  return true;
 }
 
 void storeNVState(void)

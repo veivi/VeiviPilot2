@@ -97,7 +97,7 @@ void defaultParams(void);
 bool setModel(int model, bool verbose);
 void deleteModel(int model);
 void storeParams(void);
-void readNVState(void);
+bool readNVState(void);
 void storeNVState(void);
 void printParams(void);
 void deriveParams();

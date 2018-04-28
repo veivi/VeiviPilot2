@@ -85,6 +85,16 @@ void consoleNoteLn_P(const prog_char_t *s)
   consoleNL();
 }
 
+void consolePanic_P(const prog_char_t *s)
+{
+  consolePrint("// PANIC: ");
+  consolePrint_P(s);
+  consoleNL();
+  consolePrintLn_P(PSTR("// HALTING."));
+  consoleFlush();
+  while(1);
+}
+
 void consolevNotef(const char *s, va_list argp)
 {
   consolePrint("// ");
