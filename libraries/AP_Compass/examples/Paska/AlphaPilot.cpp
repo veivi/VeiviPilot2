@@ -656,8 +656,8 @@ void configurationTask()
   // Being armed?
   //
   
-  if(leftUpButton.doublePulse() && !vpStatus.armed
-     && vpInput.aile < -0.90 && vpInput.elev > 0.90) {
+  if(leftUpButton.doublePulse() && !vpStatus.armed &&
+     vpInput.throttle < 0.10 && vpInput.aile < -0.90 && vpInput.elev > 0.90) {
     consoleNoteLn_P(PSTR("We're now ARMED"));
     vpStatus.armed = true;
     leftDownButton.reset();
