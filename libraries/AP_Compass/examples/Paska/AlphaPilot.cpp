@@ -781,9 +781,7 @@ void configurationTask()
 	vpMode.takeOff = true;
       }
 
-      vpStatus.configGood = tocTestStatus(tocReportConsole);
-      
-      if(vpStatus.configGood) {
+      if(tocTestStatus(tocReportConsole)) {
 	consoleNoteLn_P(PSTR("T/o configuration is GOOD"));
 	vpStatus.aloft = false;
       } else {
@@ -1667,7 +1665,7 @@ void throttleModule()
 {
   throttleCtrl.limit(vpControl.minThrottle, vpInput.throttle);
     
-  if(!vpStatus.configGood || vpMode.radioFailSafe)
+  if((!vpMode.takeOff && !vpStatus.aloft) || vpMode.radioFailSafe)
     throttleCtrl.reset(0, 0);
   
   else if(vpMode.autoThrottle) {
@@ -1744,8 +1742,8 @@ void mixingTask()
   // Aile to rudder mix
   
   vpOutput.rudder =
-    constrainServoOutput(vpOutput.rudder + vpOutput.aile*rudderMix);  
-  // constrainServoOutput(rudderOutput + aileOutput*rudderMix*coeffOfLift(alpha)/vpDerived.maxCoeffOfLift);  
+    constrainServoOutput(vpOutput.rudder + vpOutput.aile*rudderMix*coeffOfLift(vpFlight.alpha)/vpDerived.maxCoeffOfLift);  
+  //    constrainServoOutput(vpOutput.rudder + vpOutput.aile*rudderMix*cos(vpFlight.bank));  
 }
 
 void controlTask()
