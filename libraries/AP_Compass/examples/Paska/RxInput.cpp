@@ -2,6 +2,8 @@
 #include "Interrupt.h"
 #include "Console.h"
 #include "Objects.h"
+#include "NVState.h"
+#include "Math.h"
 #include <avr/io.h>
 
 //
@@ -179,7 +181,7 @@ float applyNullZone(float value, float nz)
 
 float applyExpo(float value)
 {
-  return sign(value)*powf(fabsf(value), 1 + EXPO);
+  return sign(value)*powf(fabsf(value), sqrt(effIAS()/vpDerived.minimumIAS));
 }
 
 float applyExpoTrim(float value, float trim)

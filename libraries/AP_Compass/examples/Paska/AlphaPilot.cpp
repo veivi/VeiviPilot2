@@ -153,6 +153,8 @@ void receiverTask()
   if(inputValid(&aileInput))
     vpInput.aile = applyNullZone(inputValue(&aileInput), NZ_BIG, &vpInput.ailePilotInput);
 
+  vpInput.aileExpo = applyExpo(vpInput.aile);
+  
   if(inputValid(&elevInput))
     vpInput.elev = applyNullZone(inputValue(&elevInput), NZ_SMALL, &vpInput.elevPilotInput);
 
@@ -1219,15 +1221,17 @@ void gaugeTask()
 	break;
 
       case 7:
-	consolePrint_P(PSTR(" aileStick = "));
+	consolePrint_P(PSTR(" aile(exp) = "));
 	consolePrint(vpInput.aile);
-	consolePrint_P(PSTR(" elevStick(expo) = "));
+	consolePrint_P(PSTR("("));
+	consolePrint(vpInput.aileExpo);
+	consolePrint_P(PSTR(") elev(exp) = "));
 	consolePrint(vpInput.elev);
 	consolePrint_P(PSTR("("));
 	consolePrint(vpInput.elevExpo);
-	consolePrint_P(PSTR(") thrStick = "));
+	consolePrint_P(PSTR(") thr = "));
 	consolePrint(vpInput.throttle);
-	consolePrint_P(PSTR(" rudderStick = "));
+	consolePrint_P(PSTR(" rudder = "));
 	consolePrint(vpInput.rudder);
 	consolePrint_P(PSTR(" knob = "));
 	consolePrint(vpInput.tuningKnob);
@@ -1590,7 +1594,7 @@ void aileronModule()
   } else if(vpFeature.alphaHold)
     maxBank /= 1 + alphaPredict(vpControl.elevTrim) / vpDerived.thresholdAlpha / 2;
   
-  float targetRollR = rollRatePredict(vpInput.aile);
+  float targetRollR = rollRatePredict(vpInput.aileExpo);
   
   // We accumulate individual contributions so start with 0
 
@@ -1602,7 +1606,7 @@ void aileronModule()
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollR = outer_P * (vpInput.aile*60/RADIAN - vpFlight.bank);
+      targetRollR = outer_P * (vpInput.aileExpo*60/RADIAN - vpFlight.bank);
 
     else if(vpMode.bankLimiter) {
 

@@ -51,8 +51,6 @@ bool_t inputValid(struct RxInputRecord *record);
 float inputValue(struct RxInputRecord *record);
 int8_t readSwitch(struct SwitchRecord *record);
 
-#define EXPO 0.3
-
 float applyNullZone(float value, float nz, bool_t *pilotInput);
 float applyNullZone(float value, float nz);
 float applyExpo(float value);
