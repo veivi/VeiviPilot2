@@ -223,9 +223,10 @@ static bool tocStatusFailed;
 
 bool tocTestInvoke(bool reset, bool challenge, void (*report)(bool, int, const char *))
 {
-  bool fail = false;
   struct TakeoffTest cache;
-    
+
+  tocStatusFailed = false;
+  
   for(int i = 0; i < tocNumOfTests; i++) {
     memcpy_P(&cache, &tocTest[i], sizeof(cache));
 
@@ -233,14 +234,13 @@ bool tocTestInvoke(bool reset, bool challenge, void (*report)(bool, int, const c
     
     if(challenge) {
       (*report)(result, i, cache.description); 
-      tocStatusFailed = true;
 
       if(!result)
-	fail = true;
+	tocStatusFailed = true;
     }
   }
 
-  return !fail;
+  return !tocStatusFailed;
 }
 
 bool tocTestReset()
@@ -254,20 +254,18 @@ void tocTestUpdate()
 }
 
 void tocReportConsole(bool result, int i, const char *s)
-{
-  if(result)
-    return;
-  
-  if(!tocStatusFailed)
-    consoleNote_P(PSTR("T/O/C FAIL :"));
+{  
+  if(!result) {
+    if(!tocStatusFailed)
+      consoleNote_P(PSTR("T/O/C FAIL :"));
 
-  consolePrint(" ");
-  consolePrint(s);
+    consolePrint(" ");
+    consolePrint(s);
+  }
 }
 
 bool tocTestStatus(void (*reportFn)(bool, int, const char*))
 {
-  tocStatusFailed = false;
   return tocTestInvoke(false, true, reportFn);
 }
 
