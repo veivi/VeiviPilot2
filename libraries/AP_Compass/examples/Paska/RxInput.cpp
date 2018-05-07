@@ -179,9 +179,12 @@ float applyNullZone(float value, float nz)
   return applyNullZone(value, nz, NULL);
 }
 
+#define EXPO 0.3
+
 float applyExpo(float value)
 {
-  return sign(value)*powf(fabsf(value), sqrt(effIAS()/vpDerived.minimumIAS));
+  return sign(value)*powf(fabsf(value),
+			  EXPO + sqrt(effIAS()/vpDerived.minimumIAS));
 }
 
 float applyExpoTrim(float value, float trim)
