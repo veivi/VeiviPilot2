@@ -180,10 +180,13 @@ float applyNullZone(float value, float nz)
 }
 
 #define EXPO 0.3
+#define HALF_RATE 0.60
 
 float applyExpo(float value)
 {
-  return sign(value)*powf(fabsf(value),
+  const float rate = vpMode.halfRate ? HALF_RATE : 1;
+  
+  return rate*sign(value)*powf(fabsf(value),
 			  EXPO + sqrt(effIAS()/vpDerived.minimumIAS));
 }
 

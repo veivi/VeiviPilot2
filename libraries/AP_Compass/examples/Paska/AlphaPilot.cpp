@@ -159,7 +159,7 @@ void receiverTask()
     vpInput.elev = applyNullZone(inputValue(&elevInput), NZ_SMALL, &vpInput.elevPilotInput);
 
   vpInput.elevExpo = applyExpo(vpInput.elev);
-  
+
   if(inputValid(&tuningKnobInput))
     vpInput.tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
     
@@ -855,7 +855,16 @@ void configurationTask()
   // Stabilizer selector input
   //
 
-  if(stabModeSelectorValue == 1) {
+  if(stabModeSelectorValue < 1) {
+    if(!vpMode.halfRate)
+      consoleNoteLn_P(PSTR("Half-rate ENABLED"));
+    vpMode.halfRate = true;
+  } else if(vpMode.halfRate) {
+    consoleNoteLn_P(PSTR("Half-rate DISABLED"));
+    vpMode.halfRate = false;
+  }
+  
+  if(stabModeSelectorValue >= 0) {
     if(!vpMode.progressiveFlight)
       consoleNoteLn_P(PSTR("Progressive aileron ENABLED"));
     vpMode.progressiveFlight = true;
