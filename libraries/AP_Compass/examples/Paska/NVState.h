@@ -39,7 +39,7 @@ struct ParamRecord {
   float elevNeutral, elevDefl;
   float flapNeutral, flap2Neutral, flapDefl;
   float rudderNeutral, rudderDefl;
-  float steerNeutral, steerDefl;
+  float steerNeutral, steerDefl, steerPark;
   float brakeNeutral, brakeDefl;
   float canardNeutral, canardDefl;
   float vertNeutral, vertDefl;

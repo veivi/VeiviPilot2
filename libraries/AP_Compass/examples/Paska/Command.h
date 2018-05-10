@@ -21,6 +21,7 @@ typedef enum {
   c_rdefl,
   c_sneutral,
   c_sdefl,
+  c_park,
   c_bneutral,
   c_bdefl,
   c_fneutral,

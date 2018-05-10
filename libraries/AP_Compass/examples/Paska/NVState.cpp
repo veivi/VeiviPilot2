@@ -31,7 +31,7 @@ const struct ParamRecord paramDefaults = {
   .elevNeutral = 0, .elevDefl = 45.0/90,
   .flapNeutral = 0, .flap2Neutral = 0, .flapDefl = 45.0/90,
   .rudderNeutral = 0, .rudderDefl = 45.0/90,
-  .steerNeutral = 0, .steerDefl = 45.0/90,
+  .steerNeutral = 0, .steerDefl = 45.0/90, .steerPark = 0,
   .brakeNeutral = 0, .brakeDefl = 45.0/90,
   .canardNeutral = 0, .canardDefl = 45.0/90,
   .vertNeutral = 0, .vertDefl = 45.0/90,

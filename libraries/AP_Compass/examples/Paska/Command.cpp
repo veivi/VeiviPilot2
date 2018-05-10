@@ -29,6 +29,7 @@ const struct Command commands[] PROGMEM = {
   { "rneutral", c_rneutral, e_angle90, &vpParam.rudderNeutral },
   { "sdefl", c_sdefl, e_angle90, &vpParam.steerDefl },
   { "sneutral", c_sneutral, e_angle90, &vpParam.steerNeutral },
+  { "spark", c_park, e_angle90, &vpParam.steerPark },
   { "fdefl", c_fdefl, e_angle90, &vpParam.flapDefl },
   { "fneutral", c_fneutral,
     e_angle90, &vpParam.flapNeutral, &vpParam.flap2Neutral },

@@ -1658,12 +1658,7 @@ void aileronModule()
 
 void rudderModule()
 {
-  vpOutput.rudder = vpInput.rudder;
-
-  if(vpDerived.haveRetracts && gearSel)
-    vpOutput.steer = 0;
-  else
-    vpOutput.steer = vpInput.rudder;
+  vpOutput.rudder = vpOutput.steer = vpInput.rudder;
 }
 
 //
@@ -1867,7 +1862,10 @@ float thrustHorizFn()
 
 float steeringFn()
 {
-  return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
+  if(vpDerived.haveRetracts && gearSel)
+    return vpParam.steerPark;
+  else
+    return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
 }
 
 float leftFlapFn()
