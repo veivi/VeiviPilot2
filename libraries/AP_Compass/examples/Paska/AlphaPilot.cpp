@@ -94,6 +94,18 @@ void displayTask()
   if(!vpStatus.armed) {
     obdMove(16-8, 0);
     obdPrint("DISARMED", true);
+
+    for(uint8_t i = 0; ppmInputs[i] != NULL; i++) {
+      obdMove((i%3)*6, 2+i/3);
+      float value = inputValue(ppmInputs[i]);
+      uint8_t valueInt = MIN((uint8_t) (fabs(value)*100), 99);
+      char buffer[] =
+	{ value < 0 ? '-' : ' ',
+	  '.', '0' + (valueInt / 10), '0' + (valueInt % 10),
+	  '\0'};
+      obdPrint(buffer);
+    }
+    
     return;
   } else if(vpMode.takeOff) {
     obdMove(16-7, 0);
