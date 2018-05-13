@@ -89,6 +89,14 @@ void displayTask()
   obdPrint(vpParam.name);
   obdPrint("\n");
 
+  // PPM freq
+  
+  obdMove(16-5, 1);
+  uint8_t freq = (uint8_t) ppmFreq;
+  char buffer1[] =
+    { '0' + (freq / 10), '0' + (freq % 10), ' ', 'H', 'z', '\0'};
+  obdPrint(buffer1);
+    
   // Status
   
   if(!vpStatus.armed) {
@@ -99,11 +107,11 @@ void displayTask()
       obdMove((i%3)*6, 2+i/3);
       float value = inputValue(ppmInputs[i]);
       uint8_t valueInt = MIN((uint8_t) (fabs(value)*100), 99);
-      char buffer[] =
+      char buffer2[] =
 	{ value < 0 ? '-' : ' ',
 	  '.', '0' + (valueInt / 10), '0' + (valueInt % 10),
 	  '\0'};
-      obdPrint(buffer);
+      obdPrint(buffer2);
     }
     
     return;
