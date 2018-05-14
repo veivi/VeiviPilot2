@@ -22,7 +22,7 @@ const struct HWTimer hwTimer5 =
        { &TCCR5A, &TCCR5B, &ICR5, { &OCR5A, &OCR5B, &OCR5C } };
 
 const struct HWTimer *hwTimers[] = 
-  { &hwTimer1, &hwTimer3, &hwTimer4 };
+  { &hwTimer1, &hwTimer3, &hwTimer4, &hwTimer5 };
 
 struct PWMOutput pwmOutput[MAX_SERVO] = {
   { { PortB, 6 }, &hwTimer1, COMnB },
