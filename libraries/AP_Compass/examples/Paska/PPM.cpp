@@ -128,9 +128,22 @@ void ppmInputInitPrim(struct RxInputRecord *inputs[], const int32_t *min, const 
   
   FORBID;
     
+    TCCR5A = _BV(WGM50) | _BV(WGM51);
+    TCCR5B |= _BV(WGM53) | _BV(WGM52) | _BV(CS51) | _BV(ICES5);
+    OCR5A  = 40000 - 1; // -1 to correct for wrap
+
+    /* OCR5B and OCR5C will be used by RCOutput_APM2. Init to 0xFFFF to prevent premature PWM output */
+    OCR5B  = 0xFFFF;
+    OCR5C  = 0xFFFF;
+
+    /* Enable input capture interrupt */
+    TIMSK5 |= _BV(ICIE5);
+    /*
   TCCR5B |= (1<<ICES5) | (1<<CS51);
   TIMSK5 |= 1<<ICIE5;
-     
+  OCR5A  = 40000 - 1; // -1 to correct for wrap
+    */
+    
   PERMIT;
 }
 

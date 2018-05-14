@@ -19,10 +19,10 @@ const struct HWTimer hwTimer3 =
 const struct HWTimer hwTimer4 =
        { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C } };
 const struct HWTimer hwTimer5 =
-       { &TCCR5A, &TCCR5B, &ICR5, { &OCR5A, &OCR5B, &OCR5C } };
+       { &TCCR5A, &TCCR5B, &OCR5A, { &OCR5A, &OCR5B, &OCR5C } };
 
 const struct HWTimer *hwTimers[] = 
-  { &hwTimer1, &hwTimer3, &hwTimer4, &hwTimer5 };
+  { &hwTimer1, &hwTimer3, &hwTimer4 };
 
 struct PWMOutput pwmOutput[MAX_SERVO] = {
   { { PortB, 6 }, &hwTimer1, COMnB },
@@ -42,18 +42,18 @@ void pwmTimerInit(const struct HWTimer *timer[], int num)
 {
   for(int i = 0; i < num; i++) { 
     // WGM, prescaling
-   
+
     *(timer[i]->TCCRA) = 1<<WGM11;
     *(timer[i]->TCCRB) = (1<<WGM13) | (1<<WGM12) | (1<<CS11);
-
+    
    // PWM frequency
-   
-   *(timer[i]->ICR) = TIMER_HZ/PWM_HZ - 1;
+
+    *(timer[i]->ICR) = TIMER_HZ/PWM_HZ - 1;
 
    // Output set to 1.5 ms by default
 
-   for(int j = 0; j < 3; j++)
-     *(timer[i]->OCR[j]) = 1500UL<<1; // ~0U;
+    for(int j = 0; j < 3; j++)
+      *(timer[i]->OCR[j]) = 1500UL<<1; // ~0U;
   }
 }
 
