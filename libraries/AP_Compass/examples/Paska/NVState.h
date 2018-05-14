@@ -6,7 +6,7 @@
 
 #define NAME_LEN     8
 #define MAX_CH       8
-#define MAX_SERVO    10
+#define MAX_SERVO    12
 
 typedef enum {
   fn_null,

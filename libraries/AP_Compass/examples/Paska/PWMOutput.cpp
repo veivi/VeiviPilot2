@@ -18,6 +18,8 @@ const struct HWTimer hwTimer3 =
        { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C } };
 const struct HWTimer hwTimer4 =
        { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C } };
+const struct HWTimer hwTimer5 =
+       { &TCCR5A, &TCCR5B, &ICR5, { &OCR5A, &OCR5B, &OCR5C } };
 
 const struct HWTimer *hwTimers[] = 
   { &hwTimer1, &hwTimer3, &hwTimer4 };
@@ -31,7 +33,9 @@ struct PWMOutput pwmOutput[MAX_SERVO] = {
   { { PortE, 5 }, &hwTimer3, COMnC },
   { { PortE, 4 }, &hwTimer3, COMnB },
   { { PortE, 3 }, &hwTimer3, COMnA },
-  { { PortB, 7 }, &hwTimer1, COMnC }
+  { { PortB, 7 }, &hwTimer1, COMnC },
+  { { PortL, 4 }, &hwTimer5, COMnB },
+  { { PortL, 5 }, &hwTimer5, COMnC }
 };
 
 void pwmTimerInit(const struct HWTimer *timer[], int num)
