@@ -1114,7 +1114,7 @@ void trimTask()
       vpParam.steerNeutral +=
 	sign(vpParam.steerDefl)*sign(vpInput.rudder)*steerTrimRate/TRIM_HZ;
       vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
-      paramsModified = true;
+      // paramsModified = true;
     }
 
     //
