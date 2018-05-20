@@ -180,7 +180,7 @@ float applyNullZone(float value, float nz)
 }
 
 #define EXPO 0.3
-#define HALF_RATE 0.60
+#define HALF_RATE 0.75
 
 float applyExpo(float value)
 {
