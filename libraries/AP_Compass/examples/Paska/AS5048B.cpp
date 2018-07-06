@@ -34,6 +34,9 @@ uint8_t AS5048B_alpha(int16_t *result)
 {
   uint16_t raw = 0;
   uint8_t status = AS5048B_readWord(AS5048B_ANGLMSB_REG, &raw);
+
+  if(vpParam.sensorOrient)
+    raw = ~raw;
   
   if(!status && result)
     *result = (int16_t) (raw - vpParam.alphaRef);

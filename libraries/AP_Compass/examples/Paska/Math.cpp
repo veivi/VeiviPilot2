@@ -42,7 +42,7 @@ float expo(float a, float b)
 
 float alphaPredictInverse(float x)
 {
-  const float a = vpParam.ff_C, b = vpParam.ff_B, c = vpParam.ff_A;
+  const float a = vpDerived.ff_C, b = vpDerived.ff_B, c = vpDerived.ff_A;
 
   if(a != 0.0 && x > vpDerived.apexAlpha)
     return vpDerived.apexElev;
@@ -52,14 +52,14 @@ float alphaPredictInverse(float x)
 
 float alphaPredict(float y)
 {
-  const float a = vpParam.ff_C, b = vpParam.ff_B, c = vpParam.ff_A;
+  const float a = vpDerived.ff_C, b = vpDerived.ff_B, c = vpDerived.ff_A;
   
   if(a == 0.0)
     return (y - c)/b;
   else if(y > vpDerived.apexElev)
-    return vpParam.alphaMax;
+    return vpDerived.maxAlpha;
   else
-    return clamp((-b+sqrt(square(b)-4*a*(c - y)))/(2*a), -vpParam.alphaMax, vpParam.alphaMax);;
+    return clamp((-b+sqrt(square(b)-4*a*(c - y)))/(2*a), -vpDerived.maxAlpha, vpDerived.maxAlpha);;
 }
 
 float rollRatePredict(float pos)
@@ -97,36 +97,16 @@ float dynamicPressureInverse(float pressure)
 
 float coeffOfLift(float aoa)
 {
-  aoa = clamp(aoa, -vpParam.alphaMax, vpParam.alphaMax);
+  aoa = clamp(aoa, -vpDerived.maxAlpha, vpDerived.maxAlpha);
 
-  if(vpParam.cL_C == 0.0) {
-    //
-    // Linear straight segment, sinusoidal apex
-    //
-    
-    const float i = (vpParam.cL_apex - vpParam.cL_A)/vpParam.cL_B,
-      d = 2/(PI-2)*(vpParam.alphaMax - i),
-      w = d + vpParam.alphaMax - i;
-
-    if(i > vpParam.alphaMax || aoa < vpParam.alphaMax - w)
-      return fminf(vpParam.cL_A + aoa*vpParam.cL_B, vpParam.cL_apex);
-    else
-      return vpParam.cL_A
-	+ vpParam.cL_B*(i - d*(1 - sin(PI/2*(aoa - vpParam.alphaMax + w)/w)));
-  } else {
-    //
-    // Simple polynomial
-    //
-    
-    return vpParam.cL_A + aoa*vpParam.cL_B  + square(aoa)*vpParam.cL_C
-      + powf(aoa, 3)*vpParam.cL_D + powf(aoa, 4)*vpParam.cL_E;
-  }
+  return vpDerived.cL_A + aoa*vpDerived.cL_B  + square(aoa)*vpDerived.cL_C
+    + powf(aoa, 3)*vpDerived.cL_D + powf(aoa, 4)*vpDerived.cL_E;
 }
 
 float coeffOfLiftInverse(float target)
 {
-  float left = -vpParam.alphaMax, right = vpParam.alphaMax;
-  float center, approx;
+  float left = -vpDerived.maxAlpha, right = vpDerived.maxAlpha;
+  float center = 0, approx = 0;
 
   int i = 0;
   
@@ -144,7 +124,7 @@ float coeffOfLiftInverse(float target)
       consolePrintLn(target);
       return -1e6;
     }
-  } while(fabs(approx - target) > 0.0003);
+  } while(fabs(approx - target) > 0.001);
 
   return center;
 }

@@ -27,6 +27,7 @@ const struct ParamRecord paramDefaults = {
   .i2c_clkDiv = 12,
   .i2c_5048B = 0x40, .i2c_24L256 = 0x50, 
   .alphaRef = 0,
+  .airSpeedRef = 0,
   .aileNeutral = 0, .aile2Neutral = 0, .aileDefl = -45.0/90,
   .elevNeutral = 0, .elevDefl = 45.0/90,
   .flapNeutral = 0, .flap2Neutral = 0, .flapDefl = 45.0/90,
@@ -37,19 +38,17 @@ const struct ParamRecord paramDefaults = {
   .vertNeutral = 0, .vertDefl = 45.0/90,
   .horizNeutral = 0, .horizDefl = 45.0/90,
   .functionMap = {0},
-  .cL_A = 0.05, .alphaMax = 12.0/RADIAN,
+  .alphaMax = { 12.0/RADIAN, 12.0/RADIAN },
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
   .r_Mix = 0.1,
   .at_Ku = 1, .at_Tu = 2.0,
   .cc_Ku = 3, .cc_Tu = 1.5,
-  .ff_A = 0.0, .ff_B = 0.0, .ff_C = 0.0,
+  .ff_A = { 0.0, 0.0} , .ff_B = { 0.0, 0.0}, .ff_C = { 0.0, 0.0 },
   .t_Mix = 0.0, .t_Expo = 1.0,
   .maxPitch = 45/RADIAN,
-  .cL_apex= 0.25,
   .roll_C = 0.1,
-  .cL_B = 0.6,
-  .cL_C = 0.0, .cL_D = 0.0, .cL_E = 0.0,
+  .cL_A = { 0, 0}, .cL_B = { 0.6, 0} , .cL_C = { 0.0, 0 }, .cL_D = { 0.0, 0 }, .cL_E = { 0.0, 0 },
   .servoRate = 60/0.09,
   .takeoffTrim = 0.25,
   .weightDry = 1,
@@ -63,6 +62,7 @@ const struct ParamRecord paramDefaults = {
   .virtualOnly = true,
   .haveGear = true,
   .wowCalibrated = false,
+  .sensorOrient = false,
   .expo = 0.8,
   .floor = -1
 };
@@ -216,7 +216,9 @@ void printParams()
   consolePrint(vpParam.thrust/vpDerived.totalMass*100, 0);
   consolePrintLn_P(PSTR("% of weight)"));
   consoleNote_P(PSTR("  AS5048B ref = "));
-  consolePrintLn(vpParam.alphaRef);
+  consolePrint(vpParam.alphaRef);
+  consolePrint_P(PSTR(" MS4525 ref = "));
+  consolePrintLn(vpParam.airSpeedRef);
   consoleNoteLn_P(PSTR("  Alpha Hold"));
   consoleNote_P(PSTR("    Inner Ku*IAS^1.5 = "));
   consolePrint(vpParam.i_Ku_C, 4);
@@ -226,11 +228,11 @@ void printParams()
   consolePrintLn(vpParam.o_P, 4);
   consoleNoteLn_P(PSTR("  Elev feedforward A+Bx+Cx^2"));
   consoleNote_P(PSTR("    "));
-  consolePrint(vpParam.ff_A, 5);
+  consolePrint(vpDerived.ff_A, 5);
   consolePrint_P(PSTR(" + "));
-  consolePrint(vpParam.ff_B, 5);
+  consolePrint(vpDerived.ff_B, 5);
   consolePrint_P(PSTR(" x + "));
-  consolePrint(vpParam.ff_C, 5);
+  consolePrint(vpDerived.ff_C, 5);
   consolePrint_P(PSTR(" x^2  (eff alpha range = "));
   consolePrint(alphaPredict(-1.0)*RADIAN);
   consolePrint_P(PSTR(" ... "));
@@ -265,7 +267,7 @@ void printParams()
   consoleNote_P(PSTR("  Alpha range = "));
   consolePrint(vpDerived.zeroLiftAlpha*RADIAN);
   consolePrint_P(PSTR(" ... "));
-  consolePrint(vpParam.alphaMax*RADIAN);
+  consolePrint(vpDerived.maxAlpha*RADIAN);
   consolePrint_P(PSTR(", minimum IAS = "));
   consolePrintLn(vpDerived.minimumIAS);
   consoleNote_P(PSTR("  Threshold margin(%) = "));
@@ -278,17 +280,17 @@ void printParams()
   consolePrint(vpDerived.shakerAlpha*RADIAN);
   consolePrint_P(PSTR(", "));
   consolePrintLn(vpDerived.pusherAlpha*RADIAN);
-  consoleNoteLn_P(PSTR("  Coeff of lift A + Bx + Cx^2"));
+  consoleNoteLn_P(PSTR("  Coeff of lift"));
   consoleNote_P(PSTR("    "));
-  consolePrint(vpParam.cL_A, 4);
+  consolePrint(vpDerived.cL_A, 4);
   consolePrint_P(PSTR(" + "));
-  consolePrint(vpParam.cL_B, 4);
+  consolePrint(vpDerived.cL_B, 4);
   consolePrint_P(PSTR(" x + "));
-  consolePrint(vpParam.cL_C, 4);
+  consolePrint(vpDerived.cL_C, 4);
   consolePrint_P(PSTR(" x^2 + "));
-  consolePrint(vpParam.cL_D, 4);
+  consolePrint(vpDerived.cL_D, 4);
   consolePrint_P(PSTR(" x^3 + "));
-  consolePrint(vpParam.cL_E, 4);
+  consolePrint(vpDerived.cL_E, 4);
   consolePrint_P(PSTR(" x^4  (max = "));
   consolePrint(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
@@ -468,6 +470,11 @@ void backupParams()
   datagramTxEnd();  
 }
 
+static float interpolate(float c, float v[])
+{
+  return mixValue(c, v[0], v[1]);
+}
+
 void deriveParams()
 {
   // Do we have rectracts and/or flaps?
@@ -494,9 +501,28 @@ void deriveParams()
 
   vpDerived.totalMass = vpParam.weightDry + vpParam.fuel;
 
+  // Max alpha and curve interpolation
+
+  vpDerived.assumedFlap = vpOutput.flap;
+  
+  const float effFlap
+    = vpDerived.haveFlaps ? powf(vpOutput.flap, vpParam.expo) : 0;
+  
+  vpDerived.maxAlpha = interpolate(effFlap, vpParam.alphaMax);
+  
+  vpDerived.cL_A = interpolate(effFlap, vpParam.cL_A);
+  vpDerived.cL_B = interpolate(effFlap, vpParam.cL_B);
+  vpDerived.cL_C = interpolate(effFlap, vpParam.cL_C);
+  vpDerived.cL_D = interpolate(effFlap, vpParam.cL_D);
+  vpDerived.cL_E = interpolate(effFlap, vpParam.cL_E);
+  
+  vpDerived.ff_A = interpolate(effFlap, vpParam.ff_A);
+  vpDerived.ff_B = interpolate(effFlap, vpParam.ff_B);
+  vpDerived.ff_C = interpolate(effFlap, vpParam.ff_C);
+  
   // Max CoL
 
-  vpDerived.maxCoeffOfLift = coeffOfLift(vpParam.alphaMax);
+  vpDerived.maxCoeffOfLift = coeffOfLift(vpDerived.maxAlpha);
   
   // Zero lift alpha
   
@@ -516,15 +542,15 @@ void deriveParams()
   vpDerived.shakerAlpha =
     coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin/2));
   vpDerived.pusherAlpha =
-    vpParam.alphaMax/(1 + fmaxf(vpParam.stallMargin, 0.0));
+    vpDerived.maxAlpha/(1 + fmaxf(vpParam.stallMargin, 0.0));
 
   //
   // Feedforward apex
   //
 
-  if(vpParam.ff_C != 0.0) {
-    vpDerived.apexAlpha = -vpParam.ff_B / (2*vpParam.ff_C);
-    vpDerived.apexElev = vpParam.ff_A + vpParam.ff_B*vpDerived.apexAlpha + vpParam.ff_C*square(vpDerived.apexAlpha);
+  if(vpDerived.ff_C != 0.0) {
+    vpDerived.apexAlpha = -vpDerived.ff_B / (2*vpDerived.ff_C);
+    vpDerived.apexElev = vpDerived.ff_A + vpDerived.ff_B*vpDerived.apexAlpha + vpDerived.ff_C*square(vpDerived.apexAlpha);
   } else {
     vpDerived.apexAlpha = vpDerived.apexElev = 0.0;
   }

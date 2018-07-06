@@ -24,6 +24,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define RUDSTK   &vpInput.rudder
 #define AILE     &vpOutput.aile
 #define ELEV     &vpOutput.elev
+#define ELEV_P   &vpControl.elevPredict
 #define RUDDER   &vpOutput.rudder
 #define FLAP     &flapEncoded
 #define MODE     &modeEncoded
@@ -50,6 +51,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define RUDSTK NULL
 #define AILE NULL
 #define ELEV NULL
+#define ELEV_P NULL
 #define RUDDER NULL
 #define FLAP NULL
 #define MODE NULL
@@ -75,6 +77,7 @@ struct LogChannel logChannels[] = {
   [lc_yawr] =    { "YRTE",   lt_angle,    -720, 720,    YAWR },
   [lc_aile] =    { "AILE",   lt_real,     -1.5, 1.5,    AILE },
   [lc_elev] =    { "ELEV",   lt_real,     -1.5, 1.5,    ELEV },
+  [lc_elev_p] =  { "ELEP",   lt_real,     -1.5, 1.5,    ELEV_P },
   [lc_rudder] =  { "RUDR",   lt_real,     -1.5, 1.5,    RUDDER },
   [lc_flap] =    { "FLAP",   lt_percent,   0, 100,      FLAP },
   [lc_ailestk] = { "ASTK",   lt_real,     -1, 1,        AILESTK },

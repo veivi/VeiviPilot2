@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include "MS4525.h"
 #include "NewI2C.h"
-#include "Console.h"
+#include "Objects.h"
+#include "NVState.h"
 
 uint8_t MS4525DO_read(uint8_t *storage, uint8_t bytes) 
 {
@@ -21,11 +22,20 @@ uint8_t MS4525DO_read(uint16_t *result)
   return status | (buf[0] & (1<<6));
 }
 
+static uint32_t acc;
+static int accCount;
+static bool calibrating = false;
+
+void MS4525DO_calibrate()
+{
+  consoleNoteLn_P(PSTR("Airspeed calibration STARTED"));
+  calibrating = true;
+  accCount = 0;
+  acc = 0;
+}
+    
 uint8_t MS4525DO_pressure(int16_t *result) 
 {
-  static uint32_t acc;
-  static int accCount;
-  static bool done = false;
   const int log2CalibWindow = 9;
   uint16_t raw = 0;
   uint8_t status = MS4525DO_read(&raw);
@@ -33,18 +43,20 @@ uint8_t MS4525DO_pressure(int16_t *result)
   if(status)
     return status;
 
-  if(accCount < 1<<log2CalibWindow) {
-    acc += raw;
-    accCount++;
-  } else {
-    if(!done)
-      consoleNoteLn_P(PSTR("Airspeed calibration DONE"));
-    
-    done = true;
-    
-    if(result)
-      *result = (raw<<2) - (acc>>(log2CalibWindow - 2));
+  if(calibrating) {
+    if(accCount < 1<<log2CalibWindow) {
+      acc += raw;
+      accCount++;
+    } else {
+      vpParam.airSpeedRef = acc>>(log2CalibWindow - 2);
+      calibrating = false;
+      consoleNote_P(PSTR("Airspeed calibration DONE, ref = "));
+      consolePrintLn(vpParam.airSpeedRef);
+    }
   }
+
+  if(result)
+    *result = (raw<<2) - vpParam.airSpeedRef;
   
   return status;
 }

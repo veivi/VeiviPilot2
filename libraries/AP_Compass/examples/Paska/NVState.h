@@ -34,7 +34,7 @@ struct ParamRecord {
   char name[NAME_LEN+1];
   uint8_t i2c_clkDiv;
   uint8_t i2c_5048B, i2c_24L256;
-  uint16_t alphaRef;
+  uint16_t alphaRef, airSpeedRef;
   float aileNeutral, aile2Neutral, aileDefl;
   float elevNeutral, elevDefl;
   float flapNeutral, flap2Neutral, flapDefl;
@@ -45,18 +45,17 @@ struct ParamRecord {
   float vertNeutral, vertDefl;
   float horizNeutral, horizDefl;
   uint8_t functionMap[MAX_SERVO]; 
-  float cL_A, alphaMax;
+  float alphaMax[2];
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;
   float r_Mix;
   float at_Ku, at_Tu;
   float cc_Ku, cc_Tu;
-  float ff_A, ff_B, ff_C;
+  float ff_A[2], ff_B[2], ff_C[2];
   float t_Mix, t_Expo;
   float maxPitch;
-  float cL_apex;
   float roll_C;
-  float cL_B, cL_C, cL_D, cL_E;
+  float cL_A[2], cL_B[2], cL_C[2], cL_D[2], cL_E[2];
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;
@@ -67,6 +66,7 @@ struct ParamRecord {
   bool virtualOnly;
   bool haveGear;
   bool wowCalibrated;
+  bool sensorOrient;
   float expo;
   int16_t floor;
   };
@@ -74,9 +74,12 @@ struct ParamRecord {
 struct DerivedParams {
   bool haveRetracts, haveFlaps;
   float totalMass;
+  float assumedFlap;
+  float ff_A, ff_B, ff_C;
+  float cL_A, cL_B, cL_C, cL_D, cL_E;
   float minimumIAS, minimumDynP, zeroLiftAlpha, maxCoeffOfLift;
-  float thresholdAlpha, shakerAlpha, pusherAlpha;
-  float apexAlpha, apexElev;
+  float thresholdAlpha, shakerAlpha, pusherAlpha, maxAlpha;
+  float apexElev, apexAlpha;
 };
 
 struct NVStateRecord {

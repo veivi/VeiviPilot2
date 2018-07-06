@@ -9,6 +9,7 @@
 typedef enum {
   c_invalid,
   c_5048b_ref,
+  c_4525_ref,
   
   c_ezero,
   c_eneutral,
@@ -43,6 +44,7 @@ typedef enum {
   c_cc_zn,
   c_offset,
   c_floor,
+  c_sensor,
 
   c_scale,
   c_dump,
@@ -53,8 +55,8 @@ typedef enum {
   c_smargin,
   c_peak,
   c_zl,
-  c_col_ab,
-  c_col_max,
+  c_col,
+  c_alt_col,
   c_store,
   c_report,
   c_start,
@@ -80,6 +82,7 @@ typedef enum {
   c_defaults,
   c_name,
   c_ff,
+  c_alt_ff,
   c_roll_k,
   c_rollrate,
   c_atrim,
@@ -97,7 +100,8 @@ typedef enum {
   c_wow,
   c_wheels,
   c_map,
-  c_function
+  c_function,
+  c_airspeed
 } token_t;
 
 typedef enum

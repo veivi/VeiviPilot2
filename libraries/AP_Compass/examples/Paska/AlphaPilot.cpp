@@ -274,7 +274,7 @@ void sensorTaskFast()
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
   vpFlight.dynP = pressureBuffer.output() * factor_c
-    / cos(clamp(vpFlight.relWind, vpDerived.zeroLiftAlpha, vpParam.alphaMax));
+    / cos(clamp(vpFlight.relWind, vpDerived.zeroLiftAlpha, vpDerived.maxAlpha));
   
   // Attitude
 
@@ -584,7 +584,7 @@ void statusTask()
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
      || vpMode.takeOff
-     || vpFlight.alpha < vpParam.alphaMax/(1 + fminf(vpParam.stallMargin, 0))) {
+     || vpFlight.alpha < vpDerived.maxAlpha/(1 + fminf(vpParam.stallMargin, 0))) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.2e6) {
@@ -1052,7 +1052,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      rudderMix = vpControl.testGain = testGainLinear(1, 0);
+      rudderMix = vpControl.testGain = testGainLinear(vpParam.r_Mix/1.2, vpParam.r_Mix*1.2);
       break;
 
     case 11:
@@ -1084,6 +1084,13 @@ void configurationTask()
       // Throttle to elev mix
 
       throttleMix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix);
+      break;
+
+    case 15:
+      // Throttle to elev mix fixed to zero
+
+      throttleMix = 0;
+      vpControl.testGain = 1;
       break;
 
     }
@@ -1726,7 +1733,7 @@ void ancillaryModule()
   // Flaps
   //
   
-  flapActuator.input((float) flapSel/FLAP_STEPS, controlCycle);
+  vpOutput.flap = flapActuator.input((float) flapSel/FLAP_STEPS, controlCycle);
 
   //
   // Brake
@@ -1825,7 +1832,7 @@ float aileronFn()
 
 float flaperonFn()
 {
-  return vpParam.flaperon ? vpParam.flapDefl*flapActuator.output() : 0;
+  return vpParam.flaperon ? vpParam.flapDefl*vpOutput.flap : 0;
 }
 
 float leftAileronFn()
@@ -1890,12 +1897,12 @@ float steeringFn()
 
 float leftFlapFn()
 {
-  return vpParam.flapNeutral + vpParam.flapDefl*flapActuator.output();
+  return vpParam.flapNeutral + vpParam.flapDefl*vpOutput.flap;
 }
 
 float rightFlapFn()
 {
-  return vpParam.flap2Neutral - vpParam.flapDefl*flapActuator.output();
+  return vpParam.flap2Neutral - vpParam.flapDefl*vpOutput.flap;
 }
 
 float gearFn()
@@ -2010,6 +2017,10 @@ void configTaskGroup()
   statusTask();
   configurationTask();
   trimTask();
+
+  if(vpOutput.flap != vpDerived.assumedFlap)
+    // Update CoL curve
+    deriveParams();
 }
 
 struct Task alphaPilotTasks[] = {

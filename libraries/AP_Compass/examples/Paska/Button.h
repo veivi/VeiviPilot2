@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define INERTIA 1
+#define INERTIA 2
 
 class Button {
 public:

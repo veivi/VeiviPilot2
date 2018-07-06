@@ -68,7 +68,7 @@ struct ControlState {
 };
 
 struct OutputState {
-  float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz;
+  float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz, flap;
 };
 
 extern struct ModeRecord vpMode;

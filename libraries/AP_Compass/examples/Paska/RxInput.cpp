@@ -179,15 +179,15 @@ float applyNullZone(float value, float nz)
   return applyNullZone(value, nz, NULL);
 }
 
-#define EXPO 0.3
-#define HALF_RATE 0.75
+#define EXPO 0.2
+#define HALF_RATE 0.7
 
 float applyExpo(float value)
 {
   const float rate = vpMode.halfRate ? HALF_RATE : 1;
   
   return rate*sign(value)*powf(fabsf(value),
-			  EXPO + sqrt(effIAS()/vpDerived.minimumIAS));
+			  EXPO + 0.7*sqrt(effIAS()/vpDerived.minimumIAS));
 }
 
 float applyExpoTrim(float value, float trim)

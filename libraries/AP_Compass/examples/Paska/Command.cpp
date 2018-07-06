@@ -3,6 +3,7 @@
 #include "Command.h"
 #include "NVState.h"
 #include "Logging.h"
+#include "MS4525.h"
 #include "Math.h"
 #include "PPM.h"
 #include "Objects.h"
@@ -10,12 +11,14 @@
 const struct Command commands[] PROGMEM = {
   { "name", c_name, e_string, &vpParam.name },
   { "as5048b_ref", c_5048b_ref, e_uint16, &vpParam.alphaRef },
+  { "ms4525_ref", c_4525_ref, e_uint16, &vpParam.airSpeedRef },
   { "at_zn", c_at_zn, e_float, &vpParam.at_Ku, &vpParam.at_Tu },
   { "cc_zn", c_cc_zn, e_float, &vpParam.cc_Ku, &vpParam.cc_Tu },
   { "inner_pid_zn", c_inner_pid_zn,
     e_float, &vpParam.i_Ku_C, &vpParam.i_Tu },
   { "outer_p", c_outer_p, e_float, &vpParam.o_P },
-  { "ff", c_ff, e_float, &vpParam.ff_A, &vpParam.ff_B, &vpParam.ff_C },
+  { "ff", c_ff, e_float, &vpParam.ff_A[0], &vpParam.ff_B[0], &vpParam.ff_C[0] },
+  { "alt_ff", c_ff, e_float, &vpParam.ff_A[1], &vpParam.ff_B[1], &vpParam.ff_C[1] },
   { "stabilizer_pid_zn", c_stabilizer_pid_zn,
     e_float, &vpParam.s_Ku_C, &vpParam.s_Tu },
   { "rmix", c_rmix, e_float, &vpParam.r_Mix },
@@ -43,13 +46,15 @@ const struct Command commands[] PROGMEM = {
   { "hneutral", c_hneutral, e_angle90, &vpParam.horizNeutral },
   { "roll_k", c_roll_k, e_float, &vpParam.roll_C, &vpParam.expo },
   { "servorate", c_servorate, e_float, &vpParam.servoRate },
-  { "col_ab", c_col_ab, e_float, &vpParam.cL_A, &vpParam.cL_B, &vpParam.cL_C, &vpParam.cL_D, &vpParam.cL_E },
-  { "col_max", c_col_max, e_float, &vpParam.cL_apex, &vpParam.alphaMax },
+  { "col_ab", c_col, e_float, &vpParam.cL_A[0], &vpParam.cL_B[0], &vpParam.cL_C[0], &vpParam.cL_D[0], &vpParam.cL_E[0] },
+  { "alt_col_ab", c_alt_col, e_float, &vpParam.cL_A[1], &vpParam.cL_B[1], &vpParam.cL_C[1], &vpParam.cL_D[1], &vpParam.cL_E[1] },
+  { "max", c_max, e_angle, &vpParam.alphaMax[0], &vpParam.alphaMax[1] },
   { "climb", c_climb, e_angle, &vpParam.maxPitch },
   { "weight", c_weight, e_float, &vpParam.weightDry },
   { "fuel", c_fuel, e_float, &vpParam.fuel },
   { "thrust", c_thrust, e_float, &vpParam.thrust },
   { "virtual", c_virtual, e_bool, &vpParam.virtualOnly },
+  { "sensor", c_sensor, e_bool, &vpParam.sensorOrient },
   { "flaperon", c_elevon, e_bool, &vpParam.flaperon },
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
   { "smargin", c_smargin, e_percent, &vpParam.stallMargin },
@@ -61,7 +66,6 @@ const struct Command commands[] PROGMEM = {
   { "map", c_map, e_map, &vpParam.functionMap },
   { "stall", c_stall },
   { "peak", c_peak },
-  { "max", c_max },
   { "zl", c_zl },
   { "scale", c_scale },
   { "trim", c_trim },
@@ -95,6 +99,7 @@ const struct Command commands[] PROGMEM = {
   { "gear", c_gear },
   { "fault", c_fault },
   { "function", c_function },
+  { "airspeed", c_airspeed },
   { "", c_invalid }
 };
 
@@ -135,7 +140,7 @@ void printCoeffElement(float y0, float y1, float x, float v)
     } else if(y > col0) {
       consoleTab(col0);
       consolePrint("|");
-      consoleTab(y);
+      consoleTab(MIN(col1,y));
       if(y < col1) {
 	consolePrint("*");
 	consoleTab(col1);
@@ -373,11 +378,16 @@ void executeCommand(char *buf)
 	vpParam.i_Tu *= param[0];
 	vpParam.s_Ku_C *= param[0];
 	vpParam.s_Tu *= param[0];
-	vpParam.cL_A *= param[0];
-	vpParam.cL_B *= param[0];
-	vpParam.cL_C *= param[0];
-	vpParam.cL_D *= param[0];
-	vpParam.cL_E *= param[0];
+	vpParam.cL_A[0] *= param[0];
+	vpParam.cL_B[0] *= param[0];
+	vpParam.cL_C[0] *= param[0];
+	vpParam.cL_D[0] *= param[0];
+	vpParam.cL_E[0] *= param[0];
+	vpParam.cL_A[1] *= param[0];
+	vpParam.cL_B[1] *= param[0];
+	vpParam.cL_C[1] *= param[0];
+	vpParam.cL_D[1] *= param[0];
+	vpParam.cL_E[1] *= param[0];
       }
       break;
     
@@ -427,19 +437,19 @@ void executeCommand(char *buf)
     case c_curve:
       consoleNoteLn_P(PSTR("Feed-forward curve"));
   
-      for(float aR = -1; aR <= 1; aR += 0.07)
-	printCoeffElement(-1, 1, vpParam.alphaMax*aR*RADIAN, alphaPredictInverse(vpParam.alphaMax*aR));
+      for(float aR = -1; aR < 1.1; aR += 0.1)
+	printCoeffElement(-1, 1, vpDerived.maxAlpha*aR*RADIAN, alphaPredictInverse(vpDerived.maxAlpha*aR));
 
       consoleNoteLn_P(PSTR("Inverse feed-forward curve"));
   
-      for(float e = 1; e >= -1; e -= 0.07)
-	printCoeffElement(-vpParam.alphaMax/2, vpParam.alphaMax, e, alphaPredict(e));
+      for(float e = -1; e < 1.1; e += 0.1)
+	printCoeffElement(-vpDerived.maxAlpha/2, vpDerived.maxAlpha, e, alphaPredict(e));
 
       consoleNoteLn_P(PSTR("Coeff of lift"));
   
-      for(float aR = -0.3; aR <= 1.02; aR += 0.05)
-	printCoeffElement(-0.2, 1, vpParam.alphaMax*aR*RADIAN,
-			  coeffOfLift(vpParam.alphaMax*aR)/vpDerived.maxCoeffOfLift);
+      for(float aR = -0.5; aR < 1.1; aR += 0.1)
+	printCoeffElement(-0.2, 1, vpDerived.maxAlpha*aR*RADIAN,
+			  coeffOfLift(vpDerived.maxAlpha*aR)/vpDerived.maxCoeffOfLift);
       break;
       
     case c_clear:
@@ -464,29 +474,25 @@ void executeCommand(char *buf)
 
     case c_zl:
       if(numParams > 0) {
-	vpParam.cL_B = vpDerived.maxCoeffOfLift/(vpParam.alphaMax - param[0]/RADIAN);
-	vpParam.cL_A = -vpParam.cL_B*param[0]/RADIAN;
+	vpParam.cL_B[0] = vpDerived.maxCoeffOfLift/(vpParam.alphaMax[0] - param[0]/RADIAN);
+	vpParam.cL_A[0] = -vpParam.cL_B[0]*param[0]/RADIAN;
       }
       break;
-      
+      /*     
     case c_peak:
       if(numParams > 0)
-	vpParam.cL_B =
-	  (1+param[0])*(vpDerived.maxCoeffOfLift - vpParam.cL_A)/vpParam.alphaMax;
+	vpParam.cL_B[0] =
+	  (1+param[0])*(vpDerived.maxCoeffOfLift - vpParam.cL_A[0])/vpDerived.maxAlpha;
       break;
-      
+       
     case c_stall:
       if(numParams > 0) {
-	vpParam.cL_apex = G * vpDerived.totalMass / dynamicPressure(param[0]);
+	vpParam.cL_apex[0] = G * vpDerived.totalMass / dynamicPressure(param[0]);
 	if(numParams > 1)
-	  vpParam.alphaMax = param[1]/RADIAN;
+	  vpParam.alphaMax[0] = param[1]/RADIAN;
       }
       break;
-      
-    case c_max:
-      if(numParams > 0)
-	vpParam.alphaMax = param[0]/RADIAN;
-      break;
+      */
       
     case c_report:
       consoleNote_P(PSTR("Idle avg = "));
@@ -536,6 +542,10 @@ void executeCommand(char *buf)
     case c_reset:
       pciWarn = ppmWarnShort = ppmWarnSlow = false;
       consoleNoteLn_P(PSTR("Warning flags reset"));
+      break;
+
+    case c_airspeed:
+      MS4525DO_calibrate();
       break;
 
     case c_function:
