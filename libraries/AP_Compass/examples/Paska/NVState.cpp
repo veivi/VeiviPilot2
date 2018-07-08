@@ -506,7 +506,8 @@ void deriveParams()
   vpDerived.assumedFlap = vpOutput.flap;
   
   const float effFlap
-    = vpDerived.haveFlaps ? powf(vpOutput.flap, vpParam.expo) : 0;
+    // = vpDerived.haveFlaps ? powf(vpOutput.flap, vpParam.expo) : 0;
+    = vpDerived.haveFlaps ? vpOutput.flap : 0;
   
   vpDerived.maxAlpha = interpolate(effFlap, vpParam.alphaMax);
   
