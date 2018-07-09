@@ -504,10 +504,13 @@ void deriveParams()
   // Max alpha and curve interpolation
 
   vpDerived.assumedFlap = vpOutput.flap;
+
+  const float expo_c = 0.8;
   
   const float effFlap
     // = vpDerived.haveFlaps ? powf(vpOutput.flap, vpParam.expo) : 0;
-    = vpDerived.haveFlaps ? vpOutput.flap : 0;
+    // = vpDerived.haveFlaps ? vpOutput.flap : 0;
+    = vpDerived.haveFlaps ? powf(vpOutput.flap, expo_c) : 0;
   
   vpDerived.maxAlpha = interpolate(effFlap, vpParam.alphaMax);
   

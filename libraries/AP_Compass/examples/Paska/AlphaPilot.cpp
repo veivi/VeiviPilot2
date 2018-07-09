@@ -583,8 +583,7 @@ void statusTask()
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff
-     || vpFlight.alpha < vpDerived.maxAlpha/(1 + fminf(vpParam.stallMargin, 0))) {
+     || vpMode.takeOff || vpFlight.alpha < vpDerived.maxAlpha) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.2e6) {
