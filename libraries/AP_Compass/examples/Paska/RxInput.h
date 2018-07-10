@@ -8,7 +8,7 @@
 #include "Button.h"
 
 extern struct RxInputRecord aileInput, elevInput, throttleInput,
-  buttonInput, tuningKnobInput, flightModeInput, rudderInput, stabModeInput;
+  buttonInput, tuningKnobInput, flightModeInput, rudderInput, flapInput;
 
 extern struct RxInputRecord *ppmInputs[];
 
@@ -16,8 +16,8 @@ extern struct RxInputRecord *ppmInputs[];
 // Mode selector inputs
 //
 
-extern struct SwitchRecord flightModeSelector, stabModeSelector;
-extern int8_t flightModeSelectorValue, stabModeSelectorValue;
+extern struct SwitchRecord flightModeSelector, flapSelector;
+extern int8_t flightModeSelectorValue, flapSelectorValue;
 
 //
 // Buttons

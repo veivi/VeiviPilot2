@@ -16,7 +16,7 @@ extern "C" {
 
 extern float controlCycle;
 extern float outer_P, rudderMix, throttleMix;
-extern uint8_t flapSel, gearSel;
+extern uint8_t gearSel, flapSel;
 extern const float sampleRate;
 extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 extern uint32_t simTimeStamp, idleMicros;

@@ -11,14 +11,14 @@
 //
 
 struct RxInputRecord aileInput, elevInput, throttleInput,
-  buttonInput, tuningKnobInput, flightModeInput, rudderInput, stabModeInput;
+  buttonInput, tuningKnobInput, flightModeInput, rudderInput, flapInput;
 
 #if RX_CHANNELS < 8
 struct RxInputRecord *ppmInputs[] = 
   { &aileInput, &elevInput, &throttleInput, &buttonInput, &tuningKnobInput, &flightModeInput, NULL };
 #else
 struct RxInputRecord *ppmInputs[] = 
-  { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &stabModeInput, NULL };
+  { &aileInput, &elevInput, &throttleInput, &rudderInput, &buttonInput, &tuningKnobInput, &flightModeInput, &flapInput, NULL };
 #endif
 
 //
@@ -26,9 +26,9 @@ struct RxInputRecord *ppmInputs[] =
 //
 
 struct SwitchRecord flightModeSelector = { &flightModeInput };
-struct SwitchRecord stabModeSelector = { &stabModeInput };
+struct SwitchRecord flapSelector = { &flapInput };
 
-int8_t flightModeSelectorValue, stabModeSelectorValue;
+int8_t flightModeSelectorValue, flapSelectorValue;
 
 //
 // Buttons

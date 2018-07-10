@@ -15,7 +15,7 @@ struct OutputState vpOutput;
 
 float controlCycle;
 float outer_P, rudderMix, throttleMix;
-uint8_t flapSel, gearSel;
+uint8_t gearSel, flapSel;
 float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 uint32_t simTimeStamp, idleMicros;
 const int maxParams = MAX_SERVO;

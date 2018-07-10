@@ -192,10 +192,10 @@ void receiverTask()
   if(inputValid(&rudderInput))
     vpInput.rudder = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &vpInput.rudderPilotInput);
   
-  stabModeSelectorValue = readSwitch(&stabModeSelector);
+  flapSelectorValue = readSwitch(&flapSelector);
 #else
   vpInput.rudder = 0;
-  stabModeSelectorValue = 1;
+  flapSelectorValue = 1;
 #endif
 
   // Button input
@@ -216,7 +216,7 @@ void receiverTask()
   // Receiver fail detection
   //
   
-  if((LEVELBUTTON.state() || stabModeSelectorValue == -1)
+  if((LEVELBUTTON.state() || flapSelectorValue == -1)
      && flightModeSelectorValue == -1 && vpInput.throttle < 0.25
      && vpInput.aile < -0.75 && vpInput.elev > 0.75) {
     if(!vpMode.radioFailSafe) {
@@ -758,26 +758,20 @@ void configurationTask()
   }
 
   //
-  // FLAP BUTTON
+  // RATE BUTTON
   //
 
-  if(vpDerived.haveFlaps) {
-    if(FLAPBUTTON.singlePulse() && flapSel > 0) {
-      //
-      // SINGLE PULSE: FLAPS UP one step
-      //
+  if(FLAPBUTTON.depressed() && !vpMode.halfRate) {
+    // Continuous: half-rate enable
     
-      consoleNote_P(PSTR("Flaps RETRACTED to "));
-      consolePrintLn(--flapSel);
-
-    } else if(FLAPBUTTON.depressed() && flapSel < FLAP_STEPS) {
-      //
-      // CONTINUOUS: FLAPS DOWN one step
-      //
+    consoleNoteLn_P(PSTR("Half-rate ENABLED"));
+    vpMode.halfRate = true;
     
-      consoleNote_P(PSTR("Flaps EXTENDED to "));
-      consolePrintLn(++flapSel);
-    }
+  } else if(FLAPBUTTON.singlePulse() && vpMode.halfRate) {
+    // Single pulse: half-rate disable
+    
+    consoleNoteLn_P(PSTR("Half-rate DISABLED"));
+    vpMode.halfRate = false;
   }
 
   //
@@ -871,27 +865,17 @@ void configurationTask()
   }
 
   //
-  // Stabilizer selector input
+  // Flap selector input
   //
 
-  if(stabModeSelectorValue < 1) {
-    if(!vpMode.halfRate)
-      consoleNoteLn_P(PSTR("Half-rate ENABLED"));
-    vpMode.halfRate = true;
-  } else if(vpMode.halfRate) {
-    consoleNoteLn_P(PSTR("Half-rate DISABLED"));
-    vpMode.halfRate = false;
-  }
+  flapSel = FLAP_STEPS/2 - flapSelectorValue;
+
+  //
+  // Stabilizer mode
+  //
   
-  if(stabModeSelectorValue >= 0) {
-    if(!vpMode.progressiveFlight)
-      consoleNoteLn_P(PSTR("Progressive aileron ENABLED"));
-    vpMode.progressiveFlight = true;
-  } else if(vpMode.progressiveFlight) {
-    consoleNoteLn_P(PSTR("Progressive aileron DISABLED"));
-    vpMode.progressiveFlight = false;
-  }
-  
+  vpMode.progressiveFlight = true;
+    
   //
   // Test mode control
   //
