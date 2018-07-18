@@ -8,8 +8,7 @@
 bool toc_test_mode(bool reset)
 {
   return !vpMode.test
-    && vpMode.wingLeveler && vpMode.bankLimiter && vpMode.takeOff
-    && vpMode.progressiveFlight && !vpMode.halfRate;
+    && vpMode.wingLeveler && vpMode.bankLimiter && vpMode.takeOff;
 }
 
 bool toc_test_link(bool reset)

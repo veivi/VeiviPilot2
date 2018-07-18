@@ -213,12 +213,24 @@ void receiverTask()
   GEARBUTTON.input(lazyButtonValue);
 
   //
-  // Receiver fail detection
+  // PPM fail detection, simulate RX failsafe if PPM fails
+  //
+
+  if(ppmFreq < 15) {
+    vpInput.tuningKnob = 1;
+    flightModeSelectorValue = -1;
+    vpInput.throttle = 0;
+    vpInput.aile = -1;
+    vpInput.elev = 1;
+  }
+
+  //
+  // RX failsafe detection
   //
   
-  if( ppmFreq < 25 || (/* LEVELBUTTON.state()
-	 && */ flightModeSelectorValue == -1 && vpInput.throttle < 0.25
-	 && vpInput.aile < -0.75 && vpInput.elev > 0.75)) {
+  if( vpInput.tuningKnob > 0.75 && flightModeSelectorValue == -1
+      && vpInput.throttle < 0.25
+      && vpInput.aile < -0.75 && vpInput.elev > 0.75 ) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
       vpMode.radioFailSafe = true;
@@ -880,7 +892,10 @@ void configurationTask()
   // Test mode control
   //
 
-  if(!vpMode.test && vpInput.tuningKnob > 0.5) {
+  if(vpMode.radioFailSafe)
+    vpMode.test = false;
+  
+  else if(!vpMode.test && vpInput.tuningKnob > 0.5) {
     vpMode.test = true;
     consoleNoteLn_P(PSTR("Test mode ENABLED"));
 
@@ -1609,7 +1624,7 @@ void aileronModule()
   if(vpMode.radioFailSafe) {
     maxBank = 15/RADIAN;
     if(vpStatus.stall)
-      vpInput.aile = 0;
+      vpInput.aile = vpInput.aileExpo = 0;
   } else if(vpFeature.alphaHold)
     maxBank /= 1 + alphaPredict(vpControl.elevTrim) / vpDerived.thresholdAlpha / 2;
   
