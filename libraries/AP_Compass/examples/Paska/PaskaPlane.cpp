@@ -16,6 +16,7 @@
 #include "Command.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
+#include "MS4525.h"
 
 extern "C" {
 #include "CRC16.h"
@@ -224,6 +225,10 @@ void setup()
   // Initial gear state is DOWN
   
   gearSel = 0;
+
+  // Initialize IAS calibration
+
+  MS4525DO_calibrate();
 
   // Done
   

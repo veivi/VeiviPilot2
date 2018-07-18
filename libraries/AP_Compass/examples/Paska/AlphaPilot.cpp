@@ -216,9 +216,9 @@ void receiverTask()
   // Receiver fail detection
   //
   
-  if((LEVELBUTTON.state() || flapSelectorValue == -1)
-     && flightModeSelectorValue == -1 && vpInput.throttle < 0.25
-     && vpInput.aile < -0.75 && vpInput.elev > 0.75) {
+  if( ppmFreq < 25 || (/* LEVELBUTTON.state()
+	 && */ flightModeSelectorValue == -1 && vpInput.throttle < 0.25
+	 && vpInput.aile < -0.75 && vpInput.elev > 0.75)) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
       vpMode.radioFailSafe = true;
@@ -561,7 +561,7 @@ void statusTask()
       disagreement = MIN(diff, 2*PI - diff);
 
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-       || (fabs(vpFlight.alpha) < 90/RADIAN && disagreement > 15/RADIAN)) {
+       || (fabs(vpFlight.alpha) < 60/RADIAN && disagreement > 15/RADIAN)) {
       if(!vpStatus.alphaUnreliable)
 	lastAlphaLocked = currentTime;
       else if(currentTime - lastAlphaLocked > 0.1e6) {
@@ -918,7 +918,7 @@ void configurationTask()
   vpFeature.stabilizePitch = vpFeature.alphaHold =
     vpMode.slowFlight && fabs(vpFlight.bank) < 60/RADIAN;
   vpFeature.aileFeedforward = vpMode.progressiveFlight;
-  vpFeature.ailePID = true;
+  vpFeature.flareAllowed = true;
 
   // Modify if taking off...
   
@@ -972,11 +972,7 @@ void configurationTask()
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
 
-  if(vpFeature.ailePID)
-    aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);
-  else
-    aileCtrl.setZieglerNicholsPI(s_Ku*scale, vpParam.s_Tu);
-  
+  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);  
   elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
   pushCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
 
@@ -1076,6 +1072,11 @@ void configurationTask()
       vpControl.testGain = 1;
       break;
 
+    case 16:
+      // Disable flare (max alpha tests)
+
+      vpFeature.flareAllowed = false;
+      break;
     }
   } else { 
     // Track s_Ku until a test is activated
@@ -1152,7 +1153,7 @@ void trimTask()
   } else
     vpControl.elevTrim =
       clamp(vpControl.elevTrim,
-	    fminf(0, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
+	    fminf(-0.15, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
 	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
@@ -1546,7 +1547,8 @@ void elevatorModule()
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
 
   vpControl.elevPredict =
-    mixValue(stickForce/2, alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
+    mixValue(vpFeature.flareAllowed ? stickForce : 0,
+	     alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
 
   if(vpFeature.stabilizePitch) {
     elevCtrl.input(vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
