@@ -1567,7 +1567,7 @@ void elevatorModule()
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -15/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
-      * ( vpStatus.stall ? 2 : 1 ) * outer_P;
+      * outer_P * (vpStatus.stall ? 2 : 1);
 
   else
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
