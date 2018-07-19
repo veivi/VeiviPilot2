@@ -568,7 +568,7 @@ void statusTask()
   }
 
   //
-  // Alpha/accel lockup detection (sensor blade detached?)
+  // Alpha/accel lockup detection (sensor vane detached?)
   //
 
   vpFlight.accDir = atan2(vpFlight.accZ, -vpFlight.accX);
@@ -609,14 +609,14 @@ void statusTask()
      || vpMode.takeOff || vpFlight.alpha < vpDerived.maxAlpha) {
     if(!vpStatus.stall)
       lastStall = currentTime;
-    else if(currentTime - lastStall > 0.2e6) {
+    else if(currentTime - lastStall > 0.1e6) {
       consoleNoteLn_P(PSTR("Stall RECOVERED"));
       vpStatus.stall = false;
     }
   } else {
     if(vpStatus.stall)
       lastStall = currentTime;
-    else if(currentTime - lastStall > 0.2e6) {
+    else if(currentTime - lastStall > 0.1e6) {
       consoleNoteLn_P(PSTR("We're STALLING"));
       vpStatus.stall = true;
     }
@@ -1567,7 +1567,7 @@ void elevatorModule()
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -15/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
-      *outer_P;
+      * ( vpStatus.stall ? 2 : 1 ) * outer_P;
 
   else
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
@@ -1577,6 +1577,10 @@ void elevatorModule()
 	     alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
 
   if(vpFeature.stabilizePitch) {
+    if(vpStatus.stall)
+      // Only apply target if it's less than the current rate
+      vpControl.targetPitchR = fminf(vpControl.targetPitchR, vpFlight.pitchR);
+    
     elevCtrl.input(vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
     
     vpOutput.elev = elevCtrl.output();
