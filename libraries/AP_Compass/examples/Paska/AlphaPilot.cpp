@@ -129,17 +129,28 @@ void displayTask()
     obdPrint(buffer);
   }
 
-  // T/O/C test status
+  // Bottom status line
+    
+  if(vpMode.radioFailSafe) {
+    obdMove(0,7);
+    obdPrint("   ");
+    obdPrint("RADIO FAIL", (count>>2) & 1);
+    obdPrint("   ");
+  } else {
+      // T/O/C test status
 
-  bool status = tocTestStatus(tocReportDisplay);
+    bool status = tocTestStatus(tocReportDisplay);
 
-  obdMove(0,7);
-  obdPrint("T/O/C ");
+    obdMove(0,7);
+    obdPrint("T/O/C ");
 
-  if(!status)
-    obdPrint("WARNING", (count>>2) & 1);
-  else
-    obdPrint("GOOD   ");
+    if(!status)
+      obdPrint("WARNING", (count>>2) & 1);
+    else
+      obdPrint("GOOD");
+
+    obdPrint("   ");
+  }
 }
 
 void airspeedTask()
