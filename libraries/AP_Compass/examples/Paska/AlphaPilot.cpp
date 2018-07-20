@@ -606,7 +606,8 @@ void statusTask()
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff || vpFlight.alpha < vpDerived.maxAlpha) {
+     || vpMode.takeOff
+     || vpFlight.alpha < vpDerived.maxAlpha+fmax(vpParam.stallMargin, 0)) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.1e6) {
@@ -1563,11 +1564,12 @@ void elevatorModule()
     trimRateLimiter.reset(vpControl.targetAlpha);
     
   if(vpFeature.alphaHold)
-    vpControl.targetPitchR = nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
+    vpControl.targetPitchR =
+      nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -15/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
-      * outer_P * (vpStatus.stall ? 2 : 1);
+      * outer_P * (vpStatus.stall ? 1.5 : 1);
 
   else
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
@@ -1577,9 +1579,13 @@ void elevatorModule()
 	     alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
 
   if(vpFeature.stabilizePitch) {
-    if(vpStatus.stall)
+    if(vpStatus.stall) {
+      // Apply a fixed pitch down bias
+      vpControl.targetPitchR -= 3/RADIAN;
+
       // Only apply target if it's less than the current rate
       vpControl.targetPitchR = fminf(vpControl.targetPitchR, vpFlight.pitchR);
+    }
     
     elevCtrl.input(vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
     

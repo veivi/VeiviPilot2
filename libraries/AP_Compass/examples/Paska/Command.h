@@ -53,6 +53,7 @@ typedef enum {
   c_trim,
   c_stall,
   c_smargin,
+  c_pmargin,
   c_peak,
   c_zl,
   c_col,
