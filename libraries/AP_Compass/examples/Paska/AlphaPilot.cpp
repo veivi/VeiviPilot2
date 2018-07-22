@@ -1545,6 +1545,9 @@ void gpsTask()
 //   Elevator
 //
 
+const float pusherBoost_c = 0.3;
+const float pusherBias_c = -3/RADIAN;
+
 void elevatorModule()
 {
   const float shakerLimit = RATIO(1/2);
@@ -1569,7 +1572,7 @@ void elevatorModule()
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -15/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
-      * outer_P * (vpStatus.stall ? 1.5 : 1);
+      * outer_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
   else
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
@@ -1580,8 +1583,8 @@ void elevatorModule()
 
   if(vpFeature.stabilizePitch) {
     if(vpStatus.stall) {
-      // Apply a fixed pitch down bias
-      vpControl.targetPitchR -= 3/RADIAN;
+      // Apply a fixed pitch rate bias
+      vpControl.targetPitchR += pusherBias_c;
 
       // Only apply target if it's less than the current rate
       vpControl.targetPitchR = fminf(vpControl.targetPitchR, vpFlight.pitchR);
@@ -1614,7 +1617,9 @@ void elevatorModule()
       // Pusher active
         
       const float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, vpControl.targetAlpha)
-	+ (effMaxAlpha - vpFlight.alpha)*outer_P;
+	+ (effMaxAlpha - vpFlight.alpha) * outer_P
+	* (1 + (vpStatus.stall ? pusherBoost_c : 0) )
+	+ (vpStatus.stall ? pusherBias_c : 0);
 
       pushCtrl.input(target - vpFlight.pitchR, controlCycle);
 
@@ -1794,8 +1799,7 @@ void mixingTask()
   // Aile to rudder mix
   
   vpOutput.rudder =
-    constrainServoOutput(vpOutput.rudder + vpOutput.aile*rudderMix*coeffOfLift(vpFlight.alpha)/vpDerived.maxCoeffOfLift);  
-  //    constrainServoOutput(vpOutput.rudder + vpOutput.aile*rudderMix*cos(vpFlight.bank));  
+    constrainServoOutput(vpOutput.rudder + vpOutput.aile * rudderMix * coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean);  
 }
 
 void controlTask()

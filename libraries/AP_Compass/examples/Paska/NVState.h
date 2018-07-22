@@ -29,6 +29,9 @@ typedef enum {
 
 // Parameters and non-volatile state
 
+const int CoL_degree = 4;
+const int FF_degree = 2;
+
 struct ParamRecord {
   uint16_t crc;
   char name[NAME_LEN+1];
@@ -51,11 +54,11 @@ struct ParamRecord {
   float r_Mix;
   float at_Ku, at_Tu;
   float cc_Ku, cc_Tu;
-  float ff_A[2], ff_B[2], ff_C[2];
+  float coeff_FF[2][FF_degree+1];
   float t_Mix, t_Expo;
   float maxPitch;
   float roll_C;
-  float cL_A[2], cL_B[2], cL_C[2], cL_D[2], cL_E[2];
+  float coeff_CoL[2][CoL_degree+1];
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;
@@ -75,9 +78,10 @@ struct DerivedParams {
   bool haveRetracts, haveFlaps;
   float totalMass;
   float assumedFlap;
-  float ff_A, ff_B, ff_C;
-  float cL_A, cL_B, cL_C, cL_D, cL_E;
-  float minimumIAS, minimumDynP, zeroLiftAlpha, maxCoeffOfLift;
+  float coeff_FF[FF_degree+1];
+  float coeff_CoL[CoL_degree+1];
+  float minimumIAS, minimumDynP, zeroLiftAlpha,
+    maxCoeffOfLift, maxCoeffOfLiftClean;
   float thresholdAlpha, shakerAlpha, pusherAlpha, maxAlpha;
   float apexElev, apexAlpha;
 };

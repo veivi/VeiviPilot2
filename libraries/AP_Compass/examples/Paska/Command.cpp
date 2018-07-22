@@ -17,8 +17,9 @@ const struct Command commands[] PROGMEM = {
   { "inner_pid_zn", c_inner_pid_zn,
     e_float, &vpParam.i_Ku_C, &vpParam.i_Tu },
   { "outer_p", c_outer_p, e_float, &vpParam.o_P },
-  { "ff", c_ff, e_float, &vpParam.ff_A[0], &vpParam.ff_B[0], &vpParam.ff_C[0] },
-  { "alt_ff", c_ff, e_float, &vpParam.ff_A[1], &vpParam.ff_B[1], &vpParam.ff_C[1] },
+  { "ff", c_ff, e_ff_curve, &vpParam.coeff_FF[0] },
+  { "alt_ff", c_ff, e_ff_curve, &vpParam.coeff_FF[1] },
+  // { "alt_ff", c_ff, e_float, &vpParam.ff_A[1], &vpParam.ff_B[1], &vpParam.ff_C[1] },
   { "stabilizer_pid_zn", c_stabilizer_pid_zn,
     e_float, &vpParam.s_Ku_C, &vpParam.s_Tu },
   { "rmix", c_rmix, e_float, &vpParam.r_Mix },
@@ -46,8 +47,9 @@ const struct Command commands[] PROGMEM = {
   { "hneutral", c_hneutral, e_angle90, &vpParam.horizNeutral },
   { "roll_k", c_roll_k, e_float, &vpParam.roll_C, &vpParam.expo },
   { "servorate", c_servorate, e_float, &vpParam.servoRate },
-  { "col_ab", c_col, e_float, &vpParam.cL_A[0], &vpParam.cL_B[0], &vpParam.cL_C[0], &vpParam.cL_D[0], &vpParam.cL_E[0] },
-  { "alt_col_ab", c_alt_col, e_float, &vpParam.cL_A[1], &vpParam.cL_B[1], &vpParam.cL_C[1], &vpParam.cL_D[1], &vpParam.cL_E[1] },
+  { "col_ab", c_col, e_col_curve, &vpParam.coeff_CoL[0] },
+  { "alt_col_ab", c_col, e_col_curve, &vpParam.coeff_CoL[1] },
+  // { "alt_col_ab", c_alt_col, e_float, &vpParam.cL_A[1], &vpParam.cL_B[1], &vpParam.cL_C[1], &vpParam.cL_D[1], &vpParam.cL_E[1] },
   { "max", c_max, e_angle, &vpParam.alphaMax[0], &vpParam.alphaMax[1] },
   { "climb", c_climb, e_angle, &vpParam.maxPitch },
   { "weight", c_weight, e_float, &vpParam.weightDry },
@@ -265,6 +267,16 @@ void executeCommand(char *buf)
 	for(int k = 0; k < MAX_SERVO; k++)
 	  ((uint8_t*) command.var[i])[k] = param[i+k];
 	break;
+	
+      case e_col_curve:
+	for(int k = 0; k < CoL_degree+1; k++)
+	  ((float*) command.var[i])[k] = param[i+k];
+	break;
+
+      case e_ff_curve:
+	for(int k = 0; k < FF_degree+1; k++)
+	  ((float*) command.var[i])[k] = param[i+k];
+	break;
       }
     }
   } else {
@@ -374,7 +386,7 @@ void executeCommand(char *buf)
       break;
 
     case c_scale:
-      if(numParams > 0) {
+      /*     if(numParams > 0) {
 	vpParam.i_Ku_C *= param[0];
 	vpParam.i_Tu *= param[0];
 	vpParam.s_Ku_C *= param[0];
@@ -389,7 +401,7 @@ void executeCommand(char *buf)
 	vpParam.cL_C[1] *= param[0];
 	vpParam.cL_D[1] *= param[0];
 	vpParam.cL_E[1] *= param[0];
-      }
+	}*/
       break;
     
     case c_stamp:
@@ -475,8 +487,8 @@ void executeCommand(char *buf)
 
     case c_zl:
       if(numParams > 0) {
-	vpParam.cL_B[0] = vpDerived.maxCoeffOfLift/(vpParam.alphaMax[0] - param[0]/RADIAN);
-	vpParam.cL_A[0] = -vpParam.cL_B[0]*param[0]/RADIAN;
+	vpParam.coeff_CoL[0][1] = vpDerived.maxCoeffOfLift/(vpParam.alphaMax[0] - param[0]/RADIAN);
+	vpParam.coeff_CoL[0][0] = -vpParam.coeff_CoL[0][1]*param[0]/RADIAN;
       }
       break;
       /*     

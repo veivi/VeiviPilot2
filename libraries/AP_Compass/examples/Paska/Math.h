@@ -46,6 +46,7 @@ float randomNum(float small, float large);
 uint32_t randomUInt32();
 float quantize(float value, float *state, int numSteps);
 float coeffOfLift(float aoa);
+float coeffOfLiftClean(float aoa);
 float coeffOfLiftInverse(float col);
 float dynamicPressure(float ias);
 float dynamicPressureInverse(float pressure);
@@ -56,6 +57,7 @@ float rollRatePredictInverse(float x);
 float scaleByIAS(float k, float p);
 float effIAS();
 float effDP();
+float polynomial(int deg, float x, const float c[]);
 
 #endif
 

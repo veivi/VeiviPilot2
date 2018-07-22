@@ -44,11 +44,11 @@ const struct ParamRecord paramDefaults = {
   .r_Mix = 0.1,
   .at_Ku = 1, .at_Tu = 2.0,
   .cc_Ku = 3, .cc_Tu = 1.5,
-  .ff_A = { 0.0, 0.0} , .ff_B = { 0.0, 0.0}, .ff_C = { 0.0, 0.0 },
+  .coeff_FF = {{0, 0, 0}, {0, 0, 0}},
   .t_Mix = 0.0, .t_Expo = 1.0,
   .maxPitch = 45/RADIAN,
   .roll_C = 0.1,
-  .cL_A = { 0, 0}, .cL_B = { 0.6, 0} , .cL_C = { 0.0, 0 }, .cL_D = { 0.0, 0 }, .cL_E = { 0.0, 0 },
+  .coeff_CoL = { { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }},
   .servoRate = 60/0.09,
   .takeoffTrim = 0.25,
   .weightDry = 1,
@@ -155,7 +155,6 @@ void storeParams(void)
 
 void deleteModel(int model)
 {
-  
   cacheWrite(paramOffset + sizeof(struct ParamRecord)*model,
   	     NULL, sizeof(struct ParamRecord));
   cacheFlush();
@@ -229,12 +228,14 @@ void printParams()
   consolePrintLn(vpParam.o_P, 4);
   consoleNoteLn_P(PSTR("  Elev feedforward A+Bx+Cx^2"));
   consoleNote_P(PSTR("    "));
-  consolePrint(vpDerived.ff_A, 5);
-  consolePrint_P(PSTR(" + "));
-  consolePrint(vpDerived.ff_B, 5);
-  consolePrint_P(PSTR(" x + "));
-  consolePrint(vpDerived.ff_C, 5);
-  consolePrint_P(PSTR(" x^2  (eff alpha range = "));
+  for(int i = 0; i < FF_degree+1; i++) {
+    if(i > 0)
+      consolePrint_P(PSTR(" + "));
+    consolePrint(vpDerived.coeff_FF[i], 4);
+    consolePrint_P(PSTR(" x^"));
+    consolePrint(i);
+  }
+  consolePrint_P(PSTR("  (eff alpha range = "));
   consolePrint(alphaPredict(-1.0)*RADIAN);
   consolePrint_P(PSTR(" ... "));
   consolePrint(alphaPredict(1.0)*RADIAN);
@@ -285,16 +286,14 @@ void printParams()
   consolePrintLn(vpDerived.pusherAlpha*RADIAN);
   consoleNoteLn_P(PSTR("  Coeff of lift"));
   consoleNote_P(PSTR("    "));
-  consolePrint(vpDerived.cL_A, 4);
-  consolePrint_P(PSTR(" + "));
-  consolePrint(vpDerived.cL_B, 4);
-  consolePrint_P(PSTR(" x + "));
-  consolePrint(vpDerived.cL_C, 4);
-  consolePrint_P(PSTR(" x^2 + "));
-  consolePrint(vpDerived.cL_D, 4);
-  consolePrint_P(PSTR(" x^3 + "));
-  consolePrint(vpDerived.cL_E, 4);
-  consolePrint_P(PSTR(" x^4  (max = "));
+  for(int i = 0; i < CoL_degree+1; i++) {
+    if(i > 0)
+      consolePrint_P(PSTR(" + "));
+    consolePrint(vpDerived.coeff_CoL[i], 4);
+    consolePrint_P(PSTR(" x^"));
+    consolePrint(i);
+  }
+  consolePrint_P(PSTR(" (max = "));
   consolePrint(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
   consoleNote_P(PSTR("  Roll rate K (expo) = "));
@@ -426,6 +425,20 @@ static void backupParamEntry(const Command *e)
 	consolePrint(((uint8_t*) e->var[i])[j]);
 	consolePrint(" ");
       }
+      break;
+
+    case e_col_curve:
+      for(int j = 0; j < CoL_degree+1; j++) {
+	consolePrint(((float*) e->var[i])[j]);
+	consolePrint(" ");
+      }
+      break;
+
+    case e_ff_curve:
+      for(int j = 0; j < FF_degree+1; j++) {
+	consolePrint(((float*) e->var[i])[j]);
+	consolePrint(" ");
+      }
     }
   }
 
@@ -478,7 +491,23 @@ static float interpolate(float c, float v[])
   return mixValue(c, v[0], v[1]);
 }
 
-void deriveParams()
+static void interpolate_vector(int d, float c, float r[], const float a[], const float b[])
+{
+  for(int i = 0; i < d; i++)
+    r[i] = mixValue(c, a[i], b[i]);
+}   
+
+static void interpolate_CoL(float c, float r[])
+{
+  interpolate_vector(CoL_degree, c, r, vpParam.coeff_CoL[0], vpParam.coeff_CoL[1]);
+}
+
+static void interpolate_FF(float c, float r[])
+{
+  interpolate_vector(FF_degree, c, r, vpParam.coeff_FF[0], vpParam.coeff_FF[1]);
+}
+
+  void deriveParams()
 {
   // Do we have rectracts and/or flaps?
 
@@ -517,19 +546,13 @@ void deriveParams()
   
   vpDerived.maxAlpha = interpolate(effFlap, vpParam.alphaMax);
   
-  vpDerived.cL_A = interpolate(effFlap, vpParam.cL_A);
-  vpDerived.cL_B = interpolate(effFlap, vpParam.cL_B);
-  vpDerived.cL_C = interpolate(effFlap, vpParam.cL_C);
-  vpDerived.cL_D = interpolate(effFlap, vpParam.cL_D);
-  vpDerived.cL_E = interpolate(effFlap, vpParam.cL_E);
-  
-  vpDerived.ff_A = interpolate(effFlap, vpParam.ff_A);
-  vpDerived.ff_B = interpolate(effFlap, vpParam.ff_B);
-  vpDerived.ff_C = interpolate(effFlap, vpParam.ff_C);
+  interpolate_CoL(effFlap, vpDerived.coeff_CoL);
+  interpolate_FF(effFlap, vpDerived.coeff_FF);
   
   // Max CoL
 
   vpDerived.maxCoeffOfLift = coeffOfLift(vpDerived.maxAlpha);
+  vpDerived.maxCoeffOfLiftClean = coeffOfLiftClean(vpParam.alphaMax[0]);
   
   // Zero lift alpha
   
@@ -554,9 +577,10 @@ void deriveParams()
   // Feedforward apex
   //
 
-  if(vpDerived.ff_C != 0.0) {
-    vpDerived.apexAlpha = -vpDerived.ff_B / (2*vpDerived.ff_C);
-    vpDerived.apexElev = vpDerived.ff_A + vpDerived.ff_B*vpDerived.apexAlpha + vpDerived.ff_C*square(vpDerived.apexAlpha);
+  if(vpDerived.coeff_FF[2] != 0.0) {
+    vpDerived.apexAlpha = -vpDerived.coeff_FF[1] / (2*vpDerived.coeff_FF[2]);
+    vpDerived.apexElev =
+      polynomial(FF_degree, vpDerived.apexAlpha, vpDerived.coeff_FF);
   } else {
     vpDerived.apexAlpha = vpDerived.apexElev = 0.0;
   }

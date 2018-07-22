@@ -42,17 +42,15 @@ float expo(float a, float b)
 
 float alphaPredictInverse(float x)
 {
-  const float a = vpDerived.ff_C, b = vpDerived.ff_B, c = vpDerived.ff_A;
-
-  if(a != 0.0 && x > vpDerived.apexAlpha)
+  if(vpDerived.coeff_FF[2] != 0.0 && x > vpDerived.apexAlpha)
     return vpDerived.apexElev;
   else
-    return clamp(a*square(x) + b*x + c, -1, 1);
+    return clamp(polynomial(FF_degree, x, vpDerived.coeff_FF), -1, 1);
 }
 
 float alphaPredict(float y)
 {
-  const float a = vpDerived.ff_C, b = vpDerived.ff_B, c = vpDerived.ff_A;
+  const float a = vpDerived.coeff_FF[2], b = vpDerived.coeff_FF[1], c = vpDerived.coeff_FF[0];
   
   if(a == 0.0)
     return (y - c)/b;
@@ -95,12 +93,32 @@ float dynamicPressureInverse(float pressure)
   return sign(pressure)*sqrtf(fabsf(2 * pressure / airDensity_c));
 }
 
-float coeffOfLift(float aoa)
+float polynomial(int deg, float x, const float c[])
+{
+  float acc = 0, p = 1;
+
+  for(int i = 0; i < deg+1; i++) {
+    acc += c[i] * p;
+    p *= x;
+  }
+
+  return acc;
+}
+
+float coeffOfLiftGeneric(float aoa, float coeff[])
 {
   aoa = clamp(aoa, -vpDerived.maxAlpha, vpDerived.maxAlpha);
+  return polynomial(CoL_degree, aoa, coeff);
+}
 
-  return vpDerived.cL_A + aoa*vpDerived.cL_B  + square(aoa)*vpDerived.cL_C
-    + powf(aoa, 3)*vpDerived.cL_D + powf(aoa, 4)*vpDerived.cL_E;
+float coeffOfLift(float aoa)
+{
+  return coeffOfLiftGeneric(aoa, vpDerived.coeff_CoL);
+}
+
+float coeffOfLiftClean(float aoa)
+{
+  return coeffOfLiftGeneric(aoa, vpParam.coeff_CoL[0]);
 }
 
 float coeffOfLiftInverse(float target)
