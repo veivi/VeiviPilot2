@@ -274,9 +274,9 @@ void printParams()
   consolePrintLn(vpDerived.minimumIAS);
   consoleNote_P(PSTR("  Threshold margin(%) = "));
   consolePrint(vpParam.thresholdMargin*100);
-  consolePrint_P(PSTR(" Pusher margin(deg) = "));
+  consolePrint_P(PSTR(" Pusher(deg) = "));
   consolePrint(vpParam.pushMargin*RADIAN);
-  consolePrint_P(PSTR(" Stall margin(deg) = "));
+  consolePrint_P(PSTR(" Stall(deg) = "));
   consolePrintLn(vpParam.stallMargin*RADIAN);
   consoleNote_P(PSTR("    Derived alpha(threshold, shake, push) = "));
   consolePrint(vpDerived.thresholdAlpha*RADIAN);

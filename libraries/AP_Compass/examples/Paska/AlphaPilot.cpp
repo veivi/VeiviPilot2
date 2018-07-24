@@ -688,7 +688,7 @@ void statusTask()
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.5e6) {
+    else if(currentTime - lastWoW > 0.2e6) {
       consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
