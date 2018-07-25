@@ -498,12 +498,12 @@ static void interpolate_vector(int d, float c, float r[], const float a[], const
 
 static void interpolate_CoL(float c, float r[])
 {
-  interpolate_vector(CoL_degree, c, r, vpParam.coeff_CoL[0], vpParam.coeff_CoL[1]);
+  interpolate_vector(CoL_degree+1, c, r, vpParam.coeff_CoL[0], vpParam.coeff_CoL[1]);
 }
 
 static void interpolate_FF(float c, float r[])
 {
-  interpolate_vector(FF_degree, c, r, vpParam.coeff_FF[0], vpParam.coeff_FF[1]);
+  interpolate_vector(FF_degree+1, c, r, vpParam.coeff_FF[0], vpParam.coeff_FF[1]);
 }
 
   void deriveParams()
