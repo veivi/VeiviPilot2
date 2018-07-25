@@ -60,7 +60,6 @@ const struct Command commands[] PROGMEM = {
   { "flaperon", c_elevon, e_bool, &vpParam.flaperon },
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
   { "pmargin", c_pmargin, e_angle, &vpParam.pushMargin },
-  { "smargin", c_smargin, e_angle, &vpParam.stallMargin },
   { "slope", c_slope, e_angle, &vpParam.glideSlope },
   { "offset", c_offset, e_angle, &vpParam.offset },
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
@@ -452,11 +451,6 @@ void executeCommand(char *buf)
   
       for(float aR = -1; aR < 1.1; aR += 0.1)
 	printCoeffElement(-1, 1, vpDerived.maxAlpha*aR*RADIAN, alphaPredictInverse(vpDerived.maxAlpha*aR));
-
-      consoleNoteLn_P(PSTR("Inverse feed-forward curve"));
-  
-      for(float e = -1; e < 1.1; e += 0.1)
-	printCoeffElement(-vpDerived.maxAlpha/2, vpDerived.maxAlpha, e, alphaPredict(e));
 
       consoleNoteLn_P(PSTR("Coeff of lift"));
   

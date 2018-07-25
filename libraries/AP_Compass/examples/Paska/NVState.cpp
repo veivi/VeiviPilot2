@@ -55,8 +55,7 @@ const struct ParamRecord paramDefaults = {
   .fuel = 0.5,
   .thrust = 0,
   .thresholdMargin = 0.15,
-  .pushMargin = 0.5/RADIAN,
-  .stallMargin = 1.5/RADIAN,
+  .pushMargin = 1.0/RADIAN,
   .glideSlope = 3.0/RADIAN,
   .offset = -0.4/RADIAN,
   .flaperon = 0,
@@ -275,15 +274,15 @@ void printParams()
   consoleNote_P(PSTR("  Threshold margin(%) = "));
   consolePrint(vpParam.thresholdMargin*100);
   consolePrint_P(PSTR(" Pusher(deg) = "));
-  consolePrint(vpParam.pushMargin*RADIAN);
-  consolePrint_P(PSTR(" Stall(deg) = "));
-  consolePrintLn(vpParam.stallMargin*RADIAN);
-  consoleNote_P(PSTR("    Derived alpha(threshold, shake, push) = "));
+  consolePrintLn(vpParam.pushMargin*RADIAN);
+  consoleNote_P(PSTR("    Derived alpha(threshold, shake, push, stall) = "));
   consolePrint(vpDerived.thresholdAlpha*RADIAN);
   consolePrint_P(PSTR(", "));
   consolePrint(vpDerived.shakerAlpha*RADIAN);
   consolePrint_P(PSTR(", "));
-  consolePrintLn(vpDerived.pusherAlpha*RADIAN);
+  consolePrint(vpDerived.pusherAlpha*RADIAN);
+  consolePrint_P(PSTR(", "));
+  consolePrintLn(vpDerived.stallAlpha*RADIAN);
   consoleNoteLn_P(PSTR("  Coeff of lift"));
   consoleNote_P(PSTR("    "));
   for(int i = 0; i < CoL_degree+1; i++) {
@@ -572,7 +571,9 @@ static void interpolate_FF(float c, float r[])
   vpDerived.shakerAlpha =
     coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin/2));
   vpDerived.pusherAlpha = vpDerived.maxAlpha - fmax(vpParam.pushMargin, 0);
-
+  
+  vpDerived.stallAlpha = vpDerived.maxAlpha - fmin(vpParam.pushMargin, 0);
+  
   //
   // Feedforward apex
   //

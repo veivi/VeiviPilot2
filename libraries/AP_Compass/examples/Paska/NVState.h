@@ -62,7 +62,7 @@ struct ParamRecord {
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;
-  float thresholdMargin, pushMargin, stallMargin;
+  float thresholdMargin, pushMargin;
   float glideSlope;
   float offset;
   bool flaperon;
@@ -82,7 +82,7 @@ struct DerivedParams {
   float coeff_CoL[CoL_degree+1];
   float minimumIAS, minimumDynP, zeroLiftAlpha,
     maxCoeffOfLift, maxCoeffOfLiftClean;
-  float thresholdAlpha, shakerAlpha, pusherAlpha, maxAlpha;
+  float thresholdAlpha, shakerAlpha, pusherAlpha, maxAlpha, stallAlpha;
   float apexElev, apexAlpha;
 };
 
