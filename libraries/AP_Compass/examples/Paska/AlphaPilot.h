@@ -18,8 +18,8 @@
 //
 
 #define CONTROL_HZ 50
-#define CONFIG_HZ (CONTROL_HZ/4.0)
-#define ALPHA_HZ (CONTROL_HZ*10)
+#define CONFIG_HZ (CONTROL_HZ/3.0)
+#define ALPHA_HZ (CONTROL_HZ*8)
 #define AIRSPEED_HZ (CONTROL_HZ*5)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
