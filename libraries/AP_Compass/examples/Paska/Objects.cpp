@@ -29,7 +29,7 @@ UnbiasedController aileCtrl;
 Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2*CONTROL_HZ), iasEntropyAcc(CONFIG_HZ), alphaEntropyAcc(CONFIG_HZ);
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(ALPHAWINDOW*ALPHA_HZ);
-RateLimiter aileRateLimiter, flapActuator, trimRateLimiter;
+RateLimiter aileActuator, rollAccelLimiter, flapActuator, trimRateLimiter;
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;

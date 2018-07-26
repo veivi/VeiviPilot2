@@ -31,7 +31,7 @@ extern UnbiasedController aileCtrl;
 extern Damper ball, iasFilterSlow, iasFilter, accAvg, iasEntropyAcc, alphaEntropyAcc;
 extern AlphaBuffer pressureBuffer;
 extern RunningAvgFilter alphaFilter;
-extern RateLimiter aileRateLimiter, flapActuator, trimRateLimiter;
+extern RateLimiter aileActuator,  rollAccelLimiter, flapActuator, trimRateLimiter;
 
 extern const AP_HAL::HAL& hal;
 extern AP_HAL::BetterStream* cliSerial;

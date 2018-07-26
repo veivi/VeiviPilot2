@@ -94,9 +94,10 @@ bool toc_test_attitude(bool reset)
 
 bool toc_test_gyro(bool reset)
 {
-  return (fabsf(vpFlight.pitchR) < 1.0/RADIAN
-	  && fabsf(vpFlight.rollR) < 1.0/RADIAN
-	  && fabsf(vpFlight.yawR) < 1.0/RADIAN);
+  return vpStatus.simulatorLink
+    || (fabsf(vpFlight.pitchR) < 1.0/RADIAN
+	&& fabsf(vpFlight.rollR) < 1.0/RADIAN
+	&& fabsf(vpFlight.yawR) < 1.0/RADIAN);
 }
 
 struct TOCRangeTestState {

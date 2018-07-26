@@ -806,7 +806,7 @@ void configurationTask()
     // PULSE : Takeoff mode enable
     //
   
-    if(!vpStatus.positiveIAS) {
+    if(!vpStatus.positiveIAS || vpStatus.simulatorLink) {
 	    
       vpStatus.silent = false;
 
@@ -1011,8 +1011,9 @@ void configurationTask()
   rudderMix = vpParam.r_Mix;
   throttleMix = vpParam.t_Mix;
   
-  aileRateLimiter.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-
+  aileActuator.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
+  rollAccelLimiter.setRate(4*PI); // Rad/s^2
+  
   //
   // Apply test mode
   //
@@ -1102,6 +1103,12 @@ void configurationTask()
       // Disable flare (max alpha tests)
 
       vpFeature.flareAllowed = false;
+      break;
+      
+    case 17:
+      // Roll acceleration
+      
+      rollAccelLimiter.setRate(vpControl.testGain = testGainExpo(4*PI));
       break;
     }
   } else { 
@@ -1691,6 +1698,10 @@ void aileronModule()
       vpOutput.aile -= vpFlight.bank + vpFlight.rollR/32;
   }
 
+  //   Apply angular accel limiter
+
+  targetRollR = rollAccelLimiter.input(targetRollR, controlCycle);
+  
   //   Apply controller output + feedforward
   
   vpControl.ailePredict =
@@ -1701,7 +1712,7 @@ void aileronModule()
   //   Constrain & rate limit
   
   vpOutput.aile
-    = aileRateLimiter.input(constrainServoOutput(vpOutput.aile), controlCycle);
+    = aileActuator.input(constrainServoOutput(vpOutput.aile), controlCycle);
 }
 
 //
