@@ -101,7 +101,8 @@ typedef enum {
   c_wheels,
   c_map,
   c_function,
-  c_airspeed
+  c_airspeed,
+  c_flare
 } token_t;
 
 typedef enum

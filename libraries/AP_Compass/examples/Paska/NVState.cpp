@@ -64,7 +64,8 @@ const struct ParamRecord paramDefaults = {
   .wowCalibrated = false,
   .sensorOrient = false,
   .expo = 0.8,
-  .floor = -1
+  .floor = -1,
+  .flare = 0.5
 };
 
 const struct NVStateRecord stateDefaults = {

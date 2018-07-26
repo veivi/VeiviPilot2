@@ -72,6 +72,7 @@ struct ParamRecord {
   bool sensorOrient;
   float expo;
   int16_t floor;
+  float flare;
   };
 
 struct DerivedParams {

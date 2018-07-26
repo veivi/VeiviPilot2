@@ -944,7 +944,6 @@ void configurationTask()
   vpFeature.stabilizePitch = vpFeature.alphaHold =
     vpMode.slowFlight && fabs(vpFlight.bank) < 60/RADIAN;
   vpFeature.aileFeedforward = vpMode.progressiveFlight;
-  vpFeature.flareAllowed = true;
 
   // Modify if taking off...
   
@@ -1012,7 +1011,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileActuator.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(4*PI); // Rad/s^2
+  rollAccelLimiter.setRate(rollRatePredict(1) / 0.3);
   
   //
   // Apply test mode
@@ -1099,16 +1098,10 @@ void configurationTask()
       vpControl.testGain = 1;
       break;
 
-    case 16:
-      // Disable flare (max alpha tests)
-
-      vpFeature.flareAllowed = false;
-      break;
-      
     case 17:
       // Roll acceleration
       
-      rollAccelLimiter.setRate(vpControl.testGain = testGainExpo(4*PI));
+      rollAccelLimiter.setRate(rollRatePredict(1)/(vpControl.testGain = testGainLinear(0.01,2)));
       break;
     }
   } else { 
@@ -1584,7 +1577,7 @@ void elevatorModule()
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
 
   vpControl.elevPredict =
-    mixValue(vpFeature.flareAllowed ? stickForce : 0,
+    mixValue(stickForce * vpParam.flare,
 	     alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
 
   if(vpFeature.stabilizePitch) {

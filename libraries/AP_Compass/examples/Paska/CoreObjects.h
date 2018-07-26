@@ -46,7 +46,6 @@ struct FeatureRecord {
   bool_t alphaHold;
   bool_t pusher;
   bool_t aileFeedforward;
-  bool_t flareAllowed;
 };
 
 struct FlightState {
