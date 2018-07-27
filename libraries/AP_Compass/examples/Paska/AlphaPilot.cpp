@@ -606,7 +606,8 @@ void statusTask()
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff || vpFlight.alpha < vpDerived.stallAlpha) {
+     || vpMode.takeOff
+     || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.1e6) {
@@ -1558,9 +1559,11 @@ void elevatorModule()
   vpOutput.elev =
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
+  const bool flareAllowed
+    = vpMode.slowFlight && gearSel == 0 && vpInput.throttle < 0.15;
+
   vpControl.targetAlpha =
-    mixValue(gearSel == 0 && vpInput.throttle < 0.15
-	     ? vpParam.flare * stickForce : 0,
+    mixValue(flareAllowed ? vpParam.flare * stickForce : 0,
 	     fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
 	     alphaPredict(vpOutput.elev));
 
