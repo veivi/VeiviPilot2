@@ -55,9 +55,9 @@ float alphaPredict(float y)
   if(a == 0.0)
     return (y - c)/b;
   else if(y > vpDerived.apexElev)
-    return vpDerived.maxAlpha;
+    return vpDerived.apexAlpha;
   else
-    return clamp((-b+sqrt(square(b)-4*a*(c - y)))/(2*a), -vpDerived.maxAlpha, vpDerived.maxAlpha);;
+    return (-b+sqrt(square(b)-4*a*(c - y)))/(2*a);
 }
 
 float rollRatePredict(float pos)

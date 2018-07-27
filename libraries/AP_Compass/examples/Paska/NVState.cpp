@@ -296,6 +296,8 @@ void printParams()
   consolePrint_P(PSTR(" (max = "));
   consolePrint(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
+  consoleNote_P(PSTR("  Flare power = "));
+  consolePrintLn(vpParam.flare, 3);
   consoleNote_P(PSTR("  Roll rate K (expo) = "));
   consolePrint(vpParam.roll_C, 3);
   consolePrint_P(PSTR(" ("));
