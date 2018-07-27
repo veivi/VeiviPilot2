@@ -1559,7 +1559,8 @@ void elevatorModule()
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   vpControl.targetAlpha =
-    mixValue(gearSel == 0 ? vpParam.flare*stickForce : 0,
+    mixValue(gearSel == 0 && vpInput.throttle < 0.15
+	     ? vpParam.flare * stickForce : 0,
 	     fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
 	     alphaPredict(vpOutput.elev));
 
