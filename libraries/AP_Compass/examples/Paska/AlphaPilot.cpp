@@ -1548,6 +1548,7 @@ void gpsTask()
 
 const float pusherBoost_c = 0.3;
 const float pusherBias_c = -3/RADIAN;
+RateLimiter flareLimiter(1/0.7);
 
 void elevatorModule()
 {
@@ -1563,10 +1564,12 @@ void elevatorModule()
   const bool flareAllowed
     = vpMode.slowFlight && gearSel == 0 && vpInput.throttle < 0.15;
 
-  vpControl.targetAlpha =
-    mixValue(flareAllowed ? vpParam.flare * stickForce : 0,
-	     fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
-	     alphaPredict(vpOutput.elev));
+  flareLimiter.input(flareAllowed ? vpParam.flare * stickForce : 0,
+		     controlCycle);
+
+  vpControl.targetAlpha = mixValue(flareLimiter.output(),
+				   fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
+				   alphaPredict(vpOutput.elev));
 
   if(vpMode.radioFailSafe)
     vpControl.targetAlpha = trimRateLimiter.input(vpControl.targetAlpha, controlCycle);

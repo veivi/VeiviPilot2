@@ -65,6 +65,15 @@ float Derivator::output(void)
   return (value - prev) / delta;
 }
 
+RateLimiter::RateLimiter(float r)
+{
+  setRate(r);
+}
+
+RateLimiter::RateLimiter(void)
+{
+}
+
 void RateLimiter::setRate(float r)
 {
   maxRate = r;

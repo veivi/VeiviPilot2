@@ -57,6 +57,8 @@ class Derivator {
 
 class RateLimiter {
   public:
+  RateLimiter(void);
+  RateLimiter(float);
   float input(float v, float dt);
   float output();
   void setRate(float v);
