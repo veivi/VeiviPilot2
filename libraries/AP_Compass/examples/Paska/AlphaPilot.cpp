@@ -918,7 +918,8 @@ void configurationTask()
 
   // Wing leveler disable when stick input detected
   
-  if(vpMode.wingLeveler && vpInput.ailePilotInput && fabsf(vpFlight.bank) > 15/RADIAN) {
+  if(vpMode.wingLeveler && vpInput.ailePilotInput
+     && fabsf(vpFlight.bank) > 7.5/RADIAN) {
     consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -1012,7 +1013,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileActuator.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(rollRatePredict(1) / 0.3);
+  rollAccelLimiter.setRate(rollRatePredict(1) / 0.35);
   
   //
   // Apply test mode
