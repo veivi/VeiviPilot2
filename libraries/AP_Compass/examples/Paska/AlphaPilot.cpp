@@ -1013,7 +1013,7 @@ void configurationTask()
   throttleMix = vpParam.t_Mix;
   
   aileActuator.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(rollRatePredict(1) / 0.35);
+  rollAccelLimiter.setRate(rollRatePredict(1) / 0.2);
   
   //
   // Apply test mode
@@ -1548,7 +1548,7 @@ void gpsTask()
 
 const float pusherBoost_c = 0.3;
 const float pusherBias_c = -3/RADIAN;
-RateLimiter flareLimiter(1/0.7);
+RateLimiter flareLimiter(1/0.4);
 
 void elevatorModule()
 {
@@ -1580,7 +1580,7 @@ void elevatorModule()
     vpControl.targetPitchR =
       nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
-	      -15/RADIAN - vpFlight.pitch,
+	      -30/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
       * outer_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
@@ -1588,8 +1588,6 @@ void elevatorModule()
     vpControl.targetPitchR = vpInput.elevExpo*PI/2;
 
   vpControl.elevPredict =
-    // mixValue(stickForce * vpParam.flare,
-    //     alphaPredictInverse(vpControl.targetAlpha), vpOutput.elev);
     alphaPredictInverse(vpControl.targetAlpha);
 
   if(vpFeature.stabilizePitch) {
