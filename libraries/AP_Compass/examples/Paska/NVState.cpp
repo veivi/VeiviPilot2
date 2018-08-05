@@ -231,7 +231,7 @@ void printParams()
   for(int i = 0; i < FF_degree+1; i++) {
     if(i > 0)
       consolePrint_P(PSTR(" + "));
-    consolePrint(vpDerived.coeff_FF[i], 4);
+    consolePrint(vpParam.coeff_FF[0][i], 4);
     consolePrint_P(PSTR(" x^"));
     consolePrint(i);
   }
@@ -240,6 +240,20 @@ void printParams()
   consolePrint_P(PSTR(" ... "));
   consolePrint(alphaPredict(1.0)*RADIAN);
   consolePrintLn_P(PSTR(")"));
+  if(vpDerived.haveFlaps) {
+    consoleNoteLn_P(PSTR("    Feedforward, clean vs full flaps"));
+    for(int j = 0; j < 2; j++) {
+      consoleNote_P(PSTR("      "));
+      for(int i = 0; i < FF_degree+1; i++) {
+	if(i > 0)
+	  consolePrint_P(PSTR(" + "));
+	consolePrint(vpParam.coeff_FF[j][i], 4);
+	consolePrint_P(PSTR(" x^"));
+	consolePrint(i);
+      }
+      consoleNL();
+    }
+  }
   consoleNote_P(PSTR("  Throttle-elev mix (expo) = "));
   consolePrint(vpParam.t_Mix, 5);
   consolePrint_P(PSTR(" ("));
@@ -266,6 +280,14 @@ void printParams()
   consolePrint(vpParam.glideSlope*RADIAN, 2);
   consolePrint_P(PSTR("  alt(floor) = "));
   consolePrintLn(vpParam.floor);
+  consoleNote_P(PSTR("  Max alpha clean (full flaps) = "));
+  consolePrint(vpParam.alphaMax[0]*RADIAN);
+  if(vpDerived.haveFlaps) {
+    consolePrint(" (");
+    consolePrint(vpParam.alphaMax[1]*RADIAN);
+    consolePrint(")");
+  }
+  consoleNL();
   consoleNote_P(PSTR("  Alpha range = "));
   consolePrint(vpDerived.zeroLiftAlpha*RADIAN);
   consolePrint_P(PSTR(" ... "));
@@ -296,6 +318,21 @@ void printParams()
   consolePrint_P(PSTR(" (max = "));
   consolePrint(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
+  if(vpDerived.haveFlaps) {
+    consoleNoteLn_P(PSTR("    CoL clean vs full flaps"));
+    for(int j = 0; j < 2; j++) {
+      consoleNote_P(PSTR("      "));
+      for(int i = 0; i < CoL_degree+1; i++) {
+	if(i > 0)
+	  consolePrint_P(PSTR(" + "));
+	consolePrint(vpParam.coeff_CoL[j][i], 4);
+	consolePrint_P(PSTR(" x^"));
+	consolePrint(i);
+      }
+      consoleNL();
+    }
+  }
+  
   consoleNote_P(PSTR("  Flare power = "));
   consolePrintLn(vpParam.flare, 3);
   consoleNote_P(PSTR("  Roll rate K (expo) = "));
