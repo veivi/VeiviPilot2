@@ -1810,9 +1810,12 @@ void mixingTask()
 					  vpParam.t_Expo));
 
   // Aile to rudder mix
-  
+
+  const float lift = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
+    ? 0.3 : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
+
   vpOutput.rudder =
-    constrainServoOutput(vpOutput.rudder + vpOutput.aile * rudderMix * coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean);  
+    constrainServoOutput(vpOutput.rudder + vpOutput.aile * rudderMix * lift);  
 }
 
 void controlTask()
