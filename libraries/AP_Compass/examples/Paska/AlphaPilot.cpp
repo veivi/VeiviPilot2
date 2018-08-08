@@ -300,7 +300,7 @@ void sensorTaskFast()
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
   vpFlight.dynP = pressureBuffer.output() * factor_c
-    / cos(clamp(vpFlight.relWind, vpDerived.zeroLiftAlpha, vpDerived.maxAlpha));
+    / cos(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
   // Attitude
 
