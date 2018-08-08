@@ -183,13 +183,9 @@ void receiverTask()
 {
   if(inputValid(&aileInput))
     vpInput.aile = applyNullZone(inputValue(&aileInput), NZ_BIG, &vpInput.ailePilotInput);
-
-  vpInput.aileExpo = applyExpo(vpInput.aile);
   
   if(inputValid(&elevInput))
     vpInput.elev = applyNullZone(inputValue(&elevInput), NZ_SMALL, &vpInput.elevPilotInput);
-
-  vpInput.elevExpo = applyExpo(vpInput.elev);
 
   if(inputValid(&tuningKnobInput))
     vpInput.tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
@@ -283,6 +279,13 @@ void receiverTask()
   
   vpInput.elev = elevDelay.input(vpInput.elev);
   vpInput.aile = aileDelay.input(vpInput.aile);
+
+  //
+  // Expo
+  //
+  
+  vpInput.aileExpo = applyExpo(vpInput.aile);
+  vpInput.elevExpo = applyExpo(vpInput.elev);
 }
 
 void sensorTaskFast()
