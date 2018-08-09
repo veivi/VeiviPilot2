@@ -215,7 +215,7 @@ void receiverTask()
     lazyButtonValue = buttonValue;
      
   LEVELBUTTON.input(lazyButtonValue);
-  FLAPBUTTON.input(lazyButtonValue);
+  RATEBUTTON.input(lazyButtonValue);
   TRIMBUTTON.input(lazyButtonValue);
   GEARBUTTON.input(lazyButtonValue);
 
@@ -788,13 +788,13 @@ void configurationTask()
   // RATE BUTTON
   //
 
-  if(FLAPBUTTON.depressed() && !vpMode.halfRate) {
+  if(RATEBUTTON.depressed() && !vpMode.halfRate) {
     // Continuous: half-rate enable
     
     consoleNoteLn_P(PSTR("Half-rate ENABLED"));
     vpMode.halfRate = true;
     
-  } else if(FLAPBUTTON.singlePulse() && vpMode.halfRate) {
+  } else if(RATEBUTTON.singlePulse() && vpMode.halfRate) {
     // Single pulse: half-rate disable
     
     consoleNoteLn_P(PSTR("Half-rate DISABLED"));

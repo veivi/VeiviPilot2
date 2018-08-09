@@ -26,7 +26,7 @@ extern int8_t flightModeSelectorValue, flapSelectorValue;
 extern Button rightDownButton, rightUpButton, leftDownButton, leftUpButton;
 
 #define LEVELBUTTON rightUpButton
-#define FLAPBUTTON rightDownButton
+#define RATEBUTTON rightDownButton
 #define TRIMBUTTON leftUpButton
 #define GEARBUTTON leftDownButton
 
