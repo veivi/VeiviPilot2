@@ -1052,7 +1052,11 @@ void configurationTask()
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
       outer_P = vpControl.testGain = testGainExpo(vpParam.o_P);
       break;
-               
+
+    case 5:
+      // Max alpha tests, just flare disabled (because in test mode)
+      break;
+      
     case 8:
       // Stall behavior test
       
@@ -1551,7 +1555,7 @@ void gpsTask()
 
 const float pusherBoost_c = 0.3;
 const float pusherBias_c = -3/RADIAN;
-RateLimiter flareLimiter(1/0.4);
+RateLimiter flareLimiter(1/0.15);
 
 void elevatorModule()
 {
@@ -1565,7 +1569,8 @@ void elevatorModule()
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   const bool flareAllowed
-    = vpMode.slowFlight && gearSel == 0 && vpInput.throttle < 0.15;
+    = !vpMode.test && vpMode.slowFlight
+    && gearSel == 0 && vpInput.throttle < 0.10;
 
   flareLimiter.input(flareAllowed ? vpParam.flare * stickForce : 0,
 		     controlCycle);
