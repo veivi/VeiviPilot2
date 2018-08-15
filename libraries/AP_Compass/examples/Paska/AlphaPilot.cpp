@@ -1553,9 +1553,9 @@ void gpsTask()
 //   Elevator
 //
 
-const float pusherBoost_c = 0.3;
-const float pusherBias_c = -3/RADIAN;
-RateLimiter flareLimiter(1/0.15);
+const float pusherBoost_c = 0.2;
+const float pusherBias_c = -2.5/RADIAN;
+RateLimiter flareLimiter(1/0.1);
 
 void elevatorModule()
 {
@@ -1568,9 +1568,8 @@ void elevatorModule()
   vpOutput.elev =
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
-  const bool flareAllowed
-    = !vpMode.test && vpMode.slowFlight
-    && gearSel == 0 && vpInput.throttle < 0.10;
+  const bool flareAllowed = !vpMode.test && vpMode.slowFlight
+    && gearSel == 0 && vpInput.throttle < 0.3;
 
   flareLimiter.input(flareAllowed ? vpParam.flare * stickForce : 0,
 		     controlCycle);
