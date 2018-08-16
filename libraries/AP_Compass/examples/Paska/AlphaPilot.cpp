@@ -1569,7 +1569,9 @@ void elevatorModule()
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   const bool flareAllowed = !vpMode.test && vpMode.slowFlight
-    && gearSel == 0 && vpInput.throttle < 0.3;
+    && gearSel == 0 && (fabs(vpFlight.bank) < 30/RADIAN)
+    && (vpDerived.haveRetracts || vpFlight.alt < 5)
+    && vpInput.throttle < 0.3;
 
   flareLimiter.input(flareAllowed ? vpParam.flare * stickForce : 0,
 		     controlCycle);
