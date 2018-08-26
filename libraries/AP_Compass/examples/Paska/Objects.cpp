@@ -44,7 +44,6 @@ static Compass compass;
 #endif
 
 NewI2C I2c = NewI2C();
-I2CDevice alphaDevice("alpha"), pitotDevice("pitot"), eepromDevice("EEPROM"), displayDevice("display");
 
 const float sampleRate = LOG_HZ_SLOW;
 

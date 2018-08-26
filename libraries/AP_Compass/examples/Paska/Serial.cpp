@@ -1,14 +1,17 @@
 #include <AP_HAL/AP_HAL.h>
-#include "Serial.h"
 
+extern "C" {
+#include "Serial.h"
+}
+  
 extern const AP_HAL::HAL& hal;
 
-void serialOut(uint8_t c)
+extern "C" void serialOut(uint8_t c)
 {
   hal.uartA->write(c);
 }
 
-void serialFlush()
+extern "C" void serialFlush()
 {
   // hal.uartA->flush();
 }

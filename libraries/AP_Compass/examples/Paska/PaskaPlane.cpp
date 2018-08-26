@@ -6,28 +6,27 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include "Math.h"
-#include "Console.h"
 #include "Controller.h"
 #include "Logging.h"
 #include "PWMOutput.h"
 #include "PPM.h"
 #include "NVState.h"
-#include "Time.h"
 #include "Command.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
 #include "MS4525.h"
 
 extern "C" {
+#include "Console.h"
+#include "Time.h"
 #include "CRC16.h"
 #include "System.h"
+#include "Serial.h"
 }
 
 //
 // Datagram protocol integration
 //
-
-#include "Serial.h"
 
 #define MAX_DG_SIZE  (1<<7)
 
@@ -40,7 +39,7 @@ uint8_t datagramRxStore[MAX_DG_SIZE];
 
 void datagramRxError(const char *error)
 {
-  consoleNote_P(PSTR("DG "));
+  consoleNote_P(CS_STRING("DG "));
   consolePrintLn(error);
 }
   
@@ -49,7 +48,7 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
   switch(t) {
   case DG_HEARTBEAT:
     if(!vpStatus.consoleLink) {
-      consoleNoteLn_P(PSTR("Console CONNECTED"));
+      consoleNoteLn_P(CS_STRING("Console CONNECTED"));
       vpStatus.consoleLink = true;
     }
     heartBeatCount++;
@@ -63,7 +62,7 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
   case DG_SIMLINK:
     if(vpStatus.consoleLink && size == sizeof(sensorData)) {
       if(!vpStatus.simulatorLink) {
-	consoleNoteLn_P(PSTR("Simulator CONNECTED"));
+	consoleNoteLn_P(CS_STRING("Simulator CONNECTED"));
 	vpStatus.simulatorLink = vpMode.loggingSuppressed = true;
       }
 
@@ -77,8 +76,8 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
     break;
     
   default:
-    consoleNote_P(PSTR("FUNNY DATAGRAM TYPE "));
-    consolePrintLn(t);
+    consoleNote_P(CS_STRING("FUNNY DATAGRAM TYPE "));
+    consolePrintLnI(t);
   }
 }
   
@@ -137,31 +136,31 @@ void setup()
   cliSerial = hal.console;
   vpStatus.consoleLink = true;
   
-  consoleNoteLn_P(PSTR("Project | Alpha"));   
+  consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
   // PWM output
 
-  consoleNoteLn_P(PSTR("Initializing PWM output"));
+  consoleNoteLn_P(CS_STRING("Initializing PWM output"));
   pwmOutputInit();
 
   // I2C
   
-  consoleNote_P(PSTR("Initializing I2C... "));
+  consoleNote_P(CS_STRING("Initializing I2C... "));
   
   I2c.begin();
   I2c.setSpeed(true);
   I2c.pullup(false);
   I2c.timeOut(2+EXT_EEPROM_LATENCY);
 
-  consolePrintLn_P(PSTR("done. "));
+  consolePrintLn_P(CS_STRING("done. "));
   
   // Read the non-volatile state
 
   if(!readNVState())
-    consolePanic_P(PSTR("NV State read failed."));
+    consolePanic_P(CS_STRING("NV State read failed."));
     
-  consoleNote_P(PSTR("Current model is "));
-  consolePrintLn(nvState.model);
+  consoleNote_P(CS_STRING("Current model is "));
+  consolePrintLnI(nvState.model);
   
   // Param record
   
@@ -169,36 +168,36 @@ void setup()
                 
   // RC input
   
-  consoleNoteLn_P(PSTR("Initializing PPM receiver"));
+  consoleNoteLn_P(CS_STRING("Initializing PPM receiver"));
 
   ppmInputInit(nvState.rxMin, nvState.rxCenter, nvState.rxMax);
 
   // Misc sensors
   
-  consoleNote_P(PSTR("Initializing barometer... "));
+  consoleNote_P(CS_STRING("Initializing barometer... "));
   consoleFlush();
 
   barometer.init();
   barometer.calibrate();
   
-  consolePrintLn_P(PSTR("  done"));
+  consolePrintLn_P(CS_STRING("  done"));
   
-  consoleNote_P(PSTR("Initializing INS/AHRS... "));
+  consoleNote_P(CS_STRING("Initializing INS/AHRS... "));
   consoleFlush();
   
   ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
   ahrs.init();
 
-  consolePrintLn_P(PSTR("  done"));
+  consolePrintLn_P(CS_STRING("  done"));
 
 #ifdef USE_COMPASS
-  consoleNote_P(PSTR("Initializing compass... "));
+  consoleNote_P(CS_STRING("Initializing compass... "));
   consoleFlush();
 
   if(compass.init()) {
-    consolePrint_P(PSTR("  done, "));
-    consolePrint(compass.get_count());
-    consolePrintLn_P(PSTR(" sensor(s) detected."));
+    consolePrint_P(CS_STRING("  done, "));
+    consolePrintI(compass.get_count());
+    consolePrintLn_P(CS_STRING(" sensor(s) detected."));
   
     ahrs.set_compass(&compass);
   
@@ -206,7 +205,7 @@ void setup()
     compass.set_declination(ToRad(0.0f));
     
   } else {
-    consolePrintLn_P(PSTR("  FAILED."));
+    consolePrintLn_P(CS_STRING("  FAILED."));
     consoleFlush();
     while (1) ;
   }
@@ -232,9 +231,9 @@ void setup()
 
   // Done
   
-  consoleNote_P(PSTR("Initialized, "));
-  consolePrint((unsigned long) hal.util->available_memory());
-  consolePrintLn_P(PSTR(" bytes free."));
+  consoleNote_P(CS_STRING("Initialized, "));
+  consolePrintUL((unsigned long) hal.util->available_memory());
+  consolePrintLn_P(CS_STRING(" bytes free."));
   
   datagramTxStart(DG_INITIALIZED);
   datagramTxEnd();
@@ -242,14 +241,16 @@ void setup()
 
 void loop() 
 {
-  // Invoke scheduler
+  while(true) {
+    // Invoke scheduler
   
-  currentTime = currentMicros();
+    currentMicros();
 
-  if(!scheduler())
-    // Idle
+    if(!scheduler())
+      // Idle
       
-    backgroundTask(1);
+      backgroundTask(1);
+  }
 }
 
 AP_HAL_MAIN();

@@ -14,9 +14,16 @@
 #define AS5048B_ANGLMSB_REG 0xFE //bits 0..7
 #define AS5048B_ANGLLSB_REG 0xFF //bits 0..5
 
+static BaseI2CTarget_t target = { "alpha" };
+
+bool AS5048B_isOnline(void)
+{
+  return basei2cIsOnline(&target);
+}
+
 uint8_t AS5048B_read(uint8_t addr, uint8_t *storage, uint8_t bytes) 
 {
-  return I2c.read(AS5048_ADDRESS, addr, storage, bytes);
+  return basei2cInvoke(&target, I2c.read(AS5048_ADDRESS, addr, storage, bytes));
 }
 
 uint8_t AS5048B_readWord(uint8_t addr, uint16_t *result)

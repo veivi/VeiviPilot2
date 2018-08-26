@@ -2,9 +2,11 @@
 #include "Interrupt.h"
 #include "Math.h"
 #include "NVState.h"
-#include "Time.h"
 #include <avr/interrupt.h>
 
+extern "C" {
+#include "Time.h"
+}
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
   
 #define AVR_RC_INPUT_MAX_CHANNELS 10

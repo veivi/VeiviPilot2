@@ -1,12 +1,12 @@
 #include <string.h>
 #include "NVState.h"
-#include "Console.h"
 #include "Storage.h"
 #include "Command.h"
 #include "Status.h"
 #include "Math.h"
 
 extern "C" {
+#include "Console.h"
 #include "CRC16.h"
 #include "Datagram.h"
 }
@@ -118,21 +118,21 @@ bool setModel(int model, bool verbose)
 	    (uint8_t*) &vpParam, sizeof(vpParam));
 
   if(verbose) {
-    consoleNote_P(PSTR("MODEL "));
-    consolePrintLn(model);
-    consoleNote_P(PSTR("  Model record CRC = "));
-    consolePrint(vpParam.crc);
+    consoleNote_P(CS_STRING("MODEL "));
+    consolePrintLnUI(model);
+    consoleNote_P(CS_STRING("  Model record CRC = "));
+    consolePrintUI(vpParam.crc);
   }
   
   bool isGood = true;
   
   if(paramRecordCrc(&vpParam) != vpParam.crc) {
     if(verbose)
-      consolePrintLn_P(PSTR(" CORRUPT, using defaults")); 
+      consolePrintLn_P(CS_STRING(" CORRUPT, using defaults")); 
     vpParam = paramDefaults;
     isGood = false;
   } else if(verbose)
-    consolePrintLn_P(PSTR(" OK"));
+    consolePrintLn_P(CS_STRING(" OK"));
 
   if(verbose)
     printParams();
@@ -145,12 +145,12 @@ bool setModel(int model, bool verbose)
 void storeParams(void)
 {
   vpParam.crc = paramRecordCrc(&vpParam);
-  consoleNote_P(PSTR("Model record CRC = "));
-  consolePrintLn(vpParam.crc);
+  consoleNote_P(CS_STRING("Model record CRC = "));
+  consolePrintLnUI(vpParam.crc);
   cacheWrite(paramOffset + sizeof(vpParam)*nvState.model,
   	     (const uint8_t*) &vpParam, sizeof(vpParam));
   cacheFlush();
-  consoleNoteLn_P(PSTR("  Stored"));
+  consoleNoteLn_P(CS_STRING("  Stored"));
 }
 
 void deleteModel(int model)
@@ -176,14 +176,14 @@ bool readNVState(void)
   if(!cacheRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState)))
     return false;
   
-  consoleNote_P(PSTR("  State record CRC = "));
-  consolePrint(nvState.crc);
+  consoleNote_P(CS_STRING("  State record CRC = "));
+  consolePrintUI(nvState.crc);
     
   if(nvState.crc != stateRecordCrc(&nvState)) {
-    consolePrintLn_P(PSTR(" CORRUPT, using defaults")); 
+    consolePrintLn_P(CS_STRING(" CORRUPT, using defaults")); 
     defaultState();
   } else
-    consolePrintLn_P(PSTR(" OK"));
+    consolePrintLn_P(CS_STRING(" OK"));
 
   return true;
 }
@@ -195,223 +195,223 @@ void storeNVState(void)
     cacheWrite(stateOffset, (const uint8_t*) &nvState, sizeof(nvState));
     cacheFlush();
   } else
-    consoleNoteLn_P(PSTR("PANIC : State record exceeds partition size"));
+    consoleNoteLn_P(CS_STRING("PANIC : State record exceeds partition size"));
 }
 
 void printParams()
 {
   deriveParams();
     
-  consoleNote_P(PSTR("  NAME \""));
+  consoleNote_P(CS_STRING("  NAME \""));
   consolePrint(vpParam.name);
-  consolePrintLn_P(PSTR("\""));
+  consolePrintLn_P(CS_STRING("\""));
   
-  consoleNote_P(PSTR("  Weight(dry) = "));
-  consolePrint(vpDerived.totalMass, 3);
-  consolePrint_P(PSTR("("));
-  consolePrint(vpParam.weightDry, 3);
-  consolePrint_P(PSTR(") kg  thrust = "));
-  consolePrint(vpParam.thrust, 3);
-  consolePrint_P(PSTR(" kg ("));
-  consolePrint(vpParam.thrust/vpDerived.totalMass*100, 0);
-  consolePrintLn_P(PSTR("% of weight)"));
-  consoleNote_P(PSTR("  AS5048B ref = "));
-  consolePrint(vpParam.alphaRef);
-  consolePrint_P(PSTR(" MS4525 ref = "));
-  consolePrintLn(vpParam.airSpeedRef);
-  consoleNoteLn_P(PSTR("  Alpha Hold"));
-  consoleNote_P(PSTR("    Inner Ku*IAS^1.5 = "));
-  consolePrint(vpParam.i_Ku_C, 4);
-  consolePrint_P(PSTR(" Tu = "));
-  consolePrint(vpParam.i_Tu, 4);
-  consolePrint_P(PSTR(" Outer P = "));
-  consolePrintLn(vpParam.o_P, 4);
-  consoleNoteLn_P(PSTR("  Elev feedforward A+Bx+Cx^2"));
-  consoleNote_P(PSTR("    "));
+  consoleNote_P(CS_STRING("  Weight(dry) = "));
+  consolePrintFP(vpDerived.totalMass, 3);
+  consolePrint_P(CS_STRING("("));
+  consolePrintFP(vpParam.weightDry, 3);
+  consolePrint_P(CS_STRING(") kg  thrust = "));
+  consolePrintFP(vpParam.thrust, 3);
+  consolePrint_P(CS_STRING(" kg ("));
+  consolePrintFP(vpParam.thrust/vpDerived.totalMass*100, 0);
+  consolePrintLn_P(CS_STRING("% of weight)"));
+  consoleNote_P(CS_STRING("  AS5048B ref = "));
+  consolePrintUI(vpParam.alphaRef);
+  consolePrint_P(CS_STRING(" MS4525 ref = "));
+  consolePrintLnUI(vpParam.airSpeedRef);
+  consoleNoteLn_P(CS_STRING("  Alpha Hold"));
+  consoleNote_P(CS_STRING("    Inner Ku*IAS^1.5 = "));
+  consolePrintFP(vpParam.i_Ku_C, 4);
+  consolePrint_P(CS_STRING(" Tu = "));
+  consolePrintFP(vpParam.i_Tu, 4);
+  consolePrint_P(CS_STRING(" Outer P = "));
+  consolePrintLnFP(vpParam.o_P, 4);
+  consoleNoteLn_P(CS_STRING("  Elev feedforward A+Bx+Cx^2"));
+  consoleNote_P(CS_STRING("    "));
   for(int i = 0; i < FF_degree+1; i++) {
     if(i > 0)
-      consolePrint_P(PSTR(" + "));
-    consolePrint(vpParam.coeff_FF[0][i], 4);
-    consolePrint_P(PSTR(" x^"));
-    consolePrint(i);
+      consolePrint_P(CS_STRING(" + "));
+    consolePrintFP(vpParam.coeff_FF[0][i], 4);
+    consolePrint_P(CS_STRING(" x^"));
+    consolePrintI(i);
   }
-  consolePrint_P(PSTR("  (eff alpha range = "));
-  consolePrint(alphaPredict(-1.0)*RADIAN);
-  consolePrint_P(PSTR(" ... "));
-  consolePrint(alphaPredict(1.0)*RADIAN);
-  consolePrintLn_P(PSTR(")"));
+  consolePrint_P(CS_STRING("  (eff alpha range = "));
+  consolePrintF(alphaPredict(-1.0)*RADIAN);
+  consolePrint_P(CS_STRING(" ... "));
+  consolePrintF(alphaPredict(1.0)*RADIAN);
+  consolePrintLn_P(CS_STRING(")"));
   if(vpDerived.haveFlaps) {
-    consoleNoteLn_P(PSTR("    Feedforward, clean vs full flaps"));
+    consoleNoteLn_P(CS_STRING("    Feedforward, clean vs full flaps"));
     for(int j = 0; j < 2; j++) {
-      consoleNote_P(PSTR("      "));
+      consoleNote_P(CS_STRING("      "));
       for(int i = 0; i < FF_degree+1; i++) {
 	if(i > 0)
-	  consolePrint_P(PSTR(" + "));
-	consolePrint(vpParam.coeff_FF[j][i], 4);
-	consolePrint_P(PSTR(" x^"));
-	consolePrint(i);
+	  consolePrint_P(CS_STRING(" + "));
+	consolePrintFP(vpParam.coeff_FF[j][i], 4);
+	consolePrint_P(CS_STRING(" x^"));
+	consolePrintI(i);
       }
       consoleNL();
     }
   }
-  consoleNote_P(PSTR("  Throttle-elev mix (expo) = "));
-  consolePrint(vpParam.t_Mix, 5);
-  consolePrint_P(PSTR(" ("));
-  consolePrint(vpParam.t_Expo, 5);
-  consolePrintLn_P(PSTR(")"));
-  consoleNoteLn_P(PSTR("  Stabilizer"));
-  consoleNote_P(PSTR("    Ku*IAS^1.5 = "));
-  consolePrint(vpParam.s_Ku_C, 4);
-  consolePrint_P(PSTR(" Tu = "));
-  consolePrintLn(vpParam.s_Tu, 4);
-  consoleNoteLn_P(PSTR("  Autothrottle"));
-  consoleNote_P(PSTR("    Ku = "));
-  consolePrint(vpParam.at_Ku, 4);
-  consolePrint_P(PSTR(" Tu = "));
-  consolePrintLn(vpParam.at_Tu, 4);
-  consoleNoteLn_P(PSTR("  Auto cruise"));
-  consoleNote_P(PSTR("    Ku = "));
-  consolePrint(vpParam.cc_Ku, 4);
-  consolePrint_P(PSTR(" Tu = "));
-  consolePrintLn(vpParam.cc_Tu, 4);
-  consoleNote_P(PSTR("  Climb pitch(max) = "));
-  consolePrint(vpParam.maxPitch*RADIAN, 2);
-  consolePrint_P(PSTR("  Glide slope = "));
-  consolePrint(vpParam.glideSlope*RADIAN, 2);
-  consolePrint_P(PSTR("  alt(floor) = "));
-  consolePrintLn(vpParam.floor);
-  consoleNote_P(PSTR("  Max alpha clean (full flaps) = "));
-  consolePrint(vpParam.alphaMax[0]*RADIAN);
+  consoleNote_P(CS_STRING("  Throttle-elev mix (expo) = "));
+  consolePrintFP(vpParam.t_Mix, 5);
+  consolePrint_P(CS_STRING(" ("));
+  consolePrintFP(vpParam.t_Expo, 5);
+  consolePrintLn_P(CS_STRING(")"));
+  consoleNoteLn_P(CS_STRING("  Stabilizer"));
+  consoleNote_P(CS_STRING("    Ku*IAS^1.5 = "));
+  consolePrintFP(vpParam.s_Ku_C, 4);
+  consolePrint_P(CS_STRING(" Tu = "));
+  consolePrintLnFP(vpParam.s_Tu, 4);
+  consoleNoteLn_P(CS_STRING("  Autothrottle"));
+  consoleNote_P(CS_STRING("    Ku = "));
+  consolePrintFP(vpParam.at_Ku, 4);
+  consolePrint_P(CS_STRING(" Tu = "));
+  consolePrintLnFP(vpParam.at_Tu, 4);
+  consoleNoteLn_P(CS_STRING("  Auto cruise"));
+  consoleNote_P(CS_STRING("    Ku = "));
+  consolePrintFP(vpParam.cc_Ku, 4);
+  consolePrint_P(CS_STRING(" Tu = "));
+  consolePrintLnFP(vpParam.cc_Tu, 4);
+  consoleNote_P(CS_STRING("  Climb pitch(max) = "));
+  consolePrintFP(vpParam.maxPitch*RADIAN, 2);
+  consolePrint_P(CS_STRING("  Glide slope = "));
+  consolePrintFP(vpParam.glideSlope*RADIAN, 2);
+  consolePrint_P(CS_STRING("  alt(floor) = "));
+  consolePrintLnF(vpParam.floor);
+  consoleNote_P(CS_STRING("  Max alpha clean (full flaps) = "));
+  consolePrintF(vpParam.alphaMax[0]*RADIAN);
   if(vpDerived.haveFlaps) {
     consolePrint(" (");
-    consolePrint(vpParam.alphaMax[1]*RADIAN);
+    consolePrintF(vpParam.alphaMax[1]*RADIAN);
     consolePrint(")");
   }
   consoleNL();
-  consoleNote_P(PSTR("  Alpha range = "));
-  consolePrint(vpDerived.zeroLiftAlpha*RADIAN);
-  consolePrint_P(PSTR(" ... "));
-  consolePrint(vpDerived.maxAlpha*RADIAN);
-  consolePrint_P(PSTR(", minimum IAS = "));
-  consolePrintLn(vpDerived.minimumIAS);
-  consoleNote_P(PSTR("  Threshold margin(%) = "));
-  consolePrint(vpParam.thresholdMargin*100);
-  consolePrint_P(PSTR(" Pusher(deg) = "));
-  consolePrintLn(vpParam.pushMargin*RADIAN);
-  consoleNote_P(PSTR("    Derived alpha(threshold, shake, push, stall) = "));
-  consolePrint(vpDerived.thresholdAlpha*RADIAN);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpDerived.shakerAlpha*RADIAN);
-  consolePrint_P(PSTR(", "));
-  consolePrint(vpDerived.pusherAlpha*RADIAN);
-  consolePrint_P(PSTR(", "));
-  consolePrintLn(vpDerived.stallAlpha*RADIAN);
-  consoleNoteLn_P(PSTR("  Coeff of lift"));
-  consoleNote_P(PSTR("    "));
+  consoleNote_P(CS_STRING("  Alpha range = "));
+  consolePrintF(vpDerived.zeroLiftAlpha*RADIAN);
+  consolePrint_P(CS_STRING(" ... "));
+  consolePrintF(vpDerived.maxAlpha*RADIAN);
+  consolePrint_P(CS_STRING(", minimum IAS = "));
+  consolePrintLnF(vpDerived.minimumIAS);
+  consoleNote_P(CS_STRING("  Threshold margin(%) = "));
+  consolePrintF(vpParam.thresholdMargin*100);
+  consolePrint_P(CS_STRING(" Pusher(deg) = "));
+  consolePrintLnF(vpParam.pushMargin*RADIAN);
+  consoleNote_P(CS_STRING("    Derived alpha(threshold, shake, push, stall) = "));
+  consolePrintF(vpDerived.thresholdAlpha*RADIAN);
+  consolePrint_P(CS_STRING(", "));
+  consolePrintF(vpDerived.shakerAlpha*RADIAN);
+  consolePrint_P(CS_STRING(", "));
+  consolePrintF(vpDerived.pusherAlpha*RADIAN);
+  consolePrint_P(CS_STRING(", "));
+  consolePrintLnF(vpDerived.stallAlpha*RADIAN);
+  consoleNoteLn_P(CS_STRING("  Coeff of lift"));
+  consoleNote_P(CS_STRING("    "));
   for(int i = 0; i < CoL_degree+1; i++) {
     if(i > 0)
-      consolePrint_P(PSTR(" + "));
-    consolePrint(vpDerived.coeff_CoL[i], 4);
-    consolePrint_P(PSTR(" x^"));
-    consolePrint(i);
+      consolePrint_P(CS_STRING(" + "));
+    consolePrintFP(vpDerived.coeff_CoL[i], 4);
+    consolePrint_P(CS_STRING(" x^"));
+    consolePrintI(i);
   }
-  consolePrint_P(PSTR(" (max = "));
-  consolePrint(vpDerived.maxCoeffOfLift, 4);
+  consolePrint_P(CS_STRING(" (max = "));
+  consolePrintFP(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
   if(vpDerived.haveFlaps) {
-    consoleNoteLn_P(PSTR("    CoL clean vs full flaps"));
+    consoleNoteLn_P(CS_STRING("    CoL clean vs full flaps"));
     for(int j = 0; j < 2; j++) {
-      consoleNote_P(PSTR("      "));
+      consoleNote_P(CS_STRING("      "));
       for(int i = 0; i < CoL_degree+1; i++) {
 	if(i > 0)
-	  consolePrint_P(PSTR(" + "));
-	consolePrint(vpParam.coeff_CoL[j][i], 4);
-	consolePrint_P(PSTR(" x^"));
-	consolePrint(i);
+	  consolePrint_P(CS_STRING(" + "));
+	consolePrintFP(vpParam.coeff_CoL[j][i], 4);
+	consolePrint_P(CS_STRING(" x^"));
+	consolePrintI(i);
       }
       consoleNL();
     }
   }
   
-  consoleNote_P(PSTR("  Flare power = "));
-  consolePrintLn(vpParam.flare, 3);
-  consoleNote_P(PSTR("  Roll rate K (expo) = "));
-  consolePrint(vpParam.roll_C, 3);
-  consolePrint_P(PSTR(" ("));
-  consolePrint(vpParam.expo, 3);
+  consoleNote_P(CS_STRING("  Flare power = "));
+  consolePrintLnFP(vpParam.flare, 3);
+  consoleNote_P(CS_STRING("  Roll rate K (expo) = "));
+  consolePrintFP(vpParam.roll_C, 3);
+  consolePrint_P(CS_STRING(" ("));
+  consolePrintFP(vpParam.expo, 3);
   consolePrintLn(")");
-  consoleNoteLn_P(PSTR("  Elevator"));
-  consoleNote_P(PSTR("    deflection = "));
-  consolePrint(vpParam.elevDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrint(vpParam.elevNeutral*90);
-  consolePrint_P(PSTR(" trim%(takeoff) = "));
-  consolePrintLn(vpParam.takeoffTrim*100);
-  consoleNoteLn_P(PSTR("  Aileron"));
-  consoleNote_P(PSTR("    deflection = "));
-  consolePrint(vpParam.aileDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrint(vpParam.aileNeutral*90);
-  consolePrint_P(PSTR(" ("));
-  consolePrint(vpParam.aile2Neutral*90);
-  consolePrintLn_P(PSTR(")"));
-  consoleNoteLn_P(PSTR("  Canard"));
-  consoleNote_P(PSTR("    deflection = "));
-  consolePrint(vpParam.canardDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrintLn(vpParam.canardNeutral*90);
-  consoleNoteLn_P(PSTR("  Vector "));
-  consoleNote_P(PSTR("    vertical deflection = "));
-  consolePrint(vpParam.vertDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrintLn(vpParam.vertNeutral*90);
-  consoleNote_P(PSTR("    horizontal deflection = "));
-  consolePrint(vpParam.horizDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrintLn(vpParam.horizNeutral*90);
-  consoleNoteLn_P(PSTR("  Rudder"));
-  consoleNote_P(PSTR("    deflection = "));
-  consolePrint(vpParam.rudderDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrint(vpParam.rudderNeutral*90);
-  consolePrint_P(PSTR(" aile mix = "));
-  consolePrintLn(vpParam.r_Mix);
-  consoleNoteLn_P(PSTR("  Steering"));
-  consoleNote_P(PSTR("    deflection = "));
-  consolePrint(vpParam.steerDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrintLn(vpParam.steerNeutral*90);
-  consoleNoteLn_P(PSTR("  Flap"));
-  consoleNote_P(PSTR("    defl = "));
-  consolePrint(vpParam.flapDefl*90);
-  consolePrint_P(PSTR(" neutral = "));
-  consolePrint(vpParam.flapNeutral*90);
-  consolePrint_P(PSTR(" ("));
-  consolePrint(vpParam.flap2Neutral*90);
-  consolePrintLn_P(PSTR(")"));
-  consoleNote_P(PSTR("  Servo rate = "));
-  consolePrintLn(vpParam.servoRate);
+  consoleNoteLn_P(CS_STRING("  Elevator"));
+  consoleNote_P(CS_STRING("    deflection = "));
+  consolePrintF(vpParam.elevDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintF(vpParam.elevNeutral*90);
+  consolePrint_P(CS_STRING(" trim%(takeoff) = "));
+  consolePrintLnF(vpParam.takeoffTrim*100);
+  consoleNoteLn_P(CS_STRING("  Aileron"));
+  consoleNote_P(CS_STRING("    deflection = "));
+  consolePrintF(vpParam.aileDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintF(vpParam.aileNeutral*90);
+  consolePrint_P(CS_STRING(" ("));
+  consolePrintF(vpParam.aile2Neutral*90);
+  consolePrintLn_P(CS_STRING(")"));
+  consoleNoteLn_P(CS_STRING("  Canard"));
+  consoleNote_P(CS_STRING("    deflection = "));
+  consolePrintF(vpParam.canardDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintLnF(vpParam.canardNeutral*90);
+  consoleNoteLn_P(CS_STRING("  Vector "));
+  consoleNote_P(CS_STRING("    vertical deflection = "));
+  consolePrintF(vpParam.vertDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintLnF(vpParam.vertNeutral*90);
+  consoleNote_P(CS_STRING("    horizontal deflection = "));
+  consolePrintF(vpParam.horizDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintLnF(vpParam.horizNeutral*90);
+  consoleNoteLn_P(CS_STRING("  Rudder"));
+  consoleNote_P(CS_STRING("    deflection = "));
+  consolePrintF(vpParam.rudderDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintF(vpParam.rudderNeutral*90);
+  consolePrint_P(CS_STRING(" aile mix = "));
+  consolePrintLnF(vpParam.r_Mix);
+  consoleNoteLn_P(CS_STRING("  Steering"));
+  consoleNote_P(CS_STRING("    deflection = "));
+  consolePrintF(vpParam.steerDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintLnF(vpParam.steerNeutral*90);
+  consoleNoteLn_P(CS_STRING("  Flap"));
+  consoleNote_P(CS_STRING("    defl = "));
+  consolePrintF(vpParam.flapDefl*90);
+  consolePrint_P(CS_STRING(" neutral = "));
+  consolePrintF(vpParam.flapNeutral*90);
+  consolePrint_P(CS_STRING(" ("));
+  consolePrintF(vpParam.flap2Neutral*90);
+  consolePrintLn_P(CS_STRING(")"));
+  consoleNote_P(CS_STRING("  Servo rate = "));
+  consolePrintLnF(vpParam.servoRate);
   if(vpParam.flaperon)
-    consoleNoteLn_P(PSTR("  Flaperon ENABLED"));
+    consoleNoteLn_P(CS_STRING("  Flaperon ENABLED"));
 
-  consoleNote_P(PSTR("  We"));
+  consoleNote_P(CS_STRING("  We"));
   if(!vpParam.haveGear)
-    consolePrint_P(PSTR(" DO NOT"));  
-  consolePrint_P(PSTR(" have"));
+    consolePrint_P(CS_STRING(" DO NOT"));  
+  consolePrint_P(CS_STRING(" have"));
 
   if(vpParam.haveGear) {
     if(vpDerived.haveRetracts)
-      consolePrint_P(PSTR(" RETRACTABLE"));
+      consolePrint_P(CS_STRING(" RETRACTABLE"));
     else
-      consolePrint_P(PSTR(" FIXED"));
+      consolePrint_P(CS_STRING(" FIXED"));
   }
   
-  consolePrintLn_P(PSTR(" landing GEAR"));
+  consolePrintLn_P(CS_STRING(" landing GEAR"));
   if(vpParam.haveGear) {
-    consoleNote_P(PSTR("    Weight on wheels"));
+    consoleNote_P(CS_STRING("    Weight on wheels"));
     if(!vpParam.wowCalibrated)
-      consolePrint_P(PSTR(" NOT"));  
-    consolePrintLn_P(PSTR(" CALIBRATED"));
+      consolePrint_P(CS_STRING(" NOT"));  
+    consolePrintLn_P(CS_STRING(" CALIBRATED"));
   } else
     vpParam.wowCalibrated = false;
 }
@@ -428,54 +428,54 @@ static void backupParamEntry(const Command *e)
       break;
       
     case e_uint16:
-      consolePrint(*((uint16_t*) e->var[i]));
+      consolePrintUI(*((uint16_t*) e->var[i]));
       break;
       
     case e_int16:
-      consolePrint(*((int16_t*) e->var[i]));
+      consolePrintI(*((int16_t*) e->var[i]));
       break;
       
     case e_int8:
-      consolePrint(*((int8_t*) e->var[i]));
+      consolePrintUI8(*((int8_t*) e->var[i]));
       break;
       
     case e_bool:
-      consolePrint(*((bool*) e->var[i]));
+      consolePrintI(*((bool*) e->var[i]));
       break;
       
     case e_float:
-      consolePrint(*((float*) e->var[i]), 4);
+      consolePrintFP(*((float*) e->var[i]), 4);
       break;
 
     case e_percent:
-      consolePrint(*((float*) e->var[i])*100);
+      consolePrintF(*((float*) e->var[i])*100);
       break;
 
     case e_angle:
-      consolePrint(*((float*) e->var[i])*RADIAN);
+      consolePrintF(*((float*) e->var[i])*RADIAN);
       break;
 
     case e_angle90:
-      consolePrint(*((float*) e->var[i])*90);
+      consolePrintF(*((float*) e->var[i])*90);
       break;
 
     case e_map:
       for(int j = 0; j < MAX_SERVO; j++) {
-	consolePrint(((uint8_t*) e->var[i])[j]);
+	consolePrintUI8(((uint8_t*) e->var[i])[j]);
 	consolePrint(" ");
       }
       break;
 
     case e_col_curve:
       for(int j = 0; j < CoL_degree+1; j++) {
-	consolePrint(((float*) e->var[i])[j]);
+	consolePrintF(((float*) e->var[i])[j]);
 	consolePrint(" ");
       }
       break;
 
     case e_ff_curve:
       for(int j = 0; j < FF_degree+1; j++) {
-	consolePrint(((float*) e->var[i])[j]);
+	consolePrintF(((float*) e->var[i])[j]);
 	consolePrint(" ");
       }
     }
@@ -484,23 +484,18 @@ static void backupParamEntry(const Command *e)
   consolePrintLn("");
 } 
 
-const prog_char_t *updateDescription = NULL;
-
 void backupParams()
 {
   datagramTxStart(DG_PARAMS);
   datagramTxOut((const uint8_t*) vpParam.name, strlen(vpParam.name));
   datagramTxEnd();
   
-  consoleNoteLn_P(PSTR("Param backup"));
+  consoleNoteLn_P(CS_STRING("Param backup"));
   consoleNoteLn("");
-  if(updateDescription) {
-    consoleNote("  APPLIED UPDATE : ");
-    consolePrintLn_P(updateDescription);
-  }
-  consoleNote_P(PSTR("MODEL "));
-  consolePrint(nvState.model);
-  consolePrint_P(PSTR(" "));
+
+  consoleNote_P(CS_STRING("MODEL "));
+  consolePrintUI(nvState.model);
+  consolePrint_P(CS_STRING(" "));
   consolePrintLn(vpParam.name);
   consoleNoteLn("");
   consolePrintLn("");
@@ -512,14 +507,14 @@ void backupParams()
   
   while(1) {
     struct Command cache;
-    memcpy_P(&cache, &commands[i++], sizeof(cache));
+    CS_MEMCPY(&cache, &commands[i++], sizeof(cache));
     if(cache.token == c_invalid)
       break;
     if(cache.var[0])
       backupParamEntry(&cache);    
   }
 
-  consolePrintLn_P(PSTR("store"));
+  consolePrintLn_P(CS_STRING("store"));
 
   datagramTxStart(DG_PARAMS);
   datagramTxEnd();  

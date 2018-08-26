@@ -1,16 +1,16 @@
 #include <stdarg.h>
 #include <math.h>
-#include "Status.h"
-#include "Objects.h"
-
-extern "C" {
 #include "Datagram.h"
 #include "System.h"
-}
-
-#define CONSOLE_PRIVATE_H
-
 #include "Console.h"
+#include "CoreObjects.h"
+
+void consolevNotef(const char *s, va_list argp);
+void consoleNotef(const char *s, ...);
+void consoleNotefLn(const char *s, ...);
+void consolevPrintf(const char *s, va_list argp);
+void consolePrintf(const char *s, ...);
+void consolePrintfLn(const char *s, ...);
 
 #define BUF_SIZE (1<<6)
 
@@ -73,24 +73,24 @@ void consoleNoteLn(const char *s)
   consoleNL();
 }
 
-void consoleNote_P(const prog_char_t *s)
+void consoleNote_P(const CS_CHAR_T *s)
 {
   consolePrint("// ");
   consolePrint_P(s);
 }
 
-void consoleNoteLn_P(const prog_char_t *s)
+void consoleNoteLn_P(const CS_CHAR_T *s)
 {
   consoleNote_P(s);
   consoleNL();
 }
 
-void consolePanic_P(const prog_char_t *s)
+void consolePanic_P(const CS_CHAR_T *s)
 {
   consolePrint("// PANIC: ");
   consolePrint_P(s);
+  consolePrintLn_P(CS_STRING("// HALTING."));
   consoleNL();
-  consolePrintLn_P(PSTR("// HALTING."));
   consoleFlush();
   while(1);
 }
@@ -152,13 +152,13 @@ void consolePrint(const char *s)
     consoleOut(*s++);
 }
 
-void consolePrint(const char *s, int l)
+void consolePrintN(const char *s, int l)
 {
   while(*s && l-- > 0)
     consoleOut(*s++);
 }
 
-void consolePrint_P(const prog_char_t *s)
+void consolePrint_P(const CS_CHAR_T *s)
 {
   uint8_t c = 0;
 
@@ -168,7 +168,7 @@ void consolePrint_P(const prog_char_t *s)
 
 #define printDigit(d) consoleOut('0'+d)
 
-void consolePrint(float v, int p)
+void consolePrintFP(float v, int p)
 {
   if(v < 0.0) {
     consoleOut('-');
@@ -179,12 +179,12 @@ void consolePrint(float v, int p)
   
   uint32_t i = (uint32_t) v;
 
-  consolePrint(i);
+  consolePrintUL(i);
 
   if(p > 0) {
     float f = v - (float) i;
   
-    consolePrint('.');
+    consolePrintC('.');
 
     while(p > 0) {
       f *= 10.0;
@@ -194,47 +194,47 @@ void consolePrint(float v, int p)
   }
 }
 
-void consolePrint(const char c)
+void consolePrintC(const char c)
 {
   consoleOut(c);
 }  
 
-void consolePrint(float v)
+void consolePrintF(float v)
 {
-  consolePrint(v, 2);
+  consolePrintFP(v, 2);
 }
 
-void consolePrint(double v, int p)
+void consolePrintDP(double v, int p)
 {
-  consolePrint((float) v, p);
+  consolePrintFP((float) v, p);
 }
 
-void consolePrint(double v)
+void consolePrintD(double v)
 {
-  consolePrint(v, 2);
+  consolePrintDP(v, 2);
 }
 
-void consolePrint(int v)
+void consolePrintI(int v)
 {
-  consolePrint((long) v);
+  consolePrintL((long) v);
 }
 
-void consolePrint(unsigned int v)
+void consolePrintUI(unsigned int v)
 {
-  consolePrint((unsigned long) v);
+  consolePrintUL((unsigned long) v);
 }
 
-void consolePrint(long v)
+void consolePrintL(long v)
 {
   if(v < 0) {
     v = -v;
     consoleOut('-');
   }
 
-  consolePrint((unsigned long) v);
+  consolePrintUL((unsigned long) v);
 }
 
-void consolePrint(unsigned long v)
+void consolePrintUL(unsigned long v)
 {
   uint8_t buf[20];
   int l = 0;
@@ -251,9 +251,9 @@ void consolePrint(unsigned long v)
     printDigit(0);
 }
 
-void consolePrint(uint8_t v)
+void consolePrintUI8(uint8_t v)
 {
-  consolePrint((unsigned int) v);
+  consolePrintUI((unsigned int) v);
 }
 
 void consolePrintLn(const char *s)
@@ -262,63 +262,63 @@ void consolePrintLn(const char *s)
   consoleNL();
 }
 
-void consolePrintLn_P(const prog_char_t *s)
+void consolePrintLn_P(const CS_CHAR_T *s)
 {
   consolePrint_P(s);
   consoleNL();
 }
 
-void consolePrintLn(float v)
+void consolePrintLnF(float v)
 {
-  consolePrint(v);
+  consolePrintF(v);
   consoleNL();
 }
 
-void consolePrintLn(float v, int p)
+void consolePrintLnFP(float v, int p)
 {
-  consolePrint(v, p);
+  consolePrintFP(v, p);
   consoleNL();
 }
 
-void consolePrintLn(double v)
+void consolePrintLnD(double v)
 {
-  consolePrint(v);
+  consolePrintD(v);
   consoleNL();
 }
 
-void consolePrintLn(double v, int p)
+void consolePrintLnDP(double v, int p)
 {
-  consolePrint(v, p);
+  consolePrintDP(v, p);
   consoleNL();
 }
 
-void consolePrintLn(int v)
+void consolePrintLnI(int v)
 {
-  consolePrint(v);
+  consolePrintI(v);
   consoleNL();
 }
 
-void consolePrintLn(unsigned int v)
+void consolePrintLnUI(unsigned int v)
 {
-  consolePrint(v);
+  consolePrintUI(v);
   consoleNL();
 }
 
-void consolePrintLn(uint8_t v)
+void consolePrintLnUI8(uint8_t v)
 {
-  consolePrint(v);
+  consolePrintUI8(v);
   consoleNL();
 }
 
-void consolePrintLn(long v)
+void consolePrintLnL(long v)
 {
-  consolePrint(v);
+  consolePrintL(v);
   consoleNL();
 }
 
-void consolePrintLn(unsigned long v)
+void consolePrintLnUL(unsigned long v)
 {
-  consolePrint(v);
+  consolePrintUL(v);
   consoleNL();
 }
 

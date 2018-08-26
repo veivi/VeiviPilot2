@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "Storage.h"
-#include "Console.h"
 
 extern "C" {
 #include "CoreObjects.h"
@@ -15,9 +14,9 @@ extern int32_t logPtr, logLen, logSize;
 
 #define logIndex(i) ((logPtr + logSize + (i)) % logSize)
 
-bool_t logReady(bool_t verbose);
-bool_t logReady(void);
-bool_t logInit(uint32_t);
+bool logReady(bool verbose);
+bool logReady(void);
+bool logInit(uint32_t);
 uint16_t logRead(int32_t index);
 void logClear();
 void logInit();

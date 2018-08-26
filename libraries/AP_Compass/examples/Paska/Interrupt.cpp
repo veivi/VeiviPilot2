@@ -1,8 +1,10 @@
 #include "Interrupt.h"
-#include "Console.h"
 #include "RxInput.h"
 #include <stdlib.h>
 
+extern "C" {
+#include "Console.h"
+}
 uint8_t nestCount = 0;
 
 extern "C" ISR(BADISR_vect)

@@ -54,13 +54,9 @@ struct GPSFix {
 
 // struct GPSFix gpsFix;
 
-extern NewI2C I2c;
-extern I2CDevice alphaDevice, pitotDevice, eepromDevice, displayDevice;
-
 extern "C" {
-#include "CRC16.h"
-#include "System.h"
 #include "Datagram.h"
+  
 extern struct SimLinkSensor sensorData;
 extern uint16_t simFrames;
 extern int linkDownCount, heartBeatCount;

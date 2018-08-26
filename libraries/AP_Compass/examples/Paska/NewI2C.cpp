@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include "NewI2C.h"
-#include "Console.h"
 #include <avr/io.h>
+
+extern "C" {
 #include "Time.h"
-
-#define BACKOFF (0.5e3)
-
+}
+  
 #define START           0x08
 #define REPEATED_START  0x10
 #define MT_SLA_ACK	0x18
@@ -24,54 +24,6 @@
 #define sbi(sfr, bit)   (_SFR_BYTE(sfr) |= _BV(bit))
 
 uint16_t NewI2C::timeOutDelay = 0;
-
-I2CDevice::I2CDevice(const char *dname)
-{
-  name = dname;
-  backoff = BACKOFF;
-}
-
-bool I2CDevice::online()
-{
-  return !failed || currentMillis() > failedAt+backoff;
-}
-
-bool I2CDevice::warning()
-{
-  return warn || failed;
-}
-
-bool I2CDevice::invoke(uint8_t status)
-{
-  if(status) {
-    warn = true;
-    
-    consoleNote_P(PSTR("Bad "));
-    consolePrintLn(name);
-
-    if(failed)
-      backoff += backoff/2;
-    else if(++failCount > 3) {
-      consoleNote("");
-      consolePrint(name);
-      consolePrintLn_P(PSTR(" failed"));
-      failed = true;
-    }
-    
-    failedAt = currentMillis();
-  } else {    
-    if(failCount > 0) {
-      consoleNote("");
-      consolePrint(name);
-      consolePrintLn_P(PSTR(" recovered"));
-      failCount = 0;
-      failed = warn = false;
-      backoff = BACKOFF;
-    }
-  }
-  
-  return status == 0;
-}
 
 ////////////// Public Methods ////////////////////////////////////////
 
@@ -455,3 +407,42 @@ void NewI2C::lockUp()
   TWCR = _BV(TWEN) | _BV(TWEA); //reinitialize TWI 
 }
 
+//
+// C wrappers
+//
+
+extern "C" void basei2cInit(void)
+{
+  I2c.begin();
+}
+
+extern "C" void basei2cShutdown(void)
+{
+  I2c.end();
+}
+
+extern "C" void basei2cSetTimeOut(uint16_t v)
+{
+  I2c.timeOut(v);
+}
+  
+extern "C" void basei2cSetSpeed(uint8_t v)
+{
+  I2c.setSpeed(v);
+}
+ 
+extern "C" void basei2cSetPullup(uint8_t v)
+{
+  I2c.pullup(v);
+}
+ 
+extern "C" uint8_t basei2cWait(uint8_t d)
+{
+  return I2c.wait(d);
+}
+ 
+extern "C" uint8_t basei2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
+{
+  return I2c.write(d, a, as, b, c);
+}
+  

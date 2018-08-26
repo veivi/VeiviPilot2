@@ -3,7 +3,11 @@
 #include "Objects.h"
 #include "Logging.h"
 #include "NVState.h"
-#include <AP_Progmem/AP_Progmem.h>
+
+extern "C" {
+#include "Console.h"
+#include "Time.h"
+}
 
 bool toc_test_mode(bool reset)
 {
@@ -30,7 +34,7 @@ bool toc_test_load(bool reset)
 
 bool toc_test_fdr(bool reset)
 {
-  return !eepromDevice.warning() && logReady(false);
+  return eepromIsOnline() && logReady(false);
 }
 
 bool toc_test_alpha_sensor(bool reset)
@@ -52,14 +56,14 @@ bool toc_test_alpha_range(bool reset)
     if(fabs(vpFlight.alpha) > 1.5/RADIAN) {
       lastNonZeroAlpha = currentTime;
     } else if(currentTime > lastNonZeroAlpha + 1.0e6) {
-      consoleNoteLn_P(PSTR("Stable ZERO ALPHA"));
+      consoleNoteLn_P(CS_STRING("Stable ZERO ALPHA"));
       zeroAlpha = true;
     }
   } else if(!bigAlpha) {
     if(fabsf(vpFlight.alpha - 90/RADIAN) > 30/RADIAN) {
       lastSmallAlpha = currentTime;
     } else if(currentTime > lastSmallAlpha + 1.0e6) {
-      consoleNoteLn_P(PSTR("Stable BIG ALPHA"));
+      consoleNoteLn_P(CS_STRING("Stable BIG ALPHA"));
       bigAlpha = true;
     }
   }
@@ -201,7 +205,7 @@ bool toc_test_button(bool reset)
   return toc_test_button_range(reset) && toc_test_button_neutral(reset);
 }
 
-const struct TakeoffTest tocTest[] PROGMEM =
+const struct TakeoffTest tocTest[] CS_QUALIFIER =
   {
     [toc_alpha] = { "ALPHA", toc_test_alpha },
     [toc_pitot] = { "PITOT", toc_test_pitot },
@@ -258,7 +262,7 @@ void tocReportConsole(bool result, int i, const char *s)
 {  
   if(!result) {
     if(!tocStatusFailed)
-      consoleNote_P(PSTR("T/O/C FAIL :"));
+      consoleNote_P(CS_STRING("T/O/C FAIL :"));
 
     consolePrint(" ");
     consolePrint(s);

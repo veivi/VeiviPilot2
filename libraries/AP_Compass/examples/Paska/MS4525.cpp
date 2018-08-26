@@ -4,11 +4,21 @@
 #include "Objects.h"
 #include "NVState.h"
 
+extern "C" {
+#include "Console.h"
+}
+
+static BaseI2CTarget_t target = { "pitot" } ;
+
+bool MS4525DO_isOnline(void)
+{
+  return basei2cIsOnline(&target);
+}
+
 uint8_t MS4525DO_read(uint8_t *storage, uint8_t bytes) 
 {
   const uint8_t addr_c = 0x28;
- 
-  return I2c.read(addr_c, NULL, 0, storage, bytes);
+  return basei2cInvoke(&target, I2c.read(addr_c, NULL, 0, storage, bytes));
 }
 
 uint8_t MS4525DO_read(uint16_t *result)
@@ -28,7 +38,7 @@ static bool calibrating = false;
 
 void MS4525DO_calibrate()
 {
-  consoleNoteLn_P(PSTR("Airspeed calibration STARTED"));
+  consoleNoteLn_P(CS_STRING("Airspeed calibration STARTED"));
   calibrating = true;
   accCount = 0;
   acc = 0;
@@ -50,8 +60,8 @@ uint8_t MS4525DO_pressure(int16_t *result)
     } else {
       vpParam.airSpeedRef = acc>>(log2CalibWindow - 2);
       calibrating = false;
-      consoleNote_P(PSTR("Airspeed calibration DONE, ref = "));
-      consolePrintLn(vpParam.airSpeedRef);
+      consoleNote_P(CS_STRING("Airspeed calibration DONE, ref = "));
+      consolePrintLnUI(vpParam.airSpeedRef);
     }
   }
 

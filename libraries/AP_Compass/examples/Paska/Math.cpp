@@ -1,9 +1,12 @@
 #include "Math.h"
 #include "NVState.h"
-#include "Console.h"
 #include "Status.h"
 #include "Objects.h"
 #include <math.h>
+
+extern "C" {
+#include "Console.h"
+}
 
 float effIAS()
 {
@@ -138,8 +141,8 @@ float coeffOfLiftInverse(float target)
       left = center;
 
     if(i++ > 1<<8) {
-      consoleNote_P(PSTR("Inverse cL not defined for "));
-      consolePrintLn(target);
+      consoleNote_P(CS_STRING("Inverse cL not defined for "));
+      consolePrintLnF(target);
       return -1e6;
     }
   } while(fabs(approx - target) > 0.001);

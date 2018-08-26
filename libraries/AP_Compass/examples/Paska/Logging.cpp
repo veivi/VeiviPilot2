@@ -2,10 +2,11 @@
 #include "Logging.h"
 #include "NVState.h"
 #include "Math.h"
-#include "Time.h"
 #include "Objects.h"
 
 extern "C" {
+#include "Console.h"
+#include "Time.h"
 #include "Datagram.h"
 #include "CRC16.h"
 }
@@ -15,23 +16,23 @@ typedef enum { invalid_c, find_stamp_c, find_start_c, ready_c, stop_c, run_c, fa
 logState_t logState;
 int32_t logPtr, logLen, logSize;
 uint16_t logEndStamp;
-bool_t logEnabled = false;
+bool logEnabled = false;
 long logBytesCum;
 
 #define logOffset nvState.logPartition
 
-bool_t logReady(bool_t verbose)
+bool logReady(bool verbose)
 {
   if(logState == stop_c || logState == run_c)
     return true;
 
   if(verbose)
-    consoleNoteLn_P(PSTR("Log not ready"));
+    consoleNoteLn_P(CS_STRING("Log not ready"));
   
   return false;
 }
 
-bool_t logReady(void)
+bool logReady(void)
 {
   return logReady(true);
 }
@@ -105,9 +106,9 @@ static void logEnter(uint16_t value)
 
 void logClear(void)
 {
-  bool_t wasNotEmpty = logLen > 0;
+  bool wasNotEmpty = logLen > 0;
   
-  consoleNoteLn_P(PSTR("Log being CLEARED"));
+  consoleNoteLn_P(CS_STRING("Log being CLEARED"));
   
   logEnter(ENTRY_TOKEN(t_start + (nvState.testNum & 0xFF)));
   
@@ -116,8 +117,8 @@ void logClear(void)
   if(wasNotEmpty) {
     nvState.logStamp++;
     storeNVState();
-    consoleNote_P(PSTR("Log STAMP incremented to "));
-    consolePrintLn(nvState.logStamp);
+    consoleNote_P(CS_STRING("Log STAMP incremented to "));
+    consolePrintLnUI(nvState.logStamp);
   }    
 }
 
@@ -128,8 +129,8 @@ void logTestSet(uint16_t ch)
   logClear();
   storeNVState();
 
-  consoleNote_P(PSTR("Test channel set to "));
-  consolePrintLn(nvState.testNum);
+  consoleNote_P(CS_STRING("Test channel set to "));
+  consolePrintLnUI(nvState.testNum);
 }
 
 static int prevCh = -1;
@@ -195,7 +196,7 @@ void logEnable()
   
   prevCh = -1;  
   
-  consoleNoteLn_P(PSTR("Logging ENABLED"));
+  consoleNoteLn_P(CS_STRING("Logging ENABLED"));
 }
 
 void logDisable()
@@ -205,7 +206,7 @@ void logDisable()
     
   logEnabled = false;
   
-  consoleNoteLn_P(PSTR("Logging DISABLED"));
+  consoleNoteLn_P(CS_STRING("Logging DISABLED"));
 }
 
 void logDumpBinary(void)
@@ -220,12 +221,12 @@ void logDumpBinary(void)
   datagramTxOut((const uint8_t*) &info, sizeof(info));
   datagramTxEnd();
 
-  consoleNoteLn_P(PSTR("PARAMETER RECORD"));
+  consoleNoteLn_P(CS_STRING("PARAMETER RECORD"));
   printParams();
   
   consolePrintLn("");
-  consoleNote_P(PSTR("TEST CH = "));
-  consolePrintLn(nvState.testNum);
+  consoleNote_P(CS_STRING("TEST CH = "));
+  consolePrintLnUI(nvState.testNum);
   consolePrintLn("");
 
   int32_t total = 0, block = 0;
@@ -259,11 +260,11 @@ void logDumpBinary(void)
   datagramTxEnd();
 }
 
-bool_t logInit(uint32_t maxDuration)
+bool logInit(uint32_t maxDuration)
 {
   uint32_t current = currentMillis();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;
-  static bool_t endFound = false;
+  static bool endFound = false;
   uint32_t eepromSize = 0;
   uint8_t dummy;
   
@@ -275,16 +276,16 @@ bool_t logInit(uint32_t maxDuration)
       eepromSize += 1<<10;
     
     if(readEEPROM(eepromSize-1, &dummy, 1)) {
-      consoleNote_P(PSTR("EEPROM size = "));
-      consolePrint(eepromSize/(1<<10));
+      consoleNote_P(CS_STRING("EEPROM size = "));
+      consolePrintUL(eepromSize/(1<<10));
       consolePrintLn("k bytes");
       
       logSize = (eepromSize - logOffset)/sizeof(uint16_t);
 
-      consoleNote_P(PSTR("Inferred log size = "));
-      consolePrint(logSize/(1<<10));
+      consoleNote_P(CS_STRING("Inferred log size = "));
+      consolePrintUL(logSize/(1<<10));
       consolePrint("k + ");
-      consolePrint(logSize%(1<<10));
+      consolePrintUL(logSize%(1<<10));
       consolePrintLn(" entries");
       
       logState = find_stamp_c;
@@ -293,7 +294,7 @@ bool_t logInit(uint32_t maxDuration)
 
       return false;
     } else {
-      consoleNoteLn_P(PSTR("Log EEPROM failed"));
+      consoleNoteLn_P(CS_STRING("Log EEPROM failed"));
       logState = failed_c;
     }
     break;
@@ -301,8 +302,8 @@ bool_t logInit(uint32_t maxDuration)
   case find_stamp_c:
     while(searchPtr < logSize) {
       if(searchPtr % (1<<12) == 0) {
-	consoleNote_P(PSTR("  Searching for log STAMP at "));
-	consolePrint(searchPtr);
+	consoleNote_P(CS_STRING("  Searching for log STAMP at "));
+	consolePrintUL(searchPtr);
 	consolePrintLn("...");
       }
 
@@ -336,14 +337,14 @@ bool_t logInit(uint32_t maxDuration)
       
       if(startPtr < 0) {
 	// Don't know the log length yet
-	consoleNoteLn_P(PSTR("Log STAMP found, looking for START"));
+	consoleNoteLn_P(CS_STRING("Log STAMP found, looking for START"));
 	logState = find_start_c;
       }	else {
 	logState = ready_c;
        }
     } else {
-      consoleNoteLn_P(PSTR("Log appears corrupted"));
-      consoleNoteLn_P(PSTR("Log being INITIALIZED"));
+      consoleNoteLn_P(CS_STRING("Log appears corrupted"));
+      consoleNoteLn_P(CS_STRING("Log being INITIALIZED"));
   
       logEndStamp = 0;
       logPtr = logSize-1;
@@ -356,8 +357,8 @@ bool_t logInit(uint32_t maxDuration)
   case find_start_c:
     while(searchPtr < logSize) {
       if(searchPtr % (1<<12) == 0) {
-       	consoleNote_P(PSTR("  Searching for log START at "));
-	consolePrint(searchPtr);
+       	consoleNote_P(CS_STRING("  Searching for log START at "));
+	consolePrintUL(searchPtr);
 	consolePrintLn("...");
       }
 
@@ -384,14 +385,14 @@ bool_t logInit(uint32_t maxDuration)
     else
       logLen = (logSize + endPtr - startPtr - 1) % logSize;
 
-    consoleNote_P(PSTR("LOG READY, PTR = "));
-    consolePrintLn(logPtr);
-    consoleNote_P(PSTR("  TEST = "));
-    consolePrintLn(nvState.testNum);
-    consoleNote_P(PSTR("  LENGTH = "));
-    consolePrintLn(logLen);
-    consoleNote_P(PSTR("  STAMP = "));
-    consolePrintLn(logEndStamp);
+    consoleNote_P(CS_STRING("LOG READY, PTR = "));
+    consolePrintLnUL(logPtr);
+    consoleNote_P(CS_STRING("  TEST = "));
+    consolePrintLnUI(nvState.testNum);
+    consoleNote_P(CS_STRING("  LENGTH = "));
+    consolePrintLnUL(logLen);
+    consoleNote_P(CS_STRING("  STAMP = "));
+    consolePrintLnUI(logEndStamp);
     
     logState = stop_c;
     
@@ -416,7 +417,7 @@ void logSave()
 
     logTask();
 
-    consoleNoteLn_P(PSTR("Logging STARTED"));
+    consoleNoteLn_P(CS_STRING("Logging STARTED"));
       
   } else if(logState == run_c) {
 
@@ -428,7 +429,7 @@ void logSave()
     
     if(!logEnabled) {
       logState = stop_c;
-      consoleNoteLn_P(PSTR("Logging STOPPED"));
+      consoleNoteLn_P(CS_STRING("Logging STOPPED"));
     }
   }
 }
@@ -469,7 +470,7 @@ void logObjects()
 // Log interface
 //
 
-static uint16_t encode(bool_t vec[], int num)
+static uint16_t encode(bool vec[], int num)
 {
   uint16_t result = 0;
 
@@ -481,7 +482,7 @@ static uint16_t encode(bool_t vec[], int num)
 
 void logTask()
 {
-  bool_t mode[] = { vpMode.slowFlight,
+  bool mode[] = { vpMode.slowFlight,
 		  vpMode.bankLimiter,
 		  vpMode.wingLeveler,
 		  vpMode.takeOff,
@@ -490,7 +491,7 @@ void logTask()
 		  vpMode.sensorFailSafe,
 		  vpMode.alphaFailSafe };
 
-  bool_t status[] = { vpStatus.weightOnWheels,
+  bool status[] = { vpStatus.weightOnWheels,
 		    vpStatus.positiveIAS,
 		    gearSel == 1,
 		    vpStatus.stall,
@@ -499,8 +500,8 @@ void logTask()
 		    vpStatus.pitotFailed,
 		    vpStatus.pitotBlocked };
   
-  modeEncoded = encode(mode, sizeof(mode)/sizeof(bool_t));
-  statusEncoded = encode(status, sizeof(status)/sizeof(bool_t));
+  modeEncoded = encode(mode, sizeof(mode)/sizeof(bool));
+  statusEncoded = encode(status, sizeof(status)/sizeof(bool));
   flapEncoded = flapActuator.output();
   testEncoded = vpMode.test ? nvState.testNum : 0;
 

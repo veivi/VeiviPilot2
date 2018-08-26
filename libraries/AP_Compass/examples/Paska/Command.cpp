@@ -8,6 +8,10 @@
 #include "PPM.h"
 #include "Objects.h"
 
+extern "C" {
+#include "Console.h"
+}
+
 const struct Command commands[] PROGMEM = {
   { "name", c_name, e_string, &vpParam.name },
   { "as5048b_ref", c_5048b_ref, e_uint16, &vpParam.alphaRef },
@@ -125,7 +129,7 @@ char *parse(char *ptr)
 void printCoeffElement(float y0, float y1, float x, float v)
 {
     consoleNote("");
-    consolePrint(x);
+    consolePrintF(x);
     consoleTab(10);
 
     const int col1 = 78, col0 = 10+(col1-10)*-y0/(y1-y0);
@@ -161,7 +165,7 @@ void executeCommand(char *buf)
   while(*buf && isblank(*buf))
     buf++;
   
-  consolePrint_P(PSTR("// % "));
+  consolePrint_P(CS_STRING("// % "));
   consolePrintLn(buf);
 
   if(!*buf || buf[0] == '/') {
@@ -209,12 +213,12 @@ void executeCommand(char *buf)
   }
   
   if(matches < 1) {
-    consolePrint_P(PSTR("Command not recognized: \""));
+    consolePrint_P(CS_STRING("Command not recognized: \""));
     consolePrint(buf);
     consolePrintLn("\"");
     
   } else if(matches > 1) {
-    consolePrint_P(PSTR("Ambiguos command: \""));
+    consolePrint_P(CS_STRING("Ambiguos command: \""));
     consolePrint(buf);
     consolePrintLn("\"");
     
@@ -303,20 +307,20 @@ void executeCommand(char *buf)
     
     case c_disarm:
       vpStatus.armed = false;
-      consoleNoteLn_P(PSTR("We're DISARMED"));
+      consoleNoteLn_P(CS_STRING("We're DISARMED"));
       break;
     
     case c_talk:
       vpStatus.silent = false;
-      consoleNoteLn_P(PSTR("Hello world"));
+      consoleNoteLn_P(CS_STRING("Hello world"));
       break;
     
     case c_test:
       if(numParams > 0)
 	logTestSet(param[0]);
 
-      consoleNote_P(PSTR("Current test channel = "));
-      consolePrintLn(nvState.testNum);
+      consoleNote_P(CS_STRING("Current test channel = "));
+      consolePrintLnI(nvState.testNum);
       break;
 
     case c_gear:
@@ -325,7 +329,7 @@ void executeCommand(char *buf)
       break;
       
     case c_calibrate:
-      consoleNoteLn_P(PSTR("Receiver calibration STARTED"));
+      consoleNoteLn_P(CS_STRING("Receiver calibration STARTED"));
       calibStart();
       break;
 
@@ -333,8 +337,8 @@ void executeCommand(char *buf)
       if(numParams > 0) {
 	vpParam.roll_C
 	  = param[0]/RADIAN/powf(vpDerived.minimumIAS, stabilityAileExp2_c);
-	consoleNote_P(PSTR("Roll rate K = "));
-	consolePrintLn(vpParam.roll_C);
+	consoleNote_P(CS_STRING("Roll rate K = "));
+	consolePrintLnF(vpParam.roll_C);
 	storeNVState();
       }
       break;
@@ -345,7 +349,7 @@ void executeCommand(char *buf)
       
       vpParam.alphaRef +=
 	(int16_t) ((1L<<16) * (vpFlight.alpha - offset / RADIAN) / CIRCLE);
-      consoleNoteLn_P(PSTR("Alpha calibrated"));
+      consoleNoteLn_P(CS_STRING("Alpha calibrated"));
       break;
 
     case c_gauge:
@@ -361,14 +365,14 @@ void executeCommand(char *buf)
       break;
 	
     case c_store:
-      consoleNoteLn_P(PSTR("Params & NV state stored"));
+      consoleNoteLn_P(CS_STRING("Params & NV state stored"));
       storeNVState();
       storeParams();
       backupParams();
       break;
 
     case c_defaults:
-      consoleNoteLn_P(PSTR("Default params restored"));
+      consoleNoteLn_P(CS_STRING("Default params restored"));
       defaultParams();
       break;
 
@@ -407,8 +411,8 @@ void executeCommand(char *buf)
 	nvState.logStamp = param[0];
 	storeNVState();
       }
-      consoleNote_P(PSTR("Current log stamp is "));
-      consolePrintLn(nvState.logStamp);  
+      consoleNote_P(CS_STRING("Current log stamp is "));
+      consolePrintLnUI(nvState.logStamp);  
       break;
 
     case c_model:
@@ -418,21 +422,21 @@ void executeCommand(char *buf)
 	setModel(param[0], true);
 	storeNVState();
       } else { 
-	consoleNote_P(PSTR("Current model is "));
-	consolePrintLn(nvState.model); 
+	consoleNote_P(CS_STRING("Current model is "));
+	consolePrintLnUI(nvState.model); 
       }
       break;
     
     case c_trim:
       if(numParams > 0)
 	vpControl.elevTrim = param[0]/100;
-      consoleNote_P(PSTR("Current elev trim(%) = "));
-      consolePrintLn(vpControl.elevTrim*100); 
+      consoleNote_P(CS_STRING("Current elev trim(%) = "));
+      consolePrintLnF(vpControl.elevTrim*100); 
       break;
       
     case c_params:
-     consoleNote_P(PSTR("SETTINGS (MODEL "));
-      consolePrint(nvState.model);
+     consoleNote_P(CS_STRING("SETTINGS (MODEL "));
+      consolePrintUI(nvState.model);
       consolePrintLn(")");
       printParams();
       break;
@@ -446,12 +450,12 @@ void executeCommand(char *buf)
       break;
 
     case c_curve:
-      consoleNoteLn_P(PSTR("Feed-forward curve"));
+      consoleNoteLn_P(CS_STRING("Feed-forward curve"));
   
       for(float aR = -1; aR < 1.1; aR += 0.1)
 	printCoeffElement(-1, 1, vpDerived.maxAlpha*aR*RADIAN, alphaPredictInverse(vpDerived.maxAlpha*aR));
 
-      consoleNoteLn_P(PSTR("Coeff of lift"));
+      consoleNoteLn_P(CS_STRING("Coeff of lift"));
   
       for(float aR = -0.5; aR < 1.1; aR += 0.1)
 	printCoeffElement(-0.2, 1, vpDerived.maxAlpha*aR*RADIAN,
@@ -501,53 +505,51 @@ void executeCommand(char *buf)
       */
       
     case c_report:
-      consoleNote_P(PSTR("Idle avg = "));
-      consolePrintLn(idleAvg*100,1);
-      consoleNote_P(PSTR("PPM frequency = "));
-      consolePrint(ppmFreq);
-      consolePrint_P(PSTR(" channels = "));
-      consolePrintLn(ppmNumChannels);
-      consoleNote_P(PSTR("Sim link frequency = "));
-      consolePrintLn(simInputFreq);
-      consoleNote_P(PSTR("Alpha = "));
-      consolePrint(vpFlight.alpha*RADIAN);
-      consolePrint_P(PSTR(" (field = "));
-      consolePrint(fieldStrength*100);
-      consolePrint_P(PSTR("%)"));
+      consoleNote_P(CS_STRING("Idle avg = "));
+      consolePrintLnFP(idleAvg*100,1);
+      consoleNote_P(CS_STRING("PPM frequency = "));
+      consolePrintF(ppmFreq);
+      consolePrint_P(CS_STRING(" channels = "));
+      consolePrintLnI(ppmNumChannels);
+      consoleNote_P(CS_STRING("Sim link frequency = "));
+      consolePrintLnF(simInputFreq);
+      consoleNote_P(CS_STRING("Alpha = "));
+      consolePrintF(vpFlight.alpha*RADIAN);
+      consolePrint_P(CS_STRING(" (field = "));
+      consolePrintF(fieldStrength*100);
+      consolePrint_P(CS_STRING("%)"));
       if(vpStatus.alphaFailed)
-	consolePrintLn_P(PSTR(" FAIL"));
+	consolePrintLn_P(CS_STRING(" FAIL"));
       else
-	consolePrintLn_P(PSTR(" OK"));
+	consolePrintLn_P(CS_STRING(" OK"));
 
-      consoleNoteLn_P(PSTR("Sensor entropy"));
-      consoleNote_P(PSTR("  Alpha = "));
-      consolePrint(alphaEntropyAcc.output());
-      consolePrint_P(PSTR("  IAS = "));
-      consolePrintLn(iasEntropyAcc.output());
+      consoleNoteLn_P(CS_STRING("Sensor entropy"));
+      consoleNote_P(CS_STRING("  Alpha = "));
+      consolePrintF(alphaEntropyAcc.output());
+      consolePrint_P(CS_STRING("  IAS = "));
+      consolePrintLnF(iasEntropyAcc.output());
 
-      consoleNote_P(PSTR("Warning flags :"));
+      consoleNote_P(CS_STRING("Warning flags :"));
       if(pciWarn)
-	consolePrint_P(PSTR(" SPURIOUS_PCINT"));
+	consolePrint_P(CS_STRING(" SPURIOUS_PCINT"));
       if(ppmWarnShort)
-	consolePrint_P(PSTR(" PPM_SHORT"));
+	consolePrint_P(CS_STRING(" PPM_SHORT"));
       if(ppmWarnSlow)
-	consolePrint_P(PSTR(" PPM_SLOW"));
-      if(eepromDevice.warning())
-	consolePrint_P(PSTR(" EEPROM_FAILED"));
+	consolePrint_P(CS_STRING(" PPM_SLOW"));
       if(vpStatus.pitotFailed)
-	consolePrint_P(PSTR(" IAS_FAILED"));
+	consolePrint_P(CS_STRING(" IAS_FAILED"));
       
       consolePrintLn("");
 
-      consoleNote_P(PSTR("Log write bandwidth = "));
-      consolePrint(logBandWidth);
-      consolePrintLn_P(PSTR(" bytes/sec"));
+      consoleNote_P(CS_STRING("Log write bandwidth = "));
+      consolePrintF(logBandWidth);
+      consolePrintLn_P(CS_STRING(" bytes/sec"));
       
       break;
       
     case c_reset:
       pciWarn = ppmWarnShort = ppmWarnSlow = false;
-      consoleNoteLn_P(PSTR("Warning flags reset"));
+      consoleNoteLn_P(CS_STRING("Warning flags reset"));
       break;
 
     case c_airspeed:
@@ -627,82 +629,82 @@ void executeCommand(char *buf)
 	if(fn != fn_invalid)
 	  vpParam.functionMap[(uint8_t) param[0]] = fn;
 	else
-	  consoleNoteLn_P(PSTR("Invalid function"));
+	  consoleNoteLn_P(CS_STRING("Invalid function"));
       } else {
-	consoleNoteLn_P(PSTR("SERVO  FUNCTION"));
-	consoleNoteLn_P(PSTR("---------------------"));
+	consoleNoteLn_P(CS_STRING("SERVO  FUNCTION"));
+	consoleNoteLn_P(CS_STRING("---------------------"));
 
 	for(int i = 0; i < MAX_SERVO; i++) {
-	  consoleNote_P(PSTR("  "));
-	  consolePrint(i);
+	  consoleNote_P(CS_STRING("  "));
+	  consolePrintI(i);
 	  consoleTab(10);
 
 	  switch(vpParam.functionMap[i]) {
 	  case fn_leftaileron:
-	    consolePrintLn_P(PSTR("aileron (left)"));
+	    consolePrintLn_P(CS_STRING("aileron (left)"));
 	    break;
 	  case fn_rightaileron:
-	    consolePrintLn_P(PSTR("aileron (right)"));
+	    consolePrintLn_P(CS_STRING("aileron (right)"));
 	    break;
 	  case fn_leftflap:
-	    consolePrintLn_P(PSTR("flap (left)"));
+	    consolePrintLn_P(CS_STRING("flap (left)"));
 	    break;
 	  case fn_rightflap:
-	    consolePrintLn_P(PSTR("flap (right)"));
+	    consolePrintLn_P(CS_STRING("flap (right)"));
 	    break;
 	  case fn_leftcanard:
-	    consolePrintLn_P(PSTR("canard (left)"));
+	    consolePrintLn_P(CS_STRING("canard (left)"));
 	    break;
 	  case fn_rightcanard:
-	    consolePrintLn_P(PSTR("canard (right)"));
+	    consolePrintLn_P(CS_STRING("canard (right)"));
 	    break;
 	  case fn_lefttail:
-	    consolePrintLn_P(PSTR("tail (left)"));
+	    consolePrintLn_P(CS_STRING("tail (left)"));
 	    break;
 	  case fn_righttail:
-	    consolePrintLn_P(PSTR("tail (right)"));
+	    consolePrintLn_P(CS_STRING("tail (right)"));
 	    break;
 	  case fn_leftthrustvert:
-	    consolePrintLn_P(PSTR("vertical thrust (left)"));
+	    consolePrintLn_P(CS_STRING("vertical thrust (left)"));
 	    break;
 	  case fn_rightthrustvert:
-	    consolePrintLn_P(PSTR("vertical thrust (right)"));
+	    consolePrintLn_P(CS_STRING("vertical thrust (right)"));
 	    break;
 	  case fn_leftelevon:
-	    consolePrintLn_P(PSTR("elevon (left)"));
+	    consolePrintLn_P(CS_STRING("elevon (left)"));
 	    break;
 	  case fn_rightelevon:
-	    consolePrintLn_P(PSTR("elevon (right)"));
+	    consolePrintLn_P(CS_STRING("elevon (right)"));
 	    break;
 	  case fn_aileron:
-	    consolePrintLn_P(PSTR("aileron"));
+	    consolePrintLn_P(CS_STRING("aileron"));
 	    break;
 	  case fn_elevator:
-	    consolePrintLn_P(PSTR("elevator"));
+	    consolePrintLn_P(CS_STRING("elevator"));
 	    break;
 	  case fn_rudder:
-	    consolePrintLn_P(PSTR("rudder"));
+	    consolePrintLn_P(CS_STRING("rudder"));
 	    break;
 	  case fn_throttle:
-	    consolePrintLn_P(PSTR("throttle"));
+	    consolePrintLn_P(CS_STRING("throttle"));
 	    break;
 	  case fn_gear:
-	    consolePrintLn_P(PSTR("landing gear"));
+	    consolePrintLn_P(CS_STRING("landing gear"));
 	    break;
 	  case fn_steering:
-	    consolePrintLn_P(PSTR("nose wheel"));
+	    consolePrintLn_P(CS_STRING("nose wheel"));
 	    break;
 	  case fn_brake:
-	    consolePrintLn_P(PSTR("brake"));
+	    consolePrintLn_P(CS_STRING("brake"));
 	    break;
 	  case fn_thrusthoriz:
-	    consolePrintLn_P(PSTR("horizontal thrust"));
+	    consolePrintLn_P(CS_STRING("horizontal thrust"));
 	    break;
 	  case fn_null:
-	    consolePrintLn_P(PSTR("---"));
+	    consolePrintLn_P(CS_STRING("---"));
 	    break;
 	  default:
-	    consolePrintLn_P(PSTR("<invalid>"));
+	    consolePrintLn_P(CS_STRING("<invalid>"));
 	    break;
 	  }
 	}
@@ -710,7 +712,7 @@ void executeCommand(char *buf)
       break;
 
     default:
-      consolePrint_P(PSTR("Sorry, command not implemented: \""));
+      consolePrint_P(CS_STRING("Sorry, command not implemented: \""));
       consolePrint(buf);
       consolePrintLn("\"");
       break;

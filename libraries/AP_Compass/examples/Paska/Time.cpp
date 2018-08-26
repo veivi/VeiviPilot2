@@ -1,17 +1,23 @@
 #include "Objects.h"
-#include "Time.h"
 
-uint32_t currentMicros()
+extern "C" {
+#include "Time.h"
+}
+  
+uint32_t currentTime;
+  
+extern "C" uint32_t currentMicros()
 {
-  return hal.scheduler->micros();
+  currentTime = hal.scheduler->micros();
+  return currentTime;
 }
     
-uint32_t currentMillis()
+extern "C" uint32_t currentMillis()
 {
   return hal.scheduler->millis();
 }
     
-void delayMicros(uint32_t x)
+extern "C" void delayMicros(uint32_t x)
 {
   uint32_t current = currentMicros();
   while(currentMicros() < current+x);

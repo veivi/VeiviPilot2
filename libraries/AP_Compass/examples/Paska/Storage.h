@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 #include "NewI2C.h"
 #include "Status.h"
@@ -6,6 +8,7 @@
 
 extern uint32_t writeBytesCum;
 
+bool eepromIsOnline(void);
 void waitEEPROM(uint32_t addr);
 void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes);
 bool readEEPROM(uint32_t addr, uint8_t *data, int size);

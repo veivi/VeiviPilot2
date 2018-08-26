@@ -73,19 +73,18 @@
 #define SSD1306_TOKEN_DATA     (1<<6)
 #define SSD1306_TOKEN_COMMAND  0
 
-extern I2CDevice displayDevice;
-
 static uint8_t displayBuffer[16*8];
 static uint8_t cursorCol, cursorRow;
 static int8_t modifiedLeft[8], modifiedRight[8];
 static bool inverseVideo = false;
+static BaseI2CTarget_t target = { "display" };
 
 static bool SSD1306_transmitBuffers(const I2CBuffer_t *buffers, int numBuffers) 
 {
-  if(!displayDevice.online())
+  if(!basei2cIsOnline(&target))
     return false;
   
-  return displayDevice.invoke(I2c.write(SSD1306_ADDR, buffers, numBuffers));
+  return basei2cInvoke(&target, I2c.write(SSD1306_ADDR, buffers, numBuffers));
 }
 
 static bool SSD1306_transmit(uint8_t token, const uint8_t *data, uint8_t bytes) 
@@ -311,7 +310,7 @@ void obdRefresh()
   static bool initialized = false;
   static uint8_t row;
 
-  if(!displayDevice.online()) {
+  if(!basei2cIsOnline(&target)) {
     initialized = false;
     return;
   }

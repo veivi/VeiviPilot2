@@ -1,12 +1,9 @@
 #ifndef NEWI2C_H
 #define NEWI2C_H
 
-#include <avr/io.h>
-
-typedef struct {
-    const uint8_t *data;
-    uint8_t size;
-} I2CBuffer_t;
+extern "C" {
+#include "BaseI2C.h"
+}
 
 class NewI2C
 {
@@ -38,20 +35,6 @@ class NewI2C
     uint8_t returnStatus;
     uint8_t nack;
     static uint16_t timeOutDelay;
-};
-
-class I2CDevice {
- public:
-  I2CDevice(const char *name);
-  bool invoke(uint8_t status);
-  bool online();
-  bool warning();
-
- private:
-  bool warn, failed;
-  int failCount;
-  uint32_t failedAt, backoff;
-  const char *name;
 };
 
 extern NewI2C I2c;

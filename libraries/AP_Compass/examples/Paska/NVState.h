@@ -2,7 +2,6 @@
 #define NVSTATE_H
 
 #include <stdint.h>
-#include <AP_ProgMem/AP_ProgMem.h>
 
 #define NAME_LEN     8
 #define MAX_CH       8
@@ -99,7 +98,6 @@ struct NVStateRecord {
 extern struct ParamRecord vpParam;
 extern struct NVStateRecord nvState;
 extern struct DerivedParams vpDerived;
-extern const prog_char_t *updateDescription;
 
 void defaultParams(void);
 bool setModel(int model, bool verbose);

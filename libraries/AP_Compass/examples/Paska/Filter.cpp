@@ -1,8 +1,11 @@
 #include "Filter.h"
-#include "Console.h"
 #include "NVState.h"
 #include "Math.h"
 
+extern "C" {
+#include "Console.h"
+}
+  
 void Median3Filter::input(float v)
 {
   memory[ptr++] = v;
@@ -155,7 +158,7 @@ float AlphaBuffer::output(void) {
     sum = 0.0;
     length = 0;
   } else if(!warn) {
-    consoleNoteLn_P(PSTR("Alpha/IAS buffer starved"));
+    consoleNoteLn_P(CS_STRING("Alpha/IAS buffer starved"));
     warn = true;
   }  
   return value;

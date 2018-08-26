@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "Filter.h"
-#include "Console.h"
 
 class Controller {
 public:

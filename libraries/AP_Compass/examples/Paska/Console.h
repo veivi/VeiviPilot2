@@ -1,49 +1,41 @@
+#ifndef CONSOLE_H
+#define CONSOLE_H
+
 #include <stdint.h>
-#include <stdarg.h>
-#include <AP_ProgMem/AP_ProgMem.h>
+#include "StaP.h"
 
 void consoleFlush();
 void consoleCR();
 void consoleNL();
-void consolePrint(const char c);
+void consolePrintC(const char c);
 void consoleTab(int i);
-void consoleNote_P(const prog_char_t *s);
+void consoleNote_P(const CS_CHAR_T *s);
 void consoleNote(const char *s);
-void consolePanic_P(const prog_char_t *s);
+void consolePanic_P(const CS_CHAR_T *s);
 void consolePanic(const char *s);
-void consoleNoteLn_P(const prog_char_t *s);
+void consoleNoteLn_P(const CS_CHAR_T *s);
 void consoleNoteLn(const char *s);
-void consolePrint_P(const prog_char_t *s);
+void consolePrint_P(const CS_CHAR_T *s);
 void consolePrint(const char *s);
-void consolePrint(const char *s, int);
-void consolePrint(float v, int p);
-void consolePrint(float v);
-void consolePrint(double v, int p);
-void consolePrint(double v);
-void consolePrint(int v);
-void consolePrint(unsigned int v);
-void consolePrint(long v);
-void consolePrint(unsigned long v);
-void consolePrint(uint8_t v);
-void consolePrintLn_P(const prog_char_t *s);
+void consolePrintN(const char *s, int);
+void consolePrintFP(float v, int p);
+void consolePrintF(float v);
+void consolePrintDP(double v, int p);
+void consolePrintD(double v);
+void consolePrintI(int v);
+void consolePrintUI(unsigned int v);
+void consolePrintUI8(uint8_t v);
+void consolePrintL(long v);
+void consolePrintUL(unsigned long v);
+void consolePrintLn_P(const CS_CHAR_T *s);
 void consolePrintLn(const char *s);
-void consolePrintLn(float v);
-void consolePrintLn(float v, int p);
-void consolePrintLn(double v);
-void consolePrintLn(double v, int p);
-void consolePrintLn(int v);
-void consolePrintLn(unsigned int v);
-void consolePrintLn(uint8_t v);
-void consolePrintLn(long v);
-void consolePrintLn(unsigned long v);
+void consolePrintLnF(float v);
+void consolePrintLnFP(float v, int p);
+void consolePrintLnD(double v);
+void consolePrintLnDP(double v, int p);
+void consolePrintLnI(int v);
+void consolePrintLnUI(unsigned int v);
+void consolePrintLnL(long v);
+void consolePrintLnUL(unsigned long v);
 
-#ifdef CONSOLE_PRIVATE_H
-void consolevNotef(const char *s, va_list argp);
-void consoleNotef(const char *s, ...);
-void consoleNotefLn(const char *s, ...);
-void consolevPrintf(const char *s, va_list argp);
-void consolePrintf(const char *s, ...);
-void consolePrintfLn(const char *s, ...);
 #endif
-
-

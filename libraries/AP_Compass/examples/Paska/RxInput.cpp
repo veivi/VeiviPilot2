@@ -1,10 +1,13 @@
 #include "RxInput.h"
 #include "Interrupt.h"
-#include "Console.h"
 #include "Objects.h"
 #include "NVState.h"
 #include "Math.h"
 #include <avr/io.h>
+
+extern "C" {
+#include "Console.h"
+}
 
 //
 // RC input
@@ -45,9 +48,9 @@ Button rightDownButton(-1.0), rightUpButton(0.33),
 struct RxInputRecord *rxInputIndex0[8], *rxInputIndex1[8], *rxInputIndex2[8];
 struct RxInputRecord **rxInputIndexList[] = { rxInputIndex0, rxInputIndex1, rxInputIndex2 };
 uint8_t log2Table[1<<8];
-bool_t pciWarn;
+bool pciWarn;
 
-bool_t inputValid(struct RxInputRecord *record)
+bool inputValid(struct RxInputRecord *record)
 {
   return record->pulseCount > 0;
 }
@@ -75,7 +78,7 @@ float inputValue(struct RxInputRecord *record)
 
 void rxInputInit(struct RxInputRecord *record)
 {
-  static bool_t initialized = false;
+  static bool initialized = false;
 
   if(!initialized) {
     for(int i = 1; i < (1<<8); i++) {
@@ -99,7 +102,7 @@ void rxInputInit(struct RxInputRecord *record)
     PCICR |= pcIntMask[port->pci];
     PERMIT;
   } else
-      consoleNoteLn("PASKA PCI-PORTTI");
+    consoleNoteLn_P(CS_STRING("PASKA PCI-PORTTI"));
 }
 
 extern "C" void rxInterrupt_callback(uint8_t num)
@@ -159,7 +162,7 @@ int8_t readSwitch(struct SwitchRecord *record)
   return record->state;
 }
 
-float applyNullZone(float value, float nz, bool_t *pilotInput)
+float applyNullZone(float value, float nz, bool *pilotInput)
 {
   const float zone = 1.0 - nz;
   

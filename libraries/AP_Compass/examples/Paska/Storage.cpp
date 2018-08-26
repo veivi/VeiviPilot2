@@ -1,15 +1,17 @@
 #include <string.h>
 #include "Storage.h"
 #include "NewI2C.h"
+
+extern "C" {
 #include "Console.h"
 #include "Time.h"
-  
+}
+
 #define CACHE_PAGE (1L<<7)
 #define PAGE_MASK ~(CACHE_PAGE-1)
 #define EEPROM_I2C_ADDR 80
 
-extern NewI2C I2c;
-extern I2CDevice eepromDevice;
+static BaseI2CTarget_t target = { "eeprom" };
 
 static uint32_t lastWriteTime;
 uint8_t cacheData[CACHE_PAGE];
@@ -17,6 +19,11 @@ bool cacheFlag[CACHE_PAGE];
 bool cacheValid, cacheModified;
 uint32_t cacheTag;
 uint32_t writeBytesCum;
+
+bool eepromIsOnline(void)
+{
+  return basei2cIsOnline(&target);
+}
 
 void waitEEPROM(uint32_t addr)
 {
@@ -26,33 +33,30 @@ void waitEEPROM(uint32_t addr)
     
   // Write latency not met, wait for acknowledge
 
-  eepromDevice.invoke
-    (I2c.wait((uint8_t) (EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+  basei2cInvoke(&target, I2c.wait((uint8_t) (EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 }
 
 void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes) 
 {
-  if(!eepromDevice.online())
+  if(!basei2cIsOnline(&target))
     return;
     
   waitEEPROM(addr);
-  eepromDevice.invoke
-    (I2c.write(  (uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
-		 (uint16_t) (addr & 0xFFFFL), 
-		 data, bytes));
+  basei2cInvoke(&target, I2c.write(  (uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
+				     (uint16_t) (addr & 0xFFFFL), 
+				     data, bytes));
 
   lastWriteTime = currentMillis();
 }
  
 bool readEEPROM(uint32_t addr, uint8_t *data, int size) 
 {
-  if(!eepromDevice.online())
+  if(!basei2cIsOnline(&target))
     return false;
     
   waitEEPROM(addr);
 
-  return eepromDevice.invoke
-    (I2c.read((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
+  return basei2cInvoke(&target, I2c.read((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
 }
 
 void cacheFlush(void)

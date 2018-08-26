@@ -3,9 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "Time.h"
 #include "Math.h"
-#include "Console.h"
 #include "Filter.h"
 #include "Controller.h"
 #include "NewI2C.h"
@@ -22,6 +20,13 @@
 #include "Objects.h"
 #include "AlphaPilot.h"
 #include "TOCTest.h"
+
+extern "C" {
+#include "Console.h"
+#include "Datagram.h"
+#include "CRC16.h"
+#include "Time.h"
+}
 
 //
 // Misc local variables
@@ -48,7 +53,7 @@ void alphaTask()
   int16_t raw = 0;
   static int16_t prev = 0;
   
-  if(alphaDevice.online() && alphaDevice.invoke(AS5048B_alpha(&raw))) {
+  if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     alphaFilter.input(CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
     alphaEntropy += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
@@ -158,7 +163,7 @@ void airspeedTask()
   int16_t raw = 0;
   static int16_t prev = 0;
   
-  if(pitotDevice.online() && pitotDevice.invoke(MS4525DO_pressure(&raw))) {
+  if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     pressureBuffer.input((float) raw);
     iasEntropy += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
@@ -239,14 +244,14 @@ void receiverTask()
       && vpInput.throttle < 0.25
       && vpInput.aile < -0.75 && vpInput.elev > 0.75 ) {
     if(!vpMode.radioFailSafe) {
-      consoleNoteLn_P(PSTR("Radio failsafe mode ENABLED"));
+      consoleNoteLn_P(CS_STRING("Radio failsafe mode ENABLED"));
       vpMode.radioFailSafe = true;
       vpMode.alphaFailSafe = vpMode.sensorFailSafe = vpMode.takeOff = false;
       // Allow the config task to react synchronously
       configurationTask();
     }
   } else if(vpMode.radioFailSafe) {
-    consoleNoteLn_P(PSTR("Radio failsafe mode DISABLED"));
+    consoleNoteLn_P(CS_STRING("Radio failsafe mode DISABLED"));
     vpMode.radioFailSafe = false;
   }
 
@@ -260,7 +265,7 @@ void receiverTask()
     // We're seeing an abrupt change, apply delay from now on
     
     if(!inputDelayed) {
-      consoleNoteLn_P(PSTR("Seeing ABRUPT aile/elev input, delay applied"));
+      consoleNoteLn_P(CS_STRING("Seeing ABRUPT aile/elev input, delay applied"));
       elevDelay.setDelay(abruptDelay_c*CONTROL_HZ);
       aileDelay.setDelay(abruptDelay_c*CONTROL_HZ);
       inputDelayed = true;
@@ -271,7 +276,7 @@ void receiverTask()
   } else if(inputDelayed && currentTime - lastAbruptInput > abruptDelay_c*1e6) {
     // No abrupt changes for a while, remove the delay
     
-    consoleNoteLn_P(PSTR("Aile/elev input seems SMOOTH"));
+    consoleNoteLn_P(CS_STRING("Aile/elev input seems SMOOTH"));
     elevDelay.setDelay(0);
     aileDelay.setDelay(0);
     inputDelayed = false;
@@ -389,7 +394,7 @@ void sensorTaskSlow()
 
   uint16_t raw = 0;
   
-  if(alphaDevice.online() && alphaDevice.invoke(AS5048B_field(&raw))) {
+  if(AS5048B_isOnline() && AS5048B_field(&raw)) {
     fieldStrength = (float) raw / (1L<<16);
   }
 }
@@ -462,7 +467,7 @@ float s_Ku_ref, i_Ku_ref;
 static void failsafeDisable()
 {
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe) {
-    consoleNoteLn_P(PSTR("Alpha/Sensor failsafe DISABLED"));
+    consoleNoteLn_P(CS_STRING("Alpha/Sensor failsafe DISABLED"));
     vpMode.alphaFailSafe = vpMode.sensorFailSafe = false;
   }
 }
@@ -490,9 +495,9 @@ void statusTask()
   //
 
   vpStatus.pitotFailed = 
-    vpStatus.fault == 1 || (!vpStatus.simulatorLink && !pitotDevice.online());
+    vpStatus.fault == 1 || (!vpStatus.simulatorLink && !MS4525DO_isOnline());
   vpStatus.alphaFailed = 
-    vpStatus.fault == 2 || (!vpStatus.simulatorLink && !alphaDevice.online());
+    vpStatus.fault == 2 || (!vpStatus.simulatorLink && !AS5048B_isOnline());
 
   //
   // Pitot block detection
@@ -502,14 +507,14 @@ void statusTask()
 
   if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - iasFilterSlow.output()) > 0.5) {
     if(vpStatus.pitotBlocked) {
-      consoleNoteLn_P(PSTR("Pitot block CLEARED"));
+      consoleNoteLn_P(CS_STRING("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
     }
     
     iasLastAlive = currentTime;
   } else if(!vpStatus.simulatorLink
 	    && currentTime - iasLastAlive > 10.0e6 && !vpStatus.pitotBlocked) {
-    consoleNoteLn_P(PSTR("Pitot appears BLOCKED"));
+    consoleNoteLn_P(CS_STRING("Pitot appears BLOCKED"));
     vpStatus.pitotBlocked = true;
   }
   
@@ -521,21 +526,21 @@ void statusTask()
 
   if(vpStatus.pitotFailed) {
     if(!vpStatus.positiveIAS) {
-      consoleNoteLn_P(PSTR("Pitot failed, positive IAS ASSUMED"));
+      consoleNoteLn_P(CS_STRING("Pitot failed, positive IAS ASSUMED"));
       vpStatus.positiveIAS = true;
     }
   } else if(iasFilter.output() < vpDerived.minimumIAS*RATIO(2/3)) {
     if(!vpStatus.positiveIAS)
       lastIAS = currentTime;
     else if(currentTime - lastIAS > 0.3e6) {
-      consoleNoteLn_P(PSTR("Positive airspeed LOST"));
+      consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
   } else {
     if(vpStatus.positiveIAS)
       lastIAS = currentTime;
     else if(currentTime - lastIAS > 0.3e6) {
-      consoleNoteLn_P(PSTR("We have POSITIVE AIRSPEED"));
+      consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
       vpStatus.positiveIAS = true;
     }
   }
@@ -558,14 +563,14 @@ void statusTask()
 
   if(motionDetected) {
     if(vpStatus.fullStop) {
-      consoleNoteLn_P(PSTR("We appear to be MOVING"));
+      consoleNoteLn_P(CS_STRING("We appear to be MOVING"));
       vpStatus.fullStop = false;
     }
     
     lastMotion = currentTime;
 
   } else if(currentTime - lastMotion > 5.0e6 && !vpStatus.fullStop) {
-    consoleNoteLn_P(PSTR("We have FULLY STOPPED"));
+    consoleNoteLn_P(CS_STRING("We have FULLY STOPPED"));
     vpStatus.fullStop = true;
     vpStatus.aloft = false;
   }
@@ -591,14 +596,14 @@ void statusTask()
       if(!vpStatus.alphaUnreliable)
 	lastAlphaLocked = currentTime;
       else if(currentTime - lastAlphaLocked > 0.1e6) {
-	consoleNoteLn_P(PSTR("Alpha sensor appears RELIABLE"));
+	consoleNoteLn_P(CS_STRING("Alpha sensor appears RELIABLE"));
 	vpStatus.alphaUnreliable = false;
       }
     } else {
       if(vpStatus.alphaUnreliable)
 	lastAlphaLocked = currentTime;
       else if(currentTime - lastAlphaLocked > 0.5e6) {
-	consoleNoteLn_P(PSTR("Alpha sensor UNRELIABLE"));
+	consoleNoteLn_P(CS_STRING("Alpha sensor UNRELIABLE"));
 	vpStatus.alphaUnreliable = true;
       }
     }
@@ -614,14 +619,14 @@ void statusTask()
     if(!vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.1e6) {
-      consoleNoteLn_P(PSTR("Stall RECOVERED"));
+      consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
       vpStatus.stall = false;
     }
   } else {
     if(vpStatus.stall)
       lastStall = currentTime;
     else if(currentTime - lastStall > 0.1e6) {
-      consoleNoteLn_P(PSTR("We're STALLING"));
+      consoleNoteLn_P(CS_STRING("We're STALLING"));
       vpStatus.stall = true;
     }
   }
@@ -632,12 +637,12 @@ void statusTask()
   
   if(vpFlight.alt > vpParam.floor + 5 || vpParam.floor < 1) {
     if(vpStatus.belowFloor)
-      consoleNoteLn_P(PSTR("We're ABOVE floor"));
+      consoleNoteLn_P(CS_STRING("We're ABOVE floor"));
     
     vpStatus.belowFloor = false;
   } else if(vpFlight.alt < vpParam.floor && !vpStatus.belowFloor) {
     vpStatus.belowFloor = true;
-    consoleNoteLn_P(PSTR("We're BELOW floor altitude"));
+    consoleNoteLn_P(CS_STRING("We're BELOW floor altitude"));
   }
 
   //
@@ -674,7 +679,7 @@ void statusTask()
      || !vpParam.haveGear || gearSel == 1 || !vpStatus.upright
      || vpFlight.IAS > vpDerived.minimumIAS*RATIO(3/2)) {
     if(vpStatus.weightOnWheels) {
-      consoleNoteLn_P(PSTR("Weight assumed to be OFF THE WHEELS"));
+      consoleNoteLn_P(CS_STRING("Weight assumed to be OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
       
@@ -685,14 +690,14 @@ void statusTask()
     if(!vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.3e6) {
-      consoleNoteLn_P(PSTR("Weight is probably OFF THE WHEELS"));
+      consoleNoteLn_P(CS_STRING("Weight is probably OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
       lastWoW = currentTime;
     else if(currentTime - lastWoW > 0.2e6) {
-      consoleNoteLn_P(PSTR("We seem to have WEIGHT ON WHEELS"));
+      consoleNoteLn_P(CS_STRING("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
   }
@@ -706,7 +711,7 @@ void configurationTask()
   
   if(leftUpButton.doublePulse() && !vpStatus.armed &&
      vpInput.throttle < 0.10 && vpInput.aile < -0.90 && vpInput.elev > 0.90) {
-    consoleNoteLn_P(PSTR("We're now ARMED"));
+    consoleNoteLn_P(CS_STRING("We're now ARMED"));
     vpStatus.armed = true;
     leftDownButton.reset();
     rightUpButton.reset();
@@ -736,12 +741,12 @@ void configurationTask()
     //
     
     if(!vpMode.alphaFailSafe) {
-      consoleNoteLn_P(PSTR("Alpha FAILSAFE"));
+      consoleNoteLn_P(CS_STRING("Alpha FAILSAFE"));
       vpMode.alphaFailSafe = true;
       logMark();
       
     } else if(!vpMode.sensorFailSafe) {
-      consoleNoteLn_P(PSTR("Total sensor FAILSAFE"));
+      consoleNoteLn_P(CS_STRING("Total sensor FAILSAFE"));
       vpMode.sensorFailSafe = true;
       logMark();
       
@@ -757,9 +762,9 @@ void configurationTask()
       gearSel = !gearSel;
 
       if(gearSel)
-	consoleNoteLn_P(PSTR("Gear UP"));
+	consoleNoteLn_P(CS_STRING("Gear UP"));
       else
-	consoleNoteLn_P(PSTR("Gear DOWN"));
+	consoleNoteLn_P(CS_STRING("Gear DOWN"));
     }
     
     vpMode.autoThrottle = false;
@@ -781,7 +786,7 @@ void configurationTask()
     }
 
     if(vpMode.autoThrottle)
-      consoleNoteLn_P(PSTR("Autothrottle ENABLED"));
+      consoleNoteLn_P(CS_STRING("Autothrottle ENABLED"));
   }
 
   //
@@ -791,13 +796,13 @@ void configurationTask()
   if(RATEBUTTON.depressed() && !vpMode.halfRate) {
     // Continuous: half-rate enable
     
-    consoleNoteLn_P(PSTR("Half-rate ENABLED"));
+    consoleNoteLn_P(CS_STRING("Half-rate ENABLED"));
     vpMode.halfRate = true;
     
   } else if(RATEBUTTON.singlePulse() && vpMode.halfRate) {
     // Single pulse: half-rate disable
     
-    consoleNoteLn_P(PSTR("Half-rate DISABLED"));
+    consoleNoteLn_P(CS_STRING("Half-rate DISABLED"));
     vpMode.halfRate = false;
   }
 
@@ -817,16 +822,16 @@ void configurationTask()
       bool prevMode = vpMode.takeOff;
       
       if(!vpMode.takeOff) {
-	consoleNoteLn_P(PSTR("TakeOff mode ENABLED"));
+	consoleNoteLn_P(CS_STRING("TakeOff mode ENABLED"));
 	vpMode.takeOff = true;
       }
 
       if(tocTestStatus(tocReportConsole)) {
-	consoleNoteLn_P(PSTR("T/o configuration is GOOD"));
+	consoleNoteLn_P(CS_STRING("T/o configuration is GOOD"));
 	vpStatus.aloft = false;
       } else {
 	consolePrintLn("");
-	consoleNoteLn_P(PSTR("T/o configuration test FAILED"));
+	consoleNoteLn_P(CS_STRING("T/o configuration test FAILED"));
 	vpMode.takeOff = prevMode;
       }
     }
@@ -838,7 +843,7 @@ void configurationTask()
     failsafeDisable();
     
     if(!vpMode.wingLeveler && !vpInput.ailePilotInput) {
-      consoleNoteLn_P(PSTR("Wing leveler ENABLED"));
+      consoleNoteLn_P(CS_STRING("Wing leveler ENABLED"));
       vpMode.wingLeveler = true;
     } 
   }
@@ -848,7 +853,7 @@ void configurationTask()
   //
 
   if(vpMode.autoThrottle && vpMode.slowFlight == (vpInput.throttle > RATIO(1/3))) {
-    consoleNoteLn_P(PSTR("Autothrottle DISABLED"));
+    consoleNoteLn_P(CS_STRING("Autothrottle DISABLED"));
     vpMode.autoThrottle = false;
   }
   
@@ -871,22 +876,22 @@ void configurationTask()
 
   if(flightModeSelectorValue == -1 || vpStatus.belowFloor) {
     if(!vpMode.slowFlight)
-      consoleNoteLn_P(PSTR("Slow flight mode ENABLED"));
+      consoleNoteLn_P(CS_STRING("Slow flight mode ENABLED"));
     vpMode.slowFlight = vpMode.bankLimiter = true;
   } else {
     if(vpMode.slowFlight) {
-      consoleNoteLn_P(PSTR("Slow flight mode DISABLED"));
+      consoleNoteLn_P(CS_STRING("Slow flight mode DISABLED"));
       vpMode.slowFlight = false;
     }
 
     if(flightModeSelectorValue == 0) {
       if(vpMode.bankLimiter)
-	consoleNoteLn_P(PSTR("Bank limiter DISABLED"));
+	consoleNoteLn_P(CS_STRING("Bank limiter DISABLED"));
     
       vpMode.bankLimiter = false;
     
     } else if(!vpMode.bankLimiter) {
-      consoleNoteLn_P(PSTR("Bank limiter ENABLED"));
+      consoleNoteLn_P(CS_STRING("Bank limiter ENABLED"));
       vpMode.bankLimiter = true;
     }
   }
@@ -912,18 +917,18 @@ void configurationTask()
   
   else if(!vpMode.test && vpInput.tuningKnob > 0.5) {
     vpMode.test = true;
-    consoleNoteLn_P(PSTR("Test mode ENABLED"));
+    consoleNoteLn_P(CS_STRING("Test mode ENABLED"));
 
   } else if(vpMode.test && vpInput.tuningKnob < 0) {
     vpMode.test = false;
-    consoleNoteLn_P(PSTR("Test mode DISABLED"));
+    consoleNoteLn_P(CS_STRING("Test mode DISABLED"));
   }
 
   // Wing leveler disable when stick input detected
   
   if(vpMode.wingLeveler && vpInput.ailePilotInput
      && fabsf(vpFlight.bank) > 7.5/RADIAN) {
-    consoleNoteLn_P(PSTR("Wing leveler DISABLED"));
+    consoleNoteLn_P(CS_STRING("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
 
@@ -931,7 +936,7 @@ void configurationTask()
 
   if(vpMode.takeOff && vpStatus.positiveIAS
      && (vpFlight.IAS > vpDerived.minimumIAS || vpFlight.alpha > vpDerived.thresholdAlpha))  {
-    consoleNoteLn_P(PSTR("TakeOff COMPLETED"));
+    consoleNoteLn_P(CS_STRING("TakeOff COMPLETED"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
     
@@ -1167,8 +1172,8 @@ void trimTask()
       vpControl.elevTrim = vpOutput.elev - vpInput.elev;
     }
     
-    consoleNote_P(PSTR("Elev trim adjusted to "));
-    consolePrintLn(vpControl.elevTrim, 2);
+    consoleNote_P(CS_STRING("Elev trim adjusted to "));
+    consolePrintLnFP(vpControl.elevTrim, 2);
   }
 
   prevMode = vpMode.slowFlight;
@@ -1200,155 +1205,155 @@ void gaugeTask()
     for(int g = 0; g < gaugeCount; g++) {
       switch(gaugeVariable[g]) {
       case 1:
-	consolePrint_P(PSTR(" alpha = "));
-	consolePrint(vpFlight.alpha*RADIAN, 1);
-	consolePrint_P(PSTR(" ("));
-	consolePrint(fieldStrength*100, 1);
-	consolePrint_P(PSTR("%)"));
+	consolePrint_P(CS_STRING(" alpha = "));
+	consolePrintFP(vpFlight.alpha*RADIAN, 1);
+	consolePrint_P(CS_STRING(" ("));
+	consolePrintFP(fieldStrength*100, 1);
+	consolePrint_P(CS_STRING("%)"));
 	consoleTab(25);
-	consolePrint_P(PSTR(" IAS,K(m/s) = "));
-	consolePrint((int) (vpFlight.IAS/KNOT));
-	consolePrint_P(PSTR(" ("));
-	consolePrint(vpFlight.IAS, 1);
-	consolePrint_P(PSTR(")"));
+	consolePrint_P(CS_STRING(" IAS,K(m/s) = "));
+	consolePrintI((int) (vpFlight.IAS/KNOT));
+	consolePrint_P(CS_STRING(" ("));
+	consolePrintFP(vpFlight.IAS, 1);
+	consolePrint_P(CS_STRING(")"));
 	consoleTab(50);
-	consolePrint_P(PSTR(" hdg = "));
-	consolePrint(vpFlight.heading);
+	consolePrint_P(CS_STRING(" hdg = "));
+	consolePrintI(vpFlight.heading);
 	consoleTab(65);
-	consolePrint_P(PSTR(" alt = "));
+	consolePrint_P(CS_STRING(" alt = "));
 
 	tmp = vpFlight.alt/FOOT;
 	
 	if(tmp < 100)
-	  consolePrint(tmp);
+	  consolePrintI(tmp);
 	else
-	  consolePrint(((tmp+5)/10)*10);
+	  consolePrintI(((tmp+5)/10)*10);
 	
 	break;
 
       case 2:
-	consolePrint_P(PSTR(" alpha(target) = "));
-	consolePrint(vpFlight.alpha*RADIAN);
-	consolePrint_P(PSTR(" ("));
-	consolePrint(vpControl.targetAlpha*RADIAN);
-	consolePrint_P(PSTR(")"));
+	consolePrint_P(CS_STRING(" alpha(target) = "));
+	consolePrintF(vpFlight.alpha*RADIAN);
+	consolePrint_P(CS_STRING(" ("));
+	consolePrintF(vpControl.targetAlpha*RADIAN);
+	consolePrint_P(CS_STRING(")"));
 	consoleTab(25);
-	consolePrint_P(PSTR(" vpFlight.pitchR(target) = "));
-	consolePrint(vpFlight.pitchR*RADIAN, 1);
-	consolePrint_P(PSTR(" ("));
-	consolePrint(vpControl.targetPitchR*RADIAN);
-	consolePrint_P(PSTR(")"));
+	consolePrint_P(CS_STRING(" vpFlight.pitchR(target) = "));
+	consolePrintFP(vpFlight.pitchR*RADIAN, 1);
+	consolePrint_P(CS_STRING(" ("));
+	consolePrintF(vpControl.targetPitchR*RADIAN);
+	consolePrint_P(CS_STRING(")"));
 	break;
 	
       case 4:
-	consolePrint_P(PSTR(" bank = "));
-	consolePrint(vpFlight.bank*RADIAN, 2);
-	consolePrint_P(PSTR(" pitch = "));
-	consolePrint(vpFlight.pitch*RADIAN, 2);
-	consolePrint_P(PSTR(" heading = "));
-	consolePrint(vpFlight.heading);
-	consolePrint_P(PSTR(" alt = "));
-	consolePrint(vpFlight.alt);
-	consolePrint_P(PSTR(" ball = "));
-	consolePrint(ball.output(), 2);
+	consolePrint_P(CS_STRING(" bank = "));
+	consolePrintFP(vpFlight.bank*RADIAN, 2);
+	consolePrint_P(CS_STRING(" pitch = "));
+	consolePrintFP(vpFlight.pitch*RADIAN, 2);
+	consolePrint_P(CS_STRING(" heading = "));
+	consolePrintF(vpFlight.heading);
+	consolePrint_P(CS_STRING(" alt = "));
+	consolePrintF(vpFlight.alt);
+	consolePrint_P(CS_STRING(" ball = "));
+	consolePrintFP(ball.output(), 2);
 	break;
 
       case 5:
-	consolePrint_P(PSTR(" rollRate = "));
-	consolePrint(vpFlight.rollR*RADIAN, 1);
-	consolePrint_P(PSTR(" pitchRate = "));
-	consolePrint(vpFlight.pitchR*RADIAN, 1);
-	consolePrint_P(PSTR(" yawRate = "));
-	consolePrint(vpFlight.yawR*RADIAN, 1);
+	consolePrint_P(CS_STRING(" rollRate = "));
+	consolePrintFP(vpFlight.rollR*RADIAN, 1);
+	consolePrint_P(CS_STRING(" pitchRate = "));
+	consolePrintFP(vpFlight.pitchR*RADIAN, 1);
+	consolePrint_P(CS_STRING(" yawRate = "));
+	consolePrintFP(vpFlight.yawR*RADIAN, 1);
 	break;
 
       case 6:
-        consolePrint_P(PSTR(" ppmFreq = "));
-	consolePrint(ppmFreq);
-	consolePrint_P(PSTR(" InputVec = ( "));
+        consolePrint_P(CS_STRING(" ppmFreq = "));
+	consolePrintF(ppmFreq);
+	consolePrint_P(CS_STRING(" InputVec = ( "));
 	for(uint8_t i = 0; ppmInputs[i] != NULL; i++) {
-	  consolePrint(inputValue(ppmInputs[i]), 2);
+	  consolePrintFP(inputValue(ppmInputs[i]), 2);
 	  consolePrint(" ");
 	}      
 	consolePrint(")");
 	break;
 
       case 7:
-	consolePrint_P(PSTR(" aile(exp) = "));
-	consolePrint(vpInput.aile);
-	consolePrint_P(PSTR("("));
-	consolePrint(vpInput.aileExpo);
-	consolePrint_P(PSTR(") elev(exp) = "));
-	consolePrint(vpInput.elev);
-	consolePrint_P(PSTR("("));
-	consolePrint(vpInput.elevExpo);
-	consolePrint_P(PSTR(") thr = "));
-	consolePrint(vpInput.throttle);
-	consolePrint_P(PSTR(" rudder = "));
-	consolePrint(vpInput.rudder);
-	consolePrint_P(PSTR(" knob = "));
-	consolePrint(vpInput.tuningKnob);
+	consolePrint_P(CS_STRING(" aile(exp) = "));
+	consolePrintF(vpInput.aile);
+	consolePrint_P(CS_STRING("("));
+	consolePrintF(vpInput.aileExpo);
+	consolePrint_P(CS_STRING(") elev(exp) = "));
+	consolePrintF(vpInput.elev);
+	consolePrint_P(CS_STRING("("));
+	consolePrintF(vpInput.elevExpo);
+	consolePrint_P(CS_STRING(") thr = "));
+	consolePrintF(vpInput.throttle);
+	consolePrint_P(CS_STRING(" rudder = "));
+	consolePrintF(vpInput.rudder);
+	consolePrint_P(CS_STRING(" knob = "));
+	consolePrintF(vpInput.tuningKnob);
 	break;
 
       case 8:
-	consolePrint_P(PSTR(" aileOut(c) = "));
-	consolePrint(vpOutput.aile);
-	consolePrint_P(PSTR(" ("));
-	consolePrint(aileCtrl.output());
-	consolePrint_P(PSTR(") elevOut = "));
-	consolePrint(vpOutput.elev);
-	consolePrint_P(PSTR(" rudderOut = "));
-	consolePrint(vpOutput.rudder);
+	consolePrint_P(CS_STRING(" aileOut(c) = "));
+	consolePrintF(vpOutput.aile);
+	consolePrint_P(CS_STRING(" ("));
+	consolePrintF(aileCtrl.output());
+	consolePrint_P(CS_STRING(") elevOut = "));
+	consolePrintF(vpOutput.elev);
+	consolePrint_P(CS_STRING(" rudderOut = "));
+	consolePrintF(vpOutput.rudder);
 	break;
 
       case 9:
-	consolePrint_P(PSTR(" gain*IAS^("));
+	consolePrint_P(CS_STRING(" gain*IAS^("));
 	for(float j = 0; j < 2; j += 0.5) {
 	  if(j > 0)
 	    consolePrint(", ");
-	  consolePrint(j);
+	  consolePrintF(j);
 	}
 	
-	consolePrint_P(PSTR(") = "));
+	consolePrint_P(CS_STRING(") = "));
 	
 	for(float j = 0; j < 2; j += 0.5) {
 	  if(j > 0)
 	    consolePrint(", ");
-	  consolePrint(vpControl.testGain*powf(vpFlight.IAS, j));
+	  consolePrintF(vpControl.testGain*powf(vpFlight.IAS, j));
 	}
 	break;
 	
       case 10:
-	consolePrint_P(PSTR(" acc(avg) = "));
-	consolePrint(vpFlight.acc);
-	consolePrint_P(PSTR("("));
-	consolePrint(accAvg.output());
-	consolePrint_P(PSTR(") acc = ("));
-	consolePrint(vpFlight.accX, 2);
-	consolePrint_P(PSTR(", "));
-	consolePrint(vpFlight.accY, 2);
-	consolePrint_P(PSTR(", "));
-	consolePrint(vpFlight.accZ, 2);
-	consolePrint_P(PSTR(")"));
+	consolePrint_P(CS_STRING(" acc(avg) = "));
+	consolePrintF(vpFlight.acc);
+	consolePrint_P(CS_STRING("("));
+	consolePrintF(accAvg.output());
+	consolePrint_P(CS_STRING(") acc = ("));
+	consolePrintFP(vpFlight.accX, 2);
+	consolePrint_P(CS_STRING(", "));
+	consolePrintFP(vpFlight.accY, 2);
+	consolePrint_P(CS_STRING(", "));
+	consolePrintFP(vpFlight.accZ, 2);
+	consolePrint_P(CS_STRING(")"));
 	break;
 
       case 11:
-	consolePrint_P(PSTR(" alpha = "));
-	consolePrint(vpFlight.alpha*RADIAN, 1);
+	consolePrint_P(CS_STRING(" alpha = "));
+	consolePrintFP(vpFlight.alpha*RADIAN, 1);
 	consoleTab(15);
-	consolePrint_P(PSTR(" relWind = "));
-	consolePrint(vpFlight.relWind*RADIAN, 1);
+	consolePrint_P(CS_STRING(" relWind = "));
+	consolePrintFP(vpFlight.relWind*RADIAN, 1);
 	consoleTab(30);
-	consolePrint_P(PSTR(" accDir = "));
-	consolePrint(vpFlight.accDir*RADIAN, 1);
+	consolePrint_P(CS_STRING(" accDir = "));
+	consolePrintFP(vpFlight.accDir*RADIAN, 1);
 	break;
 	
       case 12:
-	consoleNote_P(PSTR(" entropy(alpha,ias) = "));
-	consolePrint(alphaEntropyAcc.output());
-	consolePrint_P(PSTR(", "));
-	consolePrint(iasEntropyAcc.output());
-	consolePrint_P(PSTR(" hash = "));
+	consoleNote_P(CS_STRING(" entropy(alpha,ias) = "));
+	consolePrintF(alphaEntropyAcc.output());
+	consolePrint_P(CS_STRING(", "));
+	consolePrintF(iasEntropyAcc.output());
+	consolePrint_P(CS_STRING(" hash = "));
 	
 	tmp = sensorHash;
 
@@ -1361,43 +1366,43 @@ void gaugeTask()
 	break;
 	
      case 13:
-	consolePrint_P(PSTR(" alpha = "));
-	consolePrint(vpFlight.alpha*RADIAN, 1);
+	consolePrint_P(CS_STRING(" alpha = "));
+	consolePrintFP(vpFlight.alpha*RADIAN, 1);
 	consoleTab(15);
-	consolePrint_P(PSTR(" IAS,K(m/s) = "));
-	consolePrint((int) (vpFlight.IAS/KNOT));
-	consolePrint_P(PSTR(" ("));
-	consolePrint(vpFlight.IAS, 1);
-	consolePrint_P(PSTR(")"));
+	consolePrint_P(CS_STRING(" IAS,K(m/s) = "));
+	consolePrintI((int) (vpFlight.IAS/KNOT));
+	consolePrint_P(CS_STRING(" ("));
+	consolePrintFP(vpFlight.IAS, 1);
+	consolePrint_P(CS_STRING(")"));
 	consoleTab(40);
-	consolePrint_P(PSTR(" slope = "));
-	consolePrint(vpFlight.slope*RADIAN, 1);
+	consolePrint_P(CS_STRING(" slope = "));
+	consolePrintFP(vpFlight.slope*RADIAN, 1);
 	consoleTab(55);
-	consolePrint_P(PSTR(" THR(auto) = "));
-	consolePrint(throttleCtrl.output(), 2);
+	consolePrint_P(CS_STRING(" THR(auto) = "));
+	consolePrintFP(throttleCtrl.output(), 2);
 	break;
 	
       case 14:
-       consolePrint_P(PSTR(" roll_k = "));
-       consolePrint(vpFlight.rollR/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.IAS, 3);
+       consolePrint_P(CS_STRING(" roll_k = "));
+       consolePrintFP(vpFlight.rollR/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.IAS, 3);
        break;
        
       case 15:
-	consolePrint_P(PSTR(" elevOutput(trim) = "));
-	consolePrint(vpOutput.elev, 3);
-	consolePrint_P(PSTR("("));
-	consolePrint(vpControl.elevTrim, 3);
-	consolePrint_P(PSTR(")"));
+	consolePrint_P(CS_STRING(" elevOutput(trim) = "));
+	consolePrintFP(vpOutput.elev, 3);
+	consolePrint_P(CS_STRING("("));
+	consolePrintFP(vpControl.elevTrim, 3);
+	consolePrint_P(CS_STRING(")"));
 	break;
 
       case 20:
-	consolePrint_P(PSTR(" log bw = "));
-	consolePrint((int) logBandWidth);
+	consolePrint_P(CS_STRING(" log bw = "));
+	consolePrintI((int) logBandWidth);
 	break;
       }
     }
 
-    consolePrint_P(PSTR("      "));
+    consolePrint_P(CS_STRING("      "));
     consoleCR();
   }
 }
@@ -2010,7 +2015,7 @@ void heartBeatTask()
     vpStatus.consoleLink = vpStatus.simulatorLink = false;
 
   if(vpStatus.simulatorLink && currentTime - simTimeStamp > 1.0e6) {
-    consoleNoteLn_P(PSTR("Simulator link LOST"));
+    consoleNoteLn_P(CS_STRING("Simulator link LOST"));
     vpStatus.simulatorLink = false;
   }    
   
