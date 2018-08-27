@@ -26,7 +26,7 @@ float fieldStrength;
 
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-Damper ball(1.5*CONTROL_HZ), iasFilterSlow(3*CONTROL_HZ), iasFilter(2), accAvg(2*CONTROL_HZ), iasEntropyAcc(CONFIG_HZ), alphaEntropyAcc(CONFIG_HZ);
+Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(ALPHAWINDOW*ALPHA_HZ);
 RateLimiter aileActuator, rollAccelLimiter, flapActuator, trimRateLimiter;

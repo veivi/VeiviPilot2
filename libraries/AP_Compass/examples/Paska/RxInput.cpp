@@ -1,12 +1,13 @@
 #include "RxInput.h"
 #include "Interrupt.h"
 #include "Objects.h"
-#include "NVState.h"
-#include "Math.h"
 #include <avr/io.h>
 
 extern "C" {
 #include "Console.h"
+#include "NVState.h"
+#include "DSP.h"
+#include "Math.h"
 }
 
 //

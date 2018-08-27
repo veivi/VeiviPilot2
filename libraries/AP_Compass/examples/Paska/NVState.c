@@ -1,15 +1,12 @@
 #include <string.h>
 #include "NVState.h"
 #include "Storage.h"
-#include "Command.h"
-#include "Status.h"
 #include "Math.h"
-
-extern "C" {
+#include "DSP.h"
 #include "Console.h"
 #include "CRC16.h"
 #include "Datagram.h"
-}
+#include "CoreObjects.h"
 
 // NV store layout
 
@@ -23,7 +20,7 @@ struct DerivedParams vpDerived;
 
 const struct ParamRecord paramDefaults = {
   .crc = 0,
-  { .name = "Invalid" },
+  .name = "Invalid",
   .i2c_clkDiv = 12,
   .i2c_5048B = 0x40, .i2c_24L256 = 0x50, 
   .alphaRef = 0,
@@ -200,6 +197,8 @@ void storeNVState(void)
 
 void printParams()
 {
+  int i = 0, j = 0;
+  
   deriveParams();
     
   consoleNote_P(CS_STRING("  NAME \""));
@@ -228,7 +227,7 @@ void printParams()
   consolePrintLnFP(vpParam.o_P, 4);
   consoleNoteLn_P(CS_STRING("  Elev feedforward A+Bx+Cx^2"));
   consoleNote_P(CS_STRING("    "));
-  for(int i = 0; i < FF_degree+1; i++) {
+  for(i = 0; i < FF_degree+1; i++) {
     if(i > 0)
       consolePrint_P(CS_STRING(" + "));
     consolePrintFP(vpParam.coeff_FF[0][i], 4);
@@ -242,9 +241,9 @@ void printParams()
   consolePrintLn_P(CS_STRING(")"));
   if(vpDerived.haveFlaps) {
     consoleNoteLn_P(CS_STRING("    Feedforward, clean vs full flaps"));
-    for(int j = 0; j < 2; j++) {
+    for(j = 0; j < 2; j++) {
       consoleNote_P(CS_STRING("      "));
-      for(int i = 0; i < FF_degree+1; i++) {
+      for(i = 0; i < FF_degree+1; i++) {
 	if(i > 0)
 	  consolePrint_P(CS_STRING(" + "));
 	consolePrintFP(vpParam.coeff_FF[j][i], 4);
@@ -308,7 +307,7 @@ void printParams()
   consolePrintLnF(vpDerived.stallAlpha*RADIAN);
   consoleNoteLn_P(CS_STRING("  Coeff of lift"));
   consoleNote_P(CS_STRING("    "));
-  for(int i = 0; i < CoL_degree+1; i++) {
+  for(i = 0; i < CoL_degree+1; i++) {
     if(i > 0)
       consolePrint_P(CS_STRING(" + "));
     consolePrintFP(vpDerived.coeff_CoL[i], 4);
@@ -320,9 +319,9 @@ void printParams()
   consolePrintLn(")");
   if(vpDerived.haveFlaps) {
     consoleNoteLn_P(CS_STRING("    CoL clean vs full flaps"));
-    for(int j = 0; j < 2; j++) {
+    for(j = 0; j < 2; j++) {
       consoleNote_P(CS_STRING("      "));
-      for(int i = 0; i < CoL_degree+1; i++) {
+      for(i = 0; i < CoL_degree+1; i++) {
 	if(i > 0)
 	  consolePrint_P(CS_STRING(" + "));
 	consolePrintFP(vpParam.coeff_CoL[j][i], 4);
@@ -416,110 +415,6 @@ void printParams()
     vpParam.wowCalibrated = false;
 }
 
-static void backupParamEntry(const Command *e)
-{
-  consolePrint(e->name);
-
-  for(int i = 0; e->var[i]; i++) {
-    consolePrint(" ");
-    switch(e->varType) {
-    case e_string:
-      consolePrint((const char*) e->var[i]);
-      break;
-      
-    case e_uint16:
-      consolePrintUI(*((uint16_t*) e->var[i]));
-      break;
-      
-    case e_int16:
-      consolePrintI(*((int16_t*) e->var[i]));
-      break;
-      
-    case e_int8:
-      consolePrintUI8(*((int8_t*) e->var[i]));
-      break;
-      
-    case e_bool:
-      consolePrintI(*((bool*) e->var[i]));
-      break;
-      
-    case e_float:
-      consolePrintFP(*((float*) e->var[i]), 4);
-      break;
-
-    case e_percent:
-      consolePrintF(*((float*) e->var[i])*100);
-      break;
-
-    case e_angle:
-      consolePrintF(*((float*) e->var[i])*RADIAN);
-      break;
-
-    case e_angle90:
-      consolePrintF(*((float*) e->var[i])*90);
-      break;
-
-    case e_map:
-      for(int j = 0; j < MAX_SERVO; j++) {
-	consolePrintUI8(((uint8_t*) e->var[i])[j]);
-	consolePrint(" ");
-      }
-      break;
-
-    case e_col_curve:
-      for(int j = 0; j < CoL_degree+1; j++) {
-	consolePrintF(((float*) e->var[i])[j]);
-	consolePrint(" ");
-      }
-      break;
-
-    case e_ff_curve:
-      for(int j = 0; j < FF_degree+1; j++) {
-	consolePrintF(((float*) e->var[i])[j]);
-	consolePrint(" ");
-      }
-    }
-  }
-
-  consolePrintLn("");
-} 
-
-void backupParams()
-{
-  datagramTxStart(DG_PARAMS);
-  datagramTxOut((const uint8_t*) vpParam.name, strlen(vpParam.name));
-  datagramTxEnd();
-  
-  consoleNoteLn_P(CS_STRING("Param backup"));
-  consoleNoteLn("");
-
-  consoleNote_P(CS_STRING("MODEL "));
-  consolePrintUI(nvState.model);
-  consolePrint_P(CS_STRING(" "));
-  consolePrintLn(vpParam.name);
-  consoleNoteLn("");
-  consolePrintLn("");
-
-  //  consolePrint("model ");
-  //  consolePrintLn(nvState.model);
-
-  int i = 0;
-  
-  while(1) {
-    struct Command cache;
-    CS_MEMCPY(&cache, &commands[i++], sizeof(cache));
-    if(cache.token == c_invalid)
-      break;
-    if(cache.var[0])
-      backupParamEntry(&cache);    
-  }
-
-  consolePrintLn_P(CS_STRING("store"));
-
-  datagramTxStart(DG_PARAMS);
-  datagramTxEnd();  
-}
-
 static float interpolate(float c, float v[])
 {
   return mixValue(c, v[0], v[1]);
@@ -527,7 +422,9 @@ static float interpolate(float c, float v[])
 
 static void interpolate_vector(int d, float c, float r[], const float a[], const float b[])
 {
-  for(int i = 0; i < d; i++)
+  int i = 0;
+  
+  for(i = 0; i < d; i++)
     r[i] = mixValue(c, a[i], b[i]);
 }   
 
@@ -541,22 +438,24 @@ static void interpolate_FF(float c, float r[])
   interpolate_vector(FF_degree+1, c, r, vpParam.coeff_FF[0], vpParam.coeff_FF[1]);
 }
 
-  void deriveParams()
+void deriveParams()
 {
+  int i = 0;
+  
   // Do we have rectracts and/or flaps?
 
   vpDerived.haveRetracts = false;
   vpDerived.haveFlaps = vpParam.flaperon;
 
   if(vpParam.haveGear) {
-    for(int i = 0; i < MAX_SERVO; i++)
+    for(i = 0; i < MAX_SERVO; i++)
       if(vpParam.functionMap[i] == fn_gear) {
 	vpDerived.haveRetracts = true;
 	break;
       }
   }
 
-  for(int i = 0; i < MAX_SERVO; i++)
+  for(i = 0; i < MAX_SERVO; i++)
     if(vpParam.functionMap[i] == fn_leftflap
        || vpParam.functionMap[i] == fn_rightflap) {
       vpDerived.haveFlaps = true;

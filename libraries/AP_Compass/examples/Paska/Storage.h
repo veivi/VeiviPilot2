@@ -1,8 +1,8 @@
-#pragma once
+#ifndef STORAGE_H
+#define STORAGE_H
 
 #include <stdint.h>
-#include "NewI2C.h"
-#include "Status.h"
+#include <stdbool.h>
 
 #define EXT_EEPROM_LATENCY 6    // ms
 
@@ -16,4 +16,6 @@ void cacheFlush(void);
 void cacheWrite(uint32_t addr, const uint8_t *value, int size);
 bool cacheRead(uint32_t addr, uint8_t *value, int32_t size);
 int32_t cacheReadIndirect(uint32_t addr, uint8_t **value, int32_t size);
+
+#endif
 

@@ -1,18 +1,19 @@
 #include "Logging.h"
 #include "PWMOutput.h"
 #include "PPM.h"
-#include "NVState.h"
 #include "Command.h"
 #include "Objects.h"
 #include "MS4525.h"
 
 extern "C" {
+#include "Math.h"
+#include "Storage.h"
 #include "Console.h"
 #include "Time.h"
 #include "CRC16.h"
-#include "System.h"
 #include "Serial.h"
 #include "BaseI2C.h"
+#include "NVState.h"
 }
 
 //
@@ -207,14 +208,19 @@ void setup()
   
   // Misc filters
 
-  accAvg.reset(G);
+  damperInit(&ball, 1.5*CONTROL_HZ, 0);
+  damperInit(&iasFilter, 2, 0);
+  damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
+  damperInit(&accAvg, 2*CONTROL_HZ, G);
+  damperInit(&iasEntropy, CONFIG_HZ, 0);
+  damperInit(&alphaEntropy, CONFIG_HZ, 0);
   trimRateLimiter.setRate(3/RADIAN);
 
   // Initial gear state is DOWN
   
   gearSel = 0;
 
-  // Initialize IAS calibration
+  // Initiate IAS calibration
 
   MS4525DO_calibrate();
 

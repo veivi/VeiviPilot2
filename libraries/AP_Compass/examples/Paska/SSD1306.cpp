@@ -1,8 +1,11 @@
-#include <stdlib.h>
+#include <string.h>
 #include "SSD1306.h"
 #include "NewI2C.h"
-#include "Math.h"
-#include <AP_Progmem/AP_Progmem.h>
+
+extern "C" {
+#include "DSP.h"
+#include "StaP.h"
+}
 
 //
 // OLED display interface
@@ -174,7 +177,7 @@ void obdClear()
   }
 }
 
-const uint8_t fontData[] PROGMEM = {
+const uint8_t fontData[] CS_QUALIFIER = {
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
@@ -365,7 +368,7 @@ void obdRefresh()
       for(int col = modifiedLeft[row]; col < modifiedRight[row]+1; col++) {
 	uint8_t buffer[8], chr = displayBuffer[row*16+col];
 
-	memcpy_P(buffer, &fontData[(chr & 0x7F)*8], sizeof(buffer));
+	CS_MEMCPY(buffer, &fontData[(chr & 0x7F)*8], sizeof(buffer));
 
 	if(chr & 0x80) {
 	  for(uint8_t i = 0; i < sizeof(buffer); i++)

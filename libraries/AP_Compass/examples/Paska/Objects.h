@@ -11,6 +11,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 
 extern "C" {
+#include "DSP.h"
 #include "CoreObjects.h"
 }
 
@@ -28,7 +29,7 @@ extern float fieldStrength;
 
 extern Controller elevCtrl, pushCtrl, throttleCtrl;
 extern UnbiasedController aileCtrl;
-extern Damper ball, iasFilterSlow, iasFilter, accAvg, iasEntropyAcc, alphaEntropyAcc;
+extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
 extern AlphaBuffer pressureBuffer;
 extern RunningAvgFilter alphaFilter;
 extern RateLimiter aileActuator,  rollAccelLimiter, flapActuator, trimRateLimiter;

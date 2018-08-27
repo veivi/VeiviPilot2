@@ -1,10 +1,9 @@
 #ifndef RXINPUT_H
 #define RXINPUT_H
 
-#include <math.h>
+#include <stdint.h>
 #include "AlphaPilot.h"
 #include "InputOutput.h"
-#include "Math.h"
 #include "Button.h"
 
 extern struct RxInputRecord aileInput, elevInput, throttleInput,

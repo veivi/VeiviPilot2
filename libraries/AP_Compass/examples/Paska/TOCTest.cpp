@@ -2,11 +2,14 @@
 #include "RxInput.h"
 #include "Objects.h"
 #include "Logging.h"
-#include "NVState.h"
 
 extern "C" {
+#include "Storage.h"
 #include "Console.h"
 #include "Time.h"
+#include "NVState.h"
+#include "DSP.h"
+#include "Math.h"
 }
 
 bool toc_test_mode(bool reset)
@@ -39,7 +42,7 @@ bool toc_test_fdr(bool reset)
 
 bool toc_test_alpha_sensor(bool reset)
 {
-  return !vpStatus.alphaFailed && alphaEntropyAcc.output() > 50
+  return !vpStatus.alphaFailed && damperOutput(&alphaEntropy) > 50
     && fieldStrength > 0.15 && fieldStrength < 0.80;
 }
 
@@ -86,7 +89,7 @@ bool toc_test_pitot(bool reset)
   else if(vpStatus.positiveIAS)
     positiveIAS = true;
   
-  return (!vpStatus.pitotFailed && iasEntropyAcc.output() > 50
+  return (!vpStatus.pitotFailed && damperOutput(&iasEntropy) > 50
 	  && !vpStatus.pitotBlocked && positiveIAS && vpFlight.IAS < 5)
     || vpStatus.simulatorLink;
 }

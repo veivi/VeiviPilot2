@@ -1,4 +1,6 @@
+extern "C" {
 #include "Math.h"
+}
 
 //
 // Takeoff configuration test

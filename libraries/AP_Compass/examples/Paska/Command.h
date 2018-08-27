@@ -116,6 +116,7 @@ struct Command {
 };
 
 void executeCommand(char *buf);
+void backupParams(void);
 
 extern const struct Command commands[];
 

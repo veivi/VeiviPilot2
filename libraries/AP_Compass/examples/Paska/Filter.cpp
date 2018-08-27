@@ -1,11 +1,13 @@
 #include "Filter.h"
-#include "NVState.h"
-#include "Math.h"
+#include <string.h>
 
 extern "C" {
 #include "Console.h"
+#include "DSP.h"
+#include "NVState.h"
 }
-  
+
+  /*
 void Median3Filter::input(float v)
 {
   memory[ptr++] = v;
@@ -16,7 +18,8 @@ float Median3Filter::output(void)
 {
   return max(min(memory[0],memory[1]), min(max(memory[0],memory[1]),memory[2]));
 }
-
+  */
+  
 Damper::Damper(void)
 {
   avg = 0;

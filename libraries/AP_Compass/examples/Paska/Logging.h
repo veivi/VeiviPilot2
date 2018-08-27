@@ -2,7 +2,6 @@
 #define LOGGING_H
 
 #include <stdint.h>
-#include "Storage.h"
 
 extern "C" {
 #include "CoreObjects.h"

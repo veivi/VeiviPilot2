@@ -3,15 +3,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "Math.h"
 #include "Filter.h"
 #include "Controller.h"
-#include "NewI2C.h"
 #include "RxInput.h"
 #include "Button.h"
 #include "PPM.h"
 #include "Logging.h"
-#include "NVState.h"
 #include "PWMOutput.h"
 #include "Command.h"
 #include "AS5048B.h"
@@ -22,17 +19,21 @@
 #include "TOCTest.h"
 
 extern "C" {
+#include "Storage.h"
 #include "Console.h"
 #include "Datagram.h"
 #include "CRC16.h"
 #include "Time.h"
+#include "DSP.h"
+#include "Math.h"
+#include "NVState.h"
 }
 
 //
 // Misc local variables
 //
 
-static uint16_t iasEntropy, alphaEntropy, sensorHash = 0xFFFF;
+static uint16_t iasChange, alphaChange, sensorHash = 0xFFFF;
 
 //
 // Periodic tasks
@@ -55,7 +56,7 @@ void alphaTask()
   
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     alphaFilter.input(CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
-    alphaEntropy += ABS(raw - prev);
+    alphaChange += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
   }
@@ -165,7 +166,7 @@ void airspeedTask()
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     pressureBuffer.input((float) raw);
-    iasEntropy += ABS(raw - prev);
+    iasChange += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
   }
@@ -333,7 +334,7 @@ void sensorTaskFast()
   vpFlight.accY = acc.y;
   vpFlight.accZ = -acc.z;
 
-  ball.input(vpFlight.accY);
+  damperInput(&ball, vpFlight.accY);
   
   // Altitude data acquisition
 
@@ -370,8 +371,8 @@ void sensorTaskFast()
   // Derived values
   //
     
-  iasFilter.input(vpFlight.IAS);
-  iasFilterSlow.input(vpFlight.IAS);
+  damperInput(&iasFilter, vpFlight.IAS);
+  damperInput(&iasFilterSlow, vpFlight.IAS);
   vpFlight.slope = vpFlight.alpha - vpParam.offset - vpFlight.pitch;
 }
 
@@ -480,9 +481,9 @@ void statusTask()
   // Entropy monitor
   //
 
-  iasEntropyAcc.input(iasEntropy);
-  alphaEntropyAcc.input(alphaEntropy);
-  iasEntropy = alphaEntropy = 0;
+  damperInput(&iasEntropy, iasChange);
+  damperInput(&alphaEntropy, alphaChange);
+  iasChange = alphaChange = 0;
 
   //
   // Random seed from hashed sensor data
@@ -505,7 +506,7 @@ void statusTask()
   
   static uint32_t iasLastAlive;
 
-  if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - iasFilterSlow.output()) > 0.5) {
+  if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - damperOutput(&iasFilterSlow)) > 0.5) {
     if(vpStatus.pitotBlocked) {
       consoleNoteLn_P(CS_STRING("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
@@ -529,7 +530,7 @@ void statusTask()
       consoleNoteLn_P(CS_STRING("Pitot failed, positive IAS ASSUMED"));
       vpStatus.positiveIAS = true;
     }
-  } else if(iasFilter.output() < vpDerived.minimumIAS*RATIO(2/3)) {
+  } else if(damperOutput(&iasFilter) < vpDerived.minimumIAS*RATIO(2/3)) {
     if(!vpStatus.positiveIAS)
       lastIAS = currentTime;
     else if(currentTime - lastIAS > 0.3e6) {
@@ -551,13 +552,13 @@ void statusTask()
   
   vpFlight.acc = sqrtf(square(vpFlight.accX) + square(vpFlight.accY) + square(vpFlight.accZ));
   
-  accAvg.input(vpFlight.acc);
+  damperInput(&accAvg, vpFlight.acc);
 
   float turnRate = sqrt(square(vpFlight.rollR) + square(vpFlight.pitchR) + square(vpFlight.yawR));
   
   bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
     || turnRate > 10.0/RADIAN
-    || fabsf(vpFlight.acc - accAvg.output()) > 0.5;
+    || fabsf(vpFlight.acc - damperOutput(&accAvg)) > 0.5;
   
   static uint32_t lastMotion;
 
@@ -1255,7 +1256,7 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" alt = "));
 	consolePrintF(vpFlight.alt);
 	consolePrint_P(CS_STRING(" ball = "));
-	consolePrintFP(ball.output(), 2);
+	consolePrintFP(damperOutput(&ball), 2);
 	break;
 
       case 5:
@@ -1327,7 +1328,7 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" acc(avg) = "));
 	consolePrintF(vpFlight.acc);
 	consolePrint_P(CS_STRING("("));
-	consolePrintF(accAvg.output());
+	consolePrintF(damperOutput(&accAvg));
 	consolePrint_P(CS_STRING(") acc = ("));
 	consolePrintFP(vpFlight.accX, 2);
 	consolePrint_P(CS_STRING(", "));
@@ -1350,9 +1351,9 @@ void gaugeTask()
 	
       case 12:
 	consoleNote_P(CS_STRING(" entropy(alpha,ias) = "));
-	consolePrintF(alphaEntropyAcc.output());
+	consolePrintF(damperOutput(&alphaEntropy));
 	consolePrint_P(CS_STRING(", "));
-	consolePrintF(iasEntropyAcc.output());
+	consolePrintF(damperOutput(&iasEntropy));
 	consolePrint_P(CS_STRING(" hash = "));
 	
 	tmp = sensorHash;

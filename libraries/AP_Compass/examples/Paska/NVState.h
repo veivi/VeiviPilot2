@@ -2,6 +2,7 @@
 #define NVSTATE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define NAME_LEN     8
 #define MAX_CH       8
@@ -28,8 +29,8 @@ typedef enum {
 
 // Parameters and non-volatile state
 
-const int CoL_degree = 4;
-const int FF_degree = 2;
+#define CoL_degree 4
+#define FF_degree 2
 
 struct ParamRecord {
   uint16_t crc;
@@ -107,7 +108,6 @@ bool readNVState(void);
 void storeNVState(void);
 void printParams(void);
 void deriveParams();
-void backupParams(void);
 int maxModels(void);
 void readData(uint8_t *data, int size);
 void storeData(const uint8_t *data, int size);

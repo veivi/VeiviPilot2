@@ -1,15 +1,15 @@
 #include <ctype.h>
 #include <AP_Progmem/AP_Progmem.h>
 #include "Command.h"
-#include "NVState.h"
 #include "Logging.h"
 #include "MS4525.h"
-#include "Math.h"
 #include "PPM.h"
 #include "Objects.h"
 
 extern "C" {
 #include "Console.h"
+#include "Math.h"
+#include "NVState.h"
 }
 
 const struct Command commands[] PROGMEM = {
@@ -525,9 +525,9 @@ void executeCommand(char *buf)
 
       consoleNoteLn_P(CS_STRING("Sensor entropy"));
       consoleNote_P(CS_STRING("  Alpha = "));
-      consolePrintF(alphaEntropyAcc.output());
+      consolePrintF(damperOutput(&alphaEntropy));
       consolePrint_P(CS_STRING("  IAS = "));
-      consolePrintLnF(iasEntropyAcc.output());
+      consolePrintLnF(damperOutput(&iasEntropy));
 
       consoleNote_P(CS_STRING("Warning flags :"));
       if(pciWarn)
@@ -719,3 +719,108 @@ void executeCommand(char *buf)
     }
   }
 }
+
+static void backupParamEntry(const Command *e)
+{
+  consolePrint(e->name);
+
+  for(int i = 0; e->var[i]; i++) {
+    consolePrint(" ");
+    switch(e->varType) {
+    case e_string:
+      consolePrint((const char*) e->var[i]);
+      break;
+      
+    case e_uint16:
+      consolePrintUI(*((uint16_t*) e->var[i]));
+      break;
+      
+    case e_int16:
+      consolePrintI(*((int16_t*) e->var[i]));
+      break;
+      
+    case e_int8:
+      consolePrintUI8(*((int8_t*) e->var[i]));
+      break;
+      
+    case e_bool:
+      consolePrintI(*((bool*) e->var[i]));
+      break;
+      
+    case e_float:
+      consolePrintFP(*((float*) e->var[i]), 4);
+      break;
+
+    case e_percent:
+      consolePrintF(*((float*) e->var[i])*100);
+      break;
+
+    case e_angle:
+      consolePrintF(*((float*) e->var[i])*RADIAN);
+      break;
+
+    case e_angle90:
+      consolePrintF(*((float*) e->var[i])*90);
+      break;
+
+    case e_map:
+      for(int j = 0; j < MAX_SERVO; j++) {
+	consolePrintUI8(((uint8_t*) e->var[i])[j]);
+	consolePrint(" ");
+      }
+      break;
+
+    case e_col_curve:
+      for(int j = 0; j < CoL_degree+1; j++) {
+	consolePrintF(((float*) e->var[i])[j]);
+	consolePrint(" ");
+      }
+      break;
+
+    case e_ff_curve:
+      for(int j = 0; j < FF_degree+1; j++) {
+	consolePrintF(((float*) e->var[i])[j]);
+	consolePrint(" ");
+      }
+    }
+  }
+
+  consolePrintLn("");
+} 
+
+void backupParams()
+{
+  datagramTxStart(DG_PARAMS);
+  datagramTxOut((const uint8_t*) vpParam.name, strlen(vpParam.name));
+  datagramTxEnd();
+  
+  consoleNoteLn_P(CS_STRING("Param backup"));
+  consoleNoteLn("");
+
+  consoleNote_P(CS_STRING("MODEL "));
+  consolePrintUI(nvState.model);
+  consolePrint_P(CS_STRING(" "));
+  consolePrintLn(vpParam.name);
+  consoleNoteLn("");
+  consolePrintLn("");
+
+  //  consolePrint("model ");
+  //  consolePrintLn(nvState.model);
+
+  int i = 0;
+  
+  while(1) {
+    struct Command cache;
+    CS_MEMCPY(&cache, &commands[i++], sizeof(cache));
+    if(cache.token == c_invalid)
+      break;
+    if(cache.var[0])
+      backupParamEntry(&cache);    
+  }
+
+  consolePrintLn_P(CS_STRING("store"));
+
+  datagramTxStart(DG_PARAMS);
+  datagramTxEnd();  
+}
+

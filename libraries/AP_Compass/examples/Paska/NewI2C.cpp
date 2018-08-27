@@ -441,12 +441,12 @@ extern "C" uint8_t basei2cWait(uint8_t d)
   return I2c.wait(d);
 }
  
-extern "C" uint8_t basei2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
+extern "C" uint8_t basei2cWriteGenericBuffers(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
   return I2c.write(d, a, as, b, c);
 }
   
-extern "C" uint8_t basei2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
+extern "C" uint8_t basei2cReadGeneric(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
   return I2c.read(d, a, as, b, bs);
 }

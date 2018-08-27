@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "Datagram.h"
 #include "CRC16.h"
-#include "System.h"
+#include "Time.h"
 
 static uint16_t crcState;
 static int datagramSize = 0;

@@ -1,5 +1,8 @@
 #include "Controller.h"
-#include "Math.h"
+
+extern "C" {
+#include "DSP.h"
+}
 
 Controller::Controller() {
   rangeMin = -1;

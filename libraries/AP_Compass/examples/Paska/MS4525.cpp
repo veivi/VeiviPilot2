@@ -17,7 +17,7 @@ bool MS4525DO_isOnline(void)
 uint8_t MS4525DO_read(uint8_t *storage, uint8_t bytes) 
 {
   const uint8_t addr_c = 0x28;
-  return basei2cInvoke(&target, basei2cRead(addr_c, NULL, 0, storage, bytes));
+  return basei2cInvoke(&target, basei2cReadGeneric(addr_c, NULL, 0, storage, bytes));
 }
 
 uint8_t MS4525DO_read(uint16_t *result)

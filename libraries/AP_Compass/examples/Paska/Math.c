@@ -1,12 +1,20 @@
+#include <math.h>
 #include "Math.h"
 #include "NVState.h"
-#include "Status.h"
-#include "Objects.h"
-#include <math.h>
-
-extern "C" {
 #include "Console.h"
-}
+#include "CoreObjects.h"
+
+const float stabilityElevExp_c = -1.5;
+const float stabilityAileExp1_c = -1.5;
+const float stabilityAileExp2_c = 1.0;
+const float stabilityPusherExp_c = -0.5;
+
+const float airDensity_c = 1.225;
+
+const float G = 9.81, FOOT = 12*25.4/1000, KNOT = 1852.0/60/60, PSF = 47.880259;
+
+const float servoOutputRange_c = RATIO(6/5);
+
 
 float effIAS()
 {
@@ -37,11 +45,6 @@ float constrainServoOutput(float value)
 {
   return clamp(value, -servoOutputRange_c, servoOutputRange_c);
 }
-
-float expo(float a, float b)
-{
-  return sign(a)*powf(fabsf(a), b);
-}    
 
 float alphaPredictInverse(float x)
 {
@@ -77,13 +80,13 @@ float rollRatePredictInverse(float rate)
 
 float scaleByIAS(float k, float expo)
 {
-  float effIAS = fmaxf(iasFilter.output(), vpDerived.minimumIAS);
+  float ias = effIAS();
   
   if(vpStatus.pitotFailed || vpStatus.pitotBlocked)
     // Failsafe value chosen to be ... on the safe side
-    effIAS = expo > 0 ? vpDerived.minimumIAS : vpDerived.minimumIAS * 3/2;
+    ias = expo > 0 ? vpDerived.minimumIAS : vpDerived.minimumIAS * 3/2;
   
-  return k * powf(effIAS, expo);
+  return k * powf(ias, expo);
 }
 
 float dynamicPressure(float ias)
@@ -94,18 +97,6 @@ float dynamicPressure(float ias)
 float dynamicPressureInverse(float pressure)
 {
   return sign(pressure)*sqrtf(fabsf(2 * pressure / airDensity_c));
-}
-
-float polynomial(int deg, float x, const float c[])
-{
-  float acc = 0, p = 1;
-
-  for(int i = 0; i < deg+1; i++) {
-    acc += c[i] * p;
-    p *= x;
-  }
-
-  return acc;
 }
 
 float coeffOfLiftGeneric(float aoa, float coeff[])
@@ -148,64 +139,5 @@ float coeffOfLiftInverse(float target)
   } while(fabs(approx - target) > 0.001);
 
   return center;
-}
-
-float sign(float x)
-{
-  return x < 0.0 ? -1.0 : 1.0;
-}
-
-float clamp(float value, float a, float b)
-{
-  if(a > b) {
-    // Swap limits
-    float t = a;
-    a = b;
-    b = t;
-  }
-
-  if(value > a && value < b)
-    return value;  
-  else if(value <= a)
-    return a;
-  else if(value >= b)
-    return b;
-
-  // All comparisons failed, must be NaN or some such
-  
-  return 0.0;
-}
-
-float mixValue(float mixRatio, float a, float b)
-{
-  if(mixRatio < 0)
-    return a;
-  else if(mixRatio > 1)
-    return b;
-  else
-    return (1.0 - mixRatio)*a + mixRatio*b;
-}
-
-float randomNum(float small, float large)
-{
-  return small + (large-small)*(float) ((rand()>>3) & 0xFFF) / 0x1000;
-}
-
-uint32_t randomUInt32()
-{
-  uint32_t buffer = 0;
-  for(unsigned int i = 0; i < sizeof(buffer); i++)
-    buffer = (buffer<<8) | (uint32_t) randomNum(0, 1<<8);
-  return buffer;
-}
-
-float quantize(float value, float *state, int numSteps)
-{
-  if((int) ((value-1.0/numSteps/2)*numSteps) > *state)
-    *state = (value-1.0/numSteps/2)*numSteps;
-  else if((int) ((value+1.0/numSteps/2)*numSteps) < *state)
-    *state = (value+1.0/numSteps/2)*numSteps;
-
-  return (float) *state / numSteps;
 }
 

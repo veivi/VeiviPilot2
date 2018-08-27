@@ -1,11 +1,8 @@
 #include <string.h>
 #include "Storage.h"
-#include "NewI2C.h"
-
-extern "C" {
 #include "Console.h"
 #include "Time.h"
-}
+#include "BaseI2C.h"
 
 #define CACHE_PAGE (1L<<7)
 #define PAGE_MASK ~(CACHE_PAGE-1)
@@ -33,7 +30,7 @@ void waitEEPROM(uint32_t addr)
     
   // Write latency not met, wait for acknowledge
 
-  basei2cInvoke(&target, I2c.wait((uint8_t) (EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+  basei2cInvoke(&target, basei2cWait((uint8_t) (EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 }
 
 void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes) 
@@ -42,7 +39,7 @@ void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes)
     return;
     
   waitEEPROM(addr);
-  basei2cInvoke(&target, I2c.write(  (uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
+  basei2cInvoke(&target, basei2cWriteWithWord(  (uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
 
@@ -56,7 +53,7 @@ bool readEEPROM(uint32_t addr, uint8_t *data, int size)
     
   waitEEPROM(addr);
 
-  return basei2cInvoke(&target, I2c.read((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
+  return basei2cInvoke(&target, basei2cReadWithWord((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
 }
 
 void cacheFlush(void)
@@ -102,7 +99,9 @@ static void cacheAlloc(uint32_t addr)
 }
 
 static void cacheWritePrimitive(uint32_t addr, const uint8_t *value, int size)
-{  
+{
+  int i = 0;
+  
   if(!cacheHit(addr))
     cacheAlloc(addr);
 
@@ -113,7 +112,7 @@ static void cacheWritePrimitive(uint32_t addr, const uint8_t *value, int size)
     return;
   }
   
-  for(int i = 0; i < size; i++) {
+  for(i = 0; i < size; i++) {
     cacheData[addr + i] = value ? value[i] : '\0';
     cacheFlag[addr + i] = true;
   }
