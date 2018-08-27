@@ -1,11 +1,10 @@
 #include <stdlib.h>
 #include "MS4525.h"
-#include "NewI2C.h"
-#include "Objects.h"
 #include "NVState.h"
 
 extern "C" {
 #include "Console.h"
+#include "BaseI2C.h"
 }
 
 static BaseI2CTarget_t target = { "pitot" } ;
@@ -18,7 +17,7 @@ bool MS4525DO_isOnline(void)
 uint8_t MS4525DO_read(uint8_t *storage, uint8_t bytes) 
 {
   const uint8_t addr_c = 0x28;
-  return basei2cInvoke(&target, I2c.read(addr_c, NULL, 0, storage, bytes));
+  return basei2cInvoke(&target, basei2cRead(addr_c, NULL, 0, storage, bytes));
 }
 
 uint8_t MS4525DO_read(uint16_t *result)

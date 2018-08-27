@@ -1,19 +1,9 @@
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <math.h>
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include "Math.h"
-#include "Controller.h"
 #include "Logging.h"
 #include "PWMOutput.h"
 #include "PPM.h"
 #include "NVState.h"
 #include "Command.h"
 #include "Objects.h"
-#include "AlphaPilot.h"
 #include "MS4525.h"
 
 extern "C" {
@@ -22,6 +12,7 @@ extern "C" {
 #include "CRC16.h"
 #include "System.h"
 #include "Serial.h"
+#include "BaseI2C.h"
 }
 
 //
@@ -146,11 +137,11 @@ void setup()
   // I2C
   
   consoleNote_P(CS_STRING("Initializing I2C... "));
-  
-  I2c.begin();
-  I2c.setSpeed(true);
-  I2c.pullup(false);
-  I2c.timeOut(2+EXT_EEPROM_LATENCY);
+
+  basei2cInit();
+  basei2cSetSpeed(true);
+  basei2cSetPullup(true);
+  basei2cSetTimeOut(2+EXT_EEPROM_LATENCY);
 
   consolePrintLn_P(CS_STRING("done. "));
   
@@ -205,9 +196,7 @@ void setup()
     compass.set_declination(ToRad(0.0f));
     
   } else {
-    consolePrintLn_P(CS_STRING("  FAILED."));
-    consoleFlush();
-    while (1) ;
+    consolePanic_P(CS_STRING("  FAILED."));
   }
 #endif
 

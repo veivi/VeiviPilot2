@@ -32,7 +32,7 @@ void NewI2C::begin()
   // initialize twi prescaler and bit rate
   cbi(TWSR, TWPS0);
   cbi(TWSR, TWPS1);
-  TWBR = ((F_CPU / 100000) - 16) / 2;
+  setSpeed(false);
   // enable twi module and acks
   TWCR = _BV(TWEN) | _BV(TWEA); 
 }
@@ -446,3 +446,8 @@ extern "C" uint8_t basei2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I
   return I2c.write(d, a, as, b, c);
 }
   
+extern "C" uint8_t basei2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
+{
+  return I2c.read(d, a, as, b, bs);
+}
+ 
