@@ -1,8 +1,3 @@
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <math.h>
 #include "Filter.h"
 #include "Controller.h"
 #include "Button.h"
