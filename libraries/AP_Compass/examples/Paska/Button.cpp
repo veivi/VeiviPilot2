@@ -5,6 +5,13 @@
 
 extern AP_HAL::HAL& hal;
 
+//
+// Buttons
+//
+
+Button rightDownButton(-1.0), rightUpButton(0.33),
+  leftDownButton(-0.3), leftUpButton(1);
+
 Button :: Button(float aValue)
 {
   activeValue = aValue;

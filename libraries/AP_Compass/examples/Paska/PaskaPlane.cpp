@@ -1,11 +1,9 @@
-#include "Logging.h"
-#include "PWMOutput.h"
-#include "PPM.h"
 #include "Command.h"
 #include "Objects.h"
-#include "MS4525.h"
+#include "AlphaPilot.h"
 
 extern "C" {
+#include "Logging.h"
 #include "Math.h"
 #include "Storage.h"
 #include "Console.h"
@@ -14,6 +12,10 @@ extern "C" {
 #include "Serial.h"
 #include "BaseI2C.h"
 #include "NVState.h"
+#include "MS4525.h"
+#include "PWMOutput.h"
+#include "InputOutput.h"
+#include "PPM.h"
 }
 
 //
@@ -204,7 +206,7 @@ void setup()
   // Static controller settings
 
   aileCtrl.limit(RATIO(2/3));
-  flapActuator.setRate(0.5);
+  slopeSetRate(&flapActuator, 0.5);
   
   // Misc filters
 

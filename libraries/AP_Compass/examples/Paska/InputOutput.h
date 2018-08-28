@@ -2,6 +2,7 @@
 #define INPUTOUTPUT_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum { PortA, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortK, PortL } portName_t;
 

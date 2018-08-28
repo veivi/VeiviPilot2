@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "DSP.h"
 
 struct StatusRecord {
   bool armed;
@@ -76,5 +77,19 @@ extern struct FlightState vpFlight;
 extern struct InputState vpInput;
 extern struct ControlState vpControl;
 extern struct OutputState vpOutput;
+
+extern SlopeLimiter_t flapActuator;
+
+extern float controlCycle;
+extern float outer_P, rudderMix, throttleMix;
+extern uint8_t gearSel, flapSel;
+extern const float sampleRate;
+extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
+extern uint32_t simTimeStamp, idleMicros;
+extern const int maxParams;
+extern uint8_t gaugeCount, gaugeVariable[];
+extern bool paramsModified;
+extern uint32_t lastPPMWarn;
+extern float fieldStrength;
 
 #endif

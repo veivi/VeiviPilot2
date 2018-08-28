@@ -72,19 +72,19 @@ void consoleNoteLn(const char *s)
   consoleNL();
 }
 
-void consoleNote_P(const CS_CHAR_T *s)
+void consoleNote_P(const char *s)
 {
   consolePrint("// ");
   consolePrint_P(s);
 }
 
-void consoleNoteLn_P(const CS_CHAR_T *s)
+void consoleNoteLn_P(const char *s)
 {
   consoleNote_P(s);
   consoleNL();
 }
 
-void consolePanic_P(const CS_CHAR_T *s)
+void consolePanic_P(const char *s)
 {
   consolePrint("// PANIC: ");
   consolePrint_P(s);
@@ -157,7 +157,7 @@ void consolePrintN(const char *s, int l)
     consoleOut(*s++);
 }
 
-void consolePrint_P(const CS_CHAR_T *s)
+void consolePrint_P(const char *s)
 {
   uint8_t c = 0;
 
@@ -261,7 +261,7 @@ void consolePrintLn(const char *s)
   consoleNL();
 }
 
-void consolePrintLn_P(const CS_CHAR_T *s)
+void consolePrintLn_P(const char *s)
 {
   consolePrint_P(s);
   consoleNL();

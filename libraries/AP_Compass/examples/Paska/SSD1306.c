@@ -1,11 +1,11 @@
 #include <string.h>
 #include "SSD1306.h"
-#include "NewI2C.h"
 
-extern "C" {
+// extern "C" {
 #include "DSP.h"
 #include "StaP.h"
-}
+#include "BaseI2C.h"
+// }
 
 //
 // OLED display interface
@@ -87,7 +87,7 @@ static bool SSD1306_transmitBuffers(const I2CBuffer_t *buffers, int numBuffers)
   if(!basei2cIsOnline(&target))
     return false;
   
-  return basei2cInvoke(&target, I2c.write(SSD1306_ADDR, buffers, numBuffers));
+  return basei2cInvoke(&target, basei2cWriteBuffers(SSD1306_ADDR, buffers, numBuffers));
 }
 
 static bool SSD1306_transmit(uint8_t token, const uint8_t *data, uint8_t bytes) 
@@ -128,7 +128,9 @@ static void markModified(uint8_t col)
 
 static void nprint(const char *s, uint8_t l)
 {
-  for(int i = 0; i < l; i++) {
+  int i = 0;
+  
+  for(i = 0; i < l; i++) {
     uint8_t c = s ? s[i] : '\0';
 
     if(c == '\n') {
@@ -163,7 +165,7 @@ void obdPrint(const char *s)
   nprint(s, strlen(s));
 }
 
-void obdPrint(const char *s, bool inv)
+void obdPrintAttr(const char *s, bool inv)
 {
   inverseVideo = inv;
   nprint(s, strlen(s));
@@ -171,7 +173,9 @@ void obdPrint(const char *s, bool inv)
 
 void obdClear()
 {
-  for(int i = 0; i < 8; i++) {
+  int i = 0;
+  
+  for(i = 0; i < 8; i++) {
     obdMove(0, i);
     obdPrint("\n");
   }
@@ -312,6 +316,7 @@ void obdRefresh()
 {
   static bool initialized = false;
   static uint8_t row;
+  int i = 0;
 
   if(!basei2cIsOnline(&target)) {
     initialized = false;
@@ -347,7 +352,7 @@ void obdRefresh()
     
     SSD1306_command(SSD1306_DISPLAYON);
     
-    for(int i = 0; i < 8; i++) {
+    for(i = 0; i < 8; i++) {
       modifiedLeft[i] = 0;
       modifiedRight[i] = 15;
     }
@@ -357,6 +362,8 @@ void obdRefresh()
 
   while(row < 8) {    
     if(modifiedLeft[row] > -1) {
+      int col = 0;
+      
       SSD1306_command(SSD1306_PAGEADDR);
       SSD1306_command(row);
       SSD1306_command(row);
@@ -365,13 +372,13 @@ void obdRefresh()
       SSD1306_command(modifiedLeft[row]*8);
       SSD1306_command((uint8_t) ~0U);
 
-      for(int col = modifiedLeft[row]; col < modifiedRight[row]+1; col++) {
+      for(col = modifiedLeft[row]; col < modifiedRight[row]+1; col++) {
 	uint8_t buffer[8], chr = displayBuffer[row*16+col];
 
 	CS_MEMCPY(buffer, &fontData[(chr & 0x7F)*8], sizeof(buffer));
 
 	if(chr & 0x80) {
-	  for(uint8_t i = 0; i < sizeof(buffer); i++)
+	  for(i = 0; i < sizeof(buffer); i++)
 	    buffer[i] = ~buffer[i];
 	}
 

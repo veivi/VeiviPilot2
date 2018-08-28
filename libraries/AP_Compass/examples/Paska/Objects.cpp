@@ -2,6 +2,10 @@
 #include "NVState.h"
 #include "AlphaPilot.h"
 
+extern "C" {
+#include "DSP.h"
+}
+
 /*
 struct ModeRecord vpMode;
 struct FeatureRecord vpFeature;
@@ -13,23 +17,13 @@ struct OutputState vpOutput;
 // struct GPSFix gpsFix;
 */
 
-float controlCycle;
-float outer_P, rudderMix, throttleMix;
-uint8_t gearSel, flapSel;
-float idleAvg, logBandWidth, ppmFreq, simInputFreq;
-uint32_t simTimeStamp, idleMicros;
-const int maxParams = MAX_SERVO;
-uint8_t gaugeCount, gaugeVariable[maxParams];
-bool paramsModified = false;
-uint32_t lastPPMWarn;
-float fieldStrength;
-
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
 Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(ALPHAWINDOW*ALPHA_HZ);
-RateLimiter aileActuator, rollAccelLimiter, flapActuator, trimRateLimiter;
+RateLimiter aileActuator, rollAccelLimiter, trimRateLimiter;
+SlopeLimiter_t flapActuator;
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;
@@ -44,8 +38,6 @@ static Compass compass;
 #endif
 
 NewI2C I2c = NewI2C();
-
-const float sampleRate = LOG_HZ_SLOW;
 
 extern "C" {
 struct SimLinkSensor sensorData;

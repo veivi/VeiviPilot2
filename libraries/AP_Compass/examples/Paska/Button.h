@@ -26,4 +26,15 @@ private:
   bool pulseDouble, pulseSingle, buttonPress;
 };
 
+//
+// Buttons
+//
+
+extern Button rightDownButton, rightUpButton, leftDownButton, leftUpButton;
+
+#define LEVELBUTTON rightUpButton
+#define RATEBUTTON rightDownButton
+#define TRIMBUTTON leftUpButton
+#define GEARBUTTON leftDownButton
+
 #endif

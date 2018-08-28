@@ -54,12 +54,12 @@ uint8_t basei2cWriteGeneric(uint8_t address, const uint8_t *addrArray, uint8_t a
   return basei2cWriteGenericBuffers(address, addrArray, addrSize, &buffer, 1);
 }
 
-uint8_t basei2cWriteBlindBuffers(uint8_t address, const I2CBuffer_t *buffers, int numberBuffers)
+uint8_t basei2cWriteBuffers(uint8_t address, const I2CBuffer_t *buffers, int numberBuffers)
 {
   return basei2cWriteGenericBuffers(address, NULL, 0, buffers, numberBuffers);
 }
 
-uint8_t basei2cWriteBlind(uint8_t address, const uint8_t *data, uint8_t numberBytes)
+uint8_t basei2cWrite(uint8_t address, const uint8_t *data, uint8_t numberBytes)
 {
   I2CBuffer_t buffer = { data, numberBytes };
   return basei2cWriteGenericBuffers(address, NULL, 0, &buffer, 1);
@@ -80,7 +80,7 @@ uint8_t basei2cWriteWithWord(uint8_t address, uint16_t memAddress, const uint8_t
   return basei2cWriteGeneric(address, addrArray, sizeof(addrArray), data, numberBytes);
 }
 
-uint8_t basei2cReadBlind(uint8_t address, uint8_t *dataBuffer, uint8_t numberBytes)
+uint8_t basei2cRead(uint8_t address, uint8_t *dataBuffer, uint8_t numberBytes)
 {
   return basei2cReadGeneric(address, NULL, 0, dataBuffer, numberBytes);
 }
@@ -99,4 +99,5 @@ uint8_t basei2cReadWithWord(uint8_t address, uint16_t memAddress, uint8_t *dataB
     
   return basei2cReadGeneric(address, addrArray, sizeof(addrArray), dataBuffer, numberBytes);
 }
+
 

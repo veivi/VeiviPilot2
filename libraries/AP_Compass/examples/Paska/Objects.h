@@ -15,25 +15,12 @@ extern "C" {
 #include "CoreObjects.h"
 }
 
-extern float controlCycle;
-extern float outer_P, rudderMix, throttleMix;
-extern uint8_t gearSel, flapSel;
-extern const float sampleRate;
-extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
-extern uint32_t simTimeStamp, idleMicros;
-extern const int maxParams;
-extern uint8_t gaugeCount, gaugeVariable[];
-extern bool paramsModified;
-extern uint32_t lastPPMWarn;
-extern float fieldStrength;
-
 extern Controller elevCtrl, pushCtrl, throttleCtrl;
 extern UnbiasedController aileCtrl;
 extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
 extern AlphaBuffer pressureBuffer;
 extern RunningAvgFilter alphaFilter;
-extern RateLimiter aileActuator,  rollAccelLimiter, flapActuator, trimRateLimiter;
-
+extern RateLimiter aileActuator,  rollAccelLimiter, trimRateLimiter;
 extern const AP_HAL::HAL& hal;
 extern AP_HAL::BetterStream* cliSerial;
 

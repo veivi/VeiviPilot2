@@ -1,8 +1,9 @@
 #ifndef PPM_H
 #define PPM_H
 
-#include "RxInput.h"
-
+#include <stdint.h>
+#include <stdbool.h>
+  
 //
 
 extern uint8_t ppmNumChannels;

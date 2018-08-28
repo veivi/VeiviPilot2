@@ -21,16 +21,13 @@ uint8_t basei2cWriteGeneric(uint8_t, const uint8_t*, uint8_t, const uint8_t*, ui
 uint8_t basei2cWriteGenericBuffers(uint8_t, const uint8_t*, uint8_t, const I2CBuffer_t*, int);
 uint8_t basei2cWriteWithWord(uint8_t, uint16_t, const uint8_t*, uint8_t);
 uint8_t basei2cWriteWithByte(uint8_t, uint8_t, const uint8_t*, uint8_t);
-uint8_t basei2cWriteBlind(uint8_t, const uint8_t*, uint8_t);
-/*
-uint8_t basei2cWrite(uint8_t, const I2CBuffer_t*, int);
-*/
+uint8_t basei2cWrite(uint8_t, const uint8_t*, uint8_t);
+uint8_t basei2cWriteBuffers(uint8_t, const I2CBuffer_t*, int);
 uint8_t basei2cReadGeneric(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
 uint8_t basei2cReadWithWord(uint8_t, uint16_t, uint8_t*, uint8_t);
 uint8_t basei2cReadWithByte(uint8_t, uint8_t, uint8_t*, uint8_t);
-uint8_t basei2cReadBlind(uint8_t, uint8_t*, uint8_t);
-/*
-*/
+uint8_t basei2cRead(uint8_t, uint8_t*, uint8_t);
+
 typedef struct BaseI2CTarget {
   const char *name;
   bool warn, failed;

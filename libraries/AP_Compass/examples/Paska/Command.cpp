@@ -1,15 +1,15 @@
 #include <ctype.h>
 #include <AP_Progmem/AP_Progmem.h>
 #include "Command.h"
-#include "Logging.h"
-#include "MS4525.h"
-#include "PPM.h"
 #include "Objects.h"
 
 extern "C" {
+#include "Logging.h"
 #include "Console.h"
 #include "Math.h"
 #include "NVState.h"
+#include "MS4525.h"
+#include "PPM.h"
 }
 
 const struct Command commands[] PROGMEM = {
@@ -179,16 +179,16 @@ void executeCommand(char *buf)
   }
   
   int numParams = 0;
-  float param[maxParams];
-  const char *paramText[maxParams];
+  float param[MAX_PARAMS];
+  const char *paramText[MAX_PARAMS];
 
-  for(int i = 0; i < maxParams; i++)
+  for(int i = 0; i < MAX_PARAMS; i++)
     param[i] = 0.0;
 
   char *parsePtr = buf;
   
   while(*(parsePtr = parse(parsePtr))) {
-    if(numParams < maxParams) {
+    if(numParams < MAX_PARAMS) {
       paramText[numParams] = parsePtr;
       param[numParams] = atof(paramText[numParams]);
       numParams++;
@@ -530,8 +530,6 @@ void executeCommand(char *buf)
       consolePrintLnF(damperOutput(&iasEntropy));
 
       consoleNote_P(CS_STRING("Warning flags :"));
-      if(pciWarn)
-	consolePrint_P(CS_STRING(" SPURIOUS_PCINT"));
       if(ppmWarnShort)
 	consolePrint_P(CS_STRING(" PPM_SHORT"));
       if(ppmWarnSlow)
@@ -548,7 +546,7 @@ void executeCommand(char *buf)
       break;
       
     case c_reset:
-      pciWarn = ppmWarnShort = ppmWarnSlow = false;
+      ppmWarnShort = ppmWarnSlow = false;
       consoleNoteLn_P(CS_STRING("Warning flags reset"));
       break;
 

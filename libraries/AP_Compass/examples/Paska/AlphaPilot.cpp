@@ -5,20 +5,16 @@
 #include <math.h>
 #include "Filter.h"
 #include "Controller.h"
-#include "RxInput.h"
 #include "Button.h"
-#include "PPM.h"
-#include "Logging.h"
-#include "PWMOutput.h"
 #include "Command.h"
-#include "AS5048B.h"
-#include "MS4525.h"
-#include "SSD1306.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
 #include "TOCTest.h"
 
 extern "C" {
+#include "RxInput.h"
+#include "PPM.h"
+#include "PWMOutput.h"
 #include "Storage.h"
 #include "Console.h"
 #include "Datagram.h"
@@ -27,7 +23,13 @@ extern "C" {
 #include "DSP.h"
 #include "Math.h"
 #include "NVState.h"
+#include "MS4525.h"
+#include "SSD1306.h"
+#include "AS5048B.h"
+#include "Logging.h"
 }
+
+extern "C" const float sampleRate = LOG_HZ_SLOW;
 
 //
 // Misc local variables
@@ -67,7 +69,7 @@ void tocReportDisplay(bool result, int i, const char *s)
   obdMove((i % 3)*6, i/3 + 2);
   
   if(!result)
-    obdPrint(s, true);
+    obdPrintAttr(s, true);
   else
     obdPrint("     ");
 }
@@ -107,7 +109,7 @@ void displayTask()
   
   if(!vpStatus.armed) {
     obdMove(16-8, 0);
-    obdPrint("DISARMED", true);
+    obdPrintAttr("DISARMED", true);
 
     for(uint8_t i = 0; ppmInputs[i] != NULL; i++) {
       obdMove((i%3)*6, 2+i/3);
@@ -123,7 +125,7 @@ void displayTask()
     return;
   } else if(vpMode.takeOff) {
     obdMove(16-7, 0);
-    obdPrint("TAKEOFF", (count>>2) & 1);
+    obdPrintAttr("TAKEOFF", (count>>2) & 1);
   } else {
     char buffer[] =
       { (char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
@@ -140,7 +142,7 @@ void displayTask()
   if(vpMode.radioFailSafe) {
     obdMove(0,7);
     obdPrint("   ");
-    obdPrint("RADIO FAIL", (count>>2) & 1);
+    obdPrintAttr("RADIO FAIL", (count>>2) & 1);
     obdPrint("   ");
   } else {
       // T/O/C test status
@@ -151,7 +153,7 @@ void displayTask()
     obdPrint("T/O/C ");
 
     if(!status)
-      obdPrint("WARNING", (count>>2) & 1);
+      obdPrintAttr("WARNING", (count>>2) & 1);
     else
       obdPrint("GOOD");
 
@@ -1787,7 +1789,8 @@ void ancillaryModule()
   // Flaps
   //
   
-  vpOutput.flap = flapActuator.input((float) flapSel/FLAP_STEPS, controlCycle);
+  vpOutput.flap =
+    slopeInput(&flapActuator, (float) flapSel/FLAP_STEPS, controlCycle);
 
   //
   // Brake

@@ -1,8 +1,7 @@
 #include <stdarg.h>
+#include <string.h>
 #include "Logging.h"
-#include "Objects.h"
-
-extern "C" {
+#include "DSP.h"
 #include "Storage.h"
 #include "Console.h"
 #include "Time.h"
@@ -10,7 +9,7 @@ extern "C" {
 #include "CRC16.h"
 #include "NVState.h"
 #include "Math.h"
-}
+#include "CoreObjects.h"
 
 typedef enum { invalid_c, find_stamp_c, find_start_c, ready_c, stop_c, run_c, failed_c } logState_t;
 
@@ -33,7 +32,7 @@ bool logReady(bool verbose)
   return false;
 }
 
-bool logReady(void)
+bool logReadyVerbose(void)
 {
   return logReady(true);
 }
@@ -89,7 +88,7 @@ static void logCommit(void)
   uncommitted = 0;
 }
 
-static void logEnter(const uint16_t *value, int count)
+static void logEnterGeneric(const uint16_t *value, int count)
 {
   logWrite(logPtr, value, count);
   logCommit();
@@ -102,7 +101,7 @@ static void logEnter(const uint16_t *value, int count)
 
 static void logEnter(uint16_t value)
 {
-  logEnter(&value, 1);
+  logEnterGeneric(&value, 1);
 }
 
 void logClear(void)
@@ -156,7 +155,7 @@ static void logWithCh(ChannelId_t ch, uint16_t value, bool force)
     // Set channel first
     
     uint16_t buffer[] = { ENTRY_TOKEN(t_channel + ch), value };
-    logEnter(buffer, sizeof(buffer)/sizeof(uint16_t));
+    logEnterGeneric(buffer, sizeof(buffer)/sizeof(uint16_t));
   }
     
   logChannels[ch].value = value;
@@ -187,12 +186,14 @@ void logMark(void)
 
 void logEnable()
 {
+  int i = 0;
+  
   if(logEnabled)
     return;
     
   logEnabled = true;
   
-  for(int i = 0; i < lc_channels; i++)
+  for(i = 0; i < lc_channels; i++)
     logChannels[i].value = TOKEN_MASK;
   
   prevCh = -1;  
@@ -212,7 +213,7 @@ void logDisable()
 
 void logDumpBinary(void)
 {
-  if(!logReady())
+  if(!logReadyVerbose())
     return;
   
   struct LogInfo info = { nvState.logStamp, nvState.testNum, logLen, sampleRate, vpDerived.totalMass };
@@ -411,9 +412,11 @@ bool logInit(uint32_t maxDuration)
 void logSave()
 {
   if(logState == stop_c && logEnabled) {
+    int i = 0;
+    
     logState = run_c;
     
-    for(int i = 0; i < 4; i++)
+    for(i = 0; i < 4; i++)
       logMark();
 
     logTask();
@@ -440,13 +443,14 @@ uint32_t previousForced;
 void logObjects()
 {
   bool force = false;
+  int i = 0;
   
   if(currentMillis() > previousForced+10e3) {
     previousForced = currentMillis();
     force = true;
   }
   
-  for(int i = 0; i < lc_channels; i++) {
+  for(i = 0; i < lc_channels; i++) {
     switch(logChannels[i].type) {
     case lt_real:
       logFloat((ChannelId_t) i, *((float*) logChannels[i].object), force);
@@ -503,7 +507,7 @@ void logTask()
   
   modeEncoded = encode(mode, sizeof(mode)/sizeof(bool));
   statusEncoded = encode(status, sizeof(status)/sizeof(bool));
-  flapEncoded = flapActuator.output();
+  flapEncoded = slopeOutput(&flapActuator);
   testEncoded = vpMode.test ? nvState.testNum : 0;
 
   logObjects();

@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 //
 // MS4525DO (dynamic pressure) sensor interface

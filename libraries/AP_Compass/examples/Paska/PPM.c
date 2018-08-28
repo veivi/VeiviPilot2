@@ -1,12 +1,11 @@
 #include "PPM.h"
-#include "Interrupt.h"
+#include "RxInput.h"
+#include "InputOutput.h"
 #include <avr/interrupt.h>
-
-extern "C" {
 #include "Time.h"
 #include "DSP.h"
 #include "NVState.h"
-}
+#include "StaP.h"
 
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
   
@@ -34,9 +33,11 @@ static bool calibrating;
 
 void calibStart()
 {
+  int i = 0;
+  
   calibrating = true;
   
-  for(int i = 0; i < numInputs; i++)
+  for(i = 0; i < numInputs; i++)
     if(inputRecords[i]) {
       inputRecords[i]->pulseCenter
 	= inputRecords[i]->pulseMin
@@ -47,7 +48,9 @@ void calibStart()
 void calibStop(int32_t *min, int32_t *center, int32_t *max)
 {
   if(calibrating) {
-    for(uint8_t i = 0; i < numInputs; i++) {
+    uint8_t i = 0;
+
+    for(i = 0; i < numInputs; i++) {
       min[i] = inputRecords[i]->pulseMin;
       center[i] = inputRecords[i]->pulseCenter;
       max[i] = inputRecords[i]->pulseMax;
@@ -61,6 +64,7 @@ static void handlePPMInput(const uint16_t *pulse, int numCh)
 {
   static uint32_t prev;
   uint32_t current = currentMicros(), cycle = current - prev;
+  int i = 0;
 
   if(prev > 0 && cycle > 30000)
     ppmWarnSlow = true;
@@ -70,7 +74,7 @@ static void handlePPMInput(const uint16_t *pulse, int numCh)
   ppmNumChannels = numCh;
   ppmFrames++;
 
-  for(int i = 0; i < numCh; i++) {
+  for(i = 0; i < numCh; i++) {
     if(inputRecords[i]) {
        inputRecords[i]->alive = true;
        inputRecords[i]->pulseCount = 1;
@@ -85,7 +89,7 @@ static void handlePPMInput(const uint16_t *pulse, int numCh)
   }
 }
 
-extern "C" ISR(TIMER5_CAPT_vect)
+ISR(TIMER5_CAPT_vect)
 {
   static uint16_t icr5_prev;
   static uint8_t  channel_ctr;
@@ -116,6 +120,8 @@ extern "C" ISR(TIMER5_CAPT_vect)
 
 void ppmInputInitPrim(struct RxInputRecord *inputs[], const int32_t *min, const int32_t *center, const int32_t *max)
 {
+  uint8_t i = 0;
+  
   inputRecords = inputs;
   
   numInputs = 0;
@@ -123,13 +129,13 @@ void ppmInputInitPrim(struct RxInputRecord *inputs[], const int32_t *min, const 
   while(inputs[numInputs] && numInputs < AVR_RC_INPUT_MAX_CHANNELS)
     numInputs++;
   
-  for(uint8_t i = 0; i < numInputs; i++) {
+  for(i = 0; i < numInputs; i++) {
     inputs[i]->pulseMin = min[i];
     inputs[i]->pulseCenter = center[i];
     inputs[i]->pulseMax = max[i];
   }
   
-  FORBID;
+  STAP_FORBID;
     
     TCCR5A = _BV(WGM50) | _BV(WGM51);
     TCCR5B |= _BV(WGM53) | _BV(WGM52) | _BV(CS51) | _BV(ICES5);
@@ -147,7 +153,7 @@ void ppmInputInitPrim(struct RxInputRecord *inputs[], const int32_t *min, const 
   OCR5A  = 40000 - 1; // -1 to correct for wrap
     */
     
-  PERMIT;
+  STAP_PERMIT;
 }
 
 void ppmInputInit(const int32_t *min, const int32_t *center, const int32_t *max)
@@ -160,10 +166,10 @@ float ppmFrameRate()
 {
   static uint32_t prevMeasurement;
   
-  FORBID;
+  STAP_FORBID;
   float result = 1.0e6 * ppmFrames / (currentMicros() - prevMeasurement);
   ppmFrames = 0;
-  PERMIT;
+  STAP_PERMIT;
 
   prevMeasurement = currentMicros();
 

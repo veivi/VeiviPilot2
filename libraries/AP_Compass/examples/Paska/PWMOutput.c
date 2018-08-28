@@ -40,7 +40,9 @@ struct PWMOutput pwmOutput[MAX_SERVO] = {
 
 void pwmTimerInit(const struct HWTimer *timer[], int num)
 {
-  for(int i = 0; i < num; i++) { 
+  int i = 0, j = 0;
+  
+  for(i = 0; i < num; i++) { 
     // WGM, prescaling
 
     *(timer[i]->TCCRA) = 1<<WGM11;
@@ -52,7 +54,7 @@ void pwmTimerInit(const struct HWTimer *timer[], int num)
 
    // Output set to 1.5 ms by default
 
-    for(int j = 0; j < 3; j++)
+    for(j = 0; j < 3; j++)
       *(timer[i]->OCR[j]) = 1500UL<<1; // ~0U;
   }
 }
@@ -69,7 +71,9 @@ void pwmDisable(const struct PWMOutput *output)
 
 void pwmOutputInit(void)
 {
-  for(int i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
+  int i = 0;
+  
+  for(i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
     setPinState(&pwmOutput[i].pin, 0);
     configureOutput(&pwmOutput[i].pin);
     pwmDisable(&pwmOutput[i]);
