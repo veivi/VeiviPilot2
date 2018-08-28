@@ -20,3 +20,6 @@ bool paramsModified = false;
 uint32_t lastPPMWarn;
 float fieldStrength;
 
+Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
+SlopeLimiter_t flapActuator;
+

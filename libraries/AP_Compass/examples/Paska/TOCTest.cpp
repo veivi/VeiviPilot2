@@ -1,8 +1,9 @@
+#include <string.h>
 #include "TOCTest.h"
-#include "Objects.h"
 #include "Button.h"
 
 extern "C" {
+#include "CoreObjects.h"
 #include "Logging.h"
 #include "RxInput.h"
 #include "Storage.h"
@@ -28,7 +29,7 @@ bool toc_test_link(bool reset)
 
 bool toc_test_ram(bool reset)
 {
-  return hal.util->available_memory() > (1<<9);
+  return memoryFree() > (1<<9);
 }
 
 bool toc_test_load(bool reset)

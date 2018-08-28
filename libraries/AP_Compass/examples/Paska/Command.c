@@ -1,16 +1,16 @@
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
-#include <AP_Progmem/AP_Progmem.h>
 #include "Command.h"
-#include "Objects.h"
-
-extern "C" {
+#include "StaP.h"
+#include "CoreObjects.h"
 #include "Logging.h"
+#include "Datagram.h"
 #include "Console.h"
 #include "Math.h"
 #include "NVState.h"
 #include "MS4525.h"
 #include "PPM.h"
-}
 
 const struct Command commands[] PROGMEM = {
   { "name", c_name, e_string, &vpParam.name },
@@ -181,8 +181,9 @@ void executeCommand(char *buf)
   int numParams = 0;
   float param[MAX_PARAMS];
   const char *paramText[MAX_PARAMS];
+  int i = 0;
 
-  for(int i = 0; i < MAX_PARAMS; i++)
+  for(i = 0; i < MAX_PARAMS; i++)
     param[i] = 0.0;
 
   char *parsePtr = buf;
@@ -201,7 +202,7 @@ void executeCommand(char *buf)
   while(1) {
     struct Command cache;
   
-    memcpy_P(&cache, &commands[j++], sizeof(cache));
+    CS_MEMCPY(&cache, &commands[j++], sizeof(cache));
 
     if(cache.token == c_invalid)
       break;
@@ -226,8 +227,10 @@ void executeCommand(char *buf)
     //
     // Simple variable
     //
+
+    int k = 0;
     
-    for(int i = 0; i < numParams && command.var[i]; i++) {
+    for(i = 0; i < numParams && command.var[i]; i++) {
       switch(command.varType) {
       case e_string:
 	strncpy((char*) command.var[i], paramText[i], NAME_LEN-1);
@@ -266,17 +269,17 @@ void executeCommand(char *buf)
 	break;
 
       case e_map:
-	for(int k = 0; k < MAX_SERVO; k++)
+	for(k = 0; k < MAX_SERVO; k++)
 	  ((uint8_t*) command.var[i])[k] = param[i+k];
 	break;
 	
       case e_col_curve:
-	for(int k = 0; k < CoL_degree+1; k++)
+	for(k = 0; k < CoL_degree+1; k++)
 	  ((float*) command.var[i])[k] = param[i+k];
 	break;
 
       case e_ff_curve:
-	for(int k = 0; k < FF_degree+1; k++)
+	for(k = 0; k < FF_degree+1; k++)
 	  ((float*) command.var[i])[k] = param[i+k];
 	break;
       }
@@ -359,7 +362,7 @@ void executeCommand(char *buf)
       } else {
 	gaugeCount = numParams;
 	
-	for(int i = 0; i < numParams; i++)
+	for(i = 0; i < numParams; i++)
 	  gaugeVariable[i] = param[i];
       }
       break;
@@ -452,12 +455,14 @@ void executeCommand(char *buf)
     case c_curve:
       consoleNoteLn_P(CS_STRING("Feed-forward curve"));
   
-      for(float aR = -1; aR < 1.1; aR += 0.1)
+      float aR = 0;
+
+      for(aR = -1; aR < 1.1; aR += 0.1)
 	printCoeffElement(-1, 1, vpDerived.maxAlpha*aR*RADIAN, alphaPredictInverse(vpDerived.maxAlpha*aR));
 
       consoleNoteLn_P(CS_STRING("Coeff of lift"));
   
-      for(float aR = -0.5; aR < 1.1; aR += 0.1)
+      for(aR = -0.5; aR < 1.1; aR += 0.1)
 	printCoeffElement(-0.2, 1, vpDerived.maxAlpha*aR*RADIAN,
 			  coeffOfLift(vpDerived.maxAlpha*aR)/vpDerived.maxCoeffOfLift);
       break;
@@ -632,7 +637,7 @@ void executeCommand(char *buf)
 	consoleNoteLn_P(CS_STRING("SERVO  FUNCTION"));
 	consoleNoteLn_P(CS_STRING("---------------------"));
 
-	for(int i = 0; i < MAX_SERVO; i++) {
+	for(i = 0; i < MAX_SERVO; i++) {
 	  consoleNote_P(CS_STRING("  "));
 	  consolePrintI(i);
 	  consoleTab(10);
@@ -718,11 +723,13 @@ void executeCommand(char *buf)
   }
 }
 
-static void backupParamEntry(const Command *e)
+static void backupParamEntry(const struct Command *e)
 {
+  int i = 0, j = 0;
+  
   consolePrint(e->name);
 
-  for(int i = 0; e->var[i]; i++) {
+  for(i = 0; e->var[i]; i++) {
     consolePrint(" ");
     switch(e->varType) {
     case e_string:
@@ -762,21 +769,21 @@ static void backupParamEntry(const Command *e)
       break;
 
     case e_map:
-      for(int j = 0; j < MAX_SERVO; j++) {
+      for(j = 0; j < MAX_SERVO; j++) {
 	consolePrintUI8(((uint8_t*) e->var[i])[j]);
 	consolePrint(" ");
       }
       break;
 
     case e_col_curve:
-      for(int j = 0; j < CoL_degree+1; j++) {
+      for(j = 0; j < CoL_degree+1; j++) {
 	consolePrintF(((float*) e->var[i])[j]);
 	consolePrint(" ");
       }
       break;
 
     case e_ff_curve:
-      for(int j = 0; j < FF_degree+1; j++) {
+      for(j = 0; j < FF_degree+1; j++) {
 	consolePrintF(((float*) e->var[i])[j]);
 	consolePrint(" ");
       }

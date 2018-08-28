@@ -79,6 +79,7 @@ extern struct ControlState vpControl;
 extern struct OutputState vpOutput;
 
 extern SlopeLimiter_t flapActuator;
+extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
 
 extern float controlCycle;
 extern float outer_P, rudderMix, throttleMix;

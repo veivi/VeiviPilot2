@@ -1,4 +1,3 @@
-#include "Command.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
 
@@ -16,6 +15,7 @@ extern "C" {
 #include "PWMOutput.h"
 #include "InputOutput.h"
 #include "PPM.h"
+#include "Command.h"
 }
 
 //

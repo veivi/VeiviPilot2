@@ -22,3 +22,8 @@ extern "C" void delayMicros(uint32_t x)
   uint32_t current = currentMicros();
   while(currentMicros() < current+x);
 }
+  
+extern "C" uint32_t memoryFree(void)
+{
+  return hal.util->available_memory();
+}

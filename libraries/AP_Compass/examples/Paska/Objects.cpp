@@ -19,11 +19,9 @@ struct OutputState vpOutput;
 
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
 AlphaBuffer pressureBuffer;
 RunningAvgFilter alphaFilter(ALPHAWINDOW*ALPHA_HZ);
 RateLimiter aileActuator, rollAccelLimiter, trimRateLimiter;
-SlopeLimiter_t flapActuator;
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;

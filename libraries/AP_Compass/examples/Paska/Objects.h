@@ -17,7 +17,6 @@ extern "C" {
 
 extern Controller elevCtrl, pushCtrl, throttleCtrl;
 extern UnbiasedController aileCtrl;
-extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
 extern AlphaBuffer pressureBuffer;
 extern RunningAvgFilter alphaFilter;
 extern RateLimiter aileActuator,  rollAccelLimiter, trimRateLimiter;

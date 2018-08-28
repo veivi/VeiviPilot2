@@ -6,7 +6,6 @@
 #include "Filter.h"
 #include "Controller.h"
 #include "Button.h"
-#include "Command.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
 #include "TOCTest.h"
@@ -27,6 +26,7 @@ extern "C" {
 #include "SSD1306.h"
 #include "AS5048B.h"
 #include "Logging.h"
+#include "Command.h"
 }
 
 extern "C" const float sampleRate = LOG_HZ_SLOW;
