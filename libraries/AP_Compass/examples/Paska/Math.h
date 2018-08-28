@@ -9,9 +9,9 @@
 //
 
 #define RATIO(v) (v ## .0f)
-#define Pi 3.141592654f
-#define CIRCLE (2*Pi)
-#define RADIAN (180/Pi)
+#define PI_F 3.141592654f
+#define CIRCLE (2*PI_F)
+#define RADIAN (180/PI_F)
 
 extern const float stabilityElevExp_c, stabilityAileExp1_c, stabilityAileExp2_c , stabilityPusherExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
 

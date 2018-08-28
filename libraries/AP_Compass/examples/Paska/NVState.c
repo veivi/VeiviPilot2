@@ -230,7 +230,7 @@ void printParams()
   for(i = 0; i < FF_degree+1; i++) {
     if(i > 0)
       consolePrint_P(CS_STRING(" + "));
-    consolePrintFP(vpParam.coeff_FF[0][i], 4);
+    consolePrintFP(vpDerived.coeff_FF[i], 4);
     consolePrint_P(CS_STRING(" x^"));
     consolePrintI(i);
   }
@@ -279,10 +279,13 @@ void printParams()
   consolePrintFP(vpParam.glideSlope*RADIAN, 2);
   consolePrint_P(CS_STRING("  alt(floor) = "));
   consolePrintLnF(vpParam.floor);
-  consoleNote_P(CS_STRING("  Max alpha clean (full flaps) = "));
-  consolePrintF(vpParam.alphaMax[0]*RADIAN);
+  consoleNote_P(CS_STRING("  Max alpha (clean, full flaps) = "));
+  consolePrintF(vpDerived.maxAlpha*RADIAN);
+  
   if(vpDerived.haveFlaps) {
     consolePrint(" (");
+    consolePrintF(vpParam.alphaMax[0]*RADIAN);
+    consolePrint(", ");
     consolePrintF(vpParam.alphaMax[1]*RADIAN);
     consolePrint(")");
   }
@@ -415,7 +418,7 @@ void printParams()
     vpParam.wowCalibrated = false;
 }
 
-static float interpolate(float c, float v[])
+static float interpolate(float c, const float v[])
 {
   return mixValue(c, v[0], v[1]);
 }

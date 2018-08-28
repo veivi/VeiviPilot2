@@ -31,21 +31,6 @@ class DelayLine {
     int ptr;
 };
 
-class Damper {
- public:
-  Damper(void);
-  Damper(float tau);
-  Damper(float tau, float initState);
-  
-  void reset(float v);
-  void setTau(float tau);
-  float input(float v);
-  float output();
-    
- private:
-  float tau, avg;
-};
-
 class Derivator {
   public:
   void input(float v, float dt);

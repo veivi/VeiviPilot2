@@ -1,62 +1,10 @@
-#include "Filter.h"
 #include <string.h>
+#include "Filter.h"
 
 extern "C" {
 #include "Console.h"
 #include "DSP.h"
 #include "NVState.h"
-}
-
-  /*
-void Median3Filter::input(float v)
-{
-  memory[ptr++] = v;
-  if(ptr > MedianWindow_c-1) ptr = 0;
-}
-
-float Median3Filter::output(void)
-{
-  return max(min(memory[0],memory[1]), min(max(memory[0],memory[1]),memory[2]));
-}
-  */
-  
-Damper::Damper(void)
-{
-  avg = 0;
-  setTau(1);
-}
-
-Damper::Damper(float t)
-{
-  avg = 0;
-  setTau(t);
-}
-
-Damper::Damper(float t, float i)
-{
-  avg = i;
-  setTau(t);
-}
-
-float Damper::input(float v)
-{
-  avg = mixValue(tau, avg, v);
-  return output();
-}
-
-void Damper::reset(float v)
-{
-  avg = v;
-}
-
-float Damper::output(void)
-{
-  return avg;
-}
-
-void Damper::setTau(float tauValue)
-{
-  tau = 1.0/(1+tauValue);
 }
 
 void Derivator::input(float v, float dt)

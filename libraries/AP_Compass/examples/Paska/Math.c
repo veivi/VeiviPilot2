@@ -3,6 +3,7 @@
 #include "NVState.h"
 #include "Console.h"
 #include "CoreObjects.h"
+#include "DSP.h"
 
 const float stabilityElevExp_c = -1.5;
 const float stabilityAileExp1_c = -1.5;
@@ -99,7 +100,7 @@ float dynamicPressureInverse(float pressure)
   return sign(pressure)*sqrtf(fabsf(2 * pressure / airDensity_c));
 }
 
-float coeffOfLiftGeneric(float aoa, float coeff[])
+float coeffOfLiftGeneric(float aoa, const float coeff[])
 {
   aoa = clamp(aoa, -vpDerived.maxAlpha, vpDerived.maxAlpha);
   return polynomial(CoL_degree, aoa, coeff);

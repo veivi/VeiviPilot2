@@ -2,7 +2,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-// #include "Math.h"
 #include "Console.h"
 
 float expo(float a, float b)
