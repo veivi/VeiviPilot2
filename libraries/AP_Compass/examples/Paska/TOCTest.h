@@ -1,6 +1,5 @@
-extern "C" {
+#include <stdbool.h>
 #include "Math.h"
-}
 
 //
 // Takeoff configuration test

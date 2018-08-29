@@ -1,8 +1,5 @@
 #include <string.h>
 #include "TOCTest.h"
-#include "Button.h"
-
-extern "C" {
 #include "CoreObjects.h"
 #include "Logging.h"
 #include "RxInput.h"
@@ -12,7 +9,7 @@ extern "C" {
 #include "NVState.h"
 #include "DSP.h"
 #include "Math.h"
-}
+#include "Button.h"
 
 bool toc_test_mode(bool reset)
 {
@@ -196,13 +193,12 @@ bool toc_test_tuning(bool reset)
 bool toc_test_button_range(bool reset)
 {
   static struct TOCRangeTestState state;
-  return toc_test_range_generic(&state, reset, &buttonInput, -1, 1);
+  return toc_test_range_generic(&state, reset, &btnInput, -1, 1);
 }
 
 bool toc_test_button_neutral(bool reset)
 {
-  return  !leftUpButton.state() && !leftDownButton.state()
-    && !rightUpButton.state() && !rightDownButton.state();
+  return !buttonState(&TRIMBUTTON) && !buttonState(&GEARBUTTON) && !buttonState(&LEVELBUTTON) && !buttonState(&RATEBUTTON);
 }
 
 bool toc_test_button(bool reset)
@@ -234,10 +230,11 @@ static bool tocStatusFailed;
 bool tocTestInvoke(bool reset, bool challenge, void (*report)(bool, int, const char *))
 {
   struct TakeoffTest cache;
+  int i = 0;
 
   tocStatusFailed = false;
   
-  for(int i = 0; i < tocNumOfTests; i++) {
+  for(i = 0; i < tocNumOfTests; i++) {
     memcpy_P(&cache, &tocTest[i], sizeof(cache));
 
     bool result = (*cache.function)(reset);

@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include "InputOutput.h"
 
+#define RX_CHANNELS          8
+
 extern struct RxInputRecord aileInput, elevInput, throttleInput,
-  buttonInput, tuningKnobInput, flightModeInput, rudderInput, flapInput;
+  btnInput, tuningKnobInput, flightModeInput, rudderInput, flapInput;
 
 extern struct RxInputRecord *ppmInputs[];
 

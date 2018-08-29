@@ -203,20 +203,22 @@ void setup()
   }
 #endif
 
-  // Static controller settings
+  // Static controller settings & filters
 
   aileCtrl.limit(RATIO(2/3));
-  slopeSetRate(&flapActuator, 0.5);
   
-  // Misc filters
-
+  slopeInit(&flapActuator, 0.5);
+  slopeInit(&trimRateLimiter, 3/RADIAN);
+  
   damperInit(&ball, 1.5*CONTROL_HZ, 0);
   damperInit(&iasFilter, 2, 0);
   damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
   damperInit(&accAvg, 2*CONTROL_HZ, G);
   damperInit(&iasEntropy, CONFIG_HZ, 0);
   damperInit(&alphaEntropy, CONFIG_HZ, 0);
-  trimRateLimiter.setRate(3/RADIAN);
+  
+  swAvgInit(&alphaFilter, ALPHAWINDOW*ALPHA_HZ);
+  swAvgInit(&liftFilter, CONFIG_HZ/4);
 
   // Initial gear state is DOWN
   

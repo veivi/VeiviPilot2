@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 #include "Controller.h"
-#include "Filter.h"
-#include "NewI2C.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
@@ -17,9 +15,9 @@ extern "C" {
 
 extern Controller elevCtrl, pushCtrl, throttleCtrl;
 extern UnbiasedController aileCtrl;
-extern AlphaBuffer pressureBuffer;
-extern RunningAvgFilter alphaFilter;
-extern RateLimiter aileActuator,  rollAccelLimiter, trimRateLimiter;
+extern Sampler_t pressureBuffer;
+extern SWAvg_t alphaFilter, liftFilter;
+extern SlopeLimiter_t aileActuator,  rollAccelLimiter, trimRateLimiter;
 extern const AP_HAL::HAL& hal;
 extern AP_HAL::BetterStream* cliSerial;
 

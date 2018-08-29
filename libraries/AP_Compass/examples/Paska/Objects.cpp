@@ -1,27 +1,17 @@
 #include "Objects.h"
-#include "NVState.h"
 #include "AlphaPilot.h"
+#include "NewI2C.h"
 
 extern "C" {
 #include "DSP.h"
+#include "NVState.h"
 }
-
-/*
-struct ModeRecord vpMode;
-struct FeatureRecord vpFeature;
-struct StatusRecord vpStatus;
-struct FlightState vpFlight;
-struct InputState vpInput;
-struct ControlState vpControl;
-struct OutputState vpOutput;
-// struct GPSFix gpsFix;
-*/
 
 Controller elevCtrl, pushCtrl, throttleCtrl;
 UnbiasedController aileCtrl;
-AlphaBuffer pressureBuffer;
-RunningAvgFilter alphaFilter(ALPHAWINDOW*ALPHA_HZ);
-RateLimiter aileActuator, rollAccelLimiter, trimRateLimiter;
+Sampler_t pressureBuffer;
+SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter;
+SWAvg_t alphaFilter, liftFilter;
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 AP_HAL::BetterStream* cliSerial;

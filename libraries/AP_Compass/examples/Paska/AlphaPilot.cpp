@@ -1,9 +1,6 @@
-#include "Filter.h"
 #include "Controller.h"
-#include "Button.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
-#include "TOCTest.h"
 
 extern "C" {
 #include "RxInput.h"
@@ -22,6 +19,8 @@ extern "C" {
 #include "AS5048B.h"
 #include "Logging.h"
 #include "Command.h"
+#include "Button.h"
+#include "TOCTest.h"
 }
 
 extern "C" const float sampleRate = LOG_HZ_SLOW;
@@ -52,7 +51,7 @@ void alphaTask()
   static int16_t prev = 0;
   
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
-    alphaFilter.input(CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
+    swAvgInput(&alphaFilter, CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
     alphaChange += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
@@ -162,19 +161,14 @@ void airspeedTask()
   static int16_t prev = 0;
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
-    pressureBuffer.input((float) raw);
+    samplerInput(&pressureBuffer, (float) raw);
     iasChange += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
   }
 }
 
-DelayLine elevDelay, aileDelay;
-Derivator elevDeriv, aileDeriv;
-const float maxSlope_c = 0.75*CONTROL_HZ, abruptDelay_c = 0.15;
-uint32_t lastAbruptInput;
-bool inputDelayed;
-Derivator buttonSlope;
+Derivator_t buttonSlope;
 float lazyButtonValue;
 
 void configurationTask();
@@ -210,17 +204,17 @@ void receiverTask()
 
   // Button input
 
-  float buttonValue = inputValue(&buttonInput);
+  float buttonValue = inputValue(&btnInput);
   
-  buttonSlope.input(buttonValue, 1);
+  derivatorInput(&buttonSlope, buttonValue, 1);
 
-  if(fabs(buttonSlope.output()) < 0.03)
+  if(fabs(derivatorOutput(&buttonSlope)) < 0.03)
     lazyButtonValue = buttonValue;
      
-  LEVELBUTTON.input(lazyButtonValue);
-  RATEBUTTON.input(lazyButtonValue);
-  TRIMBUTTON.input(lazyButtonValue);
-  GEARBUTTON.input(lazyButtonValue);
+  buttonInput(&LEVELBUTTON, lazyButtonValue);
+  buttonInput(&RATEBUTTON, lazyButtonValue);
+  buttonInput(&TRIMBUTTON, lazyButtonValue);
+  buttonInput(&GEARBUTTON, lazyButtonValue);
 
   //
   // PPM fail detection, simulate RX failsafe if PPM fails
@@ -253,36 +247,6 @@ void receiverTask()
     vpMode.radioFailSafe = false;
   }
 
-  // Delay the controls just to make sure we always detect the failsafe
-  // mode before doing anything abrupt
-
-  elevDeriv.input(vpInput.elev, controlCycle);
-  aileDeriv.input(vpInput.aile, controlCycle);
-
-  if(elevDeriv.output() > maxSlope_c || aileDeriv.output() > maxSlope_c) {
-    // We're seeing an abrupt change, apply delay from now on
-    
-    if(!inputDelayed) {
-      consoleNoteLn_P(CS_STRING("Seeing ABRUPT aile/elev input, delay applied"));
-      elevDelay.setDelay(abruptDelay_c*CONTROL_HZ);
-      aileDelay.setDelay(abruptDelay_c*CONTROL_HZ);
-      inputDelayed = true;
-    }
-    
-    lastAbruptInput = currentTime;
-
-  } else if(inputDelayed && currentTime - lastAbruptInput > abruptDelay_c*1e6) {
-    // No abrupt changes for a while, remove the delay
-    
-    consoleNoteLn_P(CS_STRING("Aile/elev input seems SMOOTH"));
-    elevDelay.setDelay(0);
-    aileDelay.setDelay(0);
-    inputDelayed = false;
-  }
-  
-  vpInput.elev = elevDelay.input(vpInput.elev);
-  vpInput.aile = aileDelay.input(vpInput.aile);
-
   //
   // Expo
   //
@@ -295,14 +259,14 @@ void sensorTaskFast()
 {
   // Alpha input
   
-  vpFlight.alpha = alphaFilter.output();
+  vpFlight.alpha = swAvgOutput(&alphaFilter);
   
   // Dynamic pressure, corrected for alpha
   
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
-  vpFlight.dynP = pressureBuffer.output() * factor_c
+  vpFlight.dynP = samplerMean(&pressureBuffer) * factor_c
     / cos(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
   // Attitude
@@ -469,8 +433,6 @@ static void failsafeDisable()
     vpMode.alphaFailSafe = vpMode.sensorFailSafe = false;
   }
 }
-
-RunningAvgFilter liftFilter(CONFIG_HZ/4);
 
 void statusTask()
 {
@@ -666,7 +628,7 @@ void statusTask()
   const float
     weight = vpDerived.totalMass * G,
     lift = vpDerived.totalMass * vpFlight.accZ * cos(vpFlight.pitch),
-    liftAvg = liftFilter.input(lift),
+    liftAvg = swAvgInput(&liftFilter, lift),
     liftExpected = coeffOfLift(vpFlight.alpha) * vpFlight.dynP,
     liftMax = vpDerived.maxCoeffOfLift * vpFlight.dynP;
       
@@ -707,13 +669,14 @@ void configurationTask()
   // Being armed?
   //
   
-  if(leftUpButton.doublePulse() && !vpStatus.armed &&
+  if(buttonDoublePulse(&TRIMBUTTON) && !vpStatus.armed &&
      vpInput.throttle < 0.10 && vpInput.aile < -0.90 && vpInput.elev > 0.90) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     vpStatus.armed = true;
-    leftDownButton.reset();
-    rightUpButton.reset();
-    rightDownButton.reset();
+    buttonReset(&GEARBUTTON);
+    buttonReset(&LEVELBUTTON);
+    buttonReset(&RATEBUTTON);
+
     tocTestReset();
   }
 
@@ -733,7 +696,7 @@ void configurationTask()
   //   GEAR BUTTON
   //
   
-  if(GEARBUTTON.doublePulse()) {
+  if(buttonDoublePulse(&GEARBUTTON)) {
     //
     // DOUBLE PULSE: FAILSAFE MODE SELECT
     //
@@ -751,7 +714,7 @@ void configurationTask()
     } else if(!vpStatus.positiveIAS)
       logDisable();
     
-  } else if(GEARBUTTON.singlePulse()) {
+  } else if(buttonSinglePulse(&GEARBUTTON)) {
     //
     // SINGLE PULSE: GEAR TOGGLE
     //
@@ -767,7 +730,7 @@ void configurationTask()
     
     vpMode.autoThrottle = false;
 
-  } else if(GEARBUTTON.depressed() && !vpMode.autoThrottle) {
+  } else if(buttonDepressed(&GEARBUTTON) && !vpMode.autoThrottle) {
     //
     // CONTINUOUS: Autothrottle engage
     //
@@ -791,13 +754,13 @@ void configurationTask()
   // RATE BUTTON
   //
 
-  if(RATEBUTTON.depressed() && !vpMode.halfRate) {
+  if(buttonDepressed(&RATEBUTTON) && !vpMode.halfRate) {
     // Continuous: half-rate enable
     
     consoleNoteLn_P(CS_STRING("Half-rate ENABLED"));
     vpMode.halfRate = true;
     
-  } else if(RATEBUTTON.singlePulse() && vpMode.halfRate) {
+  } else if(buttonSinglePulse(&RATEBUTTON) && vpMode.halfRate) {
     // Single pulse: half-rate disable
     
     consoleNoteLn_P(CS_STRING("Half-rate DISABLED"));
@@ -808,7 +771,7 @@ void configurationTask()
   // WING LEVELER BUTTON
   //
 
-  if(LEVELBUTTON.singlePulse()) {
+  if(buttonSinglePulse(&LEVELBUTTON)) {
     //
     // PULSE : Takeoff mode enable
     //
@@ -833,7 +796,7 @@ void configurationTask()
 	vpMode.takeOff = prevMode;
       }
     }
-  } else if(LEVELBUTTON.depressed()) {
+  } else if(buttonDepressed(&LEVELBUTTON)) {
     //
     // CONTINUOUS : LEVEL WINGS
     //
@@ -985,7 +948,7 @@ void configurationTask()
   if(vpMode.sensorFailSafe) {
     vpFeature.stabilizePitch = vpFeature.stabilizeBank
       = vpFeature.alphaHold = vpFeature.pusher
-      = vpMode.bankLimiter = vpFeature.keepLevel = vpMode.takeOff = false;
+      = vpFeature.keepLevel = vpMode.takeOff = false;
     
     vpFeature.aileFeedforward = true;
     
@@ -1018,8 +981,8 @@ void configurationTask()
   rudderMix = vpParam.r_Mix;
   throttleMix = vpParam.t_Mix;
   
-  aileActuator.setRate(vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  rollAccelLimiter.setRate(rollRatePredict(1) / 0.2);
+  slopeSet(&aileActuator, vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
+  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.2);
   
   //
   // Apply test mode
@@ -1113,7 +1076,7 @@ void configurationTask()
     case 17:
       // Roll acceleration
       
-      rollAccelLimiter.setRate(rollRatePredict(1)/(vpControl.testGain = testGainLinear(0.01,2)));
+      slopeSet(&rollAccelLimiter, rollRatePredict(1)/(vpControl.testGain = testGainLinear(0.01,2)));
       break;
     }
   } else { 
@@ -1134,7 +1097,7 @@ void trimTask()
   const float elevTrimRate = trimRateMin_c + fabsf(vpInput.elev)*trimRateRange_c,
     steerTrimRate = trimRateMin_c + fabsf(vpInput.rudder)*trimRateRange_c;
     
-  if(TRIMBUTTON.state() || vpMode.radioFailSafe) {
+  if(buttonState(&TRIMBUTTON) || vpMode.radioFailSafe) {
     //
     // Nose wheel
     //
@@ -1558,7 +1521,6 @@ void gpsTask()
 
 const float pusherBoost_c = 0.2;
 const float pusherBias_c = -2.5/RADIAN;
-RateLimiter flareLimiter(1/0.1);
 
 void elevatorModule()
 {
@@ -1576,17 +1538,15 @@ void elevatorModule()
     && (vpDerived.haveRetracts || vpFlight.alt < 5)
     && vpInput.throttle < 0.3;
 
-  flareLimiter.input(flareAllowed ? vpParam.flare * stickForce : 0,
-		     controlCycle);
-
-  vpControl.targetAlpha = mixValue(flareLimiter.output(),
-				   fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
-				   alphaPredict(vpOutput.elev));
+  vpControl.targetAlpha =
+    mixValue(flareAllowed ? vpParam.flare * stickForce : 0,
+	     fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
+	     alphaPredict(vpOutput.elev));
 
   if(vpMode.radioFailSafe)
-    vpControl.targetAlpha = trimRateLimiter.input(vpControl.targetAlpha, controlCycle);
+    vpControl.targetAlpha = slopeInput(&trimRateLimiter, vpControl.targetAlpha, controlCycle);
   else
-    trimRateLimiter.reset(vpControl.targetAlpha);
+    slopeReset(&trimRateLimiter, vpControl.targetAlpha);
     
   if(vpFeature.alphaHold)
     vpControl.targetPitchR =
@@ -1715,7 +1675,7 @@ void aileronModule()
 
   //   Apply angular accel limiter
 
-  targetRollR = rollAccelLimiter.input(targetRollR, controlCycle);
+  targetRollR = slopeInput(&rollAccelLimiter, targetRollR, controlCycle);
   
   //   Apply controller output + feedforward
   
@@ -1727,7 +1687,7 @@ void aileronModule()
   //   Constrain & rate limit
   
   vpOutput.aile
-    = aileActuator.input(constrainServoOutput(vpOutput.aile), controlCycle);
+    = slopeInput(&aileActuator, constrainServoOutput(vpOutput.aile), controlCycle);
 }
 
 //

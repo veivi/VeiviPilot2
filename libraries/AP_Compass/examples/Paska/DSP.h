@@ -57,7 +57,7 @@ typedef struct Derivator_s {
 
 bool derivatorInit(Derivator_t*);
 void derivatorFinalize(Derivator_t*);
-float derivatorinput(Derivator_t*, float v, float dt);
+float derivatorInput(Derivator_t*, float v, float dt);
 float derivatorOutput(Derivator_t*);
     
 typedef struct SlopeLimiter {
@@ -65,11 +65,11 @@ typedef struct SlopeLimiter {
   float state;
 } SlopeLimiter_t;
 
-bool slopeInit(SlopeLimiter_t *);
+bool slopeInit(SlopeLimiter_t *, float r);
 void slopeFinalize(SlopeLimiter_t *);
 float slopeInput(SlopeLimiter_t *, float v, float dt);
 float slopeOutput(SlopeLimiter_t *);
-void slopeSetRate(SlopeLimiter_t *, float v);
+void slopeSet(SlopeLimiter_t *, float v);
 void slopeReset(SlopeLimiter_t *, float v);
 
 typedef struct Sampler {

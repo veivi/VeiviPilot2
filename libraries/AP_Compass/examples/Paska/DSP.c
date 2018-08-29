@@ -216,7 +216,7 @@ void derivatorFinalize(Derivator_t *d)
 {
 }
 
-float derivatorinput(Derivator_t *d, float v, float dt)
+float derivatorInput(Derivator_t *d, float v, float dt)
 {
   d->prev = d->value;
   d->value = v;
@@ -230,8 +230,9 @@ float derivatorOutput(Derivator_t *d)
   return (d->value - d->prev) / d->delta;
 }
 
-bool slopeInit(SlopeLimiter_t *f)
+bool slopeInit(SlopeLimiter_t *f, float r)
 {
+  slopeSet(f, r);
   return true;
 }
 
@@ -250,7 +251,7 @@ float slopeOutput(SlopeLimiter_t *f)
   return f->state;
 }
 
-void slopeSetRate(SlopeLimiter_t *f, float v)
+void slopeSet(SlopeLimiter_t *f, float v)
 {
   f->maxRate = v;
 }

@@ -9,7 +9,6 @@ extern "C" {
 // Configuration
 //
 
-#define RX_CHANNELS          8
 #define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 // #define USE_COMPASS  1

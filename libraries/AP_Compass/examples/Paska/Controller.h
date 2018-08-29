@@ -2,7 +2,6 @@
 #define CONTROLLER_H
 
 #include <stdint.h>
-#include "Filter.h"
 
 class Controller {
 public:
