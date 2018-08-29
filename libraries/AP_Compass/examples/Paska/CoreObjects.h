@@ -33,7 +33,6 @@ struct ModeRecord {
   bool takeOff;
   bool wingLeveler;
   bool slowFlight;
-  bool progressiveFlight;
   bool halfRate;
   bool autoThrottle;
   bool loggingSuppressed;
@@ -45,7 +44,6 @@ struct FeatureRecord {
   bool stabilizePitch;
   bool alphaHold;
   bool pusher;
-  bool aileFeedforward;
 };
 
 struct FlightState {

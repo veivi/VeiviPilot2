@@ -863,12 +863,6 @@ void configurationTask()
   flapSel = FLAP_STEPS/2 - flapSelectorValue;
 
   //
-  // Stabilizer mode
-  //
-  
-  vpMode.progressiveFlight = true;
-    
-  //
   // Test mode control
   //
 
@@ -913,7 +907,6 @@ void configurationTask()
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold =
     vpMode.slowFlight && fabs(vpFlight.bank) < 60/RADIAN;
-  vpFeature.aileFeedforward = vpMode.progressiveFlight;
 
   // Modify if taking off...
   
@@ -944,14 +937,12 @@ void configurationTask()
 
   // Failsafe overrides
 
-  if(vpMode.sensorFailSafe) {
+  if(vpMode.sensorFailSafe)
     vpFeature.stabilizePitch = vpFeature.stabilizeBank
       = vpFeature.alphaHold = vpFeature.pusher
       = vpFeature.keepLevel = vpMode.takeOff = false;
     
-    vpFeature.aileFeedforward = true;
-    
-  } else if(vpMode.alphaFailSafe)
+  else if(vpMode.alphaFailSafe)
     vpFeature.stabilizePitch = vpFeature.alphaHold
       = vpFeature.pusher = vpMode.takeOff = false;
   
@@ -1677,8 +1668,7 @@ void aileronModule()
   
   //   Apply controller output + feedforward
   
-  vpControl.ailePredict =
-    vpFeature.aileFeedforward ? rollRatePredictInverse(targetRollR) : 0;
+  vpControl.ailePredict = rollRatePredictInverse(targetRollR);
   
   vpOutput.aile += vpControl.ailePredict + pidCtrlOutput(&aileCtrl);
 
