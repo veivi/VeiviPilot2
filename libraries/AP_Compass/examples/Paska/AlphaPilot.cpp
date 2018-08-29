@@ -1,4 +1,3 @@
-#include "Controller.h"
 #include "Objects.h"
 #include "AlphaPilot.h"
 
@@ -968,14 +967,14 @@ void configurationTask()
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
 
-  aileCtrl.setZieglerNicholsPID(s_Ku*scale, vpParam.s_Tu);  
-  elevCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
-  pushCtrl.setZieglerNicholsPID(i_Ku*scale, vpParam.i_Tu);
+  pidCtrlSetZNPID(&aileCtrl, s_Ku*scale, vpParam.s_Tu);  
+  pidCtrlSetZNPID(&elevCtrl, i_Ku*scale, vpParam.i_Tu);
+  pidCtrlSetZNPID(&pushCtrl, i_Ku*scale, vpParam.i_Tu);
 
   if(vpMode.slowFlight)
-    throttleCtrl.setZieglerNicholsPI(vpParam.at_Ku, vpParam.at_Tu);
+    pidCtrlSetZNPI(&throttleCtrl, vpParam.at_Ku, vpParam.at_Tu);
   else
-    throttleCtrl.setZieglerNicholsPI(vpParam.cc_Ku, vpParam.cc_Tu);
+    pidCtrlSetZNPI(&throttleCtrl, vpParam.cc_Ku, vpParam.cc_Tu);
 
   outer_P = vpParam.o_P;
   rudderMix = vpParam.r_Mix;
@@ -994,7 +993,7 @@ void configurationTask()
       // Wing stabilizer gain
          
       vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;
-      aileCtrl.setPID(vpControl.testGain = testGainExpo(s_Ku_ref), 0, 0);
+      pidCtrlSetPID(&aileCtrl, vpControl.testGain = testGainExpo(s_Ku_ref), 0, 0);
       break;
             
     case 2:
@@ -1002,14 +1001,14 @@ void configurationTask()
          
       vpFeature.stabilizePitch = true;
       vpFeature.alphaHold = false;
-      elevCtrl.setPID(vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
+      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
       break;
          
     case 3:
       // Elevator stabilizer gain, outer loop enabled
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      elevCtrl.setPID(vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
+      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
       break;
          
     case 4:
@@ -1038,14 +1037,13 @@ void configurationTask()
     case 11:
       // Autothrottle gain (Z-N)
       
-      throttleCtrl.setPID(vpControl.testGain = testGainExpo(vpParam.at_Ku), 0, 0);
+      pidCtrlSetPID(&throttleCtrl, vpControl.testGain = testGainExpo(vpParam.at_Ku), 0, 0);
       break;
       
     case 12:
       // Autothrottle gain (empirical)
       
-      throttleCtrl.setZieglerNicholsPI
-	(vpControl.testGain = testGainExpo(vpParam.at_Ku), vpParam.at_Tu);
+      pidCtrlSetZNPI(&throttleCtrl, vpControl.testGain = testGainExpo(vpParam.at_Ku), vpParam.at_Tu);
       break;
 
     case 13:
@@ -1260,7 +1258,7 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" aileOut(c) = "));
 	consolePrintF(vpOutput.aile);
 	consolePrint_P(CS_STRING(" ("));
-	consolePrintF(aileCtrl.output());
+	consolePrintF(pidCtrlOutput(&aileCtrl));
 	consolePrint_P(CS_STRING(") elevOut = "));
 	consolePrintF(vpOutput.elev);
 	consolePrint_P(CS_STRING(" rudderOut = "));
@@ -1340,7 +1338,7 @@ void gaugeTask()
 	consolePrintFP(vpFlight.slope*RADIAN, 1);
 	consoleTab(55);
 	consolePrint_P(CS_STRING(" THR(auto) = "));
-	consolePrintFP(throttleCtrl.output(), 2);
+	consolePrintFP(pidCtrlOutput(&throttleCtrl), 2);
 	break;
 	
       case 14:
@@ -1571,9 +1569,9 @@ void elevatorModule()
       vpControl.targetPitchR = fminf(vpControl.targetPitchR, vpFlight.pitchR);
     }
     
-    elevCtrl.input(vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
+    pidCtrlInput(&elevCtrl, vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
     
-    vpOutput.elev = elevCtrl.output();
+    vpOutput.elev = pidCtrlOutput(&elevCtrl);
 
     if(vpFeature.alphaHold)
       vpOutput.elev += vpControl.elevPredict;
@@ -1582,14 +1580,14 @@ void elevatorModule()
     if(vpMode.radioFailSafe)
       vpOutput.elev = vpControl.elevPredict;
     
-    elevCtrl.reset(vpOutput.elev - vpControl.elevPredict, 0.0);
+    pidCtrlReset(&elevCtrl, vpOutput.elev - vpControl.elevPredict, 0.0);
       
     // Pusher
 
 #ifdef HARD_PUSHER
-    pushCtrl.limit(0, vpOutput.elev);
+    pidCtrlSetRangeAB(&pushCtrl, vpOutput.elev*RATIO(1/4), vpOutput.elev);
 #else
-    pushCtrl.limit(-vpOutput.elev, 0);
+    pidCtrlSetRangeAB(&pushCtrl, -vpOutput.elev*RATIO(3/4), 0);
 #endif
 
     vpControl.pusher = 0;
@@ -1602,20 +1600,20 @@ void elevatorModule()
 	* (1 + (vpStatus.stall ? pusherBoost_c : 0) )
 	+ (vpStatus.stall ? pusherBias_c : 0);
 
-      pushCtrl.input(target - vpFlight.pitchR, controlCycle);
+      pidCtrlInput(&pushCtrl, target - vpFlight.pitchR, controlCycle);
 
 #ifdef HARD_PUSHER
-      vpControl.pusher = fminf(pushCtrl.output() - vpOutput.elev, 0);
+      vpControl.pusher = fminf(pidCtrlOutput(&pushCtrl) - vpOutput.elev, 0);
 #else
-      vpControl.pusher = pushCtrl.output();
+      vpControl.pusher = pidCtrlOutput(&pushCtrl);
 #endif
 
       vpOutput.elev += vpControl.pusher;
     } else
 #ifdef HARD_PUSHER
-      pushCtrl.reset(vpOutput.elev, 0.0);
+      pidCtrlReset(&pushCtrl, vpOutput.elev, 0.0);
 #else
-      pushCtrl.reset(0, 0.0);
+    pidCtrlReset(&pushCtrl, 0, 0.0);
 #endif
   }
 }
@@ -1662,11 +1660,11 @@ void aileronModule()
 	      (-maxBank - vpFlight.bank)*outer_P, (maxBank - vpFlight.bank)*outer_P);
     }
 
-    aileCtrl.input(targetRollR - vpFlight.rollR, controlCycle);
+    pidCtrlInput(&aileCtrl, targetRollR - vpFlight.rollR, controlCycle);
   } else {
     // Stabilization disabled
     
-    aileCtrl.reset(0, 0);
+    pidCtrlReset(&aileCtrl, 0, 0);
     
     if(vpFeature.keepLevel)
       // Simple proportional wing leveler
@@ -1682,7 +1680,7 @@ void aileronModule()
   vpControl.ailePredict =
     vpFeature.aileFeedforward ? rollRatePredictInverse(targetRollR) : 0;
   
-  vpOutput.aile += vpControl.ailePredict + aileCtrl.output();
+  vpOutput.aile += vpControl.ailePredict + pidCtrlOutput(&aileCtrl);
 
   //   Constrain & rate limit
   
@@ -1705,10 +1703,10 @@ void rudderModule()
   
 void throttleModule()
 {
-  throttleCtrl.limit(vpControl.minThrottle, vpInput.throttle);
+  pidCtrlSetRangeAB(&throttleCtrl, vpControl.minThrottle, vpInput.throttle);
     
   if((!vpMode.takeOff && !vpStatus.aloft) || vpMode.radioFailSafe)
-    throttleCtrl.reset(0, 0);
+    pidCtrlReset(&throttleCtrl, 0, 0);
   
   else if(vpMode.autoThrottle) {
     float thrError = 0;
@@ -1718,10 +1716,10 @@ void throttleModule()
     else
       thrError = 1 - vpFlight.dynP/vpControl.targetPressure;
 
-    throttleCtrl.input(thrError, controlCycle);
+    pidCtrlInput(&throttleCtrl, thrError, controlCycle);
 
   } else 
-    throttleCtrl.reset(vpInput.throttle, 0);
+    pidCtrlReset(&throttleCtrl, vpInput.throttle, 0);
 }
 
 //
@@ -1779,7 +1777,7 @@ void mixingTask()
   
   vpOutput.elev =
     constrainServoOutput(vpOutput.elev +
-			 throttleMix*powf(throttleCtrl.output(),
+			 throttleMix*powf(pidCtrlOutput(&throttleCtrl),
 					  vpParam.t_Expo));
 
   // Aile to rudder mix
@@ -1931,7 +1929,7 @@ float brakeFn()
 
 float throttleFn()
 {
-  return THROTTLE_SIGN*RATIO(2/3)*(2*throttleCtrl.output() - 1);
+  return THROTTLE_SIGN*RATIO(2/3)*(2*pidCtrlOutput(&throttleCtrl) - 1);
 }
 
 float (*functionTable[])(void) = {
@@ -2009,7 +2007,7 @@ void simulatorLinkTask()
   if(vpStatus.simulatorLink && vpStatus.armed) {
     struct SimLinkControl control = { .aileron = vpOutput.aile,
 				      .elevator = -vpOutput.elev,
-				      .throttle = throttleCtrl.output(),
+				      .throttle = pidCtrlOutput(&throttleCtrl),
 				      .rudder = vpOutput.rudder };
 
     datagramTxStart(DG_SIMLINK);

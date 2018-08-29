@@ -205,7 +205,12 @@ void setup()
 
   // Static controller settings & filters
 
-  aileCtrl.limit(RATIO(2/3));
+  pidCtrlInit(&elevCtrl);
+  pidCtrlInit(&pushCtrl);
+  pidCtrlInit(&throttleCtrl);
+  pidCtrlInitUnwinding(&aileCtrl);
+  
+  pidCtrlSetRange(&aileCtrl, RATIO(2/3));
   
   slopeInit(&flapActuator, 0.5);
   slopeInit(&trimRateLimiter, 3/RADIAN);

@@ -7,8 +7,7 @@ extern "C" {
 #include "NVState.h"
 }
 
-Controller elevCtrl, pushCtrl, throttleCtrl;
-UnbiasedController aileCtrl;
+PIDCtrl_t elevCtrl, pushCtrl, throttleCtrl, aileCtrl;
 Sampler_t pressureBuffer;
 SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter;
 SWAvg_t alphaFilter, liftFilter;
