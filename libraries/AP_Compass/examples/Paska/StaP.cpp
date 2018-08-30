@@ -1,0 +1,145 @@
+extern "C" {
+#include "StaP.h"
+#include "Console.h"
+}
+
+#include <AP_HAL/AP_HAL.h>
+#include <AP_HAL_AVR/AP_HAL_AVR.h>
+#include <AP_InertialSensor/AP_InertialSensor.h>
+#include <AP_AHRS/AP_AHRS.h>
+
+#include "AlphaPilot.h"
+#include "NewI2C.h"
+
+const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+AP_Baro barometer;
+AP_InertialSensor ins;
+AP_GPS gps;
+AP_AHRS_DCM ahrs {ins,  barometer, gps};
+
+#ifdef USE_COMPASS
+static Compass compass;
+#endif
+
+NewI2C I2c = NewI2C();
+
+extern "C" uint8_t nestCount = 0;
+
+  bool stap_boot(void)
+{
+  hal.init(0, NULL);
+  vpStatus.consoleLink = true;
+}  
+
+bool stap_gyroInit(void)
+{
+  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
+  ahrs.init();
+}
+
+bool stap_gyroUpdate(void)
+{
+  ins.wait_for_sample();
+  ahrs.update();
+}
+
+bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
+{
+  // Acceleration
+  
+  Vector3f ap_acc = ins.get_accel(0);
+
+  acc->x = ap_acc.x;
+  acc->y = ap_acc.y;
+  acc->z = -ap_acc.z;
+  
+  // Attitude
+
+  atti->x = ahrs.roll;
+  atti->y = ahrs.pitch;
+  atti->z = ahrs.yaw;
+  
+  // Angular velocities
+
+  Vector3f ap_gyro = ins.get_gyro();
+  
+  rot->x = ap_gyro.x;
+  rot->y = ap_gyro.y;
+  rot->z = ap_gyro.z;
+
+  return true;
+}
+
+bool stap_altiInit(void)
+{
+  barometer.init();
+  barometer.calibrate();
+} 
+
+bool stap_altiUpdate(void)
+{
+  barometer.update();
+  barometer.accumulate();
+  return true;
+}
+
+float stap_altiRead(void)
+{
+  return (float) barometer.get_altitude();
+}
+
+bool stap_hostInit(void)
+{
+}
+
+int stap_hostReceiveState(void)
+{
+  return hal.console->available();
+}
+
+int stap_hostReceive(uint8_t *buffer, int size)
+{
+}
+
+uint8_t stap_hostReceiveChar(void)
+{
+  return hal.console->read();
+}
+
+int stap_hostTransmitState(void)
+{
+}
+
+int stap_hostTransmit(const uint8_t *buffer, int size)
+{
+}
+
+void stap_entropyDigest(uint16_t value)
+{
+  srand(value);
+}
+
+uint32_t currentTime;
+  
+extern "C" uint32_t currentMicros()
+{
+  currentTime = hal.scheduler->micros();
+  return currentTime;
+}
+    
+extern "C" uint32_t currentMillis()
+{
+  return hal.scheduler->millis();
+}
+    
+extern "C" void delayMicros(uint32_t x)
+{
+  uint32_t current = currentMicros();
+  while(currentMicros() < current+x);
+}
+  
+extern "C" uint32_t stap_memoryFree(void)
+{
+  return hal.util->available_memory();
+}
+

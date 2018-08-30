@@ -1,15 +1,17 @@
 #include <string.h>
+#include "StaP.h"
 #include "TOCTest.h"
 #include "CoreObjects.h"
 #include "Logging.h"
 #include "RxInput.h"
 #include "Storage.h"
 #include "Console.h"
-#include "Time.h"
 #include "NVState.h"
 #include "DSP.h"
 #include "Math.h"
 #include "Button.h"
+
+const float toc_margin_c = RATIO(3/100);
 
 bool toc_test_mode(bool reset)
 {
@@ -26,7 +28,7 @@ bool toc_test_link(bool reset)
 
 bool toc_test_ram(bool reset)
 {
-  return memoryFree() > (1<<9);
+  return stap_memoryFree() > (1<<9);
 }
 
 bool toc_test_load(bool reset)

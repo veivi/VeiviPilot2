@@ -20,6 +20,15 @@ bool paramsModified = false;
 uint32_t lastPPMWarn;
 float fieldStrength;
 
+PIDCtrl_t elevCtrl, pushCtrl, throttleCtrl, aileCtrl;
+Sampler_t iasSampler;
+SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter, flapActuator;
+SWAvg_t alphaFilter, liftFilter;
 Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
-SlopeLimiter_t flapActuator;
+
+struct SimLinkSensor sensorData;
+uint16_t simFrames;
+int linkDownCount, heartBeatCount;
+
+
 

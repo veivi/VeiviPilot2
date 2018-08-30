@@ -1,7 +1,7 @@
-#include "Objects.h"
+#include <string.h>
 #include "AlphaPilot.h"
-
-extern "C" {
+#include "StaP.h"
+#include "CoreObjects.h"
 #include "RxInput.h"
 #include "PPM.h"
 #include "PWMOutput.h"
@@ -9,7 +9,6 @@ extern "C" {
 #include "Console.h"
 #include "Datagram.h"
 #include "CRC16.h"
-#include "Time.h"
 #include "DSP.h"
 #include "Math.h"
 #include "NVState.h"
@@ -20,9 +19,8 @@ extern "C" {
 #include "Command.h"
 #include "Button.h"
 #include "TOCTest.h"
-}
 
-extern "C" const float sampleRate = LOG_HZ_SLOW;
+const float sampleRate = LOG_HZ_SLOW;
 
 //
 // Misc local variables
@@ -71,6 +69,7 @@ void displayTask()
 {
   static bool cleared = false;
   static int count = 0;
+  int i = 0;
     
   count++;
   
@@ -104,7 +103,7 @@ void displayTask()
     obdMove(16-8, 0);
     obdPrintAttr("DISARMED", true);
 
-    for(uint8_t i = 0; ppmInputs[i] != NULL; i++) {
+    for(i = 0; ppmInputs[i] != NULL; i++) {
       obdMove((i%3)*6, 2+i/3);
       float value = inputValue(ppmInputs[i]);
       uint8_t valueInt = MIN((uint8_t) (fabs(value)*100), 99);
@@ -160,7 +159,7 @@ void airspeedTask()
   static int16_t prev = 0;
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
-    samplerInput(&pressureBuffer, (float) raw);
+    samplerInput(&iasSampler, (float) raw);
     iasChange += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
@@ -265,42 +264,53 @@ void sensorTaskFast()
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
-  vpFlight.dynP = samplerMean(&pressureBuffer) * factor_c
+  vpFlight.dynP = samplerMean(&iasSampler) * factor_c
     / cos(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
   // Attitude
 
+  stap_Vector3f_t acc, atti, rot;
+  
+  stap_gyroUpdate();
+  stap_gyroRead(&acc, &atti, &rot);
+
+  /*
   ins.wait_for_sample();
   
   ahrs.update();
-
-  vpFlight.bank = ahrs.roll;
-  vpFlight.pitch = ahrs.pitch;
-  vpFlight.heading = (360 + (int) (ahrs.yaw*RADIAN)) % 360;
+  */
+  vpFlight.bank = atti.x;
+  vpFlight.pitch = atti.y;
+  vpFlight.heading = (360 + (int) (atti.z*RADIAN)) % 360;
   
   // Angular velocities
-  
+
+  /*
+  stap_Vector3f_t acc, atti, rot;
+
   Vector3f gyro = ins.get_gyro();
+  */
   
-  vpFlight.rollR = gyro.x;
-  vpFlight.pitchR = gyro.y;
-  vpFlight.yawR = gyro.z;
+  vpFlight.rollR = rot.x;
+  vpFlight.pitchR = rot.y;
+  vpFlight.yawR = rot.z;
 
   // Acceleration
-  
-  Vector3f acc = ins.get_accel(0);
 
+  /*
+  Vector3f acc = ins.get_accel(0);
+  */
+  
   vpFlight.accX = acc.x;
   vpFlight.accY = acc.y;
-  vpFlight.accZ = -acc.z;
+  vpFlight.accZ = acc.z;
 
   damperInput(&ball, vpFlight.accY);
   
   // Altitude data acquisition
 
-  barometer.update();
-  barometer.accumulate();
-
+  stap_altiUpdate();
+  
   // Compass
 
 #ifdef USE_COMPASS
@@ -343,8 +353,7 @@ void sensorTaskSlow()
   if(vpStatus.simulatorLink)
     vpFlight.alt = sensorData.alt*FOOT;
   else
-    vpFlight.alt = (float) barometer.get_altitude();
-
+    vpFlight.alt = stap_altiRead();
   // Compass
 
 #ifdef USE_COMPASS
@@ -446,8 +455,8 @@ void statusTask()
   //
   // Random seed from hashed sensor data
   //
-  
-  srand(sensorHash);
+
+  stap_entropyDigest(sensorHash);
   
   //
   // Alpha/IAS sensor status
@@ -548,7 +557,7 @@ void statusTask()
       lastAlphaLocked = currentTime;
   } else {
     const float diff = fabsf(vpFlight.accDir - vpFlight.relWind),
-      disagreement = MIN(diff, 2*PI - diff);
+      disagreement = MIN(diff, 2*PI_F - diff);
 
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
        || (fabs(vpFlight.alpha) < 60/RADIAN && disagreement > 15/RADIAN)) {
@@ -1148,11 +1157,13 @@ void trimTask()
 }
 
 void gaugeTask()
-{
+{  
   if(gaugeCount > 0) {
     uint16_t tmp = 0;
+    int i = 0, g = 0;
+    float j = 0;
 	
-    for(int g = 0; g < gaugeCount; g++) {
+    for(g = 0; g < gaugeCount; g++) {
       switch(gaugeVariable[g]) {
       case 1:
 	consolePrint_P(CS_STRING(" alpha = "));
@@ -1221,7 +1232,7 @@ void gaugeTask()
         consolePrint_P(CS_STRING(" ppmFreq = "));
 	consolePrintF(ppmFreq);
 	consolePrint_P(CS_STRING(" InputVec = ( "));
-	for(uint8_t i = 0; ppmInputs[i] != NULL; i++) {
+	for(i = 0; ppmInputs[i] != NULL; i++) {
 	  consolePrintFP(inputValue(ppmInputs[i]), 2);
 	  consolePrint(" ");
 	}      
@@ -1258,7 +1269,7 @@ void gaugeTask()
 
       case 9:
 	consolePrint_P(CS_STRING(" gain*IAS^("));
-	for(float j = 0; j < 2; j += 0.5) {
+	for(j = 0; j < 2; j += 0.5) {
 	  if(j > 0)
 	    consolePrint(", ");
 	  consolePrintF(j);
@@ -1266,7 +1277,7 @@ void gaugeTask()
 	
 	consolePrint_P(CS_STRING(") = "));
 	
-	for(float j = 0; j < 2; j += 0.5) {
+	for(j = 0; j < 2; j += 0.5) {
 	  if(j > 0)
 	    consolePrint(", ");
 	  consolePrintF(vpControl.testGain*powf(vpFlight.IAS, j));
@@ -1307,7 +1318,7 @@ void gaugeTask()
 	
 	tmp = sensorHash;
 
-	for(int i = 0; i < 16; i++) {
+	for(i = 0; i < 16; i++) {
 	  consolePrint((tmp & 1) ? "+" : " ");
 	  tmp = tmp >> 1;
 	}
@@ -1361,9 +1372,9 @@ void communicationTask()
 {
   int len = 0;
        
-  while((len = cliSerial->available()) > 0) {
+  while((len = stap_hostReceiveState()) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(cliSerial->read());
+      datagramRxInputChar(stap_hostReceiveChar());
   }
 }
 
@@ -1546,7 +1557,7 @@ void elevatorModule()
       * outer_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
   else
-    vpControl.targetPitchR = vpInput.elevExpo*PI/2;
+    vpControl.targetPitchR = vpInput.elevExpo*PI_F/2;
 
   vpControl.elevPredict =
     alphaPredictInverse(vpControl.targetAlpha);
@@ -1781,6 +1792,8 @@ void mixingTask()
 
 void controlTask()
 {
+  int i = 0;
+  
   //
   // Cycle time bookkeeping 
   //
@@ -1796,7 +1809,7 @@ void controlTask()
   // Invoke individual control modules
   //
 
-  for(uint8_t i = 0; i < sizeof(controlModules)/sizeof(void(*)()); i++)
+  for(i = 0; i < sizeof(controlModules)/sizeof(void(*)()); i++)
     (*controlModules[i])();
   
   //
@@ -1948,10 +1961,12 @@ float (*functionTable[])(void) = {
 
 void actuatorTask()
 {
+  int i = 0;
+  
   if(!vpStatus.armed)
     return;
 
-  for(unsigned int i = 0; i < MAX_SERVO; i++)
+  for(i = 0; i < MAX_SERVO; i++)
     if(functionTable[vpParam.functionMap[i]])
       pwmOutputWrite(i, clamp(functionTable[vpParam.functionMap[i]](), -1, 1));
 }

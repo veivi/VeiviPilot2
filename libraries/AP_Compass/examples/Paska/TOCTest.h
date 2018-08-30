@@ -28,8 +28,6 @@ struct TakeoffTest {
   bool (*function)(bool);
 };
 
-const float toc_margin_c = RATIO(3/100);
-
 void tocTestUpdate();
 void tocReportConsole(bool result, int i, const char *s);
 bool tocTestStatus(void (*reportFn)(bool, int, const char*));

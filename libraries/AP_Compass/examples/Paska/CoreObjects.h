@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "DSP.h"
+#include "Controller.h"
+#include "Datagram.h"
 
 struct StatusRecord {
   bool armed;
@@ -68,6 +70,30 @@ struct OutputState {
   float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz, flap;
 };
 
+struct GPSFix {
+  float altitude;
+  float track;
+  float lat;
+  float lon;
+  float speed;
+};
+
+//
+// Control and signal processing
+//
+
+extern PIDCtrl_t aileCtrl, elevCtrl, pushCtrl, throttleCtrl;
+extern Sampler_t iasSampler;
+extern SWAvg_t alphaFilter, liftFilter;
+extern SlopeLimiter_t aileActuator, flapActuator, rollAccelLimiter, trimRateLimiter;
+extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
+
+// struct GPSFix gpsFix;
+
+extern struct SimLinkSensor sensorData;
+extern uint16_t simFrames;
+extern int linkDownCount, heartBeatCount;
+
 extern struct ModeRecord vpMode;
 extern struct FeatureRecord vpFeature;
 extern struct StatusRecord vpStatus;
@@ -75,9 +101,6 @@ extern struct FlightState vpFlight;
 extern struct InputState vpInput;
 extern struct ControlState vpControl;
 extern struct OutputState vpOutput;
-
-extern SlopeLimiter_t flapActuator;
-extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
 
 extern float controlCycle;
 extern float outer_P, rudderMix, throttleMix;

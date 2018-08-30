@@ -22,6 +22,6 @@ void pidCtrlSetRangeAB(PIDCtrl_t *ctrl, float, float);
 void pidCtrlSetRange(PIDCtrl_t *ctrl, float);
 float pidCtrlOutput(PIDCtrl_t *ctrl);
 
-const float gainTweak_c = 0.80;
+extern const float gainTweak_c;
 
 #endif

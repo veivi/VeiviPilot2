@@ -1,9 +1,7 @@
 #ifndef ALPHAPILOT_H
 #define ALPHAPILOT_H
 
-extern "C" {
 #include "Math.h"
-}
 
 //
 // Configuration

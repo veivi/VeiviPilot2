@@ -1,12 +1,13 @@
-#include "Objects.h"
-#include "AlphaPilot.h"
+#include <AP_HAL/AP_HAL.h>
+#include <AP_HAL_AVR/AP_HAL_AVR.h>
 
 extern "C" {
+#include "AlphaPilot.h"
+#include "CoreObjects.h"
 #include "Logging.h"
 #include "Math.h"
 #include "Storage.h"
 #include "Console.h"
-#include "Time.h"
 #include "CRC16.h"
 #include "Serial.h"
 #include "BaseI2C.h"
@@ -121,14 +122,9 @@ bool scheduler()
 
 void setup()
 {
-  // HAL
-
-  hal.init(0, NULL);
+  // Low level init & welcome
   
-  // initialise serial port
-  
-  cliSerial = hal.console;
-  vpStatus.consoleLink = true;
+  stap_boot();
   
   consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
@@ -170,18 +166,12 @@ void setup()
   
   consoleNote_P(CS_STRING("Initializing barometer... "));
   consoleFlush();
-
-  barometer.init();
-  barometer.calibrate();
-  
+  stap_altiInit();
   consolePrintLn_P(CS_STRING("  done"));
   
   consoleNote_P(CS_STRING("Initializing INS/AHRS... "));
   consoleFlush();
-  
-  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
-  ahrs.init();
-
+  stap_gyroInit();
   consolePrintLn_P(CS_STRING("  done"));
 
 #ifdef USE_COMPASS
@@ -236,7 +226,7 @@ void setup()
   // Done
   
   consoleNote_P(CS_STRING("Initialized, "));
-  consolePrintUL((unsigned long) hal.util->available_memory());
+  consolePrintUL(stap_memoryFree());
   consolePrintLn_P(CS_STRING(" bytes free."));
   
   datagramTxStart(DG_INITIALIZED);
@@ -256,5 +246,7 @@ void loop()
       backgroundTask(1);
   }
 }
+
+extern const AP_HAL::HAL& hal;
 
 AP_HAL_MAIN();
