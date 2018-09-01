@@ -1,7 +1,6 @@
 #include <string.h>
 #include "StaP.h"
 #include "TOCTest.h"
-#include "CoreObjects.h"
 #include "Logging.h"
 #include "RxInput.h"
 #include "Storage.h"
@@ -10,6 +9,8 @@
 #include "DSP.h"
 #include "Math.h"
 #include "Button.h"
+#include "AS5048B.h"
+#include "MS4525.h"
 
 const float toc_margin_c = RATIO(3/100);
 
@@ -43,7 +44,7 @@ bool toc_test_fdr(bool reset)
 
 bool toc_test_alpha_sensor(bool reset)
 {
-  return !vpStatus.alphaFailed && AS5048B_entropy() > 50
+  return !vpStatus.alphaFailed && AS5048B_entropy() > MIN_ENTROPY
     && fieldStrength > 0.15 && fieldStrength < 0.80;
 }
 
@@ -90,7 +91,7 @@ bool toc_test_pitot(bool reset)
   else if(vpStatus.positiveIAS)
     positiveIAS = true;
   
-  return (!vpStatus.pitotFailed && MS4525DO_entropy() > 50
+  return (!vpStatus.pitotFailed && MS4525DO_entropy() > MIN_ENTROPY
 	  && !vpStatus.pitotBlocked && positiveIAS && vpFlight.IAS < 5)
     || vpStatus.simulatorLink;
 }

@@ -94,9 +94,6 @@ void mainLoopSetup()
   stap_gyroInit();
   consolePrintLn_P(CS_STRING("  done"));
 
-  consoleNote_P(CS_STRING("Initializing compass... "));
-  consoleFlush();
-
   // Static controller settings & filters
 
   pidCtrlInit(&elevCtrl);
@@ -106,6 +103,8 @@ void mainLoopSetup()
   
   pidCtrlSetRange(&aileCtrl, RATIO(2/3));
   
+  slopeInit(&aileActuator, 0);
+  slopeInit(&rollAccelLimiter, 0);
   slopeInit(&flapActuator, 0.5);
   slopeInit(&trimRateLimiter, 3/RADIAN);
   

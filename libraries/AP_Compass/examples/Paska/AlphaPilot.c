@@ -24,7 +24,7 @@
 // Misc local variables
 //
 
-static sensorHash = 0xFFFF;
+static uint16_t sensorHash = 0xFFFF;
 uint8_t datagramRxStore[MAX_DG_SIZE];
 
 //
