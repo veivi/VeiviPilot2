@@ -270,17 +270,17 @@ void samplerFinalize(Sampler_t *f)
 {
 }
 
-void samplerInput(Sampler_t *f, float v)
+void samplerInput(Sampler_t *f, int16_t v)
 {
+  f->acc += (int32_t) v;
   f->count++;
-  f->sum += v;
 }
 
 float samplerMean(Sampler_t *f)
 {
   if(f->count > 0) {
-    f->value = f->sum / f->count;
-    f->sum = 0.0;
+    f->value = (float) f->acc / f->count;
+    f->acc = 0;
     f->count = 0;
   } else if(!f->warn) {
     consoleNoteLn_P(CS_STRING("Sample buffer starved"));

@@ -102,6 +102,9 @@ void mainLoopSetup()
   pidCtrlInitUnwinding(&aileCtrl);
   
   pidCtrlSetRange(&aileCtrl, RATIO(2/3));
+
+  samplerInit(&alphaSampler);
+  samplerInit(&iasSampler);
   
   slopeInit(&aileActuator, 0);
   slopeInit(&rollAccelLimiter, 0);

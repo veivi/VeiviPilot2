@@ -73,14 +73,15 @@ void slopeSet(SlopeLimiter_t *, float v);
 void slopeReset(SlopeLimiter_t *, float v);
 
 typedef struct Sampler {
-  float sum, value;
+  int32_t acc;
+  float value;
   int count;
   bool warn;
 } Sampler_t;
 
 bool samplerInit(Sampler_t*);
 void samplerFinalize(Sampler_t*);
-void samplerInput(Sampler_t*, float v);
+void samplerInput(Sampler_t*, int16_t v);
 float samplerMean(Sampler_t*);
 
 /*

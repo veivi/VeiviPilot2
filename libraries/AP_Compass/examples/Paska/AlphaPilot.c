@@ -99,7 +99,7 @@ void alphaTask()
   int16_t raw = 0;
   
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
-    samplerInput(&alphaSampler, CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
+    samplerInput(&alphaSampler, raw);
     stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
 }
@@ -207,7 +207,7 @@ void airspeedTask()
   int16_t raw = 0;
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
-    samplerInput(&iasSampler, (float) raw);
+    samplerInput(&iasSampler, raw);
     stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
 }
@@ -303,7 +303,8 @@ void sensorTaskSync()
 {
   // Alpha input
   
-  vpFlight.alpha = samplerMean(&alphaSampler);
+  vpFlight.alpha =
+    2 * PI_F * samplerMean(&alphaSampler) / (1L<<(8*sizeof(int16_t)));
   
   // Dynamic pressure, corrected for alpha
   
