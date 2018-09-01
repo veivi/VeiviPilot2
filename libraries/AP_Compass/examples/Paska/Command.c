@@ -531,9 +531,9 @@ void executeCommand(char *buf)
 
       consoleNoteLn_P(CS_STRING("Sensor entropy"));
       consoleNote_P(CS_STRING("  Alpha = "));
-      consolePrintUL(AS5048B_entropy());
+      consolePrintF(AS5048B_entropy());
       consolePrint_P(CS_STRING("  IAS = "));
-      consolePrintLnUL(MS4525DO_entropy());
+      consolePrintLnF(MS4525DO_entropy());
 
       consoleNote_P(CS_STRING("Warning flags :"));
       if(ppmWarnShort)

@@ -18,7 +18,7 @@
 #define CONTROL_HZ 50
 #define CONFIG_HZ (CONTROL_HZ/3.0)
 #define ALPHA_HZ (CONTROL_HZ*8)
-#define AIRSPEED_HZ (CONTROL_HZ*5)
+#define AIRSPEED_HZ (ALPHA_HZ/2)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
 #define LED_TICK 100
@@ -27,12 +27,6 @@
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
   
-//
-// Constants
-//
-
-#define ALPHAWINDOW   RATIO(1/25)
-
 struct Task {
   void (*code)(void);
   uint32_t period, lastExecuted;

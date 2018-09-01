@@ -84,8 +84,8 @@ struct GPSFix {
 //
 
 extern PIDCtrl_t aileCtrl, elevCtrl, pushCtrl, throttleCtrl;
-extern Sampler_t iasSampler;
-extern SWAvg_t alphaFilter, liftFilter;
+extern Sampler_t alphaSampler, iasSampler;
+extern SWAvg_t liftFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, rollAccelLimiter, trimRateLimiter;
 extern Damper_t iasFilter, iasFilterSlow, ball, accAvg;
 

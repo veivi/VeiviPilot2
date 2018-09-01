@@ -29,7 +29,7 @@ extern uint8_t nestCount;
 // RNG interface
 //
 
-void stap_entropyDigest(uint16_t value);
+void stap_entropyDigest(const uint8_t *value, int size);
 
 //
 // Boot interface

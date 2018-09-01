@@ -7,7 +7,7 @@
 
 bool AS5048B_isOnline(void);
 bool AS5048B_alpha(int16_t *result);
-uint16_t AS5048B_entropy(void);
+float AS5048B_entropy(void);
 bool AS5048B_field(uint16_t *result);
 
 //

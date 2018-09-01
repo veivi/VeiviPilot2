@@ -54,15 +54,16 @@ void basei2cEntropySample(BaseI2CTarget_t *target, uint16_t v)
 
   target->prevValue = v;
   target->entropyAcc += ABS(diff);
+  target->entropyCount++;
 
-  if(currentTime - target->lastEntropy > 1e6) {
+  if(currentTime - target->lastEntropy > 0.3e6) {
     target->lastEntropy = currentTime;
-    target->entropy = target->entropyAcc;
-    target->entropyAcc = 0;
+    target->entropy = (float) target->entropyAcc / target->entropyCount;
+    target->entropyAcc = target->entropyCount = 0;
   }
 }
 
-uint32_t basei2cEntropy(BaseI2CTarget_t *target)
+float basei2cEntropy(BaseI2CTarget_t *target)
 {
   return target->entropy;
 }

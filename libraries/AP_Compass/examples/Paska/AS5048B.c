@@ -52,7 +52,7 @@ bool AS5048B_field(uint16_t *result)
   return status;
 }
 
-uint16_t AS5048B_entropy(void)
+float AS5048B_entropy(void)
 {
   return basei2cEntropy(&target);
 }

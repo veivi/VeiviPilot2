@@ -9,6 +9,6 @@
 
 bool MS4525DO_isOnline(void);
 void MS4525DO_calibrate(void);
-uint32_t MS4525DO_entropy(void);
+float MS4525DO_entropy(void);
 bool MS4525DO_pressure(int16_t *result);
  

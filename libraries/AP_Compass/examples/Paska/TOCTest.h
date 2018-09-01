@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include "Math.h"
 
-#define MIN_ENTROPY 50
+#define MIN_ENTROPY 0.5
 
 //
 // Takeoff configuration test

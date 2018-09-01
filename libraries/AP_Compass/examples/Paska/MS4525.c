@@ -67,7 +67,7 @@ bool MS4525DO_pressure(int16_t *result)
   return true;
 }
 
-uint32_t MS4525DO_entropy(void)
+float MS4525DO_entropy(void)
 {
   return basei2cEntropy(&target);
 }

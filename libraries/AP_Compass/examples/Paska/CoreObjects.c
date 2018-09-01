@@ -20,9 +20,9 @@ uint32_t lastPPMWarn;
 float fieldStrength;
 
 PIDCtrl_t elevCtrl, pushCtrl, throttleCtrl, aileCtrl;
-Sampler_t iasSampler;
+Sampler_t alphaSampler, iasSampler;
 SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter, flapActuator;
-SWAvg_t alphaFilter, liftFilter;
+SWAvg_t liftFilter;
 Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
 
 struct SimLinkSensor sensorData;

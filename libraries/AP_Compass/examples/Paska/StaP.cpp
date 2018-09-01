@@ -1,6 +1,7 @@
 extern "C" {
 #include "StaP.h"
 #include "Console.h"
+#include "CRC16.h"
 }
 
 #include <AP_HAL/AP_HAL.h>
@@ -19,6 +20,7 @@ AP_AHRS_DCM ahrs {ins,  barometer, gps};
 NewI2C I2c = NewI2C();
 
 uint8_t nestCount = 0;
+static uint16_t sensorHash = 0xFFFF;
 
 extern "C" bool stap_boot(void)
 {
@@ -134,9 +136,10 @@ extern "C" void stap_hostFlush()
   // hal.uartA->flush();
 }
 
-void stap_entropyDigest(uint16_t value)
+void stap_entropyDigest(const uint8_t *value, int size)
 {
-  srand(value);
+  sensorHash = crc16(sensorHash, value, size);
+  srand(sensorHash);
 }
 
 uint32_t currentTime;

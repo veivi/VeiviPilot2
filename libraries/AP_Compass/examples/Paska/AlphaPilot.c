@@ -21,15 +21,10 @@
 #include "TOCTest.h"
 
 //
-// Misc local variables
-//
-
-static uint16_t sensorHash = 0xFFFF;
-uint8_t datagramRxStore[MAX_DG_SIZE];
-
-//
 // Datagram protocol integration
 //
+
+uint8_t datagramRxStore[MAX_DG_SIZE];
 
 void datagramRxError(const char *error)
 {
@@ -104,8 +99,8 @@ void alphaTask()
   int16_t raw = 0;
   
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
-    swAvgInput(&alphaFilter, CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
-    sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
+    samplerInput(&alphaSampler, CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
+    stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
 }
 
@@ -213,12 +208,9 @@ void airspeedTask()
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     samplerInput(&iasSampler, (float) raw);
-    sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
+    stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
 }
-
-Derivator_t buttonSlope;
-float lazyButtonValue;
 
 void configurationTask();
 
@@ -227,6 +219,9 @@ void configurationTask();
 
 void receiverTask()
 {
+ static Derivator_t buttonSlope;
+ static float lazyButtonValue;
+  
   if(inputValid(&aileInput))
     vpInput.aile = applyNullZone(inputValue(&aileInput), NZ_BIG, &vpInput.ailePilotInput);
   
@@ -308,7 +303,7 @@ void sensorTaskSync()
 {
   // Alpha input
   
-  vpFlight.alpha = swAvgOutput(&alphaFilter);
+  vpFlight.alpha = samplerMean(&alphaSampler);
   
   // Dynamic pressure, corrected for alpha
   
@@ -467,12 +462,6 @@ static void failsafeDisable()
 
 void statusTask()
 {
-  //
-  // Random seed from hashed sensor data
-  //
-
-  stap_entropyDigest(sensorHash);
-  
   //
   // Alpha/IAS sensor status
   //
@@ -1328,17 +1317,7 @@ void gaugeTask()
 	consoleNote_P(CS_STRING(" entropy(alpha,ias) = "));
 	consolePrintF(AS5048B_entropy());
 	consolePrint_P(CS_STRING(", "));
-	consolePrintF(MS4525DO_entropy());
-	consolePrint_P(CS_STRING(" hash = "));
-	
-	tmp = sensorHash;
-
-	for(i = 0; i < 16; i++) {
-	  consolePrint((tmp & 1) ? "+" : " ");
-	  tmp = tmp >> 1;
-	}
-
-	consolePrintLn("");
+	consolePrintLnF(MS4525DO_entropy());
 	break;
 	
      case 13:
