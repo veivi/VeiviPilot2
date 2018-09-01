@@ -30,9 +30,11 @@ bool AS5048B_alpha(int16_t *result)
   uint16_t raw = 0;
   uint8_t status = AS5048B_readWord(AS5048B_ANGLMSB_REG, &raw);
 
+  basei2cEntropySample(&target, raw);
+  
   if(vpParam.sensorOrient)
     raw = ~raw;
-  
+
   if(status && result)
     *result = (int16_t) (raw - vpParam.alphaRef);
   
@@ -49,4 +51,10 @@ bool AS5048B_field(uint16_t *result)
   
   return status;
 }
+
+uint16_t AS5048B_entropy(void)
+{
+  return basei2cEntropy(&target);
+}
+
 

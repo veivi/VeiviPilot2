@@ -48,6 +48,25 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
   return status == 0;
 }
 
+void basei2cEntropySample(BaseI2CTarget_t *target, uint16_t v)
+{
+  int16_t diff = (int16_t) (v - target->prevValue);
+
+  target->prevValue = v;
+  target->entropyAcc += ABS(diff);
+
+  if(currentTime - target->lastEntropy > 1e6) {
+    target->lastEntropy = currentTime;
+    target->entropy = target->entropyAcc;
+    target->entropyAcc = 0;
+  }
+}
+
+uint32_t basei2cEntropy(BaseI2CTarget_t *target)
+{
+  return target->entropy;
+}
+
 uint8_t basei2cWriteGeneric(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const uint8_t *data, uint8_t numberBytes)
 {
   I2CBuffer_t buffer = { data, numberBytes };

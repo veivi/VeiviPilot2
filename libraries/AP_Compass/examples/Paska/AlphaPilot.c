@@ -102,13 +102,10 @@ void cacheTask()
 void alphaTask()
 {
   int16_t raw = 0;
-  static int16_t prev = 0;
   
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     swAvgInput(&alphaFilter, CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
-    alphaEntropy += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
-    prev = raw;
   }
 }
 
@@ -213,13 +210,10 @@ void displayTask()
 void airspeedTask()
 {
   int16_t raw = 0;
-  static int16_t prev = 0;
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     samplerInput(&iasSampler, (float) raw);
-    iasEntropy += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
-    prev = raw;
   }
 }
 
@@ -1332,9 +1326,9 @@ void gaugeTask()
 	
       case 12:
 	consoleNote_P(CS_STRING(" entropy(alpha,ias) = "));
-	consolePrintF(damperOutput(&alphaEntropy));
+	consolePrintF(AS5048B_entropy());
 	consolePrint_P(CS_STRING(", "));
-	consolePrintF(damperOutput(&iasEntropy));
+	consolePrintF(MS4525DO_entropy());
 	consolePrint_P(CS_STRING(" hash = "));
 	
 	tmp = sensorHash;

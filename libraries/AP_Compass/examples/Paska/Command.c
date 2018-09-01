@@ -10,6 +10,7 @@
 #include "Math.h"
 #include "NVState.h"
 #include "MS4525.h"
+#include "AS5048B.h"
 #include "PPM.h"
 
 const struct Command commands[] PROGMEM = {
@@ -530,9 +531,9 @@ void executeCommand(char *buf)
 
       consoleNoteLn_P(CS_STRING("Sensor entropy"));
       consoleNote_P(CS_STRING("  Alpha = "));
-      consolePrintF(damperOutput(&alphaEntropy));
+      consolePrintUL(AS5048B_entropy());
       consolePrint_P(CS_STRING("  IAS = "));
-      consolePrintLnF(damperOutput(&iasEntropy));
+      consolePrintLnUL(MS4525DO_entropy());
 
       consoleNote_P(CS_STRING("Warning flags :"));
       if(ppmWarnShort)

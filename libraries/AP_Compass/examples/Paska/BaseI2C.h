@@ -33,10 +33,15 @@ typedef struct BaseI2CTarget {
   bool warn, failed;
   int failCount;
   uint32_t failedAt, backoff;
+  uint32_t entropyAcc, entropy;
+  uint32_t lastEntropy;
+  uint16_t prevValue;
 } BaseI2CTarget_t;
 
 bool basei2cInvoke(BaseI2CTarget_t*, uint8_t status);
 bool basei2cIsOnline(BaseI2CTarget_t*);
 bool basei2cWarning(BaseI2CTarget_t*);
+void basei2cEntropySample(BaseI2CTarget_t*, uint16_t v);
+uint32_t basei2cEntropy(BaseI2CTarget_t*);
 
 #endif

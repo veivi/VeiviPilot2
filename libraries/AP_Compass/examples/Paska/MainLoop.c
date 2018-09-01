@@ -113,8 +113,6 @@ void mainLoopSetup()
   damperInit(&iasFilter, 2, 0);
   damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
   damperInit(&accAvg, 2*CONTROL_HZ, G);
-  damperInit(&iasEntropy, CONFIG_HZ, 0);
-  damperInit(&alphaEntropy, CONFIG_HZ, 0);
   
   swAvgInit(&alphaFilter, ALPHAWINDOW*ALPHA_HZ);
   swAvgInit(&liftFilter, CONFIG_HZ/4);

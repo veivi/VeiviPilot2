@@ -21,7 +21,7 @@ bool MS4525DO_read(uint16_t *result)
   uint8_t buf[sizeof(uint16_t)];
   uint8_t status = MS4525DO_readGeneric(buf, sizeof(buf));
   
-  if(status)
+  if(status && result)
     *result = (((uint16_t) (buf[0] & 0x3F)) << 8) + buf[1];
 
   return status && !(buf[0] & (1<<6));
@@ -43,10 +43,12 @@ bool MS4525DO_pressure(int16_t *result)
 {
   const int log2CalibWindow = 9;
   uint16_t raw = 0;
-
+  
   if(!MS4525DO_read(&raw))
     return false;
 
+  basei2cEntropySample(&target, raw);
+  
   if(calibrating) {
     if(accCount < 1<<log2CalibWindow) {
       acc += raw;
@@ -63,5 +65,10 @@ bool MS4525DO_pressure(int16_t *result)
     *result = (raw<<2) - vpParam.airSpeedRef;
   
   return true;
+}
+
+uint32_t MS4525DO_entropy(void)
+{
+  return basei2cEntropy(&target);
 }
 

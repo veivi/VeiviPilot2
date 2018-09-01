@@ -8,7 +8,6 @@ extern "C" {
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_AHRS/AP_AHRS.h>
 
-#include "AlphaPilot.h"
 #include "NewI2C.h"
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -17,30 +16,29 @@ AP_InertialSensor ins;
 AP_GPS gps;
 AP_AHRS_DCM ahrs {ins,  barometer, gps};
 
-#ifdef USE_COMPASS
-static Compass compass;
-#endif
-
 NewI2C I2c = NewI2C();
 
-extern "C" uint8_t nestCount = 0;
+uint8_t nestCount = 0;
 
 extern "C" bool stap_boot(void)
 {
   hal.init(0, NULL);
   vpStatus.consoleLink = true;
+  return true;
 }  
 
 extern "C" bool stap_gyroInit(void)
 {
   ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
   ahrs.init();
+  return true;
 }
 
 extern "C" bool stap_gyroUpdate(void)
 {
   ins.wait_for_sample();
   ahrs.update();
+  return true;
 }
 
 extern "C" bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
@@ -74,12 +72,14 @@ extern "C" bool stap_baroInit(void)
 {
   barometer.init();
   barometer.calibrate();
+  return true;
 } 
 
 extern "C" bool stap_baroUpdate(void)
 {
   barometer.update();
   barometer.accumulate();
+  return true;
   return true;
 }
 
@@ -90,6 +90,7 @@ extern "C" float stap_baroRead(void)
 
 extern "C" bool stap_hostInit(void)
 {
+  return true;
 }
 
 extern "C" int stap_hostReceiveState(void)
@@ -99,6 +100,10 @@ extern "C" int stap_hostReceiveState(void)
 
 extern "C" int stap_hostReceive(uint8_t *buffer, int size)
 {
+  while(size-- > 0)
+    *buffer++ = stap_hostReceiveChar();
+
+  return 0;
 }
 
 extern "C" uint8_t stap_hostReceiveChar(void)
@@ -115,11 +120,13 @@ extern "C" int stap_hostTransmit(const uint8_t *buffer, int size)
 {
   while(size-- > 0)
     stap_hostTransmitChar(*buffer++);
+  return 0;
 }
 
 extern "C" int stap_hostTransmitChar(uint8_t c)
 {
   hal.uartA->write(c);
+  return 1;
 }
 
 extern "C" void stap_hostFlush()
