@@ -1947,7 +1947,10 @@ float brakeFn()
 
 float throttleFn()
 {
-  return THROTTLE_SIGN*RATIO(2/3)*(2*pidCtrlOutput(&throttleCtrl) - 1);
+  const float effValue
+    = (vpStatus.simulatorLink || vpParam.virtualOnly)
+    ? 0 : pidCtrlOutput(&throttleCtrl);
+  return THROTTLE_SIGN*RATIO(2/3)*(2*effValue - 1);
 }
 
 float (*functionTable[])(void) = {
