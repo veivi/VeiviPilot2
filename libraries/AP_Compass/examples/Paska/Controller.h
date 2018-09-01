@@ -6,7 +6,7 @@
 
 typedef struct PIDCtrl {
   bool autoUnwind; // Unwind when I is very small
-  float I, D, prevD, delta, prevErr, Kp, Ki, Kd;
+  float I, errD, prevErrD, delta, prevErr, Kp, Ki, Kd;
   float rangeMin, rangeMax;
 } PIDCtrl_t;
 

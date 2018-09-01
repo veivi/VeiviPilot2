@@ -20,13 +20,70 @@
 #include "Button.h"
 #include "TOCTest.h"
 
-const float sampleRate = LOG_HZ_SLOW;
-
 //
 // Misc local variables
 //
 
-static uint16_t iasChange, alphaChange, sensorHash = 0xFFFF;
+static sensorHash = 0xFFFF;
+uint8_t datagramRxStore[MAX_DG_SIZE];
+
+//
+// Datagram protocol integration
+//
+
+void datagramRxError(const char *error)
+{
+  consoleNote_P(CS_STRING("DG "));
+  consolePrintLn(error);
+}
+  
+void datagramInterpreter(uint8_t t, uint8_t *data, int size)
+{
+  switch(t) {
+  case DG_HEARTBEAT:
+    if(!vpStatus.consoleLink) {
+      consoleNoteLn_P(CS_STRING("Console CONNECTED"));
+      vpStatus.consoleLink = true;
+    }
+    heartBeatCount++;
+    linkDownCount = 0;
+    break;
+    
+  case DG_CONSOLE:
+    executeCommand((char*) data);
+    break;
+
+  case DG_SIMLINK:
+    if(vpStatus.consoleLink && size == sizeof(sensorData)) {
+      if(!vpStatus.simulatorLink) {
+	consoleNoteLn_P(CS_STRING("Simulator CONNECTED"));
+	vpStatus.simulatorLink = vpMode.loggingSuppressed = true;
+      }
+
+      memcpy(&sensorData, data, sizeof(sensorData));
+      simTimeStamp = currentMicros();
+      simFrames++;    
+    }
+    break;
+
+  case DG_PING:
+    break;
+    
+  default:
+    consoleNote_P(CS_STRING("FUNNY DATAGRAM TYPE "));
+    consolePrintLnI(t);
+  }
+}
+
+void datagramSerialOut(uint8_t c)
+{
+  stap_hostTransmitChar(c);
+}
+
+void datagramSerialFlush()
+{
+  stap_hostFlush();
+}
 
 //
 // Periodic tasks
@@ -49,7 +106,7 @@ void alphaTask()
   
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     swAvgInput(&alphaFilter, CIRCLE*(float) raw / (1L<<(8*sizeof(raw))));
-    alphaChange += ABS(raw - prev);
+    alphaEntropy += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
   }
@@ -160,7 +217,7 @@ void airspeedTask()
   
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     samplerInput(&iasSampler, (float) raw);
-    iasChange += ABS(raw - prev);
+    iasEntropy += ABS(raw - prev);
     sensorHash = crc16(sensorHash, (uint8_t*) &raw, sizeof(raw));
     prev = raw;
   }
@@ -253,7 +310,7 @@ void receiverTask()
   vpInput.elevExpo = applyExpo(vpInput.elev);
 }
 
-void sensorTaskFast()
+void sensorTaskSync()
 {
   // Alpha input
   
@@ -274,48 +331,25 @@ void sensorTaskFast()
   stap_gyroUpdate();
   stap_gyroRead(&acc, &atti, &rot);
 
-  /*
-  ins.wait_for_sample();
-  
-  ahrs.update();
-  */
   vpFlight.bank = atti.x;
   vpFlight.pitch = atti.y;
   vpFlight.heading = (360 + (int) (atti.z*RADIAN)) % 360;
   
   // Angular velocities
 
-  /*
-  stap_Vector3f_t acc, atti, rot;
-
-  Vector3f gyro = ins.get_gyro();
-  */
-  
   vpFlight.rollR = rot.x;
   vpFlight.pitchR = rot.y;
   vpFlight.yawR = rot.z;
 
   // Acceleration
 
-  /*
-  Vector3f acc = ins.get_accel(0);
-  */
-  
   vpFlight.accX = acc.x;
   vpFlight.accY = acc.y;
   vpFlight.accZ = acc.z;
 
-  damperInput(&ball, vpFlight.accY);
-  
   // Altitude data acquisition
 
-  stap_altiUpdate();
-  
-  // Compass
-
-#ifdef USE_COMPASS
-  compass.accumulate();
-#endif
+  stap_baroUpdate();
   
   // Simulator link overrides
   
@@ -341,6 +375,7 @@ void sensorTaskFast()
   // Derived values
   //
     
+  damperInput(&ball, vpFlight.accY);
   damperInput(&iasFilter, vpFlight.IAS);
   damperInput(&iasFilterSlow, vpFlight.IAS);
   vpFlight.slope = vpFlight.alpha - vpParam.offset - vpFlight.pitch;
@@ -353,25 +388,19 @@ void sensorTaskSlow()
   if(vpStatus.simulatorLink)
     vpFlight.alt = sensorData.alt*FOOT;
   else
-    vpFlight.alt = stap_altiRead();
-  // Compass
-
-#ifdef USE_COMPASS
-  compass.read();
-#endif
+    vpFlight.alt = stap_baroRead();
 
   // Alpha sensor field strength
 
   uint16_t raw = 0;
   
-  if(AS5048B_isOnline() && AS5048B_field(&raw)) {
+  if(AS5048B_isOnline() && AS5048B_field(&raw))
     fieldStrength = (float) raw / (1L<<16);
-  }
 }
 
-void measurementTask()
+void monitorTask()
 {
-  static uint32_t prevMeasurement;
+  static uint32_t prevMonitor;
  
   // Idle measurement
 
@@ -384,22 +413,22 @@ void measurementTask()
   
   // Sim link monitoring
 
-  simInputFreq = 1.0e6 * simFrames / (currentTime - prevMeasurement);
+  simInputFreq = 1.0e6 * simFrames / (currentTime - prevMonitor);
   simFrames = 0;
 
   // Log bandwidth
 
-  logBandWidth = 1.0e6 * writeBytesCum / (currentTime - prevMeasurement);
+  logBandWidth = 1.0e6 * writeBytesCum / (currentTime - prevMonitor);
   writeBytesCum = 0;
   
-  prevMeasurement = currentTime;
-
   // PPM monitoring
 
   if(ppmWarnSlow || ppmWarnShort) {
     lastPPMWarn = currentTime;
     ppmWarnSlow = ppmWarnShort = false;
   }
+  
+  prevMonitor = currentTime;
 }
 
 //
@@ -444,14 +473,6 @@ static void failsafeDisable()
 
 void statusTask()
 {
-  //
-  // Entropy monitor
-  //
-
-  damperInput(&iasEntropy, iasChange);
-  damperInput(&alphaEntropy, alphaChange);
-  iasChange = alphaChange = 0;
-
   //
   // Random seed from hashed sensor data
   //
@@ -644,7 +665,7 @@ void statusTask()
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
-     || !vpParam.haveGear || gearSel == 1 || !vpStatus.upright
+     || !vpParam.haveGear || vpControl.gearSel == 1 || !vpStatus.upright
      || vpFlight.IAS > vpDerived.minimumIAS*RATIO(3/2)) {
     if(vpStatus.weightOnWheels) {
       consoleNoteLn_P(CS_STRING("Weight assumed to be OFF THE WHEELS"));
@@ -728,9 +749,9 @@ void configurationTask()
     //
 
     if(vpDerived.haveRetracts) {
-      gearSel = !gearSel;
+      vpControl.gearSel = !vpControl.gearSel;
 
-      if(gearSel)
+      if(vpControl.gearSel)
 	consoleNoteLn_P(CS_STRING("Gear UP"));
       else
 	consoleNoteLn_P(CS_STRING("Gear DOWN"));
@@ -869,7 +890,7 @@ void configurationTask()
   // Flap selector input
   //
 
-  flapSel = FLAP_STEPS/2 - flapSelectorValue;
+  vpControl.flapSel = FLAP_STEPS/2 - flapSelectorValue;
 
   //
   // Test mode control
@@ -931,7 +952,7 @@ void configurationTask()
   // ... or WoW not calibrated but wing leveling is enabled with wheels down
   
   else if(!vpParam.wowCalibrated && vpParam.haveGear
-	  && gearSel == 0 && vpMode.wingLeveler)
+	  && vpControl.gearSel == 0 && vpMode.wingLeveler)
     vpFeature.stabilizeBank = false;
   
   // ... or stalling...
@@ -1100,7 +1121,7 @@ void trimTask()
     // Nose wheel
     //
     
-    if(vpInput.rudderPilotInput && !gearSel && !vpStatus.positiveIAS) {
+    if(vpInput.rudderPilotInput && !vpControl.gearSel && !vpStatus.positiveIAS) {
       vpParam.steerNeutral +=
 	sign(vpParam.steerDefl)*sign(vpInput.rudder)*steerTrimRate/TRIM_HZ;
       vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
@@ -1534,7 +1555,7 @@ void elevatorModule()
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   const bool flareAllowed = !vpMode.test && vpMode.slowFlight
-    && gearSel == 0 && (fabs(vpFlight.bank) < 30/RADIAN)
+    && vpControl.gearSel == 0 && (fabs(vpFlight.bank) < 30/RADIAN)
     && (vpDerived.haveRetracts || vpFlight.alt < 5)
     && vpInput.throttle < 0.3;
 
@@ -1744,13 +1765,13 @@ void ancillaryModule()
   //
   
   vpOutput.flap =
-    slopeInput(&flapActuator, (float) flapSel/FLAP_STEPS, controlCycle);
+    slopeInput(&flapActuator, (float) vpControl.flapSel/FLAP_STEPS, controlCycle);
 
   //
   // Brake
   //
     
-  if(gearSel == 1 || vpInput.elev > 0)
+  if(vpControl.gearSel == 1 || vpInput.elev > 0)
     vpOutput.brake = 0;
   else
     vpOutput.brake = -vpInput.elev;
@@ -1904,7 +1925,7 @@ float thrustHorizFn()
 
 float steeringFn()
 {
-  if(vpDerived.haveRetracts && gearSel)
+  if(vpDerived.haveRetracts && vpControl.gearSel)
     return vpParam.steerPark;
   else
     return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
@@ -1922,7 +1943,7 @@ float rightFlapFn()
 
 float gearFn()
 {
-  return -RATIO(2/3)*(gearSel*2-1);
+  return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
 float brakeFn()
@@ -2023,7 +2044,7 @@ void simulatorLinkTask()
 
 void controlTaskGroup()
 {
-  sensorTaskFast();
+  sensorTaskSync();
   receiverTask();
   controlTask();
   actuatorTask();
@@ -2063,12 +2084,12 @@ struct Task alphaPilotTasks[] = {
   { configTaskGroup,
     HZ_TO_PERIOD(CONFIG_HZ) },
   { logTask,
-    HZ_TO_PERIOD(LOG_HZ_SLOW) },
+    HZ_TO_PERIOD(LOG_HZ) },
   { logSave,
     HZ_TO_PERIOD(LOG_HZ_COMMIT) },
   { cacheTask,
     HZ_TO_PERIOD(LOG_HZ_FLUSH) },
-  { measurementTask,
+  { monitorTask,
     HZ_TO_PERIOD(1) },
   { heartBeatTask,
     HZ_TO_PERIOD(HEARTBEAT_HZ) },

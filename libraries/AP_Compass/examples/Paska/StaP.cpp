@@ -25,25 +25,25 @@ NewI2C I2c = NewI2C();
 
 extern "C" uint8_t nestCount = 0;
 
-  bool stap_boot(void)
+extern "C" bool stap_boot(void)
 {
   hal.init(0, NULL);
   vpStatus.consoleLink = true;
 }  
 
-bool stap_gyroInit(void)
+extern "C" bool stap_gyroInit(void)
 {
   ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
   ahrs.init();
 }
 
-bool stap_gyroUpdate(void)
+extern "C" bool stap_gyroUpdate(void)
 {
   ins.wait_for_sample();
   ahrs.update();
 }
 
-bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
+extern "C" bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
 {
   // Acceleration
   
@@ -70,48 +70,61 @@ bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t 
   return true;
 }
 
-bool stap_altiInit(void)
+extern "C" bool stap_baroInit(void)
 {
   barometer.init();
   barometer.calibrate();
 } 
 
-bool stap_altiUpdate(void)
+extern "C" bool stap_baroUpdate(void)
 {
   barometer.update();
   barometer.accumulate();
   return true;
 }
 
-float stap_altiRead(void)
+extern "C" float stap_baroRead(void)
 {
   return (float) barometer.get_altitude();
 }
 
-bool stap_hostInit(void)
+extern "C" bool stap_hostInit(void)
 {
 }
 
-int stap_hostReceiveState(void)
+extern "C" int stap_hostReceiveState(void)
 {
   return hal.console->available();
 }
 
-int stap_hostReceive(uint8_t *buffer, int size)
+extern "C" int stap_hostReceive(uint8_t *buffer, int size)
 {
 }
 
-uint8_t stap_hostReceiveChar(void)
+extern "C" uint8_t stap_hostReceiveChar(void)
 {
   return hal.console->read();
 }
 
-int stap_hostTransmitState(void)
+extern "C" int stap_hostTransmitState(void)
 {
+  return 1;
 }
 
-int stap_hostTransmit(const uint8_t *buffer, int size)
+extern "C" int stap_hostTransmit(const uint8_t *buffer, int size)
 {
+  while(size-- > 0)
+    stap_hostTransmitChar(*buffer++);
+}
+
+extern "C" int stap_hostTransmitChar(uint8_t c)
+{
+  hal.uartA->write(c);
+}
+
+extern "C" void stap_hostFlush()
+{
+  // hal.uartA->flush();
 }
 
 void stap_entropyDigest(uint16_t value)
@@ -142,4 +155,3 @@ extern "C" uint32_t stap_memoryFree(void)
 {
   return hal.util->available_memory();
 }
-

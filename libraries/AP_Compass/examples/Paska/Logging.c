@@ -1,15 +1,12 @@
 #include <stdarg.h>
 #include <string.h>
+#include "AlphaPilot.h"
 #include "StaP.h"
 #include "Logging.h"
-#include "DSP.h"
 #include "Storage.h"
 #include "Console.h"
 #include "Datagram.h"
-#include "CRC16.h"
 #include "NVState.h"
-#include "Math.h"
-#include "CoreObjects.h"
 
 typedef enum { invalid_c, find_stamp_c, find_start_c, ready_c, stop_c, run_c, failed_c } logState_t;
 
@@ -216,7 +213,7 @@ void logDumpBinary(void)
   if(!logReadyVerbose())
     return;
   
-  struct LogInfo info = { nvState.logStamp, nvState.testNum, logLen, sampleRate, vpDerived.totalMass };
+  struct LogInfo info = { nvState.logStamp, nvState.testNum, logLen, LOG_HZ, vpDerived.totalMass };
   strncpy(info.name, vpParam.name, NAME_LEN);
 
   datagramTxStart(DG_LOGINFO);    
@@ -498,7 +495,7 @@ void logTask()
 
   bool status[] = { vpStatus.weightOnWheels,
 		    vpStatus.positiveIAS,
-		    gearSel == 1,
+		    vpControl.gearSel == 1,
 		    vpStatus.stall,
 		    vpStatus.alphaFailed,
 		    vpStatus.alphaUnreliable,

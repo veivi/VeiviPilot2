@@ -53,7 +53,7 @@ void datagramTxEnd(void)
 
 static void storeByte(const uint8_t c)
 {
-    if(datagramSize < maxDatagramSize)
+    if(datagramSize < MAX_DG_SIZE)
         datagramRxStore[datagramSize++] = c;
 }
   

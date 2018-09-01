@@ -47,6 +47,9 @@ int stap_hostReceive(uint8_t *buffer, int size);
 uint8_t stap_hostReceiveChar(void);
 int stap_hostTransmitState(void);  // How many chars will fit
 int stap_hostTransmit(const uint8_t *buffer, int size);
+int stap_hostTransmitChar(uint8_t c);
+void stap_hostFlush();
+  
 
 bool stap_initialize(void);
 void stap_mainLoop(void);
@@ -78,9 +81,9 @@ bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t 
 // Altimeter interface
 //
 
-bool stap_altiInit(void);
-bool stap_altiUpdate(void);
-float stap_altiRead(void);
+bool stap_baroInit(void);
+bool stap_baroUpdate(void);
+float stap_baroRead(void);
 
 #endif
 

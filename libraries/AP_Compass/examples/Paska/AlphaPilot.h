@@ -9,7 +9,6 @@
 
 #define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
-// #define USE_COMPASS  1
 #define FLAP_STEPS           2
 
 //
@@ -23,8 +22,7 @@
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
 #define LED_TICK 100
-#define LOG_HZ_FAST CONTROL_HZ
-#define LOG_HZ_SLOW (CONTROL_HZ/4.0)
+#define LOG_HZ (CONTROL_HZ/4.0)
 #define LOG_HZ_COMMIT 3
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1

@@ -67,15 +67,16 @@ void pidCtrlSetRange(PIDCtrl_t *ctrl, float r)
   pidCtrlSetRangeAB(ctrl, -r, r);
 }
 
-void pidCtrlInput(PIDCtrl_t *ctrl, float err, float d)
+void pidCtrlInput(PIDCtrl_t *ctrl, float err, float delta)
 {
-  ctrl->prevD = d;
-  ctrl->D = err - ctrl->prevErr;
-  ctrl->prevErr = err;
-  
-  ctrl->delta = d;
+  ctrl->delta = delta;
 
-  ctrl->I = clamp(ctrl->I + ctrl->Ki*err*ctrl->delta,
+  ctrl->prevErrD =  ctrl->errD;  // Previous error derivative
+  ctrl->errD = err - ctrl->prevErr;  // Calc current error derivative
+  
+  ctrl->prevErr = err;  // Store current error for next deriv calculation
+  
+  ctrl->I = clamp(ctrl->I + ctrl->Ki*err*delta,
 		  ctrl->rangeMin - ctrl->Kp*err,
 		  ctrl->rangeMax - ctrl->Kp*err);
 
@@ -85,7 +86,7 @@ void pidCtrlInput(PIDCtrl_t *ctrl, float err, float d)
 
 float pidCtrlOutput(PIDCtrl_t *ctrl) {
   const float diffLimit = (ctrl->rangeMax-ctrl->rangeMin)/6,
-    diffTerm = clamp(ctrl->Kd*(ctrl->D+ctrl->prevD)/2/ctrl->delta,
+    diffTerm = clamp(ctrl->Kd*(ctrl->errD+ctrl->prevErrD)/2/ctrl->delta,
 		     -diffLimit, diffLimit);
   return clamp(ctrl->Kp*ctrl->prevErr + ctrl->I + diffTerm,
 	       ctrl->rangeMin, ctrl->rangeMax);

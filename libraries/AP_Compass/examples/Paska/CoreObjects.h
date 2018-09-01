@@ -64,6 +64,7 @@ struct ControlState {
   float testGain;
   float elevTrim, targetAlpha, targetPressure, targetPitchR, minThrottle;
   float elevPredict, ailePredict, aileNeutral, pusher;
+  uint8_t gearSel, flapSel;
 };
 
 struct OutputState {
@@ -86,7 +87,7 @@ extern PIDCtrl_t aileCtrl, elevCtrl, pushCtrl, throttleCtrl;
 extern Sampler_t iasSampler;
 extern SWAvg_t alphaFilter, liftFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, rollAccelLimiter, trimRateLimiter;
-extern Damper_t iasFilter, iasFilterSlow, ball, accAvg, iasEntropy, alphaEntropy;
+extern Damper_t iasFilter, iasFilterSlow, ball, accAvg;
 
 // struct GPSFix gpsFix;
 
@@ -104,8 +105,6 @@ extern struct OutputState vpOutput;
 
 extern float controlCycle;
 extern float outer_P, rudderMix, throttleMix;
-extern uint8_t gearSel, flapSel;
-extern const float sampleRate;
 extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 extern uint32_t simTimeStamp, idleMicros;
 extern const int maxParams;

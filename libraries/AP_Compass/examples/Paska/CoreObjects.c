@@ -12,7 +12,6 @@ struct OutputState vpOutput;
 
 float controlCycle;
 float outer_P, rudderMix, throttleMix;
-uint8_t gearSel, flapSel;
 float idleAvg, logBandWidth, ppmFreq, simInputFreq;
 uint32_t simTimeStamp, idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
@@ -29,6 +28,3 @@ Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
 struct SimLinkSensor sensorData;
 uint16_t simFrames;
 int linkDownCount, heartBeatCount;
-
-
-

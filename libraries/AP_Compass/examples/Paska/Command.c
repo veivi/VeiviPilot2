@@ -328,7 +328,7 @@ void executeCommand(char *buf)
 
     case c_gear:
       if(numParams > 0)
-	gearSel = param[0];
+	vpControl.gearSel = param[0];
       break;
       
     case c_calibrate:
