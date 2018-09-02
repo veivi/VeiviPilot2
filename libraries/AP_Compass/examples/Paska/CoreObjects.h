@@ -23,6 +23,7 @@ struct StatusRecord {
   bool alphaUnreliable;
   bool upright;
   bool belowFloor;
+  float load;
 };
 
 struct ModeRecord {
@@ -105,7 +106,7 @@ extern struct OutputState vpOutput;
 
 extern float controlCycle;
 extern float outer_P, rudderMix, throttleMix;
-extern float idleAvg, logBandWidth, ppmFreq, simInputFreq;
+extern float logBandWidth, ppmFreq, simInputFreq;
 extern uint32_t simTimeStamp, idleMicros;
 extern const int maxParams;
 extern uint8_t gaugeCount, gaugeVariable[];

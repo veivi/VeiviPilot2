@@ -515,8 +515,8 @@ void executeCommand(char *buf)
       */
       
     case c_report:
-      consoleNote_P(CS_STRING("Idle avg = "));
-      consolePrintLnFP(idleAvg*100,1);
+      consoleNote_P(CS_STRING("Load = "));
+      consolePrintLnFP(vpStatus.load*100,1);
       consoleNote_P(CS_STRING("PPM frequency = "));
       consolePrintF(ppmFreq);
       consolePrint_P(CS_STRING(" channels = "));

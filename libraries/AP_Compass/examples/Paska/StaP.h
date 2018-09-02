@@ -58,11 +58,10 @@ void stap_mainLoop(void);
 // System interface
 //
 
-extern uint32_t currentTime;  // Updated on every call to currentMicros()
-
-uint32_t currentMicros(void);
-uint32_t currentMillis(void);
-void delayMicros(uint32_t x);
+extern uint32_t stap_currentMicros; // Updated on every call to currentMicros()
+void stap_delayMicros(uint32_t x);
+uint32_t stap_timeMicros(void);
+uint32_t stap_timeMillis(void);
 uint32_t stap_memoryFree(void);
 
 //

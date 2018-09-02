@@ -8,7 +8,7 @@
 
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
-  return !target->failed || currentMillis() > target->failedAt+target->backoff;
+  return !target->failed || stap_timeMillis() > target->failedAt+target->backoff;
 }
 
 bool basei2cWarning(BaseI2CTarget_t *target)
@@ -33,7 +33,7 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
       target->failed = true;
     }
     
-    target->failedAt = currentMillis();
+    target->failedAt = stap_timeMillis();
   } else {    
     if(target->failCount > 0) {
       consoleNote("");
@@ -56,8 +56,8 @@ void basei2cEntropySample(BaseI2CTarget_t *target, uint16_t v)
   target->entropyAcc += ABS(diff);
   target->entropyCount++;
 
-  if(currentTime - target->lastEntropy > 0.3e6) {
-    target->lastEntropy = currentTime;
+  if(stap_currentMicros - target->lastEntropy > 0.3e6) {
+    target->lastEntropy = stap_currentMicros;
     target->entropy = (float) target->entropyAcc / target->entropyCount;
     target->entropyAcc = target->entropyCount = 0;
   }

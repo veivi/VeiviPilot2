@@ -12,7 +12,7 @@ struct OutputState vpOutput;
 
 float controlCycle;
 float outer_P, rudderMix, throttleMix;
-float idleAvg, logBandWidth, ppmFreq, simInputFreq;
+float logBandWidth, ppmFreq, simInputFreq;
 uint32_t simTimeStamp, idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
 bool paramsModified = false;

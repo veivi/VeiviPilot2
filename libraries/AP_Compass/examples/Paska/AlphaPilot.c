@@ -56,7 +56,7 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
       }
 
       memcpy(&sensorData, data, sizeof(sensorData));
-      simTimeStamp = currentMicros();
+      simTimeStamp = stap_timeMicros();
       simFrames++;    
     }
     break;
@@ -141,7 +141,7 @@ void displayTask()
   // CPU load
   
   obdMove(0, 1);
-  uint8_t load = 100 - (uint8_t) (idleAvg*100);
+  uint8_t load = MIN(99, (uint8_t) (vpStatus.load*100));
   char buffer0[] =
     { '0' + (load / 10), '0' + (load % 10), '\%', '\0'};
   obdPrint(buffer0);
@@ -402,9 +402,9 @@ void monitorTask()
 {
   static uint32_t prevMonitor;
  
-  // Idle measurement
+  // Load measurement
 
-  idleAvg = 7*idleAvg/8 + (float) idleMicros/1e6/8;
+  vpStatus.load = vpStatus.load/2 + (1.0 - (float) idleMicros/(stap_currentMicros - prevMonitor))/2;
   idleMicros = 0;
 
   // PPM monitoring
@@ -413,22 +413,22 @@ void monitorTask()
   
   // Sim link monitoring
 
-  simInputFreq = 1.0e6 * simFrames / (currentTime - prevMonitor);
+  simInputFreq = 1.0e6 * simFrames / (stap_currentMicros - prevMonitor);
   simFrames = 0;
 
   // Log bandwidth
 
-  logBandWidth = 1.0e6 * writeBytesCum / (currentTime - prevMonitor);
+  logBandWidth = 1.0e6 * writeBytesCum / (stap_currentMicros - prevMonitor);
   writeBytesCum = 0;
   
   // PPM monitoring
 
   if(ppmWarnSlow || ppmWarnShort) {
-    lastPPMWarn = currentTime;
+    lastPPMWarn = stap_currentMicros;
     ppmWarnSlow = ppmWarnShort = false;
   }
   
-  prevMonitor = currentTime;
+  prevMonitor = stap_currentMicros;
 }
 
 //
@@ -494,9 +494,9 @@ void statusTask()
       vpStatus.pitotBlocked = false;
     }
     
-    iasLastAlive = currentTime;
+    iasLastAlive = stap_currentMicros;
   } else if(!vpStatus.simulatorLink
-	    && currentTime - iasLastAlive > 10.0e6 && !vpStatus.pitotBlocked) {
+	    && stap_currentMicros - iasLastAlive > 10.0e6 && !vpStatus.pitotBlocked) {
     consoleNoteLn_P(CS_STRING("Pitot appears BLOCKED"));
     vpStatus.pitotBlocked = true;
   }
@@ -514,15 +514,15 @@ void statusTask()
     }
   } else if(damperOutput(&iasFilter) < vpDerived.minimumIAS*RATIO(2/3)) {
     if(!vpStatus.positiveIAS)
-      lastIAS = currentTime;
-    else if(currentTime - lastIAS > 0.3e6) {
+      lastIAS = stap_currentMicros;
+    else if(stap_currentMicros - lastIAS > 0.3e6) {
       consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
   } else {
     if(vpStatus.positiveIAS)
-      lastIAS = currentTime;
-    else if(currentTime - lastIAS > 0.3e6) {
+      lastIAS = stap_currentMicros;
+    else if(stap_currentMicros - lastIAS > 0.3e6) {
       consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
       vpStatus.positiveIAS = true;
     }
@@ -550,9 +550,9 @@ void statusTask()
       vpStatus.fullStop = false;
     }
     
-    lastMotion = currentTime;
+    lastMotion = stap_currentMicros;
 
-  } else if(currentTime - lastMotion > 5.0e6 && !vpStatus.fullStop) {
+  } else if(stap_currentMicros - lastMotion > 5.0e6 && !vpStatus.fullStop) {
     consoleNoteLn_P(CS_STRING("We have FULLY STOPPED"));
     vpStatus.fullStop = true;
     vpStatus.aloft = false;
@@ -569,7 +569,7 @@ void statusTask()
       // Failed alpha is also unreliable
     
       vpStatus.alphaUnreliable = true;
-      lastAlphaLocked = currentTime;
+      lastAlphaLocked = stap_currentMicros;
   } else {
     const float diff = fabsf(vpFlight.accDir - vpFlight.relWind),
       disagreement = MIN(diff, 2*PI_F - diff);
@@ -577,15 +577,15 @@ void statusTask()
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
        || (fabs(vpFlight.alpha) < 60/RADIAN && disagreement > 15/RADIAN)) {
       if(!vpStatus.alphaUnreliable)
-	lastAlphaLocked = currentTime;
-      else if(currentTime - lastAlphaLocked > 0.1e6) {
+	lastAlphaLocked = stap_currentMicros;
+      else if(stap_currentMicros - lastAlphaLocked > 0.1e6) {
 	consoleNoteLn_P(CS_STRING("Alpha sensor appears RELIABLE"));
 	vpStatus.alphaUnreliable = false;
       }
     } else {
       if(vpStatus.alphaUnreliable)
-	lastAlphaLocked = currentTime;
-      else if(currentTime - lastAlphaLocked > 0.5e6) {
+	lastAlphaLocked = stap_currentMicros;
+      else if(stap_currentMicros - lastAlphaLocked > 0.5e6) {
 	consoleNoteLn_P(CS_STRING("Alpha sensor UNRELIABLE"));
 	vpStatus.alphaUnreliable = true;
       }
@@ -600,15 +600,15 @@ void statusTask()
      || vpMode.takeOff
      || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
     if(!vpStatus.stall)
-      lastStall = currentTime;
-    else if(currentTime - lastStall > 0.1e6) {
+      lastStall = stap_currentMicros;
+    else if(stap_currentMicros - lastStall > 0.1e6) {
       consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
       vpStatus.stall = false;
     }
   } else {
     if(vpStatus.stall)
-      lastStall = currentTime;
-    else if(currentTime - lastStall > 0.1e6) {
+      lastStall = stap_currentMicros;
+    else if(stap_currentMicros - lastStall > 0.1e6) {
       consoleNoteLn_P(CS_STRING("We're STALLING"));
       vpStatus.stall = true;
     }
@@ -636,11 +636,11 @@ void statusTask()
   
   if(fabsf(vpFlight.bank) < 15/RADIAN && fabsf(vpFlight.pitch) < 15/RADIAN) {
     vpStatus.upright = true;
-    lastUpright = currentTime;
+    lastUpright = stap_currentMicros;
   } else {
     if(!vpStatus.upright)
-      lastUpright = currentTime;
-    else if(currentTime - lastUpright > 0.5e6)
+      lastUpright = stap_currentMicros;
+    else if(stap_currentMicros - lastUpright > 0.5e6)
       vpStatus.upright = false;
   }
 
@@ -666,20 +666,20 @@ void statusTask()
       vpStatus.weightOnWheels = false;
     }
       
-    lastWoW = currentTime;
+    lastWoW = stap_currentMicros;
   } else if(vpStatus.positiveIAS
 	    && (liftAvg < weight/2 || liftAvg > 1.5*weight
 		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
-      lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.3e6) {
+      lastWoW = stap_currentMicros;
+    else if(stap_currentMicros - lastWoW > 0.3e6) {
       consoleNoteLn_P(CS_STRING("Weight is probably OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
-      lastWoW = currentTime;
-    else if(currentTime - lastWoW > 0.2e6) {
+      lastWoW = stap_currentMicros;
+    else if(stap_currentMicros - lastWoW > 0.2e6) {
       consoleNoteLn_P(CS_STRING("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
@@ -1806,9 +1806,9 @@ void controlTask()
   static uint32_t controlCycleEnded;
  
   if(controlCycleEnded > 0)
-    controlCycle = (currentTime - controlCycleEnded)/1.0e6;
+    controlCycle = (stap_currentMicros - controlCycleEnded)/1.0e6;
   
-  controlCycleEnded = currentTime;
+  controlCycleEnded = stap_currentMicros;
 
   //
   // Invoke individual control modules
@@ -1984,7 +1984,7 @@ void heartBeatTask()
   if(!heartBeatCount && linkDownCount++ > 2)
     vpStatus.consoleLink = vpStatus.simulatorLink = false;
 
-  if(vpStatus.simulatorLink && currentTime - simTimeStamp > 1.0e6) {
+  if(vpStatus.simulatorLink && stap_currentMicros - simTimeStamp > 1.0e6) {
     consoleNoteLn_P(CS_STRING("Simulator link LOST"));
     vpStatus.simulatorLink = false;
   }    

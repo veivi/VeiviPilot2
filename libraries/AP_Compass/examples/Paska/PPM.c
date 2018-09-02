@@ -62,7 +62,7 @@ void calibStop(int32_t *min, int32_t *center, int32_t *max)
 static void handlePPMInput(const uint16_t *pulse, int numCh)
 {
   static uint32_t prev;
-  uint32_t current = currentMicros(), cycle = current - prev;
+  uint32_t current = stap_timeMicros(), cycle = current - prev;
   int i = 0;
 
   if(prev > 0 && cycle > 30000)
@@ -166,11 +166,11 @@ float ppmFrameRate()
   static uint32_t prevMeasurement;
   
   STAP_FORBID;
-  float result = 1.0e6 * ppmFrames / (currentMicros() - prevMeasurement);
+  float result = 1.0e6 * ppmFrames / (stap_timeMicros() - prevMeasurement);
   ppmFrames = 0;
   STAP_PERMIT;
 
-  prevMeasurement = currentMicros();
+  prevMeasurement = stap_timeMicros();
 
   return result;
 }

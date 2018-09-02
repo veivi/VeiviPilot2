@@ -9,33 +9,21 @@
 #include "PWMOutput.h"
 #include "PPM.h"
 
-static void backgroundTask(uint32_t duration)
-{
-  uint32_t idleStart = currentMicros();
-  
-  if(!logReady(false))
-    logInit(5);
-  else if(duration > 0)
-    delayMicros(duration*1e3);
-
-  idleMicros += currentMicros() - idleStart;
-}
-
 static bool scheduler()
 {
   struct Task *task = alphaPilotTasks;
   bool status = false;
   
   while(task->code) {
-    currentMicros();
+    stap_timeMicros();
     
-    if(currentTime > task->nextInvocation ) {
-      if(task->realTime && currentTime < task->nextInvocation + task->period/3)
+    if(stap_currentMicros > task->nextInvocation ) {
+      if(task->realTime && stap_currentMicros < task->nextInvocation + task->period/3)
 	// A realtime task that has not slipped that much, try to catch up
 	task->nextInvocation += task->period;
       else
  	// Either not a realtime task or we're slipping too much
-	task->nextInvocation = currentTime + task->period;
+	task->nextInvocation = stap_currentMicros + task->period;
      
       task->code();
       status = true; // We had something to do
@@ -142,6 +130,27 @@ void mainLoopSetup()
 
 void mainLoop() 
 {
-  while(true)
-    backgroundTask(scheduler() ? 0 : 1);
+  bool idling = false;
+  uint32_t idleStarted = 0, idleEnded = 0;
+  
+  while(true) {
+    idleEnded = stap_timeMicros();
+    
+    if(scheduler()) {
+      // Had something to do
+      if(idling) {
+	// Not idling anymore
+	idleMicros += idleEnded - idleStarted;
+	idling = false;
+      }
+    } else if(!idling) {
+      // Just started idling
+      idling = true;
+      
+      if(!logReady(false))
+	logInit(10);
+      
+      idleStarted = stap_timeMicros();
+    }
+  }
 }

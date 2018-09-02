@@ -1,6 +1,9 @@
 #ifndef NEWI2C_H
 #define NEWI2C_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 extern "C" {
 #include "BaseI2C.h"
 }

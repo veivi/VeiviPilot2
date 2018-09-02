@@ -35,7 +35,7 @@ static uint32_t lastTx;
 
 void datagramTxStart(uint8_t dg)
 {
-  if(currentTime - lastTx > 0.1e6)
+  if(stap_currentMicros - lastTx > 0.1e6)
     outputBreak();
   
   crcState = 0xFFFF;
@@ -48,7 +48,7 @@ void datagramTxEnd(void)
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
   datagramSerialFlush();
-  lastTx = currentTime;
+  lastTx = stap_currentMicros;
 }
 
 static void storeByte(const uint8_t c)

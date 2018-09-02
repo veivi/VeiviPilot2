@@ -24,7 +24,7 @@ bool eepromIsOnline(void)
 
 void waitEEPROM(uint32_t addr)
 {
-  if(currentMillis() - lastWriteTime > EXT_EEPROM_LATENCY)
+  if(stap_timeMillis() - lastWriteTime > EXT_EEPROM_LATENCY)
     // We're cool
     return;
     
@@ -43,7 +43,7 @@ void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes)
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
 
-  lastWriteTime = currentMillis();
+  lastWriteTime = stap_timeMillis();
 }
  
 bool readEEPROM(uint32_t addr, uint8_t *data, int size) 

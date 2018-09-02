@@ -22,7 +22,7 @@ bool toc_test_mode(bool reset)
 
 bool toc_test_link(bool reset)
 {
-  return currentTime - lastPPMWarn > 10e6 &&
+  return stap_currentMicros - lastPPMWarn > 10e6 &&
     (vpParam.virtualOnly || ppmFreq > 30) &&
     (!vpParam.virtualOnly || vpStatus.simulatorLink);
 }
@@ -34,7 +34,7 @@ bool toc_test_ram(bool reset)
 
 bool toc_test_load(bool reset)
 {
-  return vpStatus.simulatorLink || idleAvg > 0.10;
+  return vpStatus.simulatorLink || vpStatus.load < 0.95;
 }
 
 bool toc_test_fdr(bool reset)
@@ -55,19 +55,19 @@ bool toc_test_alpha_range(bool reset)
 
   if(reset) {
     zeroAlpha = bigAlpha = false;
-    lastNonZeroAlpha = lastSmallAlpha = currentTime;
+    lastNonZeroAlpha = lastSmallAlpha = stap_currentMicros;
     
   } else if(!zeroAlpha) {
     if(fabs(vpFlight.alpha) > 1.5/RADIAN) {
-      lastNonZeroAlpha = currentTime;
-    } else if(currentTime > lastNonZeroAlpha + 1.0e6) {
+      lastNonZeroAlpha = stap_currentMicros;
+    } else if(stap_currentMicros > lastNonZeroAlpha + 1.0e6) {
       consoleNoteLn_P(CS_STRING("Stable ZERO ALPHA"));
       zeroAlpha = true;
     }
   } else if(!bigAlpha) {
     if(fabsf(vpFlight.alpha - 90/RADIAN) > 30/RADIAN) {
-      lastSmallAlpha = currentTime;
-    } else if(currentTime > lastSmallAlpha + 1.0e6) {
+      lastSmallAlpha = stap_currentMicros;
+    } else if(stap_currentMicros > lastSmallAlpha + 1.0e6) {
       consoleNoteLn_P(CS_STRING("Stable BIG ALPHA"));
       bigAlpha = true;
     }

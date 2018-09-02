@@ -3,7 +3,7 @@
 #include <avr/io.h>
 
 extern "C" {
-#include "Time.h"
+#include "StaP.h"
 }
   
 #define START           0x08
@@ -115,7 +115,7 @@ void NewI2C::pullup(uint8_t activate)
 
 uint8_t NewI2C::wait(uint8_t address)
 {
-  unsigned long startingTime = currentMillis();
+  unsigned long startingTime = stap_timeMillis();
   
   while(1) {
     returnStatus = 0;
@@ -133,7 +133,7 @@ uint8_t NewI2C::wait(uint8_t address)
         return(returnStatus);
     }
 
-    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && stap_timeMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -301,11 +301,11 @@ uint8_t NewI2C::read(uint8_t address, const uint8_t *addrArray, uint8_t addrSize
 
 uint8_t NewI2C::start()
 {
-  unsigned long startingTime = currentMillis();
+  unsigned long startingTime = stap_timeMillis();
   TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
   while (!(TWCR & (1<<TWINT)))
   {
-    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && stap_timeMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -328,11 +328,11 @@ uint8_t NewI2C::start()
 uint8_t NewI2C::transmitByte(uint8_t contents)
 {
   TWDR = contents;
-  unsigned long startingTime = currentMillis();
+  unsigned long startingTime = stap_timeMillis();
   TWCR = (1<<TWINT) | (1<<TWEN);
   while (!(TWCR & (1<<TWINT)))
   {
-    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && stap_timeMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -358,7 +358,7 @@ uint8_t NewI2C::transmitByte(uint8_t contents)
 
 uint8_t NewI2C::receiveByte(bool ack)
 {
-  unsigned long startingTime = currentMillis();
+  unsigned long startingTime = stap_timeMillis();
   if(ack)
   {
     TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
@@ -370,7 +370,7 @@ uint8_t NewI2C::receiveByte(bool ack)
   }
   while (!(TWCR & (1<<TWINT)))
   {
-    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && stap_timeMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
@@ -387,11 +387,11 @@ uint8_t NewI2C::receiveByte(bool ack)
 
 uint8_t NewI2C::stop()
 {
-  unsigned long startingTime = currentMillis();
+  unsigned long startingTime = stap_timeMillis();
   TWCR = (1<<TWINT)|(1<<TWEN)| (1<<TWSTO);
   while ((TWCR & (1<<TWSTO)))
   {
-    if(timeOutDelay > 0 && currentMillis() - startingTime > timeOutDelay)
+    if(timeOutDelay > 0 && stap_timeMillis() - startingTime > timeOutDelay)
     {
       lockUp();
       return(1);
