@@ -81,6 +81,8 @@ static uint8_t cursorCol, cursorRow;
 static int8_t modifiedLeft[8], modifiedRight[8];
 static bool inverseVideo = false;
 static BaseI2CTarget_t target = { "display" };
+static uint8_t scanRow, scanCol;
+static bool scanning = false, initialized = false;
 
 static bool SSD1306_transmitBuffers(const I2CBuffer_t *buffers, int numBuffers) 
 {
@@ -124,6 +126,12 @@ static void markModified(uint8_t col)
     modifiedLeft[cursorRow] = MIN(modifiedLeft[cursorRow], col);
     modifiedRight[cursorRow] = MAX(modifiedRight[cursorRow], col);
   }
+
+  if(scanning && scanRow == cursorRow && scanCol > cursorCol) {
+    // We hit a line on the left of the scan, abort
+    scanning = false;
+    scanRow++;
+  }  
 }
 
 static void nprint(const char *s, uint8_t l)
@@ -151,10 +159,8 @@ static void nprint(const char *s, uint8_t l)
     else {
       cursorCol = 0;
 
-      if(cursorRow < 8-1)
-	cursorRow++;
-      else
-	cursorRow = 0;
+      if(++cursorRow > 8-1)
+	cursorRow = 8-1;
     }
   }
 }
@@ -219,7 +225,7 @@ const uint8_t fontData[] CS_QUALIFIER = {
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
-0, 0, 0, 0, 0, 0, 0, 0, // NULL
+0x87, 0x45, 0x27, 0x10, 0x8, 0xE4, 0xA2, 0xE1,  // Char '%'
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
@@ -314,8 +320,6 @@ const uint8_t fontData[] CS_QUALIFIER = {
 
 void obdRefresh()
 {
-  static bool initialized = false;
-  static uint8_t row;
   int i = 0;
 
   if(!basei2cIsOnline(&target)) {
@@ -357,43 +361,58 @@ void obdRefresh()
       modifiedRight[i] = 15;
     }
 
+    scanRow = 0;
     initialized = true;
+    scanning = false;
   }
 
-  while(row < 8) {    
-    if(modifiedLeft[row] > -1) {
-      int col = 0;
+  while(scanRow < 8) {    
+    if(!scanning && modifiedLeft[scanRow] > -1) {
+      // Initialize the scan of a (partial) row
+
+      scanning = true;
+      scanCol = modifiedLeft[scanRow];
       
       SSD1306_command(SSD1306_PAGEADDR);
-      SSD1306_command(row);
-      SSD1306_command(row);
+      SSD1306_command(scanRow);
+      SSD1306_command(scanRow);
       
       SSD1306_command(SSD1306_COLUMNADDR);
-      SSD1306_command(modifiedLeft[row]*8);
+      SSD1306_command(scanCol*8);
       SSD1306_command((uint8_t) ~0U);
+    }
 
-      for(col = modifiedLeft[row]; col < modifiedRight[row]+1; col++) {
-	uint8_t buffer[8], chr = displayBuffer[row*16+col];
+    while(scanning && scanCol < modifiedRight[scanRow]+1) {
+      // We're scanning a row and not done yet
+      
+      uint8_t buffer[8], chr = displayBuffer[scanRow*16+scanCol];
 
-	CS_MEMCPY(buffer, &fontData[(chr & 0x7F)*8], sizeof(buffer));
+      CS_MEMCPY(buffer, &fontData[(chr & 0x7F)*8], sizeof(buffer));
 
-	if(chr & 0x80) {
-	  for(i = 0; i < sizeof(buffer); i++)
-	    buffer[i] = ~buffer[i];
-	}
-
-	SSD1306_data(buffer, sizeof(buffer));
+      if(chr & 0x80) {
+	for(i = 0; i < sizeof(buffer); i++)
+	  buffer[i] = ~buffer[i];
       }
 
-      modifiedLeft[row++] = -1;
-      
+      SSD1306_data(buffer, sizeof(buffer));
+      scanCol++;
+
+      if(vpMode.silent)
+	// Supposed to be silent, only one column at a time to save bandwidth
+	return;
+    }
+
+    if(scanning && scanCol > modifiedRight[scanRow]) {
+      // Done with the scan line
+      modifiedLeft[scanRow++] = scanCol = -1;
+      scanning = false;
       return; // We refresh no more than one row at a time
     }
 
-    row++;
+    scanRow++;
   }
 
-  row = 0;
+  scanRow = 0;
 }
 
 

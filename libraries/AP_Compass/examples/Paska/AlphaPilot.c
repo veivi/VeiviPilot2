@@ -52,7 +52,7 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
     if(vpStatus.consoleLink && size == sizeof(sensorData)) {
       if(!vpStatus.simulatorLink) {
 	consoleNoteLn_P(CS_STRING("Simulator CONNECTED"));
-	vpStatus.simulatorLink = vpMode.loggingSuppressed = true;
+	vpStatus.simulatorLink = vpMode.dontLog = true;
       }
 
       memcpy(&sensorData, data, sizeof(sensorData));
@@ -122,13 +122,13 @@ void displayTask()
     
   count++;
   
-  if(vpStatus.silent) {
+  if(vpMode.silent) {
     if(!cleared) {
       obdClear();
       cleared = true;
     }
     
-    return;    
+    //    return;    
   } else
     cleared = false;
 
@@ -138,6 +138,14 @@ void displayTask()
   obdPrint(vpParam.name);
   obdPrint("\n");
 
+  // CPU load
+  
+  obdMove(0, 1);
+  uint8_t load = 100 - (uint8_t) (idleAvg*100);
+  char buffer0[] =
+    { '0' + (load / 10), '0' + (load % 10), '\%', '\0'};
+  obdPrint(buffer0);
+    
   // PPM freq
   
   obdMove(16-5, 1);
@@ -178,27 +186,29 @@ void displayTask()
     obdPrint(buffer);
   }
 
-  // Bottom status line
+  if(!vpMode.silent) {
+    // TOC status and bottom status line
     
-  if(vpMode.radioFailSafe) {
-    obdMove(0,7);
-    obdPrint("   ");
-    obdPrintAttr("RADIO FAIL", (count>>2) & 1);
-    obdPrint("   ");
-  } else {
+    if(vpMode.radioFailSafe) {
+      obdMove(0,7);
+      obdPrint("   ");
+      obdPrintAttr("RADIO FAIL", (count>>2) & 1);
+      obdPrint("   ");
+    } else {
       // T/O/C test status
 
-    bool status = tocTestStatus(tocReportDisplay);
+      bool status = tocTestStatus(tocReportDisplay);
 
-    obdMove(0,7);
-    obdPrint("T/O/C ");
+      obdMove(0,7);
+      obdPrint("T/O/C ");
 
-    if(!status)
-      obdPrintAttr("WARNING", (count>>2) & 1);
-    else
-      obdPrint("GOOD");
+      if(!status)
+	obdPrintAttr("WARNING", (count>>2) & 1);
+      else
+	obdPrint("GOOD");
 
-    obdPrint("   ");
+      obdPrint("   ");
+    }
   }
 }
 
@@ -702,7 +712,7 @@ void configurationTask()
   // T/O config test
   //
 
-  if(!vpStatus.silent)
+  if(!vpMode.silent)
     tocTestUpdate();
 
   //
@@ -791,7 +801,7 @@ void configurationTask()
   
     if(!vpStatus.positiveIAS || vpStatus.simulatorLink) {
 	    
-      vpStatus.silent = false;
+      vpMode.silent = false;
 
       bool prevMode = vpMode.takeOff;
       
@@ -835,7 +845,7 @@ void configurationTask()
   // Logging control
   //
   
-  if(vpMode.loggingSuppressed)
+  if(vpMode.dontLog)
     logDisable();
   else if(vpMode.takeOff && vpInput.throttle > 0.90)
     logEnable();
@@ -909,7 +919,7 @@ void configurationTask()
     vpStatus.aloft = true;
     
     if(!vpStatus.consoleLink)
-      vpStatus.silent = true;
+      vpMode.silent = true;
   }
 
   //
@@ -2025,6 +2035,7 @@ void controlTaskGroup()
   receiverTask();
   controlTask();
   actuatorTask();
+  simulatorLinkTask();
 }
 
 void configTaskGroup()
@@ -2039,27 +2050,25 @@ void configTaskGroup()
 }
 
 struct Task alphaPilotTasks[] = {
-  { communicationTask,
-    HZ_TO_PERIOD(50) },
-  // { gpsTask, HZ_TO_PERIOD(100) },
   { alphaTask,
      HZ_TO_PERIOD(ALPHA_HZ), true },
   { airspeedTask,
     HZ_TO_PERIOD(AIRSPEED_HZ), true },
+  { controlTaskGroup,
+    HZ_TO_PERIOD(CONTROL_HZ), true },
+  { configTaskGroup,
+    HZ_TO_PERIOD(CONFIG_HZ), true },
+  { sensorTaskSlow,
+    HZ_TO_PERIOD(CONTROL_HZ/5), true },
+  { communicationTask,
+    HZ_TO_PERIOD(100), true },
+  // { gpsTask, HZ_TO_PERIOD(100) },
   { blinkTask,
     HZ_TO_PERIOD(LED_TICK) },
   { obdRefresh,
-    HZ_TO_PERIOD(15) },
+    HZ_TO_PERIOD(30) },
   { displayTask,
     HZ_TO_PERIOD(5) },
-  { controlTaskGroup,
-    HZ_TO_PERIOD(CONTROL_HZ), false },
-  { simulatorLinkTask,
-    HZ_TO_PERIOD(CONTROL_HZ) },
-  { sensorTaskSlow,
-    HZ_TO_PERIOD(CONTROL_HZ/5), true },
-  { configTaskGroup,
-    HZ_TO_PERIOD(CONFIG_HZ), true },
   { logTask,
     HZ_TO_PERIOD(LOG_HZ), true },
   { logSave,

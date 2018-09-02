@@ -30,11 +30,11 @@ static bool scheduler()
     currentMicros();
     
     if(currentTime > task->nextInvocation ) {
-      if(task->realTime && currentTime < task->nextInvocation + task->period)
-	// We've not missed a cycle on a realtime task so keep timing exact
+      if(task->realTime && currentTime < task->nextInvocation + task->period/3)
+	// A realtime task that has not slipped that much, try to catch up
 	task->nextInvocation += task->period;
       else
- 	// Either not a realtime task or we have already missed a cycle
+ 	// Either not a realtime task or we're slipping too much
 	task->nextInvocation = currentTime + task->period;
      
       task->code();

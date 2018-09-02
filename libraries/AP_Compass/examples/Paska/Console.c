@@ -30,7 +30,7 @@ void consoleFlush()
 
 void consoleOut(const uint8_t c)
 {
-  if(!vpStatus.consoleLink || vpStatus.silent)
+  if(!vpStatus.consoleLink || vpMode.silent)
     return;
   
   if(bufPtr > BUF_SIZE-1)

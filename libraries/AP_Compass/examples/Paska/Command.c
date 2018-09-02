@@ -315,8 +315,12 @@ void executeCommand(char *buf)
       break;
     
     case c_talk:
-      vpStatus.silent = false;
-      consoleNoteLn_P(CS_STRING("Hello world"));
+      if(numParams > 0)
+	vpMode.silent = true;
+      else {
+	vpMode.silent = false;
+	consoleNoteLn_P(CS_STRING("Hello world"));
+      }
       break;
     
     case c_test:
@@ -485,7 +489,7 @@ void executeCommand(char *buf)
       break;
 
     case c_log:
-      vpMode.loggingSuppressed = false;
+      vpMode.dontLog = false;
       break;
 
     case c_zl:

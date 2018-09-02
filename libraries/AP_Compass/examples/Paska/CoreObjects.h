@@ -11,7 +11,6 @@ struct StatusRecord {
   bool armed;
   bool consoleLink;
   bool simulatorLink;
-  bool silent;
   bool positiveIAS;
   bool fullStop;
   bool pitotFailed;
@@ -28,6 +27,7 @@ struct StatusRecord {
 
 struct ModeRecord {
   bool test;
+  bool silent;
   bool alphaFailSafe;
   bool sensorFailSafe;
   bool radioFailSafe;
@@ -37,7 +37,7 @@ struct ModeRecord {
   bool slowFlight;
   bool halfRate;
   bool autoThrottle;
-  bool loggingSuppressed;
+  bool dontLog;
 };
 
 struct FeatureRecord {
