@@ -34,7 +34,7 @@ bool toc_test_ram(bool reset)
 
 bool toc_test_load(bool reset)
 {
-  return idleAvg > 0.15;
+  return vpStatus.simulatorLink || idleAvg > 0.10;
 }
 
 bool toc_test_fdr(bool reset)

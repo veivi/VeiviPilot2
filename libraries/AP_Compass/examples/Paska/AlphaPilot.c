@@ -302,12 +302,12 @@ void receiverTask()
 void sensorTaskSync()
 {
   // Alpha input
-  
+
   vpFlight.alpha =
     2 * PI_F * samplerMean(&alphaSampler) / (1L<<(8*sizeof(int16_t)));
   
   // Dynamic pressure, corrected for alpha
-  
+
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
@@ -339,7 +339,7 @@ void sensorTaskSync()
 
   // Altitude data acquisition
 
-  stap_baroUpdate();
+  //  stap_baroUpdate();
   
   // Simulator link overrides
   
@@ -2040,28 +2040,28 @@ void configTaskGroup()
 
 struct Task alphaPilotTasks[] = {
   { communicationTask,
-    HZ_TO_PERIOD(100) },
-  //  { gpsTask, HZ_TO_PERIOD(100) },
+    HZ_TO_PERIOD(50) },
+  // { gpsTask, HZ_TO_PERIOD(100) },
   { alphaTask,
-    HZ_TO_PERIOD(ALPHA_HZ) },
+     HZ_TO_PERIOD(ALPHA_HZ), true },
   { airspeedTask,
-    HZ_TO_PERIOD(AIRSPEED_HZ) },
+    HZ_TO_PERIOD(AIRSPEED_HZ), true },
   { blinkTask,
     HZ_TO_PERIOD(LED_TICK) },
   { obdRefresh,
-    HZ_TO_PERIOD(20) },
+    HZ_TO_PERIOD(15) },
   { displayTask,
-    HZ_TO_PERIOD(7) },
+    HZ_TO_PERIOD(5) },
   { controlTaskGroup,
-    HZ_TO_PERIOD(CONTROL_HZ) },
+    HZ_TO_PERIOD(CONTROL_HZ), false },
   { simulatorLinkTask,
     HZ_TO_PERIOD(CONTROL_HZ) },
   { sensorTaskSlow,
-    HZ_TO_PERIOD(CONTROL_HZ/5) },
+    HZ_TO_PERIOD(CONTROL_HZ/5), true },
   { configTaskGroup,
-    HZ_TO_PERIOD(CONFIG_HZ) },
+    HZ_TO_PERIOD(CONFIG_HZ), true },
   { logTask,
-    HZ_TO_PERIOD(LOG_HZ) },
+    HZ_TO_PERIOD(LOG_HZ), true },
   { logSave,
     HZ_TO_PERIOD(LOG_HZ_COMMIT) },
   { cacheTask,

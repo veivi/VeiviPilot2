@@ -14,8 +14,8 @@ static void backgroundTask(uint32_t duration)
   uint32_t idleStart = currentMicros();
   
   if(!logReady(false))
-    logInit(duration);
-  else
+    logInit(5);
+  else if(duration > 0)
     delayMicros(duration*1e3);
 
   idleMicros += currentMicros() - idleStart;
@@ -24,22 +24,27 @@ static void backgroundTask(uint32_t duration)
 static bool scheduler()
 {
   struct Task *task = alphaPilotTasks;
+  bool status = false;
   
   while(task->code) {
-    if(task->lastExecuted + task->period < currentTime
-      || task->lastExecuted > currentTime) {
+    currentMicros();
+    
+    if(currentTime > task->nextInvocation ) {
+      if(task->realTime && currentTime < task->nextInvocation + task->period)
+	// We've not missed a cycle on a realtime task so keep timing exact
+	task->nextInvocation += task->period;
+      else
+ 	// Either not a realtime task or we have already missed a cycle
+	task->nextInvocation = currentTime + task->period;
+     
       task->code();
-      task->lastExecuted = currentTime;
-      
-      return true; // We had something to do
+      status = true; // We had something to do
     }
     
     task++;
   }
 
-  // Nothing to do right now
-  
-  return false;
+  return status;
 }
 
 void mainLoopSetup()
@@ -100,16 +105,15 @@ void mainLoopSetup()
   pidCtrlInit(&pushCtrl);
   pidCtrlInit(&throttleCtrl);
   pidCtrlInitUnwinding(&aileCtrl);
-  
   pidCtrlSetRange(&aileCtrl, RATIO(2/3));
 
   samplerInit(&alphaSampler);
   samplerInit(&iasSampler);
   
   slopeInit(&aileActuator, 0);
-  slopeInit(&rollAccelLimiter, 0);
   slopeInit(&flapActuator, 0.5);
   slopeInit(&trimRateLimiter, 3/RADIAN);
+  slopeInit(&rollAccelLimiter, 0);
   
   damperInit(&ball, 1.5*CONTROL_HZ, 0);
   damperInit(&iasFilter, 2, 0);
@@ -138,14 +142,6 @@ void mainLoopSetup()
 
 void mainLoop() 
 {
-  while(true) {
-    // Invoke scheduler
-  
-    currentMicros();
-
-    if(!scheduler())
-      // Idle
-      
-      backgroundTask(1);
-  }
+  while(true)
+    backgroundTask(scheduler() ? 0 : 1);
 }

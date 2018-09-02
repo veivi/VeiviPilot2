@@ -2,6 +2,7 @@
 #define ALPHAPILOT_H
 
 #include "Math.h"
+#include <stdbool.h>
 
 //
 // Configuration
@@ -17,11 +18,11 @@
 
 #define CONTROL_HZ 50
 #define CONFIG_HZ (CONTROL_HZ/3.0)
-#define ALPHA_HZ (CONTROL_HZ*8)
-#define AIRSPEED_HZ (ALPHA_HZ/2)
+#define ALPHA_HZ (CONTROL_HZ*4)
+#define AIRSPEED_HZ (CONTROL_HZ*2)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
-#define LED_TICK 100
+#define LED_TICK 30
 #define LOG_HZ (CONTROL_HZ/4.0)
 #define LOG_HZ_COMMIT 3
 #define LOG_HZ_FLUSH 5
@@ -29,7 +30,9 @@
   
 struct Task {
   void (*code)(void);
-  uint32_t period, lastExecuted;
+  uint32_t period;
+  bool realTime;
+  uint32_t nextInvocation;
 };
 
 #define HZ_TO_PERIOD(f) ((uint32_t) (1.0e6/(f)))
