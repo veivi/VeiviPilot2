@@ -11,9 +11,8 @@ struct OutputState vpOutput;
 // struct GPSFix gpsFix;
 
 float controlCycle;
-float outer_P, rudderMix, throttleMix;
 float logBandWidth, ppmFreq, simInputFreq;
-uint32_t simTimeStamp, idleMicros;
+uint32_t idleMicros, simTimeStamp;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
 bool paramsModified = false;
 uint32_t lastPPMWarn;

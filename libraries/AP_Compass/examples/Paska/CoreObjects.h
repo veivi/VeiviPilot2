@@ -63,6 +63,7 @@ struct InputState {
 
 struct ControlState {
   float testGain;
+  float o_P, r_Mix;
   float elevTrim, targetAlpha, targetPressure, targetPitchR, minThrottle;
   float elevPredict, ailePredict, aileNeutral, pusher;
   uint8_t gearSel, flapSel;
@@ -105,7 +106,6 @@ extern struct ControlState vpControl;
 extern struct OutputState vpOutput;
 
 extern float controlCycle;
-extern float outer_P, rudderMix, throttleMix;
 extern float logBandWidth, ppmFreq, simInputFreq;
 extern uint32_t simTimeStamp, idleMicros;
 extern const int maxParams;

@@ -49,9 +49,6 @@ int stap_hostTransmitState(void);  // How many chars will fit
 int stap_hostTransmit(const uint8_t *buffer, int size);
 int stap_hostTransmitChar(uint8_t c);
 void stap_hostFlush();
-  
-
-bool stap_initialize(void);
 void stap_mainLoop(void);
 
 //

@@ -991,9 +991,8 @@ void configurationTask()
   else
     pidCtrlSetZNPI(&throttleCtrl, vpParam.cc_Ku, vpParam.cc_Tu);
 
-  outer_P = vpParam.o_P;
-  rudderMix = vpParam.r_Mix;
-  throttleMix = vpParam.t_Mix;
+  vpControl.o_P = vpParam.o_P;
+  vpControl.r_Mix = vpParam.r_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
   slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.2);
@@ -1030,7 +1029,7 @@ void configurationTask()
       // Auto alpha outer loop gain
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      outer_P = vpControl.testGain = testGainExpo(vpParam.o_P);
+      vpControl.o_P = vpControl.testGain = testGainExpo(vpParam.o_P);
       break;
 
     case 5:
@@ -1046,7 +1045,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      rudderMix = vpControl.testGain = testGainLinear(vpParam.r_Mix/1.2, vpParam.r_Mix*1.2);
+      vpControl.r_Mix = vpControl.testGain = testGainLinear(vpParam.r_Mix/1.2, vpParam.r_Mix*1.2);
       break;
 
     case 11:
@@ -1073,19 +1072,6 @@ void configurationTask()
       }
       break;
       
-    case 14:
-      // Throttle to elev mix
-
-      throttleMix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix);
-      break;
-
-    case 15:
-      // Throttle to elev mix fixed to zero
-
-      throttleMix = 0;
-      vpControl.testGain = 1;
-      break;
-
     case 17:
       // Roll acceleration
       
@@ -1559,7 +1545,7 @@ void elevatorModule()
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
 	      -30/RADIAN - vpFlight.pitch,
 	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
-      * outer_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
+      * vpControl.o_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
   else
     vpControl.targetPitchR = vpInput.elevExpo*PI_F/2;
@@ -1603,7 +1589,7 @@ void elevatorModule()
       // Pusher active
         
       const float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, vpControl.targetAlpha)
-	+ (effMaxAlpha - vpFlight.alpha) * outer_P
+	+ (effMaxAlpha - vpFlight.alpha) * vpControl.o_P
 	* (1 + (vpStatus.stall ? pusherBoost_c : 0) )
 	+ (vpStatus.stall ? pusherBias_c : 0);
 
@@ -1652,19 +1638,21 @@ void aileronModule()
     if(vpFeature.keepLevel)
       // Strong leveler enabled
       
-      targetRollR = outer_P * (vpInput.aileExpo*60/RADIAN - vpFlight.bank);
+      targetRollR
+	= vpControl.o_P * (vpInput.aileExpo*60/RADIAN - vpFlight.bank);
 
     else if(vpMode.bankLimiter) {
 
       if(vpMode.slowFlight)
 	// Weak leveling
-	targetRollR -= outer_P*clamp(vpFlight.bank, -2.0/RADIAN, 2.0/RADIAN);
+	targetRollR
+	  -= vpControl.o_P*clamp(vpFlight.bank, -2.0/RADIAN, 2.0/RADIAN);
 
       // Bank limiter
       
-      targetRollR =
-	clamp(targetRollR,
-	      (-maxBank - vpFlight.bank)*outer_P, (maxBank - vpFlight.bank)*outer_P);
+      targetRollR = clamp(targetRollR,
+			  (-maxBank - vpFlight.bank) * vpControl.o_P,
+			  (maxBank - vpFlight.bank) * vpControl.o_P);
     }
 
     pidCtrlInput(&aileCtrl, targetRollR - vpFlight.rollR, controlCycle);
@@ -1783,16 +1771,16 @@ void mixingTask()
   
   vpOutput.elev =
     constrainServoOutput(vpOutput.elev +
-			 throttleMix*powf(pidCtrlOutput(&throttleCtrl),
+			 vpParam.t_Mix*powf(pidCtrlOutput(&throttleCtrl),
 					  vpParam.t_Expo));
 
   // Aile to rudder mix
 
-  const float lift = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
+  const float liftRatio = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
     ? 0.3 : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
 
   vpOutput.rudder =
-    constrainServoOutput(vpOutput.rudder + vpOutput.aile * rudderMix * lift);  
+    constrainServoOutput(vpOutput.rudder + vpOutput.aile * vpControl.r_Mix * liftRatio);  
 }
 
 void controlTask()
