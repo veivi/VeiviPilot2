@@ -6,57 +6,59 @@
 
 #define CACHE_PAGE (1L<<7)
 #define PAGE_MASK ~(CACHE_PAGE-1)
-#define EEPROM_I2C_ADDR 80
+#define M24XX_I2C_ADDR 80
+#define CACHE_TAG(a) ((a) & PAGE_MASK)
 
-static BaseI2CTarget_t target = { "eeprom" };
+uint32_t m24xxBytesWritten;
+
+static BaseI2CTarget_t target = { "M24xx" };
 
 static uint32_t lastWriteTime;
-uint8_t cacheData[CACHE_PAGE];
-bool cacheFlag[CACHE_PAGE];
-bool cacheValid, cacheModified;
-uint32_t cacheTag;
-uint32_t writeBytesCum;
+static uint8_t cacheData[CACHE_PAGE];
+static bool cacheFlag[CACHE_PAGE];
+static bool cacheValid, cacheModified;
+static uint32_t cacheTag;
 
-bool eepromIsOnline(void)
+bool m24xxIsOnline(void)
 {
   return basei2cIsOnline(&target);
 }
 
-void waitEEPROM(uint32_t addr)
+void m24xxWait(uint32_t addr)
 {
-  if(stap_timeMillis() - lastWriteTime > EXT_EEPROM_LATENCY)
+  if(stap_timeMillis() - lastWriteTime > M24XX_LATENCY)
     // We're cool
     return;
     
   // Write latency not met, wait for acknowledge
 
-  basei2cInvoke(&target, basei2cWait((uint8_t) (EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+  basei2cInvoke(&target, basei2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 }
 
-void writeEEPROM(uint32_t addr, const uint8_t *data, int bytes) 
+void m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes) 
 {
   if(!basei2cIsOnline(&target))
     return;
     
-  waitEEPROM(addr);
-  basei2cInvoke(&target, basei2cWriteWithWord(  (uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
+  m24xxWait(addr);
+  basei2cInvoke(&target, basei2cWriteWithWord(  (uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
 
   lastWriteTime = stap_timeMillis();
 }
  
-bool readEEPROM(uint32_t addr, uint8_t *data, int size) 
+bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size) 
 {
   if(!basei2cIsOnline(&target))
     return false;
     
-  waitEEPROM(addr);
+  m24xxWait(addr);
 
-  return basei2cInvoke(&target, basei2cReadWithWord((uint8_t) EEPROM_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
+  return basei2cInvoke(&target, basei2cReadWithWord((uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
 }
 
-void cacheFlush(void)
+void m24xxFlush(void)
 {
   if(!cacheModified)
     return;
@@ -75,7 +77,7 @@ void cacheFlush(void)
         l++;
       }
 
-      writeEEPROM(cacheTag + i, &cacheData[i], l);
+      m24xxWriteDirect(cacheTag + i, &cacheData[i], l);
         
       i += l;
     }
@@ -84,8 +86,6 @@ void cacheFlush(void)
   cacheModified = false;
 }
 
-#define CACHE_TAG(a) ((a) & PAGE_MASK)
-
 static bool cacheHit(uint32_t addr)
 {
   return CACHE_TAG(addr) == cacheTag;
@@ -93,12 +93,12 @@ static bool cacheHit(uint32_t addr)
 
 static void cacheAlloc(uint32_t addr)
 {
-  cacheFlush();
+  m24xxFlush();
   cacheTag = CACHE_TAG(addr);
   cacheValid = false;
 }
 
-static void cacheWritePrimitive(uint32_t addr, const uint8_t *value, int size)
+static void m24xxWritePrimitive(uint32_t addr, const uint8_t *value, int size)
 {
   int i = 0;
   
@@ -108,7 +108,7 @@ static void cacheWritePrimitive(uint32_t addr, const uint8_t *value, int size)
   addr &= ~PAGE_MASK;
   
   if(addr+size > CACHE_PAGE) {
-    consoleNoteLn_P(PSTR("cacheWritePrimitive() crosses line border, panic"));
+    consoleNoteLn_P(PSTR("m24xxWritePrimitive() crosses line border, panic"));
     return;
   }
   
@@ -119,14 +119,14 @@ static void cacheWritePrimitive(uint32_t addr, const uint8_t *value, int size)
   
   cacheValid = false;
   cacheModified = true;
-  writeBytesCum += size;
+  m24xxBytesWritten += size;
 }
 
-void cacheWrite(uint32_t addr, const uint8_t *value, int size)
+void m24xxWrite(uint32_t addr, const uint8_t *value, int size)
 {
   if(CACHE_TAG(addr) == CACHE_TAG(addr+size-1)) {
     // Fits one line, fall back to primitive
-    cacheWritePrimitive(addr, value, size);
+    m24xxWritePrimitive(addr, value, size);
     return;
   }  
      
@@ -136,7 +136,7 @@ void cacheWrite(uint32_t addr, const uint8_t *value, int size)
     // Starts with a partial line
     
     uint32_t extent = CACHE_TAG(ptr) + CACHE_PAGE - ptr;
-    cacheWritePrimitive(ptr, value, extent);
+    m24xxWritePrimitive(ptr, value, extent);
     if(value)
       value += extent;
     ptr += extent;
@@ -145,7 +145,7 @@ void cacheWrite(uint32_t addr, const uint8_t *value, int size)
   while(ptr+CACHE_PAGE <= addr+size) {
     // Full lines remain
     
-    cacheWritePrimitive(ptr, value, CACHE_PAGE);
+    m24xxWritePrimitive(ptr, value, CACHE_PAGE);
     if(value)
       value += CACHE_PAGE;
     ptr += CACHE_PAGE;
@@ -154,16 +154,16 @@ void cacheWrite(uint32_t addr, const uint8_t *value, int size)
   if(ptr < addr+size)
     // Partial line remains
     
-    cacheWritePrimitive(ptr, value, addr+size-ptr);
+    m24xxWritePrimitive(ptr, value, addr+size-ptr);
 }
 
-int32_t cacheReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
+int32_t m24xxReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
 {
   if(cacheModified || !cacheHit(addr))
     cacheAlloc(addr);
   
   if(!cacheValid) {
-    if(!readEEPROM(cacheTag, cacheData, CACHE_PAGE)) {
+    if(!m24xxReadDirect(cacheTag, cacheData, CACHE_PAGE)) {
       memset(cacheData, 0xFF, sizeof(cacheData));
       return -1;
     }
@@ -181,11 +181,11 @@ int32_t cacheReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
   return size;
 }
 
-bool cacheRead(uint32_t addr, uint8_t *value, int32_t size) 
+bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size) 
 {
   while(size > 0) {
     uint8_t *buffer = NULL;
-    int good = cacheReadIndirect(addr, &buffer, size);
+    int good = m24xxReadIndirect(addr, &buffer, size);
 
     if(good < 0)
       return false;

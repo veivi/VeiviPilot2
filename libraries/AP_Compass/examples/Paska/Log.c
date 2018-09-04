@@ -2,7 +2,7 @@
 #include "Log.h"
 
 #ifdef CONFIG_HAL_BOARD
-#include "CoreObjects.h"
+#include "Objects.h"
 
 float flapEncoded;
 uint16_t modeEncoded, statusEncoded, testEncoded;

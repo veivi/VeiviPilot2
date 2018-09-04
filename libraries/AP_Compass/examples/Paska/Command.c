@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include "Command.h"
 #include "StaP.h"
-#include "CoreObjects.h"
+#include "Objects.h"
 #include "Logging.h"
 #include "Datagram.h"
 #include "Console.h"
@@ -324,8 +324,10 @@ void executeCommand(char *buf)
       break;
     
     case c_test:
-      if(numParams > 0)
-	logTestSet(param[0]);
+      if(numParams > 0) {
+	nvState.testNum = param[0];
+	storeNVState();
+      }
 
       consoleNote_P(CS_STRING("Current test channel = "));
       consolePrintLnI(nvState.testNum);

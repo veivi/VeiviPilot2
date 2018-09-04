@@ -54,7 +54,7 @@ void mainLoopSetup()
   basei2cInit();
   basei2cSetSpeed(true);
   basei2cSetPullup(true);
-  basei2cSetTimeOut(2+EXT_EEPROM_LATENCY);
+  basei2cSetTimeOut(2+M24XX_LATENCY);
 
   consolePrintLn_P(CS_STRING("done. "));
   

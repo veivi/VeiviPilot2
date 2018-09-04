@@ -1,7 +1,7 @@
 #include <string.h>
 #include "AlphaPilot.h"
 #include "StaP.h"
-#include "CoreObjects.h"
+#include "Objects.h"
 #include "RxInput.h"
 #include "PPM.h"
 #include "PWMOutput.h"
@@ -86,7 +86,7 @@ void datagramSerialFlush()
 
 void cacheTask()
 {
-  cacheFlush();
+  m24xxFlush();
   
   if(paramsModified) {
     storeParams();
@@ -418,8 +418,8 @@ void monitorTask()
 
   // Log bandwidth
 
-  logBandWidth = 1.0e6 * writeBytesCum / (stap_currentMicros - prevMonitor);
-  writeBytesCum = 0;
+  logBandWidth = 1.0e6 * m24xxBytesWritten / (stap_currentMicros - prevMonitor);
+  m24xxBytesWritten = 0;
   
   // PPM monitoring
 
@@ -460,8 +460,6 @@ float testGainLinear(float start, float stop)
   float q = quantize(vpInput.tuningKnob, &state, paramSteps);
   return start + q*(stop - start);
 }
-
-float s_Ku_ref, i_Ku_ref;
 
 static void failsafeDisable()
 {
@@ -1007,7 +1005,7 @@ void configurationTask()
       // Wing stabilizer gain
          
       vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;
-      pidCtrlSetPID(&aileCtrl, vpControl.testGain = testGainExpo(s_Ku_ref), 0, 0);
+      pidCtrlSetPID(&aileCtrl, vpControl.testGain = testGainExpo(vpControl.s_Ku_ref), 0, 0);
       break;
             
     case 2:
@@ -1015,14 +1013,14 @@ void configurationTask()
          
       vpFeature.stabilizePitch = true;
       vpFeature.alphaHold = false;
-      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
+      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(vpControl.i_Ku_ref), 0, 0);
       break;
          
     case 3:
       // Elevator stabilizer gain, outer loop enabled
          
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(i_Ku_ref), 0, 0);
+      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(vpControl.i_Ku_ref), 0, 0);
       break;
          
     case 4:
@@ -1081,8 +1079,8 @@ void configurationTask()
   } else { 
     // Track s_Ku until a test is activated
     
-    s_Ku_ref = s_Ku;
-    i_Ku_ref = i_Ku;
+    vpControl.s_Ku_ref = s_Ku;
+    vpControl.i_Ku_ref = i_Ku;
   }
 }
 

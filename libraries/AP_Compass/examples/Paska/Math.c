@@ -2,7 +2,7 @@
 #include "Math.h"
 #include "NVState.h"
 #include "Console.h"
-#include "CoreObjects.h"
+#include "Objects.h"
 #include "DSP.h"
 
 const float stabilityElevExp_c = -1.5;

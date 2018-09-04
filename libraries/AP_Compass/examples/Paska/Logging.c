@@ -10,13 +10,14 @@
 
 typedef enum { invalid_c, find_stamp_c, find_start_c, ready_c, stop_c, run_c, failed_c } logState_t;
 
-logState_t logState;
-int32_t logPtr, logLen, logSize;
-uint16_t logEndStamp;
-bool logEnabled = false;
-long logBytesCum;
+static logState_t logState;
+static int32_t logPtr, logLen, logSize;
+static uint16_t logEndStamp;
+static bool logEnabled = false;
 
 #define logOffset nvState.logPartition
+
+static uint16_t logRead(int32_t index);
 
 bool logReady(bool verbose)
 {
@@ -49,10 +50,10 @@ static void logWrite(int32_t index, const uint16_t *value, int count)
 
   if(index+count > logSize) {
     int32_t p = logSize - index;
-    cacheWrite(logAddr(index), (const uint8_t*) value, p*sizeof(uint16_t));
-    cacheWrite(logAddr(0), (const uint8_t*) &value[p], (count-p)*sizeof(uint16_t));
+    m24xxWrite(logAddr(index), (const uint8_t*) value, p*sizeof(uint16_t));
+    m24xxWrite(logAddr(0), (const uint8_t*) &value[p], (count-p)*sizeof(uint16_t));
   } else
-    cacheWrite(logAddr(index), (const uint8_t*) value, count*sizeof(uint16_t));
+    m24xxWrite(logAddr(index), (const uint8_t*) value, count*sizeof(uint16_t));
 
   uncommitted = count;
 }
@@ -64,7 +65,7 @@ uint16_t logRead(int32_t index)
     
   uint16_t entry = 0;
   
-  cacheRead(logAddr(index), (uint8_t*) &entry, sizeof(entry));
+  m24xxRead(logAddr(index), (uint8_t*) &entry, sizeof(entry));
   
   return entry;
 }
@@ -75,8 +76,6 @@ static void logCommit(void)
     return;
     
   logPtr = logIndex(uncommitted);
-  logBytesCum += uncommitted*sizeof(uint16_t);
-
   logLen += uncommitted;
   
   if(logLen > logSize)
@@ -107,7 +106,7 @@ void logClear(void)
   
   consoleNoteLn_P(CS_STRING("Log being CLEARED"));
   
-  logEnter(ENTRY_TOKEN(t_start + (nvState.testNum & 0xFF)));
+  logEnter(ENTRY_TOKEN(t_start));
   
   logLen = 0;
     
@@ -117,17 +116,6 @@ void logClear(void)
     consoleNote_P(CS_STRING("Log STAMP incremented to "));
     consolePrintLnUI(nvState.logStamp);
   }    
-}
-
-void logTestSet(uint16_t ch)
-{
-  nvState.testNum = ch;
-  
-  logClear();
-  storeNVState();
-
-  consoleNote_P(CS_STRING("Test channel set to "));
-  consolePrintLnUI(nvState.testNum);
 }
 
 static int prevCh = -1;
@@ -213,7 +201,13 @@ void logDumpBinary(void)
   if(!logReadyVerbose())
     return;
   
-  struct LogInfo info = { nvState.logStamp, nvState.testNum, logLen, LOG_HZ, vpDerived.totalMass };
+  struct LogInfo info = {
+    nvState.logStamp,
+    nvState.testNum,
+    logLen,
+    LOG_HZ,
+    vpDerived.totalMass };
+  
   strncpy(info.name, vpParam.name, NAME_LEN);
 
   datagramTxStart(DG_LOGINFO);    
@@ -235,7 +229,7 @@ void logDumpBinary(void)
   while(total < logLen) {
     uint8_t *buffer = NULL;
 
-    int good = cacheReadIndirect(logAddr(logIndex(total-logLen)),
+    int good = m24xxReadIndirect(logAddr(logIndex(total-logLen)),
 				 &buffer, sizeof(uint16_t)*(logLen-total));
 
     datagramTxOut(buffer, good);
@@ -271,10 +265,10 @@ bool logInit(uint32_t maxDuration)
   case invalid_c:
     logSize = 0;
     
-    while(readEEPROM(eepromSize+(1<<10)-1, &dummy, 1))
+    while(m24xxReadDirect(eepromSize+(1<<10)-1, &dummy, 1))
       eepromSize += 1<<10;
     
-    if(readEEPROM(eepromSize-1, &dummy, 1)) {
+    if(m24xxReadDirect(eepromSize-1, &dummy, 1)) {
       consoleNote_P(CS_STRING("EEPROM size = "));
       consolePrintUL(eepromSize/(1<<10));
       consolePrintLn("k bytes");
@@ -310,7 +304,6 @@ bool logInit(uint32_t maxDuration)
       
       if(entry >= ENTRY_TOKEN(t_start) && entry <= ENTRY_TOKEN(t_start+BYTE_MASK)) {
 	startPtr = searchPtr;
-	nvState.testNum = entry & BYTE_MASK;
       } else if(entry == ENTRY_TOKEN(t_stamp)) {
         uint16_t stamp = logRead(logIndex(searchPtr+1));
 
@@ -365,7 +358,6 @@ bool logInit(uint32_t maxDuration)
       
       if(entry >= ENTRY_TOKEN(t_start) && entry <= ENTRY_TOKEN(t_start+BYTE_MASK)) {
 	startPtr = searchPtr;
-	nvState.testNum = entry & BYTE_MASK;
       }
       
       searchPtr++;
@@ -386,8 +378,6 @@ bool logInit(uint32_t maxDuration)
 
     consoleNote_P(CS_STRING("LOG READY, PTR = "));
     consolePrintLnUL(logPtr);
-    consoleNote_P(CS_STRING("  TEST = "));
-    consolePrintLnUI(nvState.testNum);
     consoleNote_P(CS_STRING("  LENGTH = "));
     consolePrintLnUL(logLen);
     consoleNote_P(CS_STRING("  STAMP = "));
@@ -424,7 +414,7 @@ void logSave()
 
     if(uncommitted > 0) {
       logCommit();
-      cacheFlush();
+      m24xxFlush();
       logEndStamp = nextStamp;
     }
     

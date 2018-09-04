@@ -6,7 +6,7 @@
 #include "Console.h"
 #include "CRC16.h"
 #include "Datagram.h"
-#include "CoreObjects.h"
+#include "Objects.h"
 
 // NV store layout
 
@@ -111,7 +111,7 @@ bool setModel(int model, bool verbose)
     model = maxModels() - 1;
   
   nvState.model = model;
-  cacheRead(paramOffset + sizeof(vpParam)*model,
+  m24xxRead(paramOffset + sizeof(vpParam)*model,
 	    (uint8_t*) &vpParam, sizeof(vpParam));
 
   if(verbose) {
@@ -144,33 +144,33 @@ void storeParams(void)
   vpParam.crc = paramRecordCrc(&vpParam);
   consoleNote_P(CS_STRING("Model record CRC = "));
   consolePrintLnUI(vpParam.crc);
-  cacheWrite(paramOffset + sizeof(vpParam)*nvState.model,
+  m24xxWrite(paramOffset + sizeof(vpParam)*nvState.model,
   	     (const uint8_t*) &vpParam, sizeof(vpParam));
-  cacheFlush();
+  m24xxFlush();
   consoleNoteLn_P(CS_STRING("  Stored"));
 }
 
 void deleteModel(int model)
 {
-  cacheWrite(paramOffset + sizeof(struct ParamRecord)*model,
+  m24xxWrite(paramOffset + sizeof(struct ParamRecord)*model,
   	     NULL, sizeof(struct ParamRecord));
-  cacheFlush();
+  m24xxFlush();
 }
 
 void readData(uint8_t *data, int size)
 {
-  cacheRead(dataOffset, data, size);
+  m24xxRead(dataOffset, data, size);
 }
 
 void storeData(const uint8_t *data, int size)
 {
-  cacheWrite(dataOffset, data, size);
-  cacheFlush();
+  m24xxWrite(dataOffset, data, size);
+  m24xxFlush();
 }
 
 bool readNVState(void)
 {
-  if(!cacheRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState)))
+  if(!m24xxRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState)))
     return false;
   
   consoleNote_P(CS_STRING("  State record CRC = "));
@@ -189,8 +189,8 @@ void storeNVState(void)
 {
   if(sizeof(nvState) < paramOffset - stateOffset) {
     nvState.crc = stateRecordCrc(&nvState);
-    cacheWrite(stateOffset, (const uint8_t*) &nvState, sizeof(nvState));
-    cacheFlush();
+    m24xxWrite(stateOffset, (const uint8_t*) &nvState, sizeof(nvState));
+    m24xxFlush();
   } else
     consoleNoteLn_P(CS_STRING("PANIC : State record exceeds partition size"));
 }

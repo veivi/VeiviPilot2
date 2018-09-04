@@ -39,7 +39,7 @@ bool toc_test_load(bool reset)
 
 bool toc_test_fdr(bool reset)
 {
-  return eepromIsOnline() && logReady(false);
+  return m24xxIsOnline() && logReady(false);
 }
 
 bool toc_test_alpha_sensor(bool reset)

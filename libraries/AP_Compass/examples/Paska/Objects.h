@@ -1,5 +1,5 @@
-#ifndef COREOBJECTS_H
-#define COREOBJECTS_H
+#ifndef OBJECTS_H
+#define OBJECTS_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -64,6 +64,7 @@ struct InputState {
 struct ControlState {
   float testGain;
   float o_P, r_Mix;
+  float s_Ku_ref, i_Ku_ref;
   float elevTrim, targetAlpha, targetPressure, targetPitchR, minThrottle;
   float elevPredict, ailePredict, aileNeutral, pusher;
   uint8_t gearSel, flapSel;
