@@ -1,6 +1,6 @@
 #include <string.h>
 #include "NVState.h"
-#include "Storage.h"
+#include "M24XX.h"
 #include "Math.h"
 #include "DSP.h"
 #include "Console.h"

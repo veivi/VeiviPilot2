@@ -3,7 +3,7 @@
 #include "TOCTest.h"
 #include "Logging.h"
 #include "RxInput.h"
-#include "Storage.h"
+#include "M24XX.h"
 #include "Console.h"
 #include "NVState.h"
 #include "DSP.h"

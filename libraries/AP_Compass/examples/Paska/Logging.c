@@ -3,7 +3,7 @@
 #include "AlphaPilot.h"
 #include "StaP.h"
 #include "Logging.h"
-#include "Storage.h"
+#include "M24XX.h"
 #include "Console.h"
 #include "Datagram.h"
 #include "NVState.h"

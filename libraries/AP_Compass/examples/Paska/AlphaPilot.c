@@ -5,7 +5,7 @@
 #include "RxInput.h"
 #include "PPM.h"
 #include "PWMOutput.h"
-#include "Storage.h"
+#include "M24XX.h"
 #include "Console.h"
 #include "Datagram.h"
 #include "CRC16.h"

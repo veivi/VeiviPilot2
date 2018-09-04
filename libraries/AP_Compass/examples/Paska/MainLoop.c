@@ -1,7 +1,7 @@
 #include "MainLoop.h"
 #include "AlphaPilot.h"
 #include "Logging.h"
-#include "Storage.h"
+#include "M24XX.h"
 #include "Console.h"
 #include "BaseI2C.h"
 #include "NVState.h"

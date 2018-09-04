@@ -1,5 +1,5 @@
 #include <string.h>
-#include "Storage.h"
+#include "M24XX.h"
 #include "Console.h"
 #include "StaP.h"
 #include "BaseI2C.h"
