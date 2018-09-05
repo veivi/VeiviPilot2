@@ -1522,16 +1522,18 @@ void elevatorModule()
   vpOutput.elev =
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
-  const bool flareAllowed = !vpMode.test && vpMode.slowFlight
-    && vpControl.gearSel == 0 && (fabs(vpFlight.bank) < 30/RADIAN)
+  vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
+
+  const float flareAlpha = 
+    mixValue(vpParam.flare * stickForce,
+	     vpControl.targetAlpha, alphaPredict(applyExpo(vpInput.elev)));
+
+  if(!vpMode.test && vpMode.slowFlight
+    && vpControl.gearSel == 0 && fabs(vpFlight.bank) < 45/RADIAN
     && (vpDerived.haveRetracts || vpFlight.alt < 5)
-    && vpInput.throttle < 0.3;
-
-  vpControl.targetAlpha =
-    mixValue(flareAllowed ? vpParam.flare * stickForce : 0,
-	     fminf(alphaPredict(vpOutput.elev), effMaxAlpha),
-	     alphaPredict(vpOutput.elev));
-
+    && vpInput.throttle < 0.3)
+    vpControl.targetAlpha = fmax(vpControl.targetAlpha, flareAlpha);
+  
   if(vpMode.radioFailSafe)
     vpControl.targetAlpha = slopeInput(&trimRateLimiter, vpControl.targetAlpha, controlCycle);
   else

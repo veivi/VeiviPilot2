@@ -51,6 +51,18 @@ void damperSetTau(Damper_t*, float tau);
 float damperInput(Damper_t*, float v);
 float damperOutput(Damper_t*);
     
+typedef struct Washout_s {
+  float state;
+  struct Damper_s damper;
+} Washout_t;
+
+bool washoutInit(Washout_t*, float tau, float state);
+void washoutFinalize(Washout_t*);
+void washoutReset(Washout_t*, float v);
+void washoutSetTau(Washout_t*, float tau);
+float washoutInput(Washout_t*, float v);
+float washoutOutput(Washout_t*);
+    
 typedef struct Derivator_s {
   float value, prev, delta;
 } Derivator_t;
