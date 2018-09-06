@@ -1513,7 +1513,7 @@ const float pusherBias_c = -2.5/RADIAN;
 
 void elevatorModule()
 {
-  const float shakerLimit = RATIO(1/2);
+  const float shakerLimit = RATIO(1/3);
   const float stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
