@@ -1526,12 +1526,13 @@ void elevatorModule()
 
   const float flareAlpha = 
     mixValue(vpParam.flare * stickForce,
-	     vpControl.targetAlpha, alphaPredict(applyExpo(vpInput.elev)));
+	     vpControl.targetAlpha, alphaPredict(vpInput.elevExpo));
 
   if(!vpMode.test && vpMode.slowFlight
-    && vpControl.gearSel == 0 && fabs(vpFlight.bank) < 45/RADIAN
-    && (vpDerived.haveRetracts || vpFlight.alt < 5)
+    && vpControl.gearSel == 0 && fabs(vpFlight.bank) < 30/RADIAN
+    && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
     && vpInput.throttle < 0.3)
+    // We may be in a flare
     vpControl.targetAlpha = fmax(vpControl.targetAlpha, flareAlpha);
   
   if(vpMode.radioFailSafe)
@@ -1925,10 +1926,7 @@ float brakeFn()
 
 float throttleFn()
 {
-  const float effValue
-    = (vpStatus.simulatorLink || vpParam.virtualOnly)
-    ? 0 : pidCtrlOutput(&throttleCtrl);
-  return THROTTLE_SIGN*RATIO(2/3)*(2*effValue - 1);
+  return THROTTLE_SIGN*RATIO(2/3)*(2*pidCtrlOutput(&throttleCtrl) - 1);
 }
 
 float (*functionTable[])(void) = {
@@ -1959,7 +1957,7 @@ void actuatorTask()
 {
   int i = 0;
   
-  if(!vpStatus.armed)
+  if(!vpStatus.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
     return;
 
   for(i = 0; i < MAX_SERVO; i++)

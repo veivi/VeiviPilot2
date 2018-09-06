@@ -5,7 +5,6 @@
 #include "NVState.h"
 #include "DSP.h"
 #include "Math.h"
-#include "Time.h"
 #include "StaP.h"
 
 //
@@ -102,20 +101,21 @@ float applyNullZoneBlind(float value, float nz)
   return applyNullZone(value, nz, NULL);
 }
 
-#define EXPO 0.2
-#define HALF_RATE 0.7
+#define EXPO 0.3
+#define HALF_RATE 0.6
 
 float applyExpo(float value)
 {
-  const float rate = vpMode.halfRate ? HALF_RATE : 1;
+  const float p = 1.0 - powf(vpDerived.minimumIAS / effIAS(), 1.5),
+    rate = vpMode.halfRate ? mixValue(p, 1, HALF_RATE) : 1;
   
-  return rate*sign(value)*powf(fabsf(value),
-			  EXPO + 0.7*sqrt(effIAS()/vpDerived.minimumIAS));
+  return rate*sign(value)*powf(fabsf(value), 1 + EXPO*p);
 }
 
 float applyExpoTrim(float value, float trim)
 {
-  const float boost = sign(value) == sign(trim) ? 0 : fabs(value * trim);
+  const float valueExp = applyExpo(value),
+    boost = sign(value) == sign(trim) ? 0 : fabs(valueExp * trim);
 
-  return clamp(applyExpo(value) * (1 + boost) + trim, -1, 1);
+  return clamp(valueExp * (1 + boost) + trim, -1, 1);
 }
