@@ -106,8 +106,8 @@ float applyNullZoneBlind(float value, float nz)
   return applyNullZone(value, nz, NULL);
 }
 
-#define EXPO 0.3
-#define HALF_RATE 0.6
+#define EXPO 0.35
+#define HALF_RATE 0.5
 
 float applyExpo(float value)
 {

@@ -589,13 +589,37 @@ void statusTask()
       }
     }
   }
+
+  //
+  // Flare detection
+  //
+
+  static uint32_t lastFlare;
+  
+  if(!vpMode.test && vpMode.slowFlight
+     && vpControl.gearSel == 0 && fabs(vpFlight.bank) < 30/RADIAN
+     && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
+     && vpInput.throttle < 0.4
+     && vpInput.stickForce > RATIO(1/4)) {
+    // We may be in a flare
+
+    if(!vpStatus.flare)
+      consoleNoteLn_P(CS_STRING("We seem to ba FLARING"));
+    
+    vpStatus.flare = true;
+    lastFlare = stap_currentMicros;
+    
+  } else if(vpStatus.flare && stap_currentMicros - lastFlare > 0.7e6) {
+    consoleNoteLn_P(CS_STRING("Flare ended"));
+    vpStatus.flare = false;
+  }
   
   //
   // Stall detection
   //
   
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
-     || vpMode.takeOff
+     || vpMode.takeOff || vpStatus.flare
      || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
     if(!vpStatus.stall)
       lastStall = stap_currentMicros;
@@ -903,7 +927,7 @@ void configurationTask()
   // Wing leveler disable when stick input detected
   
   if(vpMode.wingLeveler && vpInput.ailePilotInput
-     && fabsf(vpFlight.bank) > 7.5/RADIAN) {
+     && fabsf(vpFlight.bank) > 5/RADIAN) {
     consoleNoteLn_P(CS_STRING("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -1239,20 +1263,18 @@ void gaugeTask()
 	break;
 
       case 7:
-	consolePrint_P(CS_STRING(" aile(exp) = "));
+	consolePrint_P(CS_STRING(" aile(e) = "));
 	consolePrintF(vpInput.aile);
 	consolePrint_P(CS_STRING("("));
 	consolePrintF(vpInput.aileExpo);
-	consolePrint_P(CS_STRING(") elev(exp) = "));
+	consolePrint_P(CS_STRING(") elev(e) = "));
 	consolePrintF(vpInput.elev);
 	consolePrint_P(CS_STRING("("));
 	consolePrintF(vpInput.elevExpo);
 	consolePrint_P(CS_STRING(") thr = "));
 	consolePrintF(vpInput.throttle);
-	consolePrint_P(CS_STRING(" rudder = "));
+	consolePrint_P(CS_STRING(" rud = "));
 	consolePrintF(vpInput.rudder);
-	consolePrint_P(CS_STRING(" knob = "));
-	consolePrintF(vpInput.tuningKnob);
 	break;
 
       case 8:
@@ -1514,10 +1536,12 @@ const float pusherBias_c = -2.5/RADIAN;
 void elevatorModule()
 {
   const float shakerLimit = RATIO(1/3);
-  const float stickForce =
+
+  vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
-    = mixValue(stickForce, vpDerived.shakerAlpha, vpDerived.pusherAlpha);
+    = mixValue(vpInput.stickForce,
+	       vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
   vpOutput.elev =
     applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
@@ -1525,14 +1549,10 @@ void elevatorModule()
   vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
 
   const float flareAlpha = 
-    mixValue(vpParam.flare * stickForce,
+    mixValue(vpParam.flare * vpInput.stickForce,
 	     vpControl.targetAlpha, alphaPredict(vpInput.elevExpo));
 
-  if(!vpMode.test && vpMode.slowFlight
-    && vpControl.gearSel == 0 && fabs(vpFlight.bank) < 30/RADIAN
-    && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
-    && vpInput.throttle < 0.3)
-    // We may be in a flare
+  if(vpStatus.flare)
     vpControl.targetAlpha = fmax(vpControl.targetAlpha, flareAlpha);
   
   if(vpMode.radioFailSafe)
@@ -1640,7 +1660,7 @@ void aileronModule()
       // Strong leveler enabled
       
       targetRollR
-	= vpControl.o_P * (vpInput.aileExpo*60/RADIAN - vpFlight.bank);
+	= vpControl.o_P * (vpInput.aile*80/RADIAN - vpFlight.bank);
 
     else if(vpMode.bankLimiter) {
 

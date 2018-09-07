@@ -23,6 +23,7 @@ struct StatusRecord {
   bool alphaUnreliable;
   bool upright;
   bool belowFloor;
+  bool flare;
   float load;
 };
 
@@ -59,6 +60,7 @@ struct FlightState {
 struct InputState {
   float aile, elev, aileExpo, elevExpo, throttle, rudder, tuningKnob;
   bool ailePilotInput, elevPilotInput, rudderPilotInput;
+  float stickForce;
 };
 
 struct ControlState {
