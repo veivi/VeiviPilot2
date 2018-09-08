@@ -597,8 +597,10 @@ void statusTask()
   static uint32_t lastFlare;
   
   if(!vpMode.test && vpMode.slowFlight
-     && vpControl.gearSel == 0 && fabs(vpFlight.bank) < 30/RADIAN
+     && vpControl.gearSel == 0
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
+     && vpFlight.IAS < 1.3*vpDerived.minimumIAS
+     && fabs(vpFlight.bank) < 30/RADIAN
      && vpInput.throttle < 0.4
      && vpInput.stickForce > RATIO(1/4)) {
     // We may be in a flare
@@ -1017,7 +1019,7 @@ void configurationTask()
   vpControl.r_Mix = vpParam.r_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.2);
+  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.25);
   
   //
   // Apply test mode
@@ -1544,16 +1546,18 @@ void elevatorModule()
 	       vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
   vpOutput.elev =
-    applyExpoTrim(vpInput.elev, vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
+    applyExpoTrim(vpInput.elev,
+		  vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
 
-  const float flareAlpha = 
-    mixValue(vpParam.flare * vpInput.stickForce,
-	     vpControl.targetAlpha, alphaPredict(vpInput.elevExpo));
+  if(vpStatus.flare) {
+    const float flareAlpha = 
+      mixValue(vpParam.flare * vpInput.stickForce,
+	       vpControl.targetAlpha, alphaPredict(vpInput.elev));
 
-  if(vpStatus.flare)
     vpControl.targetAlpha = fmax(vpControl.targetAlpha, flareAlpha);
+  }
   
   if(vpMode.radioFailSafe)
     vpControl.targetAlpha = slopeInput(&trimRateLimiter, vpControl.targetAlpha, controlCycle);
@@ -1645,7 +1649,7 @@ void aileronModule()
     if(vpStatus.stall)
       vpInput.aile = vpInput.aileExpo = 0;
   } else if(vpFeature.alphaHold)
-    maxBank /= 1 + alphaPredict(vpControl.elevTrim) / vpDerived.thresholdAlpha / 2;
+    maxBank /= 1 + alphaPredict(vpControl.elevTrim)/vpDerived.thresholdAlpha/2;
   
   float targetRollR = rollRatePredict(vpInput.aileExpo);
   
