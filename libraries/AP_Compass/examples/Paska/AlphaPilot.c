@@ -1005,6 +1005,7 @@ void configurationTask()
 
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
+  vpControl.yd_P = scaleByIAS(vpParam.yd_C, stabilityRudExp_c);
 
   pidCtrlSetZNPID(&aileCtrl, s_Ku*scale, vpParam.s_Tu);  
   pidCtrlSetZNPID(&elevCtrl, i_Ku*scale, vpParam.i_Tu);
@@ -1059,6 +1060,11 @@ void configurationTask()
     case 5:
       // Max alpha tests, just flare disabled (because in test mode)
       break;
+
+    case 6:
+      // Yaw damper gain
+      vpControl.yd_P = vpControl.testGain = testGainExpo(vpControl.yd_P_ref);
+      break;
       
     case 8:
       // Stall behavior test
@@ -1107,6 +1113,7 @@ void configurationTask()
     
     vpControl.s_Ku_ref = s_Ku;
     vpControl.i_Ku_ref = i_Ku;
+    vpControl.yd_P_ref = vpControl.yd_P;
   }
 }
 
@@ -1714,6 +1721,7 @@ void aileronModule()
 void rudderModule()
 {
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
+  vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
 }
 
 //
@@ -1722,6 +1730,8 @@ void rudderModule()
   
 void throttleModule()
 {
+  const float glideSlope = 3.0/RADIAN;
+  
   pidCtrlSetRangeAB(&throttleCtrl, vpControl.minThrottle, vpInput.throttle);
     
   if((!vpMode.takeOff && !vpStatus.aloft) || vpMode.radioFailSafe)
@@ -1731,7 +1741,7 @@ void throttleModule()
     float thrError = 0;
     
     if(vpMode.slowFlight)
-      thrError = vpFlight.slope - vpParam.glideSlope*(RATIO(3/2) - 3*vpInput.throttle);
+      thrError = vpFlight.slope - glideSlope*(RATIO(3/2) - 3*vpInput.throttle);
     else
       thrError = 1 - vpFlight.dynP/vpControl.targetPressure;
 

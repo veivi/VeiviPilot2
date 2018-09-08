@@ -64,7 +64,7 @@ struct ParamRecord {
   float takeoffTrim;
   float weightDry, fuel, thrust;
   float thresholdMargin, pushMargin;
-  float glideSlope;
+  float yd_C;
   float offset;
   bool flaperon;
   bool virtualOnly;

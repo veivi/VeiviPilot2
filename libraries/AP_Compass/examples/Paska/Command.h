@@ -39,7 +39,7 @@ typedef enum {
   c_elevon,
   c_vtail,
   c_margin,
-  c_slope,
+  c_yawdamper,
   c_at_zn,
   c_cc_zn,
   c_offset,

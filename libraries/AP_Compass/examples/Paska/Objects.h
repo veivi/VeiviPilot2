@@ -65,8 +65,8 @@ struct InputState {
 
 struct ControlState {
   float testGain;
-  float o_P, r_Mix;
-  float s_Ku_ref, i_Ku_ref;
+  float o_P, r_Mix, yd_P;
+  float s_Ku_ref, i_Ku_ref, yd_P_ref;
   float elevTrim, targetAlpha, targetPressure, targetPitchR, minThrottle;
   float elevPredict, ailePredict, aileNeutral, pusher;
   uint8_t gearSel, flapSel;
@@ -93,6 +93,7 @@ extern Sampler_t alphaSampler, iasSampler;
 extern SWAvg_t liftFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, rollAccelLimiter, trimRateLimiter;
 extern Damper_t iasFilter, iasFilterSlow, ball, accAvg;
+extern Washout_t yawDamper;
 
 // struct GPSFix gpsFix;
 

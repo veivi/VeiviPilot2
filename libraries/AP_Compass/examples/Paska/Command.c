@@ -63,7 +63,7 @@ const struct Command commands[] PROGMEM = {
   { "flaperon", c_elevon, e_bool, &vpParam.flaperon },
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
   { "pmargin", c_pmargin, e_angle, &vpParam.pushMargin },
-  { "slope", c_slope, e_angle, &vpParam.glideSlope },
+  { "yawdamper", c_yawdamper, e_float, &vpParam.yd_C },
   { "offset", c_offset, e_angle, &vpParam.offset },
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
   { "wheels", c_wheels, e_bool, &vpParam.haveGear },

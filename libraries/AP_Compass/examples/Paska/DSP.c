@@ -105,7 +105,7 @@ bool damperInit(Damper_t *damper, float tau, float state)
 float damperInput(Damper_t *damper, float v)
 {
   damper->state = mixValue(damper->tau, damper->state, v);
-  return damper->state;
+  return damperOutput(damper);
 }
 
 void damperReset(Damper_t *damper, float v)
@@ -123,6 +123,39 @@ void damperSetTau(Damper_t *damper, float t)
   damper->tau = 1.0 / (1 + t);
 }
 
+bool washoutInit(Washout_t *i, float tau, float state)
+{
+  i->state = state;
+  return damperInit(&i->dc, tau, state);
+}
+
+void washoutFinalize(Washout_t *i)
+{
+}
+
+void washoutReset(Washout_t *i, float v)
+{
+  i->state = v;
+  damperReset(&i->dc, v);
+}
+
+void washoutSetTau(Washout_t *i, float tau)
+{
+  damperSetTau(&i->dc, tau);
+}
+
+float washoutInput(Washout_t *i, float v)
+{
+  i->state = v;
+  damperInput(&i->dc, v);
+  return washoutOutput(i);
+}
+
+float washoutOutput(Washout_t *i)
+{
+  return i->state - damperOutput(&i->dc);
+}
+    
 bool swAvgInit(SWAvg_t *f, int w)
 {
   f->sum = 0.0;

@@ -53,7 +53,7 @@ const struct ParamRecord paramDefaults = {
   .thrust = 0,
   .thresholdMargin = 0.15,
   .pushMargin = 1.0/RADIAN,
-  .glideSlope = 3.0/RADIAN,
+  .yd_C = 5,
   .offset = -0.4/RADIAN,
   .flaperon = 0,
   .virtualOnly = true,
@@ -263,6 +263,9 @@ void printParams()
   consolePrintFP(vpParam.s_Ku_C, 4);
   consolePrint_P(CS_STRING(" Tu = "));
   consolePrintLnFP(vpParam.s_Tu, 4);
+  consoleNoteLn_P(CS_STRING("  Yaw damper"));
+  consoleNote_P(CS_STRING("    P*IAS^1.5 = "));
+  consolePrintLnFP(vpParam.yd_C, 4);
   consoleNoteLn_P(CS_STRING("  Autothrottle"));
   consoleNote_P(CS_STRING("    Ku = "));
   consolePrintFP(vpParam.at_Ku, 4);
@@ -275,8 +278,6 @@ void printParams()
   consolePrintLnFP(vpParam.cc_Tu, 4);
   consoleNote_P(CS_STRING("  Climb pitch(max) = "));
   consolePrintFP(vpParam.maxPitch*RADIAN, 2);
-  consolePrint_P(CS_STRING("  Glide slope = "));
-  consolePrintFP(vpParam.glideSlope*RADIAN, 2);
   consolePrint_P(CS_STRING("  alt(floor) = "));
   consolePrintLnF(vpParam.floor);
   consoleNote_P(CS_STRING("  Max alpha (clean, full flaps) = "));

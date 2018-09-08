@@ -53,7 +53,7 @@ float damperOutput(Damper_t*);
     
 typedef struct Washout_s {
   float state;
-  struct Damper_s damper;
+  struct Damper_s dc;
 } Washout_t;
 
 bool washoutInit(Washout_t*, float tau, float state);

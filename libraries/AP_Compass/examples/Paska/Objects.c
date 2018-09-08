@@ -23,6 +23,7 @@ Sampler_t alphaSampler, iasSampler;
 SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter, flapActuator;
 SWAvg_t liftFilter;
 Damper_t ball, iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
+Washout_t yawDamper;
 
 struct SimLinkSensor sensorData;
 uint16_t simFrames;
