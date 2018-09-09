@@ -1722,7 +1722,6 @@ void rudderModule()
 {
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
   vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
-  vpOutput.rudder = constrainServoOutput(vpOutput.rudder);
 }
 
 //
@@ -1816,7 +1815,8 @@ void mixingTask()
     ? 0.3 : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
 
   vpOutput.rudder =
-    constrainServoOutput(vpOutput.rudder + vpOutput.aile * vpControl.r_Mix * liftRatio);  
+    constrainServoOutput(vpOutput.rudder
+			 + vpOutput.aile * vpControl.r_Mix * liftRatio);  
 }
 
 void controlTask()
