@@ -189,15 +189,15 @@ void displayTask()
   if(!vpMode.silent) {
     // TOC status and bottom status line
     
-    if(vpMode.radioFailSafe) {
+    bool status = tocTestStatus(tocReportDisplay);
+
+   if(vpMode.radioFailSafe) {
       obdMove(0,7);
       obdPrint("   ");
       obdPrintAttr("RADIO FAIL", (count>>2) & 1);
       obdPrint("   ");
     } else {
       // T/O/C test status
-
-      bool status = tocTestStatus(tocReportDisplay);
 
       obdMove(0,7);
       obdPrint("T/O/C ");
@@ -2087,9 +2087,9 @@ struct Task alphaPilotTasks[] = {
   { blinkTask,
     HZ_TO_PERIOD(LED_TICK) },
   { obdRefresh,
-    HZ_TO_PERIOD(30) },
+    HZ_TO_PERIOD(40) },
   { displayTask,
-    HZ_TO_PERIOD(5) },
+    HZ_TO_PERIOD(8) },
   { logTask,
     HZ_TO_PERIOD(LOG_HZ), true },
   { logSave,
