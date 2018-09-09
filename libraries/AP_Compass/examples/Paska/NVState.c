@@ -264,7 +264,7 @@ void printParams()
   consolePrint_P(CS_STRING(" Tu = "));
   consolePrintLnFP(vpParam.s_Tu, 4);
   consoleNoteLn_P(CS_STRING("  Yaw damper"));
-  consoleNote_P(CS_STRING("    P*IAS^1.5 = "));
+  consoleNote_P(CS_STRING("    P*IAS^2 = "));
   consolePrintLnFP(vpParam.yd_C, 4);
   consoleNoteLn_P(CS_STRING("  Autothrottle"));
   consoleNote_P(CS_STRING("    Ku = "));

@@ -1722,6 +1722,7 @@ void rudderModule()
 {
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
   vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
+  vpOutput.rudder = constrainServoOutput(vpOutput.rudder);
 }
 
 //
