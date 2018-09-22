@@ -21,24 +21,26 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
   if(status) {
     target->warn = true;
     
-    consoleNote_P(PSTR("Bad "));
-    consolePrintLn(target->name);
+    consoleNote_P(PSTR("I2C("));
+    consolePrint(target->name);
+    consolePrintLn_P(PSTR(") FAIL"));
 
     if(target->failed)
       target->backoff += target->backoff/2;
-    else if(++target->failCount > 3) {
-      consoleNote("");
+    else if(target->failCount++ > 3) {
+      consoleNote_P(PSTR("I2C("));
       consolePrint(target->name);
-      consolePrintLn_P(PSTR(" failed"));
+      consolePrintLn_P(PSTR(") is OFFLINE"));
       target->failed = true;
+      target->backoff = BACKOFF;
     }
     
     target->failedAt = stap_timeMillis();
   } else {    
     if(target->failCount > 0) {
-      consoleNote("");
+      consoleNote_P(PSTR("I2C("));
       consolePrint(target->name);
-      consolePrintLn_P(PSTR(" recovered"));
+      consolePrintLn_P(PSTR(") RECOVERED"));
       target->failCount = 0;
       target->failed = target->warn = false;
       target->backoff = BACKOFF;

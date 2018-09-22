@@ -326,10 +326,10 @@ void sensorTaskSync()
   
   // Attitude
 
-  stap_Vector3f_t acc, atti, rot;
+  stap_Vector3f_t acc, atti, rate;
   
   stap_gyroUpdate();
-  stap_gyroRead(&acc, &atti, &rot);
+  stap_gyroRead(&acc, &atti, &rate);
 
   vpFlight.bank = atti.x;
   vpFlight.pitch = atti.y;
@@ -337,9 +337,9 @@ void sensorTaskSync()
   
   // Angular velocities
 
-  vpFlight.rollR = rot.x;
-  vpFlight.pitchR = rot.y;
-  vpFlight.yawR = rot.z;
+  vpFlight.rollR = rate.x;
+  vpFlight.pitchR = rate.y;
+  vpFlight.yawR = rate.z;
 
   // Acceleration
 
