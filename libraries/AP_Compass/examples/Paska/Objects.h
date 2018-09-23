@@ -40,6 +40,7 @@ struct ModeRecord {
   bool halfRate;
   bool autoThrottle;
   bool dontLog;
+  bool gearSelected;
 };
 
 struct FeatureRecord {

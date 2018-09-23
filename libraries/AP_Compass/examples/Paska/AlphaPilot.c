@@ -768,6 +768,7 @@ void configurationTask()
 
     if(vpDerived.haveRetracts) {
       vpControl.gearSel = !vpControl.gearSel;
+      vpMode.gearSelected = true;
 
       if(vpControl.gearSel)
 	consoleNoteLn_P(CS_STRING("Gear UP"));
@@ -1995,9 +1996,14 @@ void actuatorTask()
   if(!vpStatus.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
     return;
 
-  for(i = 0; i < MAX_SERVO; i++)
+  for(i = 0; i < MAX_SERVO; i++) {
+    if(vpParam.functionMap[i] == fn_gear && !vpMode.gearSelected)
+      // We haven't toggled the gear yet, stay inactive
+      continue;
+    
     if(functionTable[vpParam.functionMap[i]])
       pwmOutputWrite(i, clamp(functionTable[vpParam.functionMap[i]](), -1, 1));
+  }
 }
 
 void heartBeatTask()
