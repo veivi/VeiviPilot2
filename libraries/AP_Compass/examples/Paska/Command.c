@@ -622,6 +622,9 @@ void executeCommand(char *buf)
 	case 'g':
 	  fn = fn_gear;
 	  break;
+	case 'G':
+	  fn = fn_gearinv;
+	  break;
 	case 'b':
 	  fn = fn_brake;
 	  break;
@@ -700,6 +703,9 @@ void executeCommand(char *buf)
 	    break;
 	  case fn_gear:
 	    consolePrintLn_P(CS_STRING("landing gear"));
+	    break;
+	  case fn_gearinv:
+	    consolePrintLn_P(CS_STRING("landing gear (inv)"));
 	    break;
 	  case fn_steering:
 	    consolePrintLn_P(CS_STRING("nose wheel"));

@@ -25,6 +25,7 @@ typedef enum {
   fn_leftflap, fn_rightflap,
   fn_leftthrustvert, fn_rightthrustvert,
   fn_thrusthoriz,
+  fn_gearinv,
   fn_invalid
 } function_t;
 

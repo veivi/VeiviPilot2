@@ -1955,6 +1955,11 @@ float gearFn()
   return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
+float gearFnInv()
+{
+  return -gearFn();
+}
+
 float brakeFn()
 {
   return vpParam.brakeDefl*vpOutput.brake + vpParam.brakeNeutral;
@@ -1986,7 +1991,8 @@ float (*functionTable[])(void) = {
   [fn_rightflap] = rightFlapFn,
   [fn_leftthrustvert] = leftThrustVertFn,
   [fn_rightthrustvert] = rightThrustVertFn,
-  [fn_thrusthoriz] = thrustHorizFn
+  [fn_thrusthoriz] = thrustHorizFn,
+  [fn_gearinv] = gearFnInv
 };
 
 void actuatorTask()
