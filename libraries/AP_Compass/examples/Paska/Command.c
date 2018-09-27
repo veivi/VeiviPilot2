@@ -70,10 +70,6 @@ const struct Command commands[] PROGMEM = {
   { "floor", c_floor, e_int16, &vpParam.floor },
   { "map", c_map, e_map, &vpParam.functionMap },
   { "flare", c_flare, e_float, &vpParam.flare },
-  { "stall", c_stall },
-  { "peak", c_peak },
-  { "zl", c_zl },
-  { "scale", c_scale },
   { "trim", c_trim },
   { "ping", c_ping },
   { "model", c_model },
@@ -96,16 +92,12 @@ const struct Command commands[] PROGMEM = {
   { "test", c_test },
   { "talk", c_talk },
   { "defaults", c_defaults },
-  { "ailetrim", c_atrim },
-  { "elevtrim", c_etrim },
-  { "ruddertrim", c_rtrim },
   { "rollrate", c_rollrate },
   { "calibrate", c_calibrate },  
   { "curve", c_curve },
   { "gear", c_gear },
   { "fault", c_fault },
   { "function", c_function },
-  { "airspeed", c_airspeed },
   { "", c_invalid }
 };
 
@@ -293,18 +285,6 @@ void executeCommand(char *buf)
     float offset = 0.0;
     
     switch(command.token) {
-    case c_atrim:
-      vpParam.aileNeutral += vpParam.aileDefl*param[0];
-      break;
-      
-    case c_etrim:
-      vpParam.elevNeutral += vpParam.elevDefl*param[0];
-      break;
-      
-    case c_rtrim:
-      vpParam.rudderNeutral += vpParam.rudderDefl*param[0];
-      break;
-      
     case c_arm:
       vpStatus.armed = true;
       break;
@@ -396,25 +376,6 @@ void executeCommand(char *buf)
       else
 	vpStatus.fault = 0;
       break;
-
-    case c_scale:
-      /*     if(numParams > 0) {
-	vpParam.i_Ku_C *= param[0];
-	vpParam.i_Tu *= param[0];
-	vpParam.s_Ku_C *= param[0];
-	vpParam.s_Tu *= param[0];
-	vpParam.cL_A[0] *= param[0];
-	vpParam.cL_B[0] *= param[0];
-	vpParam.cL_C[0] *= param[0];
-	vpParam.cL_D[0] *= param[0];
-	vpParam.cL_E[0] *= param[0];
-	vpParam.cL_A[1] *= param[0];
-	vpParam.cL_B[1] *= param[0];
-	vpParam.cL_C[1] *= param[0];
-	vpParam.cL_D[1] *= param[0];
-	vpParam.cL_E[1] *= param[0];
-	}*/
-      break;
     
     case c_stamp:
       if(numParams > 0) {
@@ -494,28 +455,6 @@ void executeCommand(char *buf)
       vpMode.dontLog = false;
       break;
 
-    case c_zl:
-      if(numParams > 0) {
-	vpParam.coeff_CoL[0][1] = vpDerived.maxCoeffOfLift/(vpParam.alphaMax[0] - param[0]/RADIAN);
-	vpParam.coeff_CoL[0][0] = -vpParam.coeff_CoL[0][1]*param[0]/RADIAN;
-      }
-      break;
-      /*     
-    case c_peak:
-      if(numParams > 0)
-	vpParam.cL_B[0] =
-	  (1+param[0])*(vpDerived.maxCoeffOfLift - vpParam.cL_A[0])/vpDerived.maxAlpha;
-      break;
-       
-    case c_stall:
-      if(numParams > 0) {
-	vpParam.cL_apex[0] = G * vpDerived.totalMass / dynamicPressure(param[0]);
-	if(numParams > 1)
-	  vpParam.alphaMax[0] = param[1]/RADIAN;
-      }
-      break;
-      */
-      
     case c_report:
       consoleNote_P(CS_STRING("Load = "));
       consolePrintLnFP(vpStatus.load*100,1);
@@ -560,10 +499,6 @@ void executeCommand(char *buf)
     case c_reset:
       ppmWarnShort = ppmWarnSlow = false;
       consoleNoteLn_P(CS_STRING("Warning flags reset"));
-      break;
-
-    case c_airspeed:
-      MS4525DO_calibrate();
       break;
 
     case c_function:
