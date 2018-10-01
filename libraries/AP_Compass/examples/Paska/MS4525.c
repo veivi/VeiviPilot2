@@ -27,23 +27,23 @@ bool MS4525DO_read(uint16_t *result)
   return status && !(buf[0] & (1<<6));
 }
 
-static uint32_t acc;
-static int accCount;
-static bool calibrating = false;
+static uint32_t acc = 0;
+static uint16_t ms4525_ref;
+static int accCount = 0;
+static bool calibrating = true;
 
-void MS4525DO_calibrate()
+void MS4525DO_calibrate(void)
 {
-  consoleNoteLn_P(CS_STRING("Airspeed calibration STARTED"));
   calibrating = true;
-  accCount = 0;
   acc = 0;
+  accCount = 0;
 }
-    
+
 bool MS4525DO_pressure(int16_t *result) 
 {
   const int log2CalibWindow = 9;
   uint16_t raw = 0;
-  
+
   if(!MS4525DO_read(&raw))
     return false;
 
@@ -54,15 +54,13 @@ bool MS4525DO_pressure(int16_t *result)
       acc += raw;
       accCount++;
     } else {
-      vpParam.airSpeedRef = acc>>(log2CalibWindow - 2);
+      ms4525_ref = acc>>(log2CalibWindow - 2);
       calibrating = false;
       consoleNote_P(CS_STRING("Airspeed calibration DONE, ref = "));
-      consolePrintLnUI(vpParam.airSpeedRef);
+      consolePrintLnUI(ms4525_ref);
     }
-  }
-
-  if(result)
-    *result = (raw<<2) - vpParam.airSpeedRef;
+  } else if(result)
+    *result = (raw<<2) - ms4525_ref;
   
   return true;
 }

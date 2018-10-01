@@ -9,7 +9,6 @@
 typedef enum {
   c_invalid,
   c_5048b_ref,
-  c_4525_ref,
   
   c_ezero,
   c_eneutral,

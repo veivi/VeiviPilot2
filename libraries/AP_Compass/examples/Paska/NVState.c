@@ -24,7 +24,6 @@ const struct ParamRecord paramDefaults = {
   .i2c_clkDiv = 12,
   .i2c_5048B = 0x40, .i2c_24L256 = 0x50, 
   .alphaRef = 0,
-  .airSpeedRef = 0,
   .aileNeutral = 0, .aile2Neutral = 0, .aileDefl = -45.0/90,
   .elevNeutral = 0, .elevDefl = 45.0/90,
   .flapNeutral = 0, .flap2Neutral = 0, .flapDefl = 45.0/90,
@@ -215,9 +214,7 @@ void printParams()
   consolePrintFP(vpParam.thrust/vpDerived.totalMass*100, 0);
   consolePrintLn_P(CS_STRING("% of weight)"));
   consoleNote_P(CS_STRING("  AS5048B ref = "));
-  consolePrintUI(vpParam.alphaRef);
-  consolePrint_P(CS_STRING(" MS4525 ref = "));
-  consolePrintLnUI(vpParam.airSpeedRef);
+  consolePrintLnUI(vpParam.alphaRef);
   consoleNoteLn_P(CS_STRING("  Alpha Hold"));
   consoleNote_P(CS_STRING("    Inner Ku*IAS^1.5 = "));
   consolePrintFP(vpParam.i_Ku_C, 4);

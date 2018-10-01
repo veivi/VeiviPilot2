@@ -39,7 +39,7 @@ struct ParamRecord {
   char name[NAME_LEN+1];
   uint8_t i2c_clkDiv;
   uint8_t i2c_5048B, i2c_24L256;
-  uint16_t alphaRef, airSpeedRef;
+  uint16_t alphaRef;
   float aileNeutral, aile2Neutral, aileDefl;
   float elevNeutral, elevDefl;
   float flapNeutral, flap2Neutral, flapDefl;

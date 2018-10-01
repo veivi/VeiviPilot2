@@ -16,7 +16,6 @@
 const struct Command commands[] PROGMEM = {
   { "name", c_name, e_string, &vpParam.name },
   { "as5048b_ref", c_5048b_ref, e_uint16, &vpParam.alphaRef },
-  { "ms4525_ref", c_4525_ref, e_uint16, &vpParam.airSpeedRef },
   { "at_zn", c_at_zn, e_float, &vpParam.at_Ku, &vpParam.at_Tu },
   { "cc_zn", c_cc_zn, e_float, &vpParam.cc_Ku, &vpParam.cc_Tu },
   { "inner_pid_zn", c_inner_pid_zn,

@@ -215,8 +215,12 @@ void displayTask()
 void airspeedTask()
 {
   int16_t raw = 0;
-  
-  if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
+
+  if(!MS4525DO_isOnline())
+    // The sensor is offline, start calibrating when it comes back
+    MS4525DO_calibrate();
+  else if(MS4525DO_pressure(&raw)) {
+    // We got a good value
     samplerInput(&iasSampler, raw);
     stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
@@ -1006,12 +1010,23 @@ void configurationTask()
 
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
-  vpControl.yd_P = scaleByIAS(vpParam.yd_C, stabilityRudExp_c);
 
-  pidCtrlSetZNPID(&aileCtrl, s_Ku*scale, vpParam.s_Tu);  
+  //   Aileron
+  
+  pidCtrlSetZNPID(&aileCtrl, s_Ku*scale, vpParam.s_Tu);
+
+  //   Elevator inner loop
+  
   pidCtrlSetZNPID(&elevCtrl, i_Ku*scale, vpParam.i_Tu);
+
+  //   Elevator pusher
+  
   pidCtrlSetZNPID(&pushCtrl, i_Ku*scale, vpParam.i_Tu);
 
+  //   Yaw damper
+  
+  vpControl.yd_P = scaleByIAS(vpParam.yd_C, stabilityRudExp_c) * scale;
+  
   if(vpMode.slowFlight)
     pidCtrlSetZNPI(&throttleCtrl, vpParam.at_Ku, vpParam.at_Tu);
   else
