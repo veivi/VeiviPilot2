@@ -250,7 +250,7 @@ void printParams()
       consoleNL();
     }
   }
-  consoleNote_P(CS_STRING("  Throttle-elev mix (expo) = "));
+  consoleNote_P(CS_STRING("  Throttle-elev mix comp'n P*IAS^2 (expo) = "));
   consolePrintFP(vpParam.t_Mix, 5);
   consolePrint_P(CS_STRING(" ("));
   consolePrintFP(vpParam.t_Expo, 5);

@@ -91,6 +91,18 @@ float scaleByIAS(float k, float expo)
   return k * powf(ias, expo);
 }
 
+/*
+float scaleByIAS(float k, float expo)
+{
+  return genericScaleByIAS(k, 1, expo);
+}
+
+float scaleByRelativeIAS(float k, float expo)
+{
+  return genericScaleByIAS(k, vpDerived.minimumIAS, expo);
+}
+*/
+
 float dynamicPressure(float ias)
 {
     return airDensity_c * square(ias) / 2;

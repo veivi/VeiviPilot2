@@ -1036,7 +1036,7 @@ void configurationTask()
   vpControl.r_Mix = vpParam.r_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.25);
+  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.1);
   
   //
   // Apply test mode
@@ -1821,9 +1821,9 @@ void mixingTask()
   // Throttle to elev mix
   
   vpOutput.elev =
-    constrainServoOutput(vpOutput.elev +
-			 vpParam.t_Mix*powf(pidCtrlOutput(&throttleCtrl),
-					  vpParam.t_Expo));
+    constrainServoOutput(vpOutput.elev
+			 + scaleByIAS(vpParam.t_Mix, -2)
+			 * powf(pidCtrlOutput(&throttleCtrl), vpParam.t_Expo));
 
   // Aile to rudder mix
 

@@ -28,6 +28,7 @@ float alphaPredictInverse(float x);
 float rollRatePredict(float r);
 float rollRatePredictInverse(float x);
 float scaleByIAS(float k, float p);
+// float scaleByRelativeIAS(float k, float p);
 float effIAS();
 float effDP();
 
