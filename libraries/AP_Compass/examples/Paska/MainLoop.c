@@ -108,13 +108,14 @@ void mainLoopSetup()
   damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
   damperInit(&accAvg, 2*CONTROL_HZ, G);
 
-  washoutInit(&yawDamper, 0.3*CONTROL_HZ, 0);
+  washoutInit(&yawDamper, 0.4*CONTROL_HZ, 0);
   
   swAvgInit(&liftFilter, CONFIG_HZ/4);
 
   // Initial gear state is DOWN
   
   vpControl.gearSel = 0;
+  vpMode.gearSelected = false;
 
   // Initiate IAS calibration
 

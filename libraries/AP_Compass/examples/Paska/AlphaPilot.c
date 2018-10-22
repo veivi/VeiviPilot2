@@ -603,7 +603,7 @@ void statusTask()
   if(!vpMode.test && vpMode.slowFlight
      && vpControl.gearSel == 0
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
-     && vpFlight.IAS < 1.3*vpDerived.minimumIAS
+     && vpFlight.IAS < (1.1 + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabs(vpFlight.bank) < 30/RADIAN
      && vpInput.throttle < 0.4
      && vpInput.stickForce > RATIO(1/4)) {
@@ -771,13 +771,18 @@ void configurationTask()
     //
 
     if(vpDerived.haveRetracts) {
-      vpControl.gearSel = !vpControl.gearSel;
-      vpMode.gearSelected = true;
+      if(vpParam.gearLock) {
+	vpControl.gearSel = 0;
+	consoleNoteLn_P(CS_STRING("Gear is LOCKED DOWN"));
+      } else {
+	vpControl.gearSel = !vpControl.gearSel;
+	vpMode.gearSelected = true;
 
-      if(vpControl.gearSel)
-	consoleNoteLn_P(CS_STRING("Gear UP"));
-      else
-	consoleNoteLn_P(CS_STRING("Gear DOWN"));
+	if(vpControl.gearSel)
+	  consoleNoteLn_P(CS_STRING("Gear UP"));
+	else
+	  consoleNoteLn_P(CS_STRING("Gear DOWN"));
+      }
     }
     
     vpMode.autoThrottle = false;
@@ -1034,6 +1039,7 @@ void configurationTask()
 
   vpControl.o_P = vpParam.o_P;
   vpControl.r_Mix = vpParam.r_Mix;
+  vpControl.t_Mix = vpParam.t_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
   slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.1);
@@ -1080,6 +1086,12 @@ void configurationTask()
     case 6:
       // Yaw damper gain
       vpControl.yd_P = vpControl.testGain = testGainExpo(vpControl.yd_P_ref);
+      break;
+
+    case 7:
+      // Throttle-elev mix
+      
+      vpControl.t_Mix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix*1.2);
       break;
       
     case 8:
@@ -1822,7 +1834,7 @@ void mixingTask()
   
   vpOutput.elev =
     constrainServoOutput(vpOutput.elev
-			 + scaleByIAS(vpParam.t_Mix, -2)
+			 + scaleByIAS(vpControl.t_Mix, -2)
 			 * powf(pidCtrlOutput(&throttleCtrl), vpParam.t_Expo));
 
   // Aile to rudder mix

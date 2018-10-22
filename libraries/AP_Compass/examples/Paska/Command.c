@@ -66,6 +66,7 @@ const struct Command commands[] PROGMEM = {
   { "offset", c_offset, e_angle, &vpParam.offset },
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
   { "wheels", c_wheels, e_bool, &vpParam.haveGear },
+  { "lock", c_lock, e_bool, &vpParam.gearLock },
   { "floor", c_floor, e_int16, &vpParam.floor },
   { "map", c_map, e_map, &vpParam.functionMap },
   { "flare", c_flare, e_float, &vpParam.flare },

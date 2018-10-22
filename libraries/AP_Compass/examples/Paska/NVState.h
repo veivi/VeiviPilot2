@@ -75,6 +75,7 @@ struct ParamRecord {
   float expo;
   int16_t floor;
   float flare;
+  bool gearLock;
   };
 
 struct DerivedParams {

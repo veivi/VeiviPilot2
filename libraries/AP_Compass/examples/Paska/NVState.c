@@ -412,6 +412,9 @@ void printParams()
     if(!vpParam.wowCalibrated)
       consolePrint_P(CS_STRING(" NOT"));  
     consolePrintLn_P(CS_STRING(" CALIBRATED"));
+
+    if(vpParam.gearLock) 
+      consoleNoteLn_P(CS_STRING("    Gear is LOCKED DOWN"));
   } else
     vpParam.wowCalibrated = false;
 }
