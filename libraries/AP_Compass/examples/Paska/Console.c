@@ -159,9 +159,9 @@ void consolePrintN(const char *s, int l)
 
 void consolePrint_P(const char *s)
 {
-  uint8_t c = 0;
+  char c = 0;
 
-  while((c = pgm_read_byte(s++)))
+  while((c = CS_READCHAR(s++)))
     consoleOut(c);
 }
 
@@ -174,7 +174,7 @@ void consolePrintFP(float v, int p)
     v = -v;
   }
 
-  v += 0.5*pow(0.1, p);
+  v += 0.5f*powf(0.1f, p);
   
   uint32_t i = (uint32_t) v;
 
@@ -186,7 +186,7 @@ void consolePrintFP(float v, int p)
     consolePrintC('.');
 
     while(p > 0) {
-      f *= 10.0;
+      f *= 10.0f;
       printDigit(((uint32_t) f) % 10);
       p--;
     }

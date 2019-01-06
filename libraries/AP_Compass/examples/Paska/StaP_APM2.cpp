@@ -7,7 +7,6 @@ extern "C" {
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_AHRS/AP_AHRS.h>
-
 #include "NewI2C.h"
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -21,6 +20,29 @@ NewI2C I2c = NewI2C();
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
 
+extern "C" void stap_I2cInit(void)
+{
+  I2c.begin();
+  I2c.setSpeed(true);
+  I2c.pullup(true);
+  I2c.timeOut(10);
+}
+
+extern "C" uint8_t stap_I2cWait(uint8_t d)
+{
+  return I2c.wait(d);
+}
+ 
+extern "C" uint8_t stap_I2cWriteGenericBuffers(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
+{
+  return I2c.write(d, a, as, b, c);
+}
+  
+extern "C" uint8_t stap_I2cReadGeneric(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
+{
+  return I2c.read(d, a, as, b, bs);
+}
+ 
 extern "C" bool stap_gyroInit(void)
 {
   ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
@@ -160,12 +182,87 @@ extern "C" uint32_t stap_memoryFree(void)
 
 extern "C" {
 #include <avr/io.h>
-#include "InputOutput.h"
 #include "RxInput.h"
 #include <avr/interrupt.h>
 #include "DSP.h"
 #include "NVState.h"
   
+typedef enum { PortA, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortK, PortL } portName_t;
+
+struct PortDescriptor {
+  volatile uint8_t *pin, *port, *ddr, *mask;
+  uint8_t pci;
+};
+
+extern const struct PortDescriptor portTable[];
+  
+struct PinDescriptor {
+  portName_t port;
+  uint8_t index;
+};
+
+extern const portName_t pcIntPort[];
+extern const uint8_t pcIntMask[];
+
+void pinOutputEnable(const struct PinDescriptor *pin, bool output);
+void setPinState(const struct PinDescriptor *pin, uint8_t state);
+uint8_t getPinState(const struct PinDescriptor *pin);  
+void configureInput(const struct PinDescriptor *pin, bool pullup);
+void configureOutput(const struct PinDescriptor *pin);
+
+const struct PortDescriptor portTable[] = {
+  [PortA] = { &PINA, &PORTA, &DDRA },
+  [PortB] = { &PINB, &PORTB, &DDRB, &PCMSK0, 0 },
+  [PortC] = { &PINC, &PORTC, &DDRC },
+  [PortD] = { &PIND, &PORTD, &DDRD },
+  [PortE] = { &PINE, &PORTE, &DDRE },
+  [PortF] = { &PINF, &PORTF, &DDRF },
+  [PortG] = { &PING, &PORTG, &DDRG },
+  [PortH] = { &PINH, &PORTH, &DDRH },
+  [PortK] = { &PINK, &PORTK, &DDRK, &PCMSK2, 2 },
+  [PortL] = { &PINL, &PORTL, &DDRL }
+};
+
+const portName_t pcIntPort[] = {
+  PortB, PortF, PortK
+};
+
+const uint8_t pcIntMask[] = {
+  1<<PCIE0, 1<<PCIE1, 1<<PCIE2
+};
+
+void pinOutputEnable(const struct PinDescriptor *pin, bool output)
+{
+  if(output)
+    *(portTable[pin->port].ddr) |= 1<<(pin->index);
+  else
+    *(portTable[pin->port].ddr) &= ~(1<<(pin->index));
+}  
+
+void setPinState(const struct PinDescriptor *pin, uint8_t state)
+{
+  if(state > 0)
+    *(portTable[pin->port].port) |= 1<<(pin->index);
+  else
+    *(portTable[pin->port].port) &= ~(1<<(pin->index));
+}
+
+uint8_t getPinState(const struct PinDescriptor *pin)
+{
+  return (*(portTable[pin->port].pin)>>(pin->index)) & 1;
+}
+
+void configureInput(const struct PinDescriptor *pin, bool pullup)
+{
+  pinOutputEnable(pin, false);
+  setPinState(pin, pullup ? 1 : 0);
+}
+
+void configureOutput(const struct PinDescriptor *pin)
+{
+  pinOutputEnable(pin, true);
+}
+
 #define RC_OUTPUT_MIN_PULSEWIDTH 400
 #define RC_OUTPUT_MAX_PULSEWIDTH 2100
 

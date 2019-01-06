@@ -2,7 +2,7 @@
 #define RXINPUT_H
 
 #include <stdint.h>
-#include "InputOutput.h"
+#include <stdbool.h>
 
 //
 // Receiver channel mapping
@@ -29,7 +29,6 @@
 #endif
 
 struct RxInputRecord {
-  struct PinDescriptor pin;
   bool freqOnly, alive;
   //  int32_t pulseStart;
   int32_t pulseCount;

@@ -32,7 +32,7 @@ void m24xxWait(uint32_t addr)
     
   // Write latency not met, wait for acknowledge
 
-  basei2cInvoke(&target, basei2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+  basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 }
 
 void m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes) 

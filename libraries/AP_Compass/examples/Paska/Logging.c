@@ -207,7 +207,7 @@ void logDumpBinary(void)
     logLen,
     LOG_HZ,
     vpDerived.totalMass,
-    "" };
+    "\0" };
   
   strncpy(info.name, vpParam.name, NAME_LEN);
 
@@ -226,7 +226,7 @@ void logDumpBinary(void)
   int32_t total = 0, block = 0;
 
   datagramTxStart(DG_LOGDATA);
-      
+
   while(total < logLen) {
     uint8_t *buffer = NULL;
 

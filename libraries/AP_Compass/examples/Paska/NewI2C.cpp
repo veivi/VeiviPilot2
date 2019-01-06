@@ -5,7 +5,7 @@
 extern "C" {
 #include "StaP.h"
 }
-  
+
 #define START           0x08
 #define REPEATED_START  0x10
 #define MT_SLA_ACK	0x18
@@ -407,47 +407,3 @@ void NewI2C::lockUp()
   TWCR = _BV(TWEN) | _BV(TWEA); //reinitialize TWI 
 }
 
-//
-// C wrappers
-//
-
-extern "C" void basei2cInit(void)
-{
-  I2c.begin();
-}
-
-extern "C" void basei2cShutdown(void)
-{
-  I2c.end();
-}
-
-extern "C" void basei2cSetTimeOut(uint16_t v)
-{
-  I2c.timeOut(v);
-}
-  
-extern "C" void basei2cSetSpeed(uint8_t v)
-{
-  I2c.setSpeed(v);
-}
- 
-extern "C" void basei2cSetPullup(uint8_t v)
-{
-  I2c.pullup(v);
-}
- 
-extern "C" uint8_t basei2cWait(uint8_t d)
-{
-  return I2c.wait(d);
-}
- 
-extern "C" uint8_t basei2cWriteGenericBuffers(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
-{
-  return I2c.write(d, a, as, b, c);
-}
-  
-extern "C" uint8_t basei2cReadGeneric(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
-{
-  return I2c.read(d, a, as, b, bs);
-}
- 

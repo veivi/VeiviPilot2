@@ -22,6 +22,9 @@
 // Datagram protocol integration
 //
 
+#define MAX_DG_SIZE (1<<7)
+
+uint16_t maxDatagramSize = MAX_DG_SIZE;
 uint8_t datagramRxStore[MAX_DG_SIZE];
 
 void datagramRxError(const char *error)
@@ -2067,11 +2070,12 @@ void blinkTask()
   static int tick = 0;
   
   tick = (tick + 1) % (LED_TICK/LED_HZ);
-
+  /*
   const struct PinDescriptor led = { PortA, 5 };
 
   configureOutput(&led);
   setPinState(&led, tick < ledRatio*LED_TICK/LED_HZ ? 0 : 1);
+  */
 }
 
 void simulatorLinkTask()

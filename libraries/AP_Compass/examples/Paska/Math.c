@@ -64,7 +64,7 @@ float constrainServoOutput(float value)
 
 float alphaPredictInverse(float x)
 {
-  if(vpDerived.coeff_FF[2] != 0.0 && x > vpDerived.apexAlpha)
+  if(vpDerived.coeff_FF[2] != 0.0f && x > vpDerived.apexAlpha)
     return vpDerived.apexElev;
   else
     return clamp(polynomial(FF_degree, x, vpDerived.coeff_FF), -1, 1);
@@ -74,7 +74,7 @@ float alphaPredict(float y)
 {
   const float a = vpDerived.coeff_FF[2], b = vpDerived.coeff_FF[1], c = vpDerived.coeff_FF[0];
   
-  if(a == 0.0)
+  if(a == 0.0f)
     return (y - c)/b;
   else if(y > vpDerived.apexElev)
     return vpDerived.apexAlpha;

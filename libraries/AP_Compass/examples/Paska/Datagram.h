@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAX_DG_SIZE  (1<<7)
-
 void datagramTxStart(uint8_t );
 void datagramTxOutByte(const uint8_t c);
 void datagramTxOut(const uint8_t *data, int l);
@@ -27,6 +25,7 @@ extern void datagramSerialOut(uint8_t);
 extern void datagramSerialFlush();
 extern void datagramRxError(const char *);
   
+extern uint16_t maxDatagramSize;
 extern uint8_t datagramRxStore[];
 
 struct SimLinkSensor {

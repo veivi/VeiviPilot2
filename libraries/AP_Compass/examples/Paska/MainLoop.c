@@ -50,11 +50,7 @@ void mainLoopSetup()
   // I2C
   
   consoleNote_P(CS_STRING("Initializing I2C... "));
-
-  basei2cInit();
-  basei2cSetSpeed(true);
-  basei2cSetPullup(true);
-  basei2cSetTimeOut(2+M24XX_LATENCY);
+  stap_I2cInit();
 
   consolePrintLn_P(CS_STRING("done. "));
   

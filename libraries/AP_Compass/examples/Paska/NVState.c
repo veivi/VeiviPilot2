@@ -34,14 +34,14 @@ const struct ParamRecord paramDefaults = {
   .vertNeutral = 0, .vertDefl = 45.0/90,
   .horizNeutral = 0, .horizDefl = 45.0/90,
   .functionMap = {0},
-  .alphaMax = { 12.0/RADIAN, 12.0/RADIAN },
+  .alphaMax = { 12.0f/RADIAN, 12.0f/RADIAN },
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
   .r_Mix = 0.1,
   .at_Ku = 1, .at_Tu = 2.0,
   .cc_Ku = 3, .cc_Tu = 1.5,
   .coeff_FF = {{0, 0, 0}, {0, 0, 0}},
-  .t_Mix = 0.0, .t_Expo = 1.0,
+  .t_Mix = 0.0f, .t_Expo = 1.0f,
   .maxPitch = 45/RADIAN,
   .roll_C = 0.1,
   .coeff_CoL = { { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }},
@@ -51,9 +51,9 @@ const struct ParamRecord paramDefaults = {
   .fuel = 0.5,
   .thrust = 0,
   .thresholdMargin = 0.15,
-  .pushMargin = 1.0/RADIAN,
+  .pushMargin = 1.0f/RADIAN,
   .yd_C = 5,
-  .offset = -0.4/RADIAN,
+  .offset = -0.4f/RADIAN,
   .flaperon = 0,
   .virtualOnly = true,
   .haveGear = true,
@@ -516,12 +516,12 @@ void deriveParams()
   // Feedforward apex
   //
 
-  if(vpDerived.coeff_FF[2] != 0.0) {
+  if(vpDerived.coeff_FF[2] != 0.0f) {
     vpDerived.apexAlpha = -vpDerived.coeff_FF[1] / (2*vpDerived.coeff_FF[2]);
     vpDerived.apexElev =
       polynomial(FF_degree, vpDerived.apexAlpha, vpDerived.coeff_FF);
   } else {
-    vpDerived.apexAlpha = vpDerived.apexElev = 0.0;
+    vpDerived.apexAlpha = vpDerived.apexElev = 0.0f;
   }
 }
 
