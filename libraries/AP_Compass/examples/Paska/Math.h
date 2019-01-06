@@ -15,6 +15,8 @@
 
 extern const float stabilityElevExp_c, stabilityAileExp1_c, stabilityAileExp2_c , stabilityPusherExp_c, stabilityRudExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
 
+float signf(float x);
+float sq(float x);
 float nominalPitchRate(float bank, float pitch, float target);
 float nominalPitchRateLevel(float bank, float target);
 float constrainServoOutput(float value);

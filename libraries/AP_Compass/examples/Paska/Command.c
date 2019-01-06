@@ -11,7 +11,6 @@
 #include "NVState.h"
 #include "MS4525.h"
 #include "AS5048B.h"
-#include "PPM.h"
 
 const struct Command commands[] PROGMEM = {
   { "name", c_name, e_string, &vpParam.name },
@@ -163,7 +162,7 @@ void executeCommand(char *buf)
 
   if(!*buf || buf[0] == '/') {
     gaugeCount = 0;
-    calibStop(nvState.rxMin, nvState.rxCenter, nvState.rxMax);
+    inputCalibStop();
     return;
   } else if(atoi(buf) > 0) {
     gaugeCount = 1;
@@ -320,7 +319,7 @@ void executeCommand(char *buf)
       
     case c_calibrate:
       consoleNoteLn_P(CS_STRING("Receiver calibration STARTED"));
-      calibStart();
+      inputCalibStart();
       break;
 
     case c_rollrate:
@@ -459,9 +458,7 @@ void executeCommand(char *buf)
       consoleNote_P(CS_STRING("Load = "));
       consolePrintLnFP(vpStatus.load*100,1);
       consoleNote_P(CS_STRING("PPM frequency = "));
-      consolePrintF(ppmFreq);
-      consolePrint_P(CS_STRING(" channels = "));
-      consolePrintLnI(ppmNumChannels);
+      consolePrintLnF(ppmFreq);
       consoleNote_P(CS_STRING("Sim link frequency = "));
       consolePrintLnF(simInputFreq);
       consoleNote_P(CS_STRING("Alpha = "));
@@ -481,10 +478,8 @@ void executeCommand(char *buf)
       consolePrintLnF(MS4525DO_entropy());
 
       consoleNote_P(CS_STRING("Warning flags :"));
-      if(ppmWarnShort)
-	consolePrint_P(CS_STRING(" PPM_SHORT"));
-      if(ppmWarnSlow)
-	consolePrint_P(CS_STRING(" PPM_SLOW"));
+      if(!inputSourceGood())
+	consolePrint_P(CS_STRING(" PPM"));
       if(vpStatus.pitotFailed)
 	consolePrint_P(CS_STRING(" IAS_FAILED"));
       
@@ -497,8 +492,6 @@ void executeCommand(char *buf)
       break;
       
     case c_reset:
-      ppmWarnShort = ppmWarnSlow = false;
-      consoleNoteLn_P(CS_STRING("Warning flags reset"));
       break;
 
     case c_function:

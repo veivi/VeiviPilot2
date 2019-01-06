@@ -17,13 +17,13 @@
 //
 
 #define CONTROL_HZ 50
-#define CONFIG_HZ (CONTROL_HZ/3.0)
+#define CONFIG_HZ (CONTROL_HZ/3.0f)
 #define ALPHA_HZ (CONTROL_HZ*4)
 #define AIRSPEED_HZ (CONTROL_HZ*2)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 3
 #define LED_TICK 30
-#define LOG_HZ (CONTROL_HZ/4.0)
+#define LOG_HZ (CONTROL_HZ/4.0f)
 #define LOG_HZ_COMMIT 3
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
@@ -35,7 +35,7 @@ struct Task {
   uint32_t nextInvocation;
 };
 
-#define HZ_TO_PERIOD(f) ((uint32_t) (1.0e6/(f)))
+#define HZ_TO_PERIOD(f) ((uint32_t) (1.0e6f/(f)))
 
 extern struct Task alphaPilotTasks[];
 

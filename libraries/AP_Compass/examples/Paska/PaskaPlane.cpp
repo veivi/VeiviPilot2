@@ -2,11 +2,17 @@
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 
 extern "C" {
+#include "StaP.h"
 #include "MainLoop.h"
+#include "Objects.h"
 }
+
+extern const AP_HAL::HAL& hal;
 
 void setup()
 {
+  hal.init(0, NULL);
+  vpStatus.consoleLink = true;
   mainLoopSetup();
 }
 
@@ -14,7 +20,5 @@ void loop()
 {
   mainLoop();
 }
-
-extern const AP_HAL::HAL& hal;
 
 AP_HAL_MAIN();

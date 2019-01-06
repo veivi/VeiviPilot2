@@ -3,8 +3,6 @@
 #include "StaP.h"
 #include "Objects.h"
 #include "RxInput.h"
-#include "PPM.h"
-#include "PWMOutput.h"
 #include "M24XX.h"
 #include "Console.h"
 #include "Datagram.h"
@@ -143,7 +141,7 @@ void displayTask()
   obdMove(0, 1);
   uint8_t load = MIN(99, (uint8_t) (vpStatus.load*100));
   char buffer0[] =
-    { '0' + (load / 10), '0' + (load % 10), '\%', '\0'};
+    { '0' + (load / 10), '0' + (load % 10), '%', '\0'};
   obdPrint(buffer0);
     
   // PPM freq
@@ -160,10 +158,10 @@ void displayTask()
     obdMove(16-8, 0);
     obdPrintAttr("DISARMED", true);
 
-    for(i = 0; ppmInputs[i] != NULL; i++) {
+    for(i = 0; i < MAX_CH; i++) {
       obdMove((i%3)*6, 2+i/3);
-      float value = inputValue(ppmInputs[i]);
-      uint8_t valueInt = MIN((uint8_t) (fabs(value)*100), 99);
+      float value = inputValue(i);
+      uint8_t valueInt = MIN((uint8_t) (fabsf(value)*100), 99);
       char buffer2[] =
 	{ value < 0 ? '-' : ' ',
 	  '.', '0' + (valueInt / 10), '0' + (valueInt % 10),
@@ -236,37 +234,40 @@ void receiverTask()
  static Derivator_t buttonSlope;
  static float lazyButtonValue;
   
-  if(inputValid(&aileInput))
-    vpInput.aile = applyNullZone(inputValue(&aileInput), NZ_BIG, &vpInput.ailePilotInput);
+  if(inputValid(CH_AILE))
+    vpInput.aile = applyNullZone(inputValue(CH_AILE), NZ_BIG, &vpInput.ailePilotInput);
   
-  if(inputValid(&elevInput))
-    vpInput.elev = applyNullZone(inputValue(&elevInput), NZ_SMALL, &vpInput.elevPilotInput);
+  if(inputValid(CH_ELEV))
+    vpInput.elev = applyNullZone(inputValue(CH_ELEV), NZ_SMALL, &vpInput.elevPilotInput);
 
-  if(inputValid(&tuningKnobInput))
-    vpInput.tuningKnob = inputValue(&tuningKnobInput)*1.05 - 0.05;
+  if(inputValid(CH_TUNE))
+    vpInput.tuningKnob = inputValue(CH_TUNE)*1.05f - 0.05f;
     
-  if(inputValid(&throttleInput))
-    vpInput.throttle = inputValue(&throttleInput);
+  if(inputValid(CH_THRO))
+    vpInput.throttle = inputValue(CH_THRO);
 
-  flightModeSelectorValue = readSwitch(&flightModeSelector);
+  vpInput.modeSel = readSwitch(&flightModeSelector);
 
-#if RX_CHANNELS >= 8
-  if(inputValid(&rudderInput))
-    vpInput.rudder = applyNullZone(inputValue(&rudderInput), NZ_SMALL, &vpInput.rudderPilotInput);
-  
-  flapSelectorValue = readSwitch(&flapSelector);
+#ifdef CH_RUD 
+  if(inputValid(CH_RUD))
+    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_SMALL, &vpInput.rudderPilotInput);
 #else
   vpInput.rudder = 0;
-  flapSelectorValue = 1;
+#endif
+
+#ifdef CH_FLAP
+  vpInput.flapSel = readSwitch(&flapSelector);
+#else
+  vpInput.flapSel = 1;
 #endif
 
   // Button input
 
-  float buttonValue = inputValue(&btnInput);
+  float buttonValue = inputValue(CH_BUTTON);
   
   derivatorInput(&buttonSlope, buttonValue, 1);
 
-  if(fabs(derivatorOutput(&buttonSlope)) < 0.03)
+  if(fabsf(derivatorOutput(&buttonSlope)) < 0.03f)
     lazyButtonValue = buttonValue;
      
   buttonInput(&LEVELBUTTON, lazyButtonValue);
@@ -280,7 +281,7 @@ void receiverTask()
 
   if(ppmFreq < 15) {
     vpInput.tuningKnob = 1;
-    flightModeSelectorValue = -1;
+    vpInput.modeSel = -1;
     vpInput.throttle = 0;
     vpInput.aile = -1;
     vpInput.elev = 1;
@@ -290,9 +291,9 @@ void receiverTask()
   // RX failsafe detection
   //
   
-  if( vpInput.tuningKnob > 0.75 && flightModeSelectorValue == -1
-      && vpInput.throttle < 0.25
-      && vpInput.aile < -0.75 && vpInput.elev > 0.75 ) {
+  if( vpInput.tuningKnob > 0.75f && vpInput.modeSel == -1
+      && vpInput.throttle < 0.25f
+      && vpInput.aile < -0.75f && vpInput.elev > 0.75f ) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(CS_STRING("Radio failsafe mode ENABLED"));
       vpMode.radioFailSafe = true;
@@ -322,11 +323,11 @@ void sensorTaskSync()
   
   // Dynamic pressure, corrected for alpha
 
-  const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1;
+  const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1f;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
     
   vpFlight.dynP = samplerMean(&iasSampler) * factor_c
-    / cos(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
+    / cosf(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
   // Attitude
 
@@ -365,7 +366,7 @@ void sensorTaskSync()
     vpFlight.yawR = sensorData.yrate;
     vpFlight.bank = sensorData.roll/RADIAN;
     vpFlight.pitch = sensorData.pitch/RADIAN;
-    vpFlight.heading = (int) (sensorData.heading + 0.5);
+    vpFlight.heading = (int) (sensorData.heading + 0.5f);
     vpFlight.accX = sensorData.accx*FOOT;
     vpFlight.accY = sensorData.accy*FOOT;
     vpFlight.accZ = -sensorData.accz*FOOT;
@@ -408,29 +409,27 @@ void monitorTask()
  
   // Load measurement
 
-  vpStatus.load = vpStatus.load/2 + (1.0 - (float) idleMicros/(stap_currentMicros - prevMonitor))/2;
+  vpStatus.load = vpStatus.load/2 + (1.0f - (float) idleMicros/(stap_currentMicros - prevMonitor))/2;
   idleMicros = 0;
 
   // PPM monitoring
 
-  ppmFreq = ppmFrameRate();
+  ppmFreq = inputSourceRate();
   
   // Sim link monitoring
 
-  simInputFreq = 1.0e6 * simFrames / (stap_currentMicros - prevMonitor);
+  simInputFreq = 1.0e6f * simFrames / (stap_currentMicros - prevMonitor);
   simFrames = 0;
 
   // Log bandwidth
 
-  logBandWidth = 1.0e6 * m24xxBytesWritten / (stap_currentMicros - prevMonitor);
+  logBandWidth = 1.0e6f * m24xxBytesWritten / (stap_currentMicros - prevMonitor);
   m24xxBytesWritten = 0;
   
   // PPM monitoring
 
-  if(ppmWarnSlow || ppmWarnShort) {
+  if(!inputSourceGood())
     lastPPMWarn = stap_currentMicros;
-    ppmWarnSlow = ppmWarnShort = false;
-  }
   
   prevMonitor = stap_currentMicros;
 }
@@ -445,7 +444,7 @@ const float testRange_c = 5;
 static float testGainExpoGeneric(float range, float param)
 {
   static float state;
-  return exp(log(testRange_c)*(1.3*quantize(param, &state, paramSteps)-0.3))*range;
+  return expf(logf(testRange_c)*(1.3f*quantize(param, &state, paramSteps)-0.3f))*range;
 }
 
 float testGainExpo(float range)
@@ -490,7 +489,7 @@ void statusTask()
   
   static uint32_t iasLastAlive;
 
-  if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - damperOutput(&iasFilterSlow)) > 0.5) {
+  if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - damperOutput(&iasFilterSlow)) > 0.5f) {
     if(vpStatus.pitotBlocked) {
       consoleNoteLn_P(CS_STRING("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
@@ -498,7 +497,7 @@ void statusTask()
     
     iasLastAlive = stap_currentMicros;
   } else if(!vpStatus.simulatorLink
-	    && stap_currentMicros - iasLastAlive > 10.0e6 && !vpStatus.pitotBlocked) {
+	    && stap_currentMicros - iasLastAlive > 10e6 && !vpStatus.pitotBlocked) {
     consoleNoteLn_P(CS_STRING("Pitot appears BLOCKED"));
     vpStatus.pitotBlocked = true;
   }
@@ -517,14 +516,14 @@ void statusTask()
   } else if(damperOutput(&iasFilter) < vpDerived.minimumIAS*RATIO(2/3)) {
     if(!vpStatus.positiveIAS)
       lastIAS = stap_currentMicros;
-    else if(stap_currentMicros - lastIAS > 0.3e6) {
+    else if(stap_currentMicros - lastIAS > 0.3e6f) {
       consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
   } else {
     if(vpStatus.positiveIAS)
       lastIAS = stap_currentMicros;
-    else if(stap_currentMicros - lastIAS > 0.3e6) {
+    else if(stap_currentMicros - lastIAS > 0.3e6f) {
       consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
       vpStatus.positiveIAS = true;
     }
@@ -534,15 +533,15 @@ void statusTask()
   // Movement detection
   //
   
-  vpFlight.acc = sqrtf(square(vpFlight.accX) + square(vpFlight.accY) + square(vpFlight.accZ));
+  vpFlight.acc = sqrtf(sq(vpFlight.accX) + sq(vpFlight.accY) + sq(vpFlight.accZ));
   
   damperInput(&accAvg, vpFlight.acc);
 
-  float turnRate = sqrt(square(vpFlight.rollR) + square(vpFlight.pitchR) + square(vpFlight.yawR));
+  float turnRate = sqrtf(sq(vpFlight.rollR) + sq(vpFlight.pitchR) + sq(vpFlight.yawR));
   
   bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
-    || turnRate > 10.0/RADIAN
-    || fabsf(vpFlight.acc - damperOutput(&accAvg)) > 0.5;
+    || turnRate > 10.0f/RADIAN
+    || fabsf(vpFlight.acc - damperOutput(&accAvg)) > 0.5f;
   
   static uint32_t lastMotion;
 
@@ -577,7 +576,7 @@ void statusTask()
       disagreement = MIN(diff, 2*PI_F - diff);
 
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-       || (fabs(vpFlight.alpha) < 60/RADIAN && disagreement > 15/RADIAN)) {
+       || (fabsf(vpFlight.alpha) < 60.0f/RADIAN && disagreement > 15.0f/RADIAN)) {
       if(!vpStatus.alphaUnreliable)
 	lastAlphaLocked = stap_currentMicros;
       else if(stap_currentMicros - lastAlphaLocked > 0.1e6) {
@@ -603,9 +602,9 @@ void statusTask()
   if(!vpMode.test && vpMode.slowFlight
      && vpControl.gearSel == 0
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
-     && vpFlight.IAS < (1.1 + vpParam.thresholdMargin)*vpDerived.minimumIAS
-     && fabs(vpFlight.bank) < 30/RADIAN
-     && vpInput.throttle < 0.4
+     && vpFlight.IAS < (1.1f + vpParam.thresholdMargin)*vpDerived.minimumIAS
+     && fabsf(vpFlight.bank) < 30.0f/RADIAN
+     && vpInput.throttle < 0.4f
      && vpInput.stickForce > RATIO(1/4)) {
     // We may be in a flare
 
@@ -662,7 +661,7 @@ void statusTask()
   
   static uint32_t lastUpright;
   
-  if(fabsf(vpFlight.bank) < 15/RADIAN && fabsf(vpFlight.pitch) < 15/RADIAN) {
+  if(fabsf(vpFlight.bank) < 15.0f/RADIAN && fabsf(vpFlight.pitch) < 15.0f/RADIAN) {
     vpStatus.upright = true;
     lastUpright = stap_currentMicros;
   } else {
@@ -678,7 +677,7 @@ void statusTask()
 
   const float
     weight = vpDerived.totalMass * G,
-    lift = vpDerived.totalMass * vpFlight.accZ * cos(vpFlight.pitch),
+    lift = vpDerived.totalMass * vpFlight.accZ * cosf(vpFlight.pitch),
     liftAvg = swAvgInput(&liftFilter, lift),
     liftExpected = coeffOfLift(vpFlight.alpha) * vpFlight.dynP,
     liftMax = vpDerived.maxCoeffOfLift * vpFlight.dynP;
@@ -696,7 +695,7 @@ void statusTask()
       
     lastWoW = stap_currentMicros;
   } else if(vpStatus.positiveIAS
-	    && (liftAvg < weight/2 || liftAvg > 1.5*weight
+	    && (liftAvg < weight/2 || liftAvg > 1.5f*weight
 		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
       lastWoW = stap_currentMicros;
@@ -721,7 +720,7 @@ void configurationTask()
   //
   
   if(buttonDoublePulse(&TRIMBUTTON) && !vpStatus.armed &&
-     vpInput.throttle < 0.10 && vpInput.aile < -0.90 && vpInput.elev > 0.90) {
+     vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     vpStatus.armed = true;
     buttonReset(&GEARBUTTON);
@@ -881,7 +880,7 @@ void configurationTask()
   
   if(vpMode.dontLog)
     logDisable();
-  else if(vpMode.takeOff && vpInput.throttle > 0.90)
+  else if(vpMode.takeOff && vpInput.throttle > 0.90f)
     logEnable();
   else if(vpStatus.aloft && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
     logEnable();
@@ -892,7 +891,7 @@ void configurationTask()
   // Direct mode selector input
   //
 
-  if(flightModeSelectorValue == -1 || vpStatus.belowFloor) {
+  if(vpInput.modeSel == -1 || vpStatus.belowFloor) {
     if(!vpMode.slowFlight)
       consoleNoteLn_P(CS_STRING("Slow flight mode ENABLED"));
     vpMode.slowFlight = vpMode.bankLimiter = true;
@@ -902,7 +901,7 @@ void configurationTask()
       vpMode.slowFlight = false;
     }
 
-    if(flightModeSelectorValue == 0) {
+    if(vpInput.modeSel == 0) {
       if(vpMode.bankLimiter)
 	consoleNoteLn_P(CS_STRING("Bank limiter DISABLED"));
     
@@ -918,7 +917,7 @@ void configurationTask()
   // Flap selector input
   //
 
-  vpControl.flapSel = FLAP_STEPS/2 - flapSelectorValue;
+  vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
 
   //
   // Test mode control
@@ -927,7 +926,7 @@ void configurationTask()
   if(vpMode.radioFailSafe)
     vpMode.test = false;
   
-  else if(!vpMode.test && vpInput.tuningKnob > 0.5) {
+  else if(!vpMode.test && vpInput.tuningKnob > 0.5f) {
     vpMode.test = true;
     consoleNoteLn_P(CS_STRING("Test mode ENABLED"));
 
@@ -939,7 +938,7 @@ void configurationTask()
   // Wing leveler disable when stick input detected
   
   if(vpMode.wingLeveler && vpInput.ailePilotInput
-     && fabsf(vpFlight.bank) > 5/RADIAN) {
+     && fabsf(vpFlight.bank) > 5.0f/RADIAN) {
     consoleNoteLn_P(CS_STRING("Wing leveler DISABLED"));
     vpMode.wingLeveler = false;
   }
@@ -964,7 +963,7 @@ void configurationTask()
   vpFeature.keepLevel = vpMode.wingLeveler;
   vpFeature.pusher = !vpMode.slowFlight;
   vpFeature.stabilizePitch = vpFeature.alphaHold =
-    vpMode.slowFlight && fabs(vpFlight.bank) < 60/RADIAN;
+    vpMode.slowFlight && fabsf(vpFlight.bank) < 60.0f/RADIAN;
 
   // Modify if taking off...
   
@@ -1041,8 +1040,8 @@ void configurationTask()
   vpControl.r_Mix = vpParam.r_Mix;
   vpControl.t_Mix = vpParam.t_Mix;
   
-  slopeSet(&aileActuator, vpParam.servoRate/(90.0/2)/vpParam.aileDefl);
-  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.1);
+  slopeSet(&aileActuator, vpParam.servoRate/(90.0f/2)/vpParam.aileDefl);
+  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.1f);
   
   //
   // Apply test mode
@@ -1091,7 +1090,7 @@ void configurationTask()
     case 7:
       // Throttle-elev mix
       
-      vpControl.t_Mix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix*1.2);
+      vpControl.t_Mix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix*1.2f);
       break;
       
     case 8:
@@ -1103,7 +1102,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      vpControl.r_Mix = vpControl.testGain = testGainLinear(vpParam.r_Mix/1.2, vpParam.r_Mix*1.2);
+      vpControl.r_Mix = vpControl.testGain = testGainLinear(vpParam.r_Mix/1.2f, vpParam.r_Mix*1.2f);
       break;
 
     case 11:
@@ -1159,10 +1158,10 @@ void trimTask()
     //
     // Nose wheel
     //
-    
+
     if(vpInput.rudderPilotInput && !vpControl.gearSel && !vpStatus.positiveIAS) {
       vpParam.steerNeutral +=
-	sign(vpParam.steerDefl)*sign(vpInput.rudder)*steerTrimRate/TRIM_HZ;
+	signf(vpParam.steerDefl)*signf(vpInput.rudder)*steerTrimRate/TRIM_HZ;
       vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
       // paramsModified = true;
     }
@@ -1172,7 +1171,7 @@ void trimTask()
     //
   
     if(vpInput.elevPilotInput)
-      vpControl.elevTrim += sign(vpInput.elev) * elevTrimRate / TRIM_HZ;
+      vpControl.elevTrim += signf(vpInput.elev) * elevTrimRate / TRIM_HZ;
   }
 
   //
@@ -1212,7 +1211,7 @@ void trimTask()
   } else
     vpControl.elevTrim =
       clamp(vpControl.elevTrim,
-	    fminf(-0.15, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
+	    fminf(-0.15f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
 	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
@@ -1220,7 +1219,7 @@ void gaugeTask()
 {  
   if(gaugeCount > 0) {
     uint16_t tmp = 0;
-    int i = 0, g = 0;
+    uint8_t i = 0, g = 0;
     float j = 0;
 	
     for(g = 0; g < gaugeCount; g++) {
@@ -1292,8 +1291,8 @@ void gaugeTask()
         consolePrint_P(CS_STRING(" ppmFreq = "));
 	consolePrintF(ppmFreq);
 	consolePrint_P(CS_STRING(" InputVec = ( "));
-	for(i = 0; ppmInputs[i] != NULL; i++) {
-	  consolePrintFP(inputValue(ppmInputs[i]), 2);
+	for(i = 0; i < MAX_CH; i++) {
+	  consolePrintFP(inputValue(i), 2);
 	  consolePrint(" ");
 	}      
 	consolePrint(")");
@@ -1327,7 +1326,7 @@ void gaugeTask()
 
       case 9:
 	consolePrint_P(CS_STRING(" gain*IAS^("));
-	for(j = 0; j < 2; j += 0.5) {
+	for(j = 0; j < 2; j += 0.5f) {
 	  if(j > 0)
 	    consolePrint(", ");
 	  consolePrintF(j);
@@ -1335,7 +1334,7 @@ void gaugeTask()
 	
 	consolePrint_P(CS_STRING(") = "));
 	
-	for(j = 0; j < 2; j += 0.5) {
+	for(j = 0; j < 2; j += 0.5f) {
 	  if(j > 0)
 	    consolePrint(", ");
 	  consolePrintF(vpControl.testGain*powf(vpFlight.IAS, j));
@@ -1567,8 +1566,8 @@ void gpsTask()
 //   Elevator
 //
 
-const float pusherBoost_c = 0.2;
-const float pusherBias_c = -2.5/RADIAN;
+const float pusherBoost_c = 0.2f;
+const float pusherBias_c = -2.5f/RADIAN;
 
 void elevatorModule()
 {
@@ -1591,7 +1590,7 @@ void elevatorModule()
       mixValue(vpParam.flare * vpInput.stickForce,
 	       vpControl.targetAlpha, alphaPredict(vpInput.elev));
 
-    vpControl.targetAlpha = fmax(vpControl.targetAlpha, flareAlpha);
+    vpControl.targetAlpha = fmaxf(vpControl.targetAlpha, flareAlpha);
   }
   
   if(vpMode.radioFailSafe)
@@ -1603,8 +1602,8 @@ void elevatorModule()
     vpControl.targetPitchR =
       nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
-	      -30/RADIAN - vpFlight.pitch,
-	      clamp(vpParam.maxPitch, 30/RADIAN, 80/RADIAN) - vpFlight.pitch)
+	      -30.0f/RADIAN - vpFlight.pitch,
+	      clamp(vpParam.maxPitch, 30.0f/RADIAN, 80.0f/RADIAN) - vpFlight.pitch)
       * vpControl.o_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
   else
@@ -1677,10 +1676,10 @@ void elevatorModule()
 
 void aileronModule()
 {
-  float maxBank = 45/RADIAN;
+  float maxBank = 45.0f/RADIAN;
 
   if(vpMode.radioFailSafe) {
-    maxBank = 15/RADIAN;
+    maxBank = 15.0f/RADIAN;
     if(vpStatus.stall)
       vpInput.aile = vpInput.aileExpo = 0;
   } else if(vpFeature.alphaHold)
@@ -1699,14 +1698,14 @@ void aileronModule()
       // Strong leveler enabled
       
       targetRollR
-	= vpControl.o_P * (vpInput.aile*80/RADIAN - vpFlight.bank);
+	= vpControl.o_P * (vpInput.aile*80.0f/RADIAN - vpFlight.bank);
 
     else if(vpMode.bankLimiter) {
 
       if(vpMode.slowFlight)
 	// Weak leveling
 	targetRollR
-	  -= vpControl.o_P*clamp(vpFlight.bank, -2.0/RADIAN, 2.0/RADIAN);
+	  -= vpControl.o_P*clamp(vpFlight.bank, -2.0f/RADIAN, 2.0f/RADIAN);
 
       // Bank limiter
       
@@ -1758,7 +1757,7 @@ void rudderModule()
   
 void throttleModule()
 {
-  const float glideSlope = 3.0/RADIAN;
+  const float glideSlope = 3.0f/RADIAN;
   
   pidCtrlSetRangeAB(&throttleCtrl, vpControl.minThrottle, vpInput.throttle);
     
@@ -1840,7 +1839,7 @@ void mixingTask()
   // Aile to rudder mix
 
   const float liftRatio = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
-    ? 0.3 : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
+    ? 0.3f : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
 
   vpOutput.rudder =
     constrainServoOutput(vpOutput.rudder
@@ -1849,7 +1848,7 @@ void mixingTask()
 
 void controlTask()
 {
-  int i = 0;
+  uint8_t i = 0;
   
   //
   // Cycle time bookkeeping 
@@ -2035,7 +2034,7 @@ void actuatorTask()
       continue;
     
     if(functionTable[vpParam.functionMap[i]])
-      pwmOutputWrite(i, clamp(functionTable[vpParam.functionMap[i]](), -1, 1));
+      stap_servoOutput(i, clamp(functionTable[vpParam.functionMap[i]](), -1, 1));
   }
 }
 
@@ -2064,7 +2063,7 @@ void heartBeatTask()
 
 void blinkTask()
 {
-  float ledRatio = vpMode.test ? 0.0 : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5 : vpFlight.alpha > 0.0 ? 0.90 : 0.10;
+  float ledRatio = vpMode.test ? 0.0f : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5f : vpFlight.alpha > 0.0f ? 0.90f : 0.10f;
   static int tick = 0;
   
   tick = (tick + 1) % (LED_TICK/LED_HZ);
@@ -2110,37 +2109,22 @@ void configTaskGroup()
 }
 
 struct Task alphaPilotTasks[] = {
-  { alphaTask,
-     HZ_TO_PERIOD(ALPHA_HZ), true },
-  { airspeedTask,
-    HZ_TO_PERIOD(AIRSPEED_HZ), true },
-  { sensorTaskSlow,
-    HZ_TO_PERIOD(CONTROL_HZ/5), true },
-  { controlTaskGroup,
-    HZ_TO_PERIOD(CONTROL_HZ), true },
-  { configTaskGroup,
-    HZ_TO_PERIOD(CONFIG_HZ), true },
-  { communicationTask,
-    HZ_TO_PERIOD(100), true },
+  { alphaTask, HZ_TO_PERIOD(ALPHA_HZ), true, 9 },
+  { airspeedTask, HZ_TO_PERIOD(AIRSPEED_HZ), true, 0 },
+  { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true, 0 },
+  { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, 0 },
+  { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true, 0 },
+  { communicationTask, HZ_TO_PERIOD(100), true, 0 },
   // { gpsTask, HZ_TO_PERIOD(100) },
-  { blinkTask,
-    HZ_TO_PERIOD(LED_TICK) },
-  { obdRefresh,
-    HZ_TO_PERIOD(40) },
-  { displayTask,
-    HZ_TO_PERIOD(8) },
-  { logTask,
-    HZ_TO_PERIOD(LOG_HZ), true },
-  { logSave,
-    HZ_TO_PERIOD(LOG_HZ_COMMIT) },
-  { cacheTask,
-    HZ_TO_PERIOD(LOG_HZ_FLUSH) },
-  { monitorTask,
-    HZ_TO_PERIOD(1) },
-  { heartBeatTask,
-    HZ_TO_PERIOD(HEARTBEAT_HZ) },
-  { gaugeTask,
-    HZ_TO_PERIOD(10) },
-  { NULL } };
+  { blinkTask, HZ_TO_PERIOD(LED_TICK), false, 0 },
+  { obdRefresh, HZ_TO_PERIOD(40), false, 0 },
+  { displayTask, HZ_TO_PERIOD(8), false, 0 },
+  { logTask, HZ_TO_PERIOD(LOG_HZ), true, 0 },
+  { logSave, HZ_TO_PERIOD(LOG_HZ_COMMIT), false, 0 },
+  { cacheTask, HZ_TO_PERIOD(LOG_HZ_FLUSH), false, 0 },
+  { monitorTask, HZ_TO_PERIOD(1), false, 0 },
+  { heartBeatTask, HZ_TO_PERIOD(HEARTBEAT_HZ), false, 0 },
+  { gaugeTask, HZ_TO_PERIOD(10), false, 0 },
+  { NULL, 0, false, 0 } };
 
 

@@ -17,6 +17,20 @@ const float G = 9.81, FOOT = 12*25.4/1000, KNOT = 1852.0/60/60, PSF = 47.880259;
 
 const float servoOutputRange_c = RATIO(6/5);
 
+float sq(float x)
+{
+  return x * x;
+}
+
+float signf(float x)
+{
+  if(x < 0.0f)
+    return -1.0f;
+  else if(x > 0.0f)
+    return 1.0f;
+  else
+    return 0.0;
+}
 
 float effIAS()
 {
@@ -32,7 +46,7 @@ float nominalPitchRateLevel(float bank, float target)
 {
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
   
-  return 1/effIAS() * effDP() * CoL * square(sin(bank)) / m;
+  return 1/effIAS() * effDP() * CoL * sq(sinf(bank)) / m;
 }
 
 float nominalPitchRate(float bank, float pitch, float target)
@@ -40,7 +54,7 @@ float nominalPitchRate(float bank, float pitch, float target)
   const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
 
   return
-    1/effIAS() * (effDP() * CoL / m - G * cos(bank) * cos(pitch-target)); 
+    1/effIAS() * (effDP() * CoL / m - G * cosf(bank) * cosf(pitch-target)); 
 }
 
 float constrainServoOutput(float value)
@@ -65,7 +79,7 @@ float alphaPredict(float y)
   else if(y > vpDerived.apexElev)
     return vpDerived.apexAlpha;
   else
-    return (-b+sqrt(square(b)-4*a*(c - y)))/(2*a);
+    return (-b+sqrtf(sq(b)-4*a*(c - y)))/(2*a);
 }
 
 float rollRatePredict(float pos)
@@ -105,12 +119,12 @@ float scaleByRelativeIAS(float k, float expo)
 
 float dynamicPressure(float ias)
 {
-    return airDensity_c * square(ias) / 2;
+    return airDensity_c * sq(ias) / 2;
 }
 
 float dynamicPressureInverse(float pressure)
 {
-  return sign(pressure)*sqrtf(fabsf(2 * pressure / airDensity_c));
+  return signf(pressure)*sqrtf(fabsf(2 * pressure / airDensity_c));
 }
 
 float coeffOfLiftGeneric(float aoa, const float coeff[])

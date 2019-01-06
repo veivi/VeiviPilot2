@@ -6,8 +6,6 @@
 #include "BaseI2C.h"
 #include "NVState.h"
 #include "MS4525.h"
-#include "PWMOutput.h"
-#include "PPM.h"
 
 static bool scheduler()
 {
@@ -37,16 +35,18 @@ static bool scheduler()
 
 void mainLoopSetup()
 {
-  // Low level init & welcome
-  
-  stap_boot();  
   consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
-  // PWM output
+  // PWM out
+  
+  consoleNoteLn_P(CS_STRING("Initializing PWM output... "));
+  stap_servoOutputInit();
 
-  consoleNoteLn_P(CS_STRING("Initializing PWM output"));
-  pwmOutputInit();
-
+  // Rx input
+  
+  consoleNoteLn_P(CS_STRING("Initializing PPM input... "));
+  stap_rxInputInit();
+  
   // I2C
   
   consoleNote_P(CS_STRING("Initializing I2C... "));
@@ -70,11 +70,6 @@ void mainLoopSetup()
   
   setModel(nvState.model, true);
                 
-  // RC input
-  
-  consoleNoteLn_P(CS_STRING("Initializing PPM receiver"));
-  ppmInputInit(nvState.rxMin, nvState.rxCenter, nvState.rxMax);
-
   // Misc sensors
   
   consoleNote_P(CS_STRING("Initializing barometer... "));

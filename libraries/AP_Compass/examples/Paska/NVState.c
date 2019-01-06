@@ -250,7 +250,7 @@ void printParams()
       consoleNL();
     }
   }
-  consoleNote_P(CS_STRING("  Throttle-elev mix comp'n P*IAS^2 (expo) = "));
+  consoleNote_P(CS_STRING("  Throttle trim compensation P*IAS^2 (expo) = "));
   consolePrintFP(vpParam.t_Mix, 5);
   consolePrint_P(CS_STRING(" ("));
   consolePrintFP(vpParam.t_Expo, 5);
@@ -505,12 +505,12 @@ void deriveParams()
   //
   
   vpDerived.thresholdAlpha =
-    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin));
+    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sq(1 + vpParam.thresholdMargin));
   vpDerived.shakerAlpha =
-    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin/2));
-  vpDerived.pusherAlpha = vpDerived.maxAlpha - fmax(vpParam.pushMargin, 0);
+    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sq(1 + vpParam.thresholdMargin/2));
+  vpDerived.pusherAlpha = vpDerived.maxAlpha - fmaxf(vpParam.pushMargin, 0);
   
-  vpDerived.stallAlpha = vpDerived.maxAlpha - fmin(vpParam.pushMargin, 0);
+  vpDerived.stallAlpha = vpDerived.maxAlpha - fminf(vpParam.pushMargin, 0);
   
   //
   // Feedforward apex

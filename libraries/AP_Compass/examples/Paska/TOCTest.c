@@ -113,9 +113,9 @@ struct TOCRangeTestState {
   float valueMin, valueMax;
 };
 
-bool toc_test_range_generic(struct TOCRangeTestState *state, bool reset, struct RxInputRecord *input, float expectedMin, float expectedMax)
+bool toc_test_range_generic(struct TOCRangeTestState *state, bool reset, uint8_t ch, float expectedMin, float expectedMax)
 {
-  const float value = inputValue(input);
+  const float value = inputValue(ch);
   
   if(reset) {
     state->valueMin = state->valueMax = value;
@@ -132,14 +132,14 @@ bool toc_test_range_generic(struct TOCRangeTestState *state, bool reset, struct 
 bool toc_test_rstick_range(bool reset)
 {
   static struct TOCRangeTestState stateElev, stateAile;
-  return toc_test_range_generic(&stateElev, reset, &elevInput, -1, 1)
-    && toc_test_range_generic(&stateAile, reset, &aileInput, -1, 1);
+  return toc_test_range_generic(&stateElev, reset, CH_ELEV, -1, 1)
+    && toc_test_range_generic(&stateAile, reset, CH_AILE, -1, 1);
 }
 
 bool toc_test_rstick_neutral(bool reset)
 {
-  return ( fabsf(inputValue(&aileInput)) < toc_margin_c )
-    && ( fabsf(inputValue(&elevInput)) < toc_margin_c );
+  return ( fabsf(inputValue(CH_AILE)) < toc_margin_c )
+    && ( fabsf(inputValue(CH_ELEV)) < toc_margin_c );
 }
 
 bool toc_test_rstick(bool reset)
@@ -150,11 +150,11 @@ bool toc_test_rstick(bool reset)
 bool toc_test_lstick_range(bool reset)
 {
   static struct TOCRangeTestState stateThr;
-  bool status = toc_test_range_generic(&stateThr, reset, &throttleInput, 0, 1);
+  bool status = toc_test_range_generic(&stateThr, reset, CH_THRO, 0, 1);
 
 #if RX_CHANNELS >= 8
   static struct TOCRangeTestState stateRudder;
-  bool status2 = toc_test_range_generic(&stateRudder, reset, &rudderInput, -1, 1);
+  bool status2 = toc_test_range_generic(&stateRudder, reset, CH_RUD, -1, 1);
   status = status && status2;
 #endif
 
@@ -163,10 +163,10 @@ bool toc_test_lstick_range(bool reset)
 
 bool toc_test_lstick_neutral(bool reset)
 {
-  bool status = fabsf(inputValue(&throttleInput)) < toc_margin_c;
+  bool status = fabsf(inputValue(CH_THRO)) < toc_margin_c;
     
 #if RX_CHANNELS >= 8
-  status = status && fabsf(inputValue(&rudderInput)) < toc_margin_c;
+  status = status && fabsf(inputValue(CH_RUD)) < toc_margin_c;
 #endif
   
   return status;
@@ -180,12 +180,12 @@ bool toc_test_lstick(bool reset)
 bool toc_test_tuning_range(bool reset)
 {
   static struct TOCRangeTestState state;
-  return toc_test_range_generic(&state, reset, &tuningKnobInput, 0, 1);
+  return toc_test_range_generic(&state, reset, CH_TUNE, 0, 1);
 }
 
 bool toc_test_tuning_zero(bool reset)
 {
-  return fabsf(inputValue(&tuningKnobInput)) < toc_margin_c;
+  return fabsf(inputValue(CH_TUNE)) < toc_margin_c;
 }
 
 bool toc_test_tuning(bool reset)
@@ -196,7 +196,7 @@ bool toc_test_tuning(bool reset)
 bool toc_test_button_range(bool reset)
 {
   static struct TOCRangeTestState state;
-  return toc_test_range_generic(&state, reset, &btnInput, -1, 1);
+  return toc_test_range_generic(&state, reset, CH_BUTTON, -1, 1);
 }
 
 bool toc_test_button_neutral(bool reset)

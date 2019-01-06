@@ -96,7 +96,7 @@ struct NVStateRecord {
   uint16_t logStamp;
   uint16_t model;
   uint16_t testNum;
-  int32_t rxCenter[MAX_CH], rxMin[MAX_CH], rxMax[MAX_CH];
+  uint16_t rxCenter[MAX_CH], rxMin[MAX_CH], rxMax[MAX_CH];
 };
 
 extern struct ParamRecord vpParam;
