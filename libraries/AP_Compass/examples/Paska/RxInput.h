@@ -29,10 +29,7 @@
 #endif
 
 struct RxInputRecord {
-  bool freqOnly, alive;
-  //  int32_t pulseStart;
-  int32_t pulseCount;
-  //  int32_t pulseWidthAcc;
+  bool alive;
   uint16_t pulseWidth;
 };
   
