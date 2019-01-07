@@ -47,6 +47,7 @@ extern uint8_t nestCount;
 //
 
 void stap_rxInputInit(void);
+void stap_rxInputPoll(void);
 void stap_servoOutputInit(void);
 void stap_servoOutput(int i, float fvalue);
 

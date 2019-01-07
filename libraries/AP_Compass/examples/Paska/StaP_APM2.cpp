@@ -461,6 +461,11 @@ void stap_rxInputInit(void)
   STAP_PERMIT;
 }
 
+void stap_rxInputPoll(void)
+{
+  // We run on PPM interrupt that calls inputSource()
+}
+  
 }
 
 

@@ -1,13 +1,19 @@
+#ifndef CONFIG_HAL_BOARD
+
 #include "StaP.h"
 #include "CRC16.h"
-
-#ifndef CONFIG_HAL_BOARD
+#include "platform.h"
+#include "drivers/bus.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "io/serial.h"
 
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
 
 void stap_I2cInit(void)
 {
+  //  i2cInit(I2C_DEVICE);
   /*
   I2c.begin();
   I2c.setSpeed(true);
@@ -102,39 +108,36 @@ bool stap_hostInit(void)
 
 int stap_hostReceiveState(void)
 {
-  // return hal.console->available();
-  return 0;
+  return serialRxBytesWaiting(SERIAL_PORT_USART1);
 }
 
 int stap_hostReceive(uint8_t *buffer, int size)
 {
-  // while(size-- > 0)
-  //  *buffer++ = stap_hostReceiveChar();
+  while(size-- > 0)
+    *buffer++ = stap_hostReceiveChar();
 
   return 0;
 }
 
 uint8_t stap_hostReceiveChar(void)
 {
-  // return hal.console->read();
-  return 0;
+  return serialRead(SERIAL_PORT_USART1);
 }
 
 int stap_hostTransmitState(void)
 {
-  return 1;
+  return (int) serialTxBytesFree(SERIAL_PORT_USART1);
 }
 
 int stap_hostTransmit(const uint8_t *buffer, int size)
 {
-  // while(size-- > 0)
-  //   stap_hostTransmitChar(*buffer++);
-  return 0;
+  serialWriteBuf(SERIAL_PORT_USART1, buffer, size);
+  return size;
 }
 
 int stap_hostTransmitChar(uint8_t c)
 {
-  // hal.uartA->write(c);
+  serialWrite(SERIAL_PORT_USART1, c);
   return 1;
 }
 
@@ -218,4 +221,8 @@ void stap_rxInputInit(void)
 {
 }
 
+void stap_rxInputPoll(void)
+{
+  // call inputSource() with the data
+}
 #endif

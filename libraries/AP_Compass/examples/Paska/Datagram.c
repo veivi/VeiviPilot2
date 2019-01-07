@@ -7,7 +7,7 @@ static uint16_t crcState;
 static int datagramSize = 0;
 static int datagrams, datagramsGood;
 
-const uint8_t FLAG = 0xAB;
+#define FLAG 0xAB
 
 static void outputBreak()
 {
@@ -20,7 +20,7 @@ void datagramTxOutByte(const uint8_t c)
   datagramSerialOut(c);
 
   if(c == FLAG)
-    datagramSerialOut(~FLAG);
+    datagramSerialOut((~FLAG) & 0xFF);
 
   crcState = crc16_update(crcState, c);
 }
@@ -37,6 +37,8 @@ void datagramTxStart(uint8_t dg)
 {
   if(stap_currentMicros - lastTx > 0.1e6)
     outputBreak();
+  
+  datagramSerialOut((~FLAG) & 0xFF);
   
   crcState = 0xFFFF;
   datagramTxOutByte((const uint8_t) dg);
@@ -91,11 +93,11 @@ bool datagramRxInputChar(const uint8_t c)
 	storeByte(FLAG);
       else
 	storeByte(c);
-    } else {
+    } else if(c == ((~FLAG) & 0xFF)) {
       busy = true;
       datagramSize = 0;
-      storeByte(c);
-    }
+    } else
+      datagramRxError("BAD START");
     
     flagCnt = 0;
   } else if(++flagCnt > 1) {

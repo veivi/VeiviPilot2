@@ -234,9 +234,8 @@ void configurationTask();
 
 void receiverTask()
 {
- static Derivator_t buttonSlope;
- static float lazyButtonValue;
-  
+  stap_rxInputPoll();
+ 
   if(inputValid(CH_AILE))
     vpInput.aile = applyNullZone(inputValue(CH_AILE), NZ_BIG, &vpInput.ailePilotInput);
   
@@ -268,6 +267,9 @@ void receiverTask()
 
   float buttonValue = inputValue(CH_BUTTON);
   
+  static Derivator_t buttonSlope;
+  static float lazyButtonValue;
+
   derivatorInput(&buttonSlope, buttonValue, 1);
 
   if(fabsf(derivatorOutput(&buttonSlope)) < 0.03f)
