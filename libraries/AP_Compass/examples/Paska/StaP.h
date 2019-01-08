@@ -61,7 +61,6 @@ void stap_entropyDigest(const uint8_t *value, int size);
 // Host (serial) interface
 //
 
-bool stap_hostInit(void);
 int stap_hostReceiveState(void);   // How many chars in the buffer
 int stap_hostReceive(uint8_t *buffer, int size);
 uint8_t stap_hostReceiveChar(void);
@@ -69,7 +68,6 @@ int stap_hostTransmitState(void);  // How many chars will fit
 int stap_hostTransmit(const uint8_t *buffer, int size);
 int stap_hostTransmitChar(uint8_t c);
 void stap_hostFlush();
-void stap_mainLoop(void);
 
 //
 // System interface

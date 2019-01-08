@@ -101,6 +101,11 @@ float stap_baroRead(void)
   return 0;
 }
 
+#include "io/serial.h"
+
+extern serialPort_t *stap_serialPort;
+
+
 bool stap_hostInit(void)
 {
   return true;
@@ -108,7 +113,7 @@ bool stap_hostInit(void)
 
 int stap_hostReceiveState(void)
 {
-  return serialRxBytesWaiting(SERIAL_PORT_USART1);
+  return serialRxBytesWaiting(stap_serialPort);
 }
 
 int stap_hostReceive(uint8_t *buffer, int size)
@@ -121,23 +126,23 @@ int stap_hostReceive(uint8_t *buffer, int size)
 
 uint8_t stap_hostReceiveChar(void)
 {
-  return serialRead(SERIAL_PORT_USART1);
+  return serialRead(stap_serialPort);
 }
 
 int stap_hostTransmitState(void)
 {
-  return (int) serialTxBytesFree(SERIAL_PORT_USART1);
+  return (int) serialTxBytesFree(stap_serialPort);
 }
 
 int stap_hostTransmit(const uint8_t *buffer, int size)
 {
-  serialWriteBuf(SERIAL_PORT_USART1, buffer, size);
+  serialWriteBuf(stap_serialPort, buffer, size);
   return size;
 }
 
 int stap_hostTransmitChar(uint8_t c)
 {
-  serialWrite(SERIAL_PORT_USART1, c);
+  serialWrite(stap_serialPort, c);
   return 1;
 }
 

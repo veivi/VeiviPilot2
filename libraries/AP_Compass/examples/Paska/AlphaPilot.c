@@ -5,7 +5,6 @@
 #include "RxInput.h"
 #include "M24XX.h"
 #include "Console.h"
-#include "Datagram.h"
 #include "CRC16.h"
 #include "DSP.h"
 #include "Math.h"
@@ -14,72 +13,8 @@
 #include "SSD1306.h"
 #include "AS5048B.h"
 #include "Logging.h"
-#include "Command.h"
 #include "Button.h"
 #include "TOCTest.h"
-
-//
-// Datagram protocol integration
-//
-
-#define MAX_DG_SIZE (1<<7)
-
-uint16_t maxDatagramSize = MAX_DG_SIZE;
-uint8_t datagramRxStore[MAX_DG_SIZE];
-
-void datagramRxError(const char *error)
-{
-  consoleNote_P(CS_STRING("DG "));
-  consolePrintLn(error);
-}
-  
-void datagramInterpreter(uint8_t t, uint8_t *data, int size)
-{
-  switch(t) {
-  case DG_HEARTBEAT:
-    if(!vpStatus.consoleLink) {
-      consoleNoteLn_P(CS_STRING("Console CONNECTED"));
-      vpStatus.consoleLink = true;
-    }
-    heartBeatCount++;
-    linkDownCount = 0;
-    break;
-    
-  case DG_CONSOLE:
-    executeCommand((char*) data);
-    break;
-
-  case DG_SIMLINK:
-    if(vpStatus.consoleLink && size == sizeof(sensorData)) {
-      if(!vpStatus.simulatorLink) {
-	consoleNoteLn_P(CS_STRING("Simulator CONNECTED"));
-	vpStatus.simulatorLink = vpMode.dontLog = true;
-      }
-
-      memcpy(&sensorData, data, sizeof(sensorData));
-      simTimeStamp = stap_timeMicros();
-      simFrames++;    
-    }
-    break;
-
-  case DG_PING:
-    break;
-    
-  default:
-    consoleNote_P(CS_STRING("FUNNY DATAGRAM TYPE "));
-    consolePrintLnI(t);
-  }
-}
-
-void datagramSerialOut(uint8_t c)
-{
-  stap_hostTransmitChar(c);
-}
-
-void datagramSerialFlush()
-{
-  stap_hostFlush();
-}
 
 //
 // Periodic tasks

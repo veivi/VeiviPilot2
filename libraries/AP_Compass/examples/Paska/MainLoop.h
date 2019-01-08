@@ -3,6 +3,7 @@
 
 void mainLoopSetup();
 void mainLoop();
+void hostLoopback(void);
 
 #endif
 
