@@ -29,11 +29,34 @@
 
 #ifdef AVR
 #include <avr/interrupt.h>
+#include <avr/io.h>
+
+typedef enum { PortA, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortK, PortL } portName_t;
+
+struct PortDescriptor {
+  volatile uint8_t *pin, *port, *ddr, *mask;
+  uint8_t pci;
+};
+
+struct PinDescriptor {
+  portName_t port;
+  uint8_t index;
+};
+
+void pinOutputEnable(const struct PinDescriptor *pin, bool output);
+void setPinState(const struct PinDescriptor *pin, uint8_t state);
+uint8_t getPinState(const struct PinDescriptor *pin);  
+void configureInput(const struct PinDescriptor *pin, bool pullup);
+void configureOutput(const struct PinDescriptor *pin);
 
 #define STAP_FORBID if(!nestCount++) cli()
 #define STAP_PERMIT if(!--nestCount) sei()
-
 extern uint8_t nestCount;
+
+extern const struct PinDescriptor led;
+
+#define STAP_LED_OFF     setPinState(&led, false)
+#define STAP_LED_ON     setPinState(&led, true)
 #else
 
 #include "drivers/light_led.h"

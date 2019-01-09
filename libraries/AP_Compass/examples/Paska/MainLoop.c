@@ -128,6 +128,8 @@ void hostLoopback(void)
 
 void mainLoopSetup()
 {
+  vpStatus.consoleLink = true; // Assume we have link until otherwise etc...
+  
   consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
   // PWM out

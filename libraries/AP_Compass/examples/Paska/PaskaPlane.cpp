@@ -12,7 +12,8 @@ extern const AP_HAL::HAL& hal;
 void setup()
 {
   hal.init(0, NULL);
-  vpStatus.consoleLink = true;
+  configureOutput(&led);
+
   mainLoopSetup();
 }
 
