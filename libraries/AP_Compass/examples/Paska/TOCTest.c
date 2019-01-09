@@ -238,7 +238,7 @@ bool tocTestInvoke(bool reset, bool challenge, void (*report)(bool, int, const c
   tocStatusFailed = false;
   
   for(i = 0; i < tocNumOfTests; i++) {
-    memcpy_P(&cache, &tocTest[i], sizeof(cache));
+    CS_MEMCPY(&cache, &tocTest[i], sizeof(cache));
 
     bool result = (*cache.function)(reset);
     

@@ -7,12 +7,13 @@
 #include "Logging.h"
 #include "Datagram.h"
 #include "Console.h"
+#include "RxInput.h"
 #include "Math.h"
 #include "NVState.h"
 #include "MS4525.h"
 #include "AS5048B.h"
 
-const struct Command commands[] PROGMEM = {
+const struct Command commands[] CS_QUALIFIER = {
   { "name", c_name, e_string, &vpParam.name },
   { "as5048b_ref", c_5048b_ref, e_uint16, &vpParam.alphaRef },
   { "at_zn", c_at_zn, e_float, &vpParam.at_Ku, &vpParam.at_Tu },

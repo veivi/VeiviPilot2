@@ -1,7 +1,7 @@
 #include "stdlib.h"
 #include "Log.h"
 
-#ifdef CONFIG_HAL_BOARD
+#ifndef __APPLE__
 #include "Objects.h"
 
 float flapEncoded;

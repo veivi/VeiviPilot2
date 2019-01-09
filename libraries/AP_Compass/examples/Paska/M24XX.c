@@ -108,7 +108,7 @@ static void m24xxWritePrimitive(uint32_t addr, const uint8_t *value, int size)
   addr &= ~PAGE_MASK;
   
   if(addr+size > CACHE_PAGE) {
-    consoleNoteLn_P(PSTR("m24xxWritePrimitive() crosses line border, panic"));
+    consoleNoteLn_P(CS_STRING("m24xxWritePrimitive() crosses line border, panic"));
     return;
   }
   

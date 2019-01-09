@@ -7,6 +7,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "io/serial.h"
+#include "drivers/time.h"
 
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
@@ -36,6 +37,7 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
   
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
+  bzero(b, bs);
   // return I2c.read(d, a, as, b, bs);
   return 0;
 }
@@ -113,7 +115,9 @@ bool stap_hostInit(void)
 
 int stap_hostReceiveState(void)
 {
-  return serialRxBytesWaiting(stap_serialPort);
+  if(serialRxBytesWaiting(stap_serialPort))
+    return 1;
+  return 0;
 }
 
 int stap_hostReceive(uint8_t *buffer, int size)
@@ -134,21 +138,36 @@ int stap_hostTransmitState(void)
   return (int) serialTxBytesFree(stap_serialPort);
 }
 
+int stap_hostTransmitNonblock(const uint8_t *buffer, int size)
+{
+  int len = stap_hostTransmitState();
+  if(len > size)
+    len = size;
+  serialWriteBuf(stap_serialPort, buffer, len);
+  return len;
+}
+
 int stap_hostTransmit(const uint8_t *buffer, int size)
 {
-  serialWriteBuf(stap_serialPort, buffer, size);
+  int left = size;
+  
+  while(left > 0) {
+    int len = stap_hostTransmitNonblock(buffer, left);
+    buffer += len;
+    left -= len;
+  }
+  
   return size;
 }
 
 int stap_hostTransmitChar(uint8_t c)
 {
-  serialWrite(stap_serialPort, c);
-  return 1;
+  return stap_hostTransmit(&c, 1);
 }
 
 void stap_hostFlush()
 {
-  // hal.uartA->flush();
+  while(!isSerialTransmitBufferEmpty(stap_serialPort));
 }
 
 void stap_entropyDigest(const uint8_t *value, int size)
@@ -161,20 +180,25 @@ uint32_t stap_currentMicros;
 
 uint32_t stap_timeMicros(void)
 {
-  // stap_currentMicros = hal.scheduler->micros();
+  stap_currentMicros = (uint32_t) micros();
   return stap_currentMicros;
 }
     
 uint32_t stap_timeMillis(void)
 {
-  //  return hal.scheduler->millis();
-  return stap_timeMicros() / 1000UL;
+  return millis();
 }
     
 void stap_delayMicros(uint32_t x)
 {
   uint32_t current = stap_timeMicros();
   while(stap_timeMicros() < current+x);
+}
+  
+void stap_delayMillis(uint32_t x)
+{
+  uint32_t current = stap_timeMillis();
+  while(stap_timeMillis() < current+x);
 }
   
 uint32_t stap_memoryFree(void)

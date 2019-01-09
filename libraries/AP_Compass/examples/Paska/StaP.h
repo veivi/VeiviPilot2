@@ -36,8 +36,12 @@
 extern uint8_t nestCount;
 #else
 
-#define STAP_FORBID if(!nestCount++) __disable_irq()
-#define STAP_PERMIT if(!--nestCount) __enable_irq()
+#include "drivers/light_led.h"
+
+#define STAP_FORBID // if(!nestCount++) __disable_irq()
+#define STAP_PERMIT // if(!--nestCount) __enable_irq()
+#define STAP_LED_ON      LED1_ON
+#define STAP_LED_OFF     LED1_OFF
 
 extern uint8_t nestCount;
 #endif
@@ -65,6 +69,7 @@ int stap_hostReceiveState(void);   // How many chars in the buffer
 int stap_hostReceive(uint8_t *buffer, int size);
 uint8_t stap_hostReceiveChar(void);
 int stap_hostTransmitState(void);  // How many chars will fit
+int stap_hostTransmitNonblock(const uint8_t *buffer, int size);
 int stap_hostTransmit(const uint8_t *buffer, int size);
 int stap_hostTransmitChar(uint8_t c);
 void stap_hostFlush();
@@ -75,6 +80,7 @@ void stap_hostFlush();
 
 extern uint32_t stap_currentMicros; // Updated on every call to currentMicros()
 void stap_delayMicros(uint32_t x);
+void stap_delayMillis(uint32_t x);
 uint32_t stap_timeMicros(void);
 uint32_t stap_timeMillis(void);
 uint32_t stap_memoryFree(void);

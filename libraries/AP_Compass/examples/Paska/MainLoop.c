@@ -82,6 +82,8 @@ static bool scheduler()
   struct Task *task = alphaPilotTasks;
   bool status = false;
   
+  //  consoleNote("S ");
+      
   while(task->code) {
     stap_timeMicros();
     
@@ -92,7 +94,10 @@ static bool scheduler()
       else
  	// Either not a realtime task or we're slipping too much
 	task->nextInvocation = stap_currentMicros + task->period;
-     
+
+      //      consoleNote("Invoking task ");
+      // consolePrintLnUL(task->code);
+
       task->code();
       status = true; // We had something to do
     }
@@ -100,6 +105,8 @@ static bool scheduler()
     task++;
   }
 
+  //  consoleNote("SX ");
+  
   return status;
 }
 
@@ -226,10 +233,10 @@ void mainLoop()
     } else if(!idling) {
       // Just started idling
       idling = true;
-      
+      /*
       if(!logReady(false))
 	logInit(10);
-      
+      */
       idleStarted = stap_timeMicros();
     }
   }

@@ -2007,12 +2007,11 @@ void blinkTask()
   static int tick = 0;
   
   tick = (tick + 1) % (LED_TICK/LED_HZ);
-  /*
-  const struct PinDescriptor led = { PortA, 5 };
 
-  configureOutput(&led);
-  setPinState(&led, tick < ledRatio*LED_TICK/LED_HZ ? 0 : 1);
-  */
+  if(tick < ledRatio*LED_TICK/LED_HZ)
+    STAP_LED_OFF;
+  else
+    STAP_LED_ON;
 }
 
 void simulatorLinkTask()
