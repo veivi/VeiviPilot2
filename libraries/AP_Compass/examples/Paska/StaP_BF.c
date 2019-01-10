@@ -14,7 +14,7 @@ static uint16_t sensorHash = 0xFFFF;
 
 void stap_I2cInit(void)
 {
-  //  i2cInit(I2C_DEVICE);
+  // i2cInit(I2C_DEVICE);
   /*
   I2c.begin();
   I2c.setSpeed(true);
@@ -26,20 +26,28 @@ void stap_I2cInit(void)
 uint8_t stap_I2cWait(uint8_t d)
 {
   // return I2c.wait(d);
-  return 0;
+  return 1;
 }
  
 uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
-  //  return I2c.write(d, a, as, b, c);
-  return 0;
+  bool status = true;
+  /*
+  for(int i = 0; i < c; i++)
+    if(!(status = i2cWriteBuffer(I2C_DEVICE, d, 0xFF, b[i].data, b[i].size)))
+      break;
+  */
+  return status ? 0 : 1;
 }
   
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-  bzero(b, bs);
-  // return I2c.read(d, a, as, b, bs);
-  return 0;
+  bool status = true;
+
+  if(as == 1)
+    status = i2cRead(I2C_DEVICE, d, *a, b, bs);
+
+  return status ? 0 : 1;
 }
  
 bool stap_gyroInit(void)

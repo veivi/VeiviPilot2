@@ -98,6 +98,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "gear", c_gear },
   { "fault", c_fault },
   { "function", c_function },
+  { "read", c_read },
   { "", c_invalid }
 };
 
@@ -285,6 +286,16 @@ void executeCommand(char *buf)
     float offset = 0.0;
     
     switch(command.token) {
+    case c_read:
+      if(numParams > 1) {
+	uint8_t target = param[0], addr = param[1], data = 0,
+	  status = stap_I2cRead(target, &addr, 1, &data, 1);
+	consolePrintUI(data);
+	consolePrint(", ");
+	consolePrintLnUI(status);
+      }
+      break;
+      
     case c_arm:
       vpStatus.armed = true;
       break;
