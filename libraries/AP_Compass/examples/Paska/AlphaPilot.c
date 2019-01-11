@@ -2049,9 +2049,9 @@ void configTaskGroup()
 }
 
 struct Task alphaPilotTasks[] = {
-  // { alphaTask, HZ_TO_PERIOD(ALPHA_HZ), true, 0 },
-  //  { airspeedTask, HZ_TO_PERIOD(AIRSPEED_HZ), true, 0 },
-  // { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true, 0 },
+  { alphaTask, HZ_TO_PERIOD(ALPHA_HZ), true, 0 },
+  { airspeedTask, HZ_TO_PERIOD(AIRSPEED_HZ), true, 0 },
+  { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true, 0 },
   { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, 0 },
   { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true, 0 },
   { communicationTask, HZ_TO_PERIOD(100), true, 0 },

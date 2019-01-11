@@ -4,7 +4,8 @@
 #include "Console.h"
 #include "StaP.h"
 
-#define BACKOFF (0.5e3)
+#define BACKOFF (0.1e3)
+#define BACKOFF_FRACTION  3
 
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
@@ -26,7 +27,7 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
     consolePrintLn_P(CS_STRING(") FAIL"));
 
     if(target->failed)
-      target->backoff += target->backoff/2;
+      target->backoff += target->backoff/BACKOFF_FRACTION;
     else if(target->failCount++ > 3) {
       consoleNote_P(CS_STRING("I2C("));
       consolePrint(target->name);

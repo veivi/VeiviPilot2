@@ -63,8 +63,8 @@ extern const struct PinDescriptor led;
 
 #define STAP_FORBID // if(!nestCount++) __disable_irq()
 #define STAP_PERMIT // if(!--nestCount) __enable_irq()
-#define STAP_LED_ON      LED1_ON
-#define STAP_LED_OFF     LED1_OFF
+#define STAP_LED_ON      LED0_ON
+#define STAP_LED_OFF     LED0_OFF
 
 extern uint8_t nestCount;
 #endif

@@ -32,20 +32,20 @@ uint8_t stap_I2cWait(uint8_t d)
 uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
   bool status = true;
-  /*
+
   for(int i = 0; i < c; i++)
-    if(!(status = i2cWriteBuffer(I2C_DEVICE, d, 0xFF, b[i].data, b[i].size)))
+    if(!(status = i2cWriteBuffer(I2C_DEVICE, d, 0xFF, b[i].size, b[i].data)))
       break;
-  */
+
   return status ? 0 : 1;
 }
-  
+
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
   bool status = true;
 
   if(as == 1)
-    status = i2cRead(I2C_DEVICE, d, *a, b, bs);
+    status = i2cRead(I2C_DEVICE, d, *a, bs, b);
 
   return status ? 0 : 1;
 }
