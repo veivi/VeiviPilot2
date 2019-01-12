@@ -1,5 +1,6 @@
 #ifndef CONFIG_HAL_BOARD
 
+#include <string.h>
 #include "StaP.h"
 #include "CRC16.h"
 #include "platform.h"
@@ -28,14 +29,27 @@ uint8_t stap_I2cWait(uint8_t d)
   // return I2c.wait(d);
   return 1;
 }
- 
+
+#define MAX_BUFFER 0x100
+
 uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
   bool status = true;
+  uint8_t buffer[MAX_BUFFER];
+  uint8_t total = 0;
 
-  for(int i = 0; i < c; i++)
-    if(!(status = i2cWriteBuffer(I2C_DEVICE, d, 0xFF, b[i].size, b[i].data)))
+  for(int i = 0; i < c; i++) {
+    if(total + b[i].size > MAX_BUFFER)
       break;
+    memcpy(&buffer[total], b[i].data, b[i].size);
+    total += b[i].size;
+  }
+
+    //    if(!(status = i2cWriteBuffer(I2C_DEVICE, d, 0xFF, b[i].size, b[i].data)))
+  // if(!(status = i2cWrite(I2C_DEVICE, d, 0xFF, b[i].data[0])))
+
+  // status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+  status = i2cWrite(I2C_DEVICE, d, a[0], buffer[0]);
 
   return status ? 0 : 1;
 }
@@ -45,8 +59,10 @@ uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_
   bool status = true;
 
   if(as == 1)
-    status = i2cRead(I2C_DEVICE, d, *a, bs, b);
-
+    status = i2cRead(I2C_DEVICE, d, a[0], bs, b);
+  
+  //  status = i2cReadGeneric(I2C_DEVICE, d, a, as, bs, b);
+  
   return status ? 0 : 1;
 }
  
