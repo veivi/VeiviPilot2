@@ -84,7 +84,6 @@ const struct Command commands[] CS_QUALIFIER = {
   { "log", c_log },
   { "start", c_start },
   { "params", c_params },
-  { "reset", c_reset },
   { "gauge", c_gauge },
   { "stamp", c_stamp },
   { "arm", c_arm },
@@ -99,8 +98,8 @@ const struct Command commands[] CS_QUALIFIER = {
   { "fault", c_fault },
   { "function", c_function },
   { "read", c_read },
-  { "bl", c_bl },
-  { "reboot", c_reboot },
+  { "reset", c_reset },
+  { "boot", c_boot },
   { "", c_invalid }
 };
 
@@ -288,19 +287,20 @@ void executeCommand(char *buf)
     float offset = 0.0;
     
     switch(command.token) {
-    case c_reboot:
+    case c_reset:
       consoleNote("Reboot...");
       consoleFlush();
-      stap_delayMillis(1000);
+      stap_delayMillis(500);
       stap_reboot(false);
       break;
 
-    case c_bl:
+    case c_boot:
       consoleNote("Reboot into bootloader...");
       consoleFlush();
-      stap_delayMillis(1000);
+      stap_delayMillis(500);
       datagramTxStart(DG_DISCONNECT);
       datagramTxEnd();
+      stap_delayMillis(500);
       stap_reboot(true);
       break;
       
@@ -521,9 +521,6 @@ void executeCommand(char *buf)
       
       break;
       
-    case c_reset:
-      break;
-
     case c_function:
       if(numParams > 1 && param[0] >= 0 && param[0] < MAX_SERVO) {
 	function_t fn = fn_invalid;

@@ -59,7 +59,6 @@ typedef enum {
   c_stop,
   c_log,
   c_params,
-  c_reset,
   c_clear,
   c_init,
   c_gauge,
@@ -97,8 +96,8 @@ typedef enum {
   c_airspeed,
   c_flare,
   c_read,
-  c_bl,
-  c_reboot
+  c_boot,
+  c_reset
 } token_t;
 
 typedef enum

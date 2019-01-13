@@ -36,9 +36,9 @@ void stap_I2cInit(void)
 
 uint8_t stap_I2cWait(uint8_t d)
 {
-  consolePrint("I2CWAIT : ");
+  // consolePrint("I2CWAIT : ");
   uint8_t status = i2cWait(I2C_DEVICE, d);
-  consolePrintLnUI(status);
+  // consolePrintLnUI(status);
   return status;
 }
 
@@ -52,16 +52,12 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
 
   for(int i = 0; i < c; i++) {
     if(total + b[i].size > MAX_BUFFER)
-      break;
+      return 1;
+    
     memcpy(&buffer[total], b[i].data, b[i].size);
     total += b[i].size;
   }
 
-    //    if(!(status = i2cWriteBuffer(I2C_DEVICE, d, 0xFF, b[i].size, b[i].data)))
-  // if(!(status = i2cWrite(I2C_DEVICE, d, 0xFF, b[i].data[0])))
-
-  // status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
-  // status = i2cWriteBuffer(I2C_DEVICE, d, buffer[0], total-1, &buffer[1]);
   status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 
   return status ? 0 : 1;
@@ -69,13 +65,7 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
 
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-  bool status = true;
-
-  /*
-  if(as == 1)
-    status = i2cRead(I2C_DEVICE, d, a[0], bs, b);
-  */
-  status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
+  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
   
   return status ? 0 : 1;
 }

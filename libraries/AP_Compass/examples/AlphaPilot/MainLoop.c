@@ -235,10 +235,10 @@ void mainLoop()
     } else if(!idling) {
       // Just started idling
       idling = true;
-      /*
+      
       if(!logReady(false))
 	logInit(10);
-      */
+
       idleStarted = stap_timeMicros();
     }
   }
