@@ -8,10 +8,20 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "io/serial.h"
+#include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/bus_i2c.h"
 
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
+
+void stap_reboot(bool bootloader)
+{
+  if(bootloader)
+    systemResetToBootloader();
+  else
+    systemReset();
+}
 
 void stap_I2cInit(void)
 {
@@ -26,8 +36,10 @@ void stap_I2cInit(void)
 
 uint8_t stap_I2cWait(uint8_t d)
 {
-  // return I2c.wait(d);
-  return 1;
+  consolePrint("I2CWAIT : ");
+  uint8_t status = i2cWait(I2C_DEVICE, d);
+  consolePrintLnUI(status);
+  return status;
 }
 
 #define MAX_BUFFER 0x100
@@ -49,7 +61,8 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
   // if(!(status = i2cWrite(I2C_DEVICE, d, 0xFF, b[i].data[0])))
 
   // status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
-  status = i2cWrite(I2C_DEVICE, d, a[0], buffer[0]);
+  // status = i2cWriteBuffer(I2C_DEVICE, d, buffer[0], total-1, &buffer[1]);
+  status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 
   return status ? 0 : 1;
 }
@@ -58,10 +71,11 @@ uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_
 {
   bool status = true;
 
+  /*
   if(as == 1)
     status = i2cRead(I2C_DEVICE, d, a[0], bs, b);
-  
-  //  status = i2cReadGeneric(I2C_DEVICE, d, a, as, bs, b);
+  */
+  status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
   
   return status ? 0 : 1;
 }

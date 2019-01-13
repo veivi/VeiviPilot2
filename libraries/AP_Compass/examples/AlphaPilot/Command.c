@@ -99,6 +99,8 @@ const struct Command commands[] CS_QUALIFIER = {
   { "fault", c_fault },
   { "function", c_function },
   { "read", c_read },
+  { "bl", c_bl },
+  { "reboot", c_reboot },
   { "", c_invalid }
 };
 
@@ -286,6 +288,22 @@ void executeCommand(char *buf)
     float offset = 0.0;
     
     switch(command.token) {
+    case c_reboot:
+      consoleNote("Reboot...");
+      consoleFlush();
+      stap_delayMillis(1000);
+      stap_reboot(false);
+      break;
+
+    case c_bl:
+      consoleNote("Reboot into bootloader...");
+      consoleFlush();
+      stap_delayMillis(1000);
+      datagramTxStart(DG_DISCONNECT);
+      datagramTxEnd();
+      stap_reboot(true);
+      break;
+      
     case c_read:
       if(numParams > 1) {
 	uint8_t target = param[0], addr = param[1], data = 0,

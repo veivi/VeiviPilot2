@@ -6,6 +6,12 @@
 #include "BaseI2C.h"
 
 //
+// System interface
+//
+
+void stap_reboot(bool bootloader);
+
+//
 // Constant storage access (alias nasty AVR hack called "progmem")
 //
 
@@ -59,6 +65,7 @@ extern const struct PinDescriptor led;
 #define STAP_LED_ON     setPinState(&led, true)
 #else
 
+#ifdef ALPHAPILOT
 #include "drivers/light_led.h"
 
 #define STAP_FORBID // if(!nestCount++) __disable_irq()
@@ -67,6 +74,8 @@ extern const struct PinDescriptor led;
 #define STAP_LED_OFF     LED0_OFF
 
 extern uint8_t nestCount;
+#endif
+
 #endif
 
 //
