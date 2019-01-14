@@ -343,8 +343,6 @@ void sensorTaskSlow()
     fieldStrength = (float) raw / (1L<<16);
 }
 
-extern uint16_t i2cErrorCount, i2cBusyCount;
-
 void monitorTask()
 {
   static uint32_t prevMonitor;
@@ -377,17 +375,14 @@ void monitorTask()
 
   // I2C errors
 
-  if(i2cErrorCount > 0) {
-    consoleNote("I2C errors ");
-    consolePrintLnUI(i2cErrorCount);
-    i2cErrorCount = 0;
-  }
-  // I2C errors
+  uint16_t num = stap_i2cErrorCount();
 
-  if(i2cBusyCount > 0) {
-    consoleNote("I2C lockups ");
-    consolePrintLnUI(i2cBusyCount);
-    i2cBusyCount = 0;
+  if(num > 0) {
+    consoleNote("I2C errors ");
+    consolePrintUI(num);
+    consolePrint(" (last code ");
+    consolePrintUI(stap_i2cErrorCode());
+    consolePrintLn(")");
   }
 }
 

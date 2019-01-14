@@ -46,7 +46,7 @@
 
 #define I2C_GPIO_AF         GPIO_AF_4
 
-uint16_t i2cErrorCount = 0, i2cBusyCount = 0;
+static uint16_t i2cErrorCount = 0, i2cErrorCode = 0;
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
@@ -86,14 +86,7 @@ typedef struct {
 
 static bool timeoutOccurred(timeoutState_t *state)
 {
-  if(state->period > 0 && micros() > state->start+state->period) {
-    if(state->period > I2C_TIMEOUT_WAIT)
-      // It's a transfer level timeout
-      i2cErrorCount++;
-    
-    return true;
-  }
-  return false;
+  return state->period > 0 && micros() > state->start+state->period;
 }
 
 bool i2cWaitOnFlagTO(I2C_TypeDef *I2Cx, uint32_t flag, FlagStatus status, timeUs_t timeout_)
@@ -112,10 +105,14 @@ bool i2cWaitOnFlag(I2C_TypeDef *I2Cx, uint32_t flag, FlagStatus status)
   return i2cWaitOnFlagTO(I2Cx, flag, status, I2C_TIMEOUT_TRANSFER);
 }
 
-bool i2cTimeoutUserCallback(void)
+bool i2cReturnCode(uint16_t code)
 {
-  i2cErrorCount++;
-  return false;
+  if(code) {
+    i2cErrorCode = code;
+    i2cErrorCount++;
+    return false;
+  }
+  return true;
 }
 
 void i2cInit(I2CDevice device)
@@ -164,29 +161,48 @@ void i2cInit(I2CDevice device)
 
 uint16_t i2cGetErrorCounter(void)
 {
-    return i2cErrorCount;
+  return i2cErrorCount;
+}
+
+uint16_t i2cGetErrorCode(void)
+{
+  return i2cErrorCode;
+}
+
+uint16_t i2cGetErrorCounterReset(void)
+{
+  uint16_t value = i2cGetErrorCounter();
+  i2cErrorCount = 0;
+  return value;
+}
+
+uint16_t i2cGetErrorCodeReset(void)
+{
+  uint16_t value = i2cGetErrorCode();
+  i2cErrorCode = 0;
+  return value;
 }
 
 bool i2cWriteGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t *addr, uint8_t len, uint8_t *data)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return false;
-    }
+    if (device == I2CINVALID || device > I2CDEV_COUNT)
+      return i2cReturnCode(100);
 
     I2C_TypeDef *I2Cx = i2cDevice[device].reg;
 
-    if (!I2Cx) {
-        return false;
-    }
+    if (!I2Cx)
+      return i2cReturnCode(101);
 
+    if(!len)
+      return i2cReturnCode(110);
+    
     target_ <<= 1;
 
     /* Test on BUSY Flag */
 
     if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET)) {
-      i2cErrorCount++;
       I2C_SoftwareResetCmd(I2Cx);
-      return false;
+      return i2cReturnCode(102);
     }
 
     /* Configure slave address, nbytes, reload, end mode and start or stop generation */
@@ -196,7 +212,7 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_
       /* Wait until TXIS flag is set */
 
       if(!i2cWaitOnFlag(I2Cx, I2C_ISR_TXIS, RESET))
-	return false;
+	return i2cReturnCode(103);
 
       if(addrSize > 0) {
 	/* Send Register address */
@@ -211,7 +227,7 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_
     // Wait until Stop
     
     if(!i2cWaitOnFlag(I2Cx, I2C_ISR_STOPF, RESET))
-      return false;
+      return i2cReturnCode(104);
 
     /* Clear STOPF flag */
     I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);
@@ -229,29 +245,26 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
   return i2cWriteBuffer(device, addr_, reg, 1, &data);
 }
 
-uint8_t i2cWait(I2CDevice device, uint8_t target_)
+bool i2cWait(I2CDevice device, uint8_t target_)
 {
     timeoutState_t major = I2C_TIMEOUT_CONS(I2C_TIMEOUT_TRANSFER);
     bool ack = false;
     
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return 1;
-    }
+    if (device == I2CINVALID || device > I2CDEV_COUNT)
+      return i2cReturnCode(200);
 
     I2C_TypeDef *I2Cx = i2cDevice[device].reg;
 
-    if (!I2Cx) {
-        return 2;
-    }
+    if (!I2Cx)
+      return i2cReturnCode(201);
 
     target_ <<= 1;
 
     /* Test on BUSY Flag */
     
     if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET)) {
-      i2cErrorCount++;
       I2C_SoftwareResetCmd(I2Cx);
-      return 3;
+      return i2cReturnCode(202);
     }
 
     do {
@@ -264,35 +277,36 @@ uint8_t i2cWait(I2CDevice device, uint8_t target_)
     /* Wait until STOPF flag is set */
 
     if(!i2cWaitOnFlag(I2Cx, I2C_ISR_STOPF, RESET))
-      return 4;
+      return i2cReturnCode(203);
 
     /* Clear STOPF flag */
     I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);
     
     /* If all operations OK */
-    return 0;
+
+    return true;
 }
 
 bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t *addr, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return false;
-    }
+    if (device == I2CINVALID || device > I2CDEV_COUNT)
+      return i2cReturnCode(300);
 
     I2C_TypeDef *I2Cx = i2cDevice[device].reg;
 
-    if (!I2Cx) {
-        return false;
-    }
+    if (!I2Cx)
+      return i2cReturnCode(301);
 
+    if(!len)
+      return i2cReturnCode(310);
+    
     target_ <<= 1;
 
     /* Test on BUSY Flag */
     
     if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET)) {
-      i2cErrorCount++;
       I2C_SoftwareResetCmd(I2Cx);
-      return false;
+      return i2cReturnCode(302);
     }
 
     if(addrSize > 0) {
@@ -302,7 +316,7 @@ bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t
 	/* Wait until TXIS flag is set */
 	
 	if(!i2cWaitOnFlag(I2Cx, I2C_ISR_TXIS, RESET))
-	  return false;
+	  return i2cReturnCode(303);
 
 	/* Send Register address */
 	I2C_SendData(I2Cx, (uint8_t) *addr++);
@@ -312,7 +326,7 @@ bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t
       /* Wait until TC flag is set */
 
       if(!i2cWaitOnFlag(I2Cx, I2C_ISR_TC, RESET))
-	return false;
+	return i2cReturnCode(304);
     }
     
     I2C_TransferHandling(I2Cx, target_, len, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
@@ -322,7 +336,7 @@ bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t
         /* Wait until RXNE flag is set */
 
       if(!i2cWaitOnFlag(I2Cx, I2C_ISR_RXNE, RESET))
-	return false;
+	return i2cReturnCode(305);
 
       /* Read data from RXDR */
       *buf++ = I2C_ReceiveData(I2Cx);
@@ -332,7 +346,7 @@ bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t
     /* Wait until STOPF flag is set */
     
     if(!i2cWaitOnFlag(I2Cx, I2C_ISR_STOPF, RESET))
-      return false;
+      return i2cReturnCode(306);
 
     /* Clear STOPF flag */
     I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);

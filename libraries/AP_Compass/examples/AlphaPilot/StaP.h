@@ -145,6 +145,8 @@ void stap_I2cInit(void);
 uint8_t stap_I2cWrite(uint8_t, const uint8_t*, uint8_t, const I2CBuffer_t*, int);
 uint8_t stap_I2cRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
 uint8_t stap_I2cWait(uint8_t);
+uint16_t stap_i2cErrorCount(void);
+uint16_t stap_i2cErrorCOde(void);
 
 #endif
 
