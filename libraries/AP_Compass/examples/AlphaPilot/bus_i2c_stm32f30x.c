@@ -46,7 +46,7 @@
 
 #define I2C_GPIO_AF         GPIO_AF_4
 
-static volatile uint16_t i2cErrorCount = 0;
+uint16_t i2cErrorCount = 0, i2cBusyCount = 0;
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
@@ -183,8 +183,11 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_
 
     /* Test on BUSY Flag */
 
-    if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET))
+    if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET)) {
+      i2cErrorCount++;
+      I2C_SoftwareResetCmd(I2Cx);
       return false;
+    }
 
     /* Configure slave address, nbytes, reload, end mode and start or stop generation */
     I2C_TransferHandling(I2Cx, target_, addrSize+len, I2C_AutoEnd_Mode, I2C_Generate_Start_Write);
@@ -245,8 +248,11 @@ uint8_t i2cWait(I2CDevice device, uint8_t target_)
 
     /* Test on BUSY Flag */
     
-    if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET))
+    if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET)) {
+      i2cErrorCount++;
+      I2C_SoftwareResetCmd(I2Cx);
       return 3;
+    }
 
     do {
       I2C_TransferHandling(I2Cx, target_, 1, I2C_AutoEnd_Mode, I2C_Generate_Start_Write);
@@ -283,8 +289,11 @@ bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t
 
     /* Test on BUSY Flag */
     
-    if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET))
+    if(!i2cWaitOnFlag(I2Cx, I2C_ISR_BUSY, SET)) {
+      i2cErrorCount++;
+      I2C_SoftwareResetCmd(I2Cx);
       return false;
+    }
 
     if(addrSize > 0) {
       I2C_TransferHandling(I2Cx, target_, addrSize, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
