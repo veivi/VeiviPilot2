@@ -86,12 +86,12 @@ void consoleNoteLn_P(const char *s)
 
 void consolePanic_P(const char *s)
 {
-  consolePrint("// PANIC: ");
-  consolePrint_P(s);
-  consolePrintLn_P(CS_STRING("// HALTING."));
-  consoleNL();
+  consoleNote("// PANIC: ");
+  consolePrintLn_P(s);
+  consoleNoteLn("// HALT/REBOOT");
   consoleFlush();
-  while(1);
+  delay(5000);
+  stap_reboot(false);
 }
 
 void consolevNotef(const char *s, va_list argp)

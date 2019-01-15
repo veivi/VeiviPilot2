@@ -3,6 +3,8 @@
 #include <string.h>
 #include "StaP.h"
 #include "CRC16.h"
+#include "RxInput.h"
+#include "NVState.h"
 #include "platform.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
@@ -11,6 +13,7 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/rx/rx_pwm.h"
 
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
@@ -26,12 +29,6 @@ void stap_reboot(bool bootloader)
 void stap_I2cInit(void)
 {
   // i2cInit(I2C_DEVICE);
-  /*
-  I2c.begin();
-  I2c.setSpeed(true);
-  I2c.pullup(true);
-  I2c.timeOut(10);
-  */
 }
 
 uint8_t stap_I2cWait(uint8_t d)
@@ -288,6 +285,16 @@ void stap_rxInputInit(void)
 
 void stap_rxInputPoll(void)
 {
-  // call inputSource() with the data
+  uint16_t input[MAX_CH];
+
+  if(isPPMDataBeingReceived()) {
+    resetPPMDataReceivedState();
+    
+    for(int i = 0; i < MAX_CH; i++)
+      input[i] = ppmRead(i);
+
+    inputSource(input, MAX_CH);
+  }
 }
+
 #endif

@@ -70,8 +70,8 @@ extern const struct PinDescriptor led;
 
 #define STAP_FORBID // if(!nestCount++) __disable_irq()
 #define STAP_PERMIT // if(!--nestCount) __enable_irq()
-#define STAP_LED_ON      LED0_ON
-#define STAP_LED_OFF     LED0_OFF
+#define STAP_LED_ON      LED1_ON
+#define STAP_LED_OFF     LED1_OFF
 
 extern uint8_t nestCount;
 #endif
@@ -84,6 +84,7 @@ extern uint8_t nestCount;
 
 void stap_rxInputInit(void);
 void stap_rxInputPoll(void);
+uint16_t stap_rxFrameCount(void);
 void stap_servoOutputInit(void);
 void stap_servoOutput(int i, float fvalue);
 
@@ -146,7 +147,7 @@ uint8_t stap_I2cWrite(uint8_t, const uint8_t*, uint8_t, const I2CBuffer_t*, int)
 uint8_t stap_I2cRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
 uint8_t stap_I2cWait(uint8_t);
 uint16_t stap_i2cErrorCount(void);
-uint16_t stap_i2cErrorCOde(void);
+uint16_t stap_i2cErrorCode(void);
 
 #endif
 

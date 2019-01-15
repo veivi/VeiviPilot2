@@ -169,11 +169,16 @@ float inputSourceRate()
   static uint32_t prevMeasurement;
   
   STAP_FORBID;
-  float result = 1.0e6 * ppmFrames / (stap_timeMicros() - prevMeasurement);
+  uint16_t count = ppmFrames;
   ppmFrames = 0;
   STAP_PERMIT;
-
+  
+  float result = 1.0e6 * count / (stap_timeMicros() - prevMeasurement);
+  
   prevMeasurement = stap_timeMicros();
 
+  if(result < 30)
+    ppmWarnSlow = true;
+    
   return result;
 }
