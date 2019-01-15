@@ -33,24 +33,39 @@ void stap_I2cInit(void)
 
 uint8_t stap_I2cWait(uint8_t d)
 {
+#ifdef STM32F4
+  return 1;
+#else
   bool status = i2cWait(I2C_DEVICE, d);
   return status ? 0 : i2cGetErrorCode();
+#endif
 }
 
 #define MAX_BUFFER 0x100
 
 uint16_t stap_i2cErrorCount(void)
 {
+#ifdef STM32F4
+  return 0;
+#else
   return i2cGetErrorCounterReset();
+#endif
 }
 
 uint16_t stap_i2cErrorCode(void)
 {
+#ifdef STM32F4
+  return 0;
+#else
   return i2cGetErrorCodeReset();
+#endif
 }
 
 uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
+#ifdef STM32F4
+  return 1;
+#else
   bool status = true;
   uint8_t buffer[MAX_BUFFER];
   uint8_t total = 0;
@@ -66,13 +81,18 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
   status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 
   return status ? 0 : i2cGetErrorCode();
+#endif
 }
 
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
+#ifdef STM32F4
+  return 1;
+#else
   bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
   
   return status ? 0 : i2cGetErrorCode();
+#endif
 }
  
 bool stap_gyroInit(void)
