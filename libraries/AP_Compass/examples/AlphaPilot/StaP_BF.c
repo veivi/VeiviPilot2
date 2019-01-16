@@ -63,10 +63,6 @@ uint16_t stap_i2cErrorCode(void)
 
 uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
-#ifdef STM32F4
-  return 1;
-#else
-  bool status = true;
   uint8_t buffer[MAX_BUFFER];
   uint8_t total = 0;
 
@@ -78,7 +74,15 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
     total += b[i].size;
   }
 
-  status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+#ifdef STM32F4
+  if(as == 0)
+    return !i2cWriteBuffer(I2C_DEVICE, d, 0xFF, total, buffer);
+  else if(as == 1)
+    return !i2cWriteBuffer(I2C_DEVICE, d, a[0], total, buffer);
+  else
+    return 1;
+#else
+  bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 
   return status ? 0 : i2cGetErrorCode();
 #endif
@@ -87,9 +91,14 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
 #ifdef STM32F4
-  return 1;
+  if(as == 0)
+    return !i2cRead(I2C_DEVICE, d, 0xFF, bs, b);
+  else if(as == 1)
+    return !i2cRead(I2C_DEVICE, d, a[0], bs, b);
+  else
+    return 1;
 #else
-  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
+  status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
   
   return status ? 0 : i2cGetErrorCode();
 #endif
