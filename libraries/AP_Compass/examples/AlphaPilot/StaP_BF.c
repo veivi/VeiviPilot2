@@ -3,6 +3,7 @@
 #include <string.h>
 #include "StaP.h"
 #include "CRC16.h"
+#include "Math.h"
 #include "RxInput.h"
 #include "NVState.h"
 #include "platform.h"
@@ -14,6 +15,7 @@
 #include "drivers/time.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/rx/rx_pwm.h"
+#include "fc/runtime_config.h"
 
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
@@ -98,51 +100,60 @@ uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_
   else
     return 1;
 #else
-  status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
+  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
   
   return status ? 0 : i2cGetErrorCode();
 #endif
 }
- 
-bool stap_gyroInit(void)
-{
-  // ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
-  // ahrs.init();
-  return true;
-}
+
+#include "sensors/acceleration.h"
+#include "sensors/gyro.h"
+#include "flight/imu.h"
 
 bool stap_gyroUpdate(void)
 {
-  // ins.wait_for_sample();
-  // ahrs.update();
+  gyroUpdate(stap_timeMicros());
   return true;
 }
 
-bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
+bool stap_accUpdate(void)
 {
-  // Acceleration
-  /*  
-  Vector3f ap_acc = ins.get_accel(0);
-
-  acc->x = ap_acc.x;
-  acc->y = ap_acc.y;
-  acc->z = -ap_acc.z;
+  static rollAndPitchTrims_t trims;
   
+  accUpdate(stap_timeMicros(), &trims);
+}
+
+bool stap_attiUpdate(void)
+{
+  if(vpStatus.armed)
+    ENABLE_ARMING_FLAG(ARMED);
+  else
+    DISABLE_ARMING_FLAG(ARMED);
+    
+  imuUpdateAttitude(stap_timeMicros());
+}
+
+bool stap_sensorRead(stap_Vector3f_t *a, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
+{
+  // Angular velocities
+  
+  rot->x = gyroRateDps(FD_ROLL)/RADIAN/10.0f;
+  rot->y = -gyroRateDps(FD_PITCH)/RADIAN/10.0f;
+  rot->z = gyroRateDps(FD_YAW)/RADIAN/10.0f;
+
   // Attitude
 
-  atti->x = ahrs.roll;
-  atti->y = ahrs.pitch;
-  atti->z = ahrs.yaw;
-  
-  // Angular velocities
+  atti->x = attitude.values.roll/RADIAN/10.0f;
+  atti->y = -attitude.values.pitch/RADIAN/10.0f;
+  atti->z = attitude.values.yaw/RADIAN/10.0f;
 
-  Vector3f ap_gyro = ins.get_gyro();
-  
-  rot->x = ap_gyro.x;
-  rot->y = ap_gyro.y;
-  rot->z = ap_gyro.z;
-  */
-  return false;
+  // Acceleration
+ 
+  a->x = acc.accADC[X]/200;
+  a->y = acc.accADC[Y]/200;
+  a->z = acc.accADC[Z]/200;
+
+  return true;
 }
 
 bool stap_baroInit(void)
@@ -266,7 +277,7 @@ void stap_delayMillis(uint32_t x)
 uint32_t stap_memoryFree(void)
 {
   // return hal.util->available_memory();
-  return 0;
+  return 2000;
 }
 
 void stap_servoOutputInit(void)

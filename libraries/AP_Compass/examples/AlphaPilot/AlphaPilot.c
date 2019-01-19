@@ -40,6 +40,24 @@ void alphaTask()
   }
 }
 
+void gyroTask()
+{
+  if(!vpStatus.simulatorLink)
+    stap_gyroUpdate();
+}
+
+void attiTask()
+{
+  if(!vpStatus.simulatorLink)
+    stap_attiUpdate();
+}
+
+void accTask()
+{
+  if(!vpStatus.simulatorLink)
+    stap_accUpdate();
+}
+
 void tocReportDisplay(bool result, int i, const char *s)
 {
   obdMove((i % 3)*6, i/3 + 2);
@@ -271,10 +289,19 @@ void sensorTaskSync()
   
   // Attitude
 
+#ifndef TASK_GYRO_HZ
+  stap_gyroUpdate();
+#endif
+#ifndef TASK_ATTI_HZ
+  stap_attiUpdate();
+#endif
+#ifndef TASK_ACC_HZ
+  stap_accUpdate();
+#endif
+
   stap_Vector3f_t acc, atti, rate;
   
-  stap_gyroUpdate();
-  stap_gyroRead(&acc, &atti, &rate);
+  stap_sensorRead(&acc, &atti, &rate);
 
   vpFlight.bank = atti.x;
   vpFlight.pitch = atti.y;
@@ -369,10 +396,8 @@ void monitorTask()
   // PPM monitoring
 
   if(!inputSourceGood())
-    lastPPMWarn = stap_currentMicros;
+    ; //lastPPMWarn = stap_currentMicros;
   
-  prevMonitor = stap_currentMicros;
-
   // I2C errors
 
   uint16_t num = stap_i2cErrorCount();
@@ -384,6 +409,8 @@ void monitorTask()
     consolePrintUI(stap_i2cErrorCode());
     consolePrintLn(")");
   }
+
+  prevMonitor = stap_currentMicros;
 }
 
 //
@@ -2061,6 +2088,15 @@ void configTaskGroup()
 }
 
 struct Task alphaPilotTasks[] = {
+#ifdef TASK_GYRO_HZ
+  { gyroTask, HZ_TO_PERIOD(TASK_GYRO_HZ), true, 0 },
+#endif
+#ifdef TASK_ATTI_HZ
+  { attiTask, HZ_TO_PERIOD(TASK_ATTI_HZ), true, 0 },
+#endif
+#ifdef TASK_ACC_HZ
+  { accTask, HZ_TO_PERIOD(TASK_ACC_HZ), true, 0 },
+#endif
   { alphaTask, HZ_TO_PERIOD(ALPHA_HZ), true, 0 },
   { airspeedTask, HZ_TO_PERIOD(AIRSPEED_HZ), true, 0 },
   { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true, 0 },

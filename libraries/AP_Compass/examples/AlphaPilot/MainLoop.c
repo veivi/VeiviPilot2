@@ -168,12 +168,12 @@ void mainLoopSetup()
   consoleFlush();
   stap_baroInit();
   consolePrintLn_P(CS_STRING("  done"));
-  
+  /*  
   consoleNote_P(CS_STRING("Initializing INS/AHRS... "));
   consoleFlush();
   stap_gyroInit();
   consolePrintLn_P(CS_STRING("  done"));
-
+  */
   // Static controller settings & filters
 
   pidCtrlInit(&elevCtrl);

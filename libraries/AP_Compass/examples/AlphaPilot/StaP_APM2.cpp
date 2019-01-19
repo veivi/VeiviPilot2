@@ -18,7 +18,17 @@ AP_AHRS_DCM ahrs {ins,  barometer, gps};
 NewI2C I2c = NewI2C();
 
 uint8_t nestCount = 0;
+
+
 static uint16_t sensorHash = 0xFFFF;
+
+extern "C" void stap_reboot(bool bootloader)
+{/*
+  if(bootloader)
+    systemResetToBootloader();
+  else
+    systemReset();
+ */}
 
 extern "C" void stap_I2cInit(void)
 {
@@ -26,6 +36,16 @@ extern "C" void stap_I2cInit(void)
   I2c.setSpeed(true);
   I2c.pullup(true);
   I2c.timeOut(10);
+}
+
+extern "C" uint16_t stap_i2cErrorCount(void)
+{
+  return 0;
+}
+
+extern "C" uint16_t stap_i2cErrorCode(void)
+{
+  return 0;
 }
 
 extern "C" uint8_t stap_I2cWait(uint8_t d)
@@ -45,8 +65,8 @@ extern "C" uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t
  
 extern "C" bool stap_gyroInit(void)
 {
-  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
-  ahrs.init();
+  //  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
+  //  ahrs.init();
   return true;
 }
 
@@ -57,7 +77,17 @@ extern "C" bool stap_gyroUpdate(void)
   return true;
 }
 
-extern "C" bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
+extern "C" bool stap_attiUpdate(void)
+{
+  return true;
+}
+
+extern "C" bool stap_accUpdate(void)
+{
+  return true;
+}
+
+extern "C" bool stap_sensorRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
 {
   // Acceleration
   
@@ -173,6 +203,12 @@ extern "C" void stap_delayMicros(uint32_t x)
 {
   uint32_t current = stap_timeMicros();
   while(stap_timeMicros() < current+x);
+}
+  
+extern "C" void stap_delayMillis(uint32_t x)
+{
+  uint32_t current = stap_timeMillis();
+  while(stap_timeMillis() < current+x);
 }
   
 extern "C" uint32_t stap_memoryFree(void)

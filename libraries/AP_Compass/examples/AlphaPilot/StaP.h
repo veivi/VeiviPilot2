@@ -5,6 +5,12 @@
 #include <stdbool.h>
 #include "BaseI2C.h"
 
+#ifndef AVR
+#define TASK_GYRO_HZ    8000
+#define TASK_ATTI_HZ    1000
+#define TASK_ACC_HZ     1000
+#endif
+
 //
 // System interface
 //
@@ -126,9 +132,10 @@ typedef struct stap_Vector3f {
   float x, y, z;
 } stap_Vector3f_t;
 
-bool stap_gyroInit(void);
 bool stap_gyroUpdate(void);
-bool stap_gyroRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot);
+bool stap_attiUpdate(void);
+bool stap_accUpdate(void);
+bool stap_sensorRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_t *rot);
 
 //
 // Altimeter interface
