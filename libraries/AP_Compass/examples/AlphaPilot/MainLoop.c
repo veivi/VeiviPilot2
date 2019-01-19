@@ -127,11 +127,16 @@ void hostLoopback(void)
 //
 
 void mainLoopSetup()
-{
+{  
   vpStatus.consoleLink = true; // Assume we have link until otherwise etc...
+
+  stap_delayMillis(2000);
   
   consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
+  stap_initialize();
+  
+  /*
   // PWM out
   
   consoleNoteLn_P(CS_STRING("Initializing PWM output... "));
@@ -148,7 +153,7 @@ void mainLoopSetup()
   stap_I2cInit();
 
   consolePrintLn_P(CS_STRING("done. "));
-  
+  */  
   // Read the non-volatile state
 
   if(!readNVState())
@@ -163,11 +168,12 @@ void mainLoopSetup()
   setModel(nvState.model, true);
                 
   // Misc sensors
-  
+  /*
   consoleNote_P(CS_STRING("Initializing barometer... "));
   consoleFlush();
   stap_baroInit();
   consolePrintLn_P(CS_STRING("  done"));
+  */
   /*  
   consoleNote_P(CS_STRING("Initializing INS/AHRS... "));
   consoleFlush();

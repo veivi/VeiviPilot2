@@ -17,9 +17,10 @@ extern AP_AHRS_DCM ahrs;// {ins,  barometer, gps};
 void setup()
 {
   hal.init(0, NULL);
-  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
+
+  /*ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
   ahrs.init();
-  
+  */
   configureOutput(&led);
   
   mainLoopSetup();

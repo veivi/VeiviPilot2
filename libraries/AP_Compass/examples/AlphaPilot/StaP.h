@@ -15,6 +15,14 @@
 // System interface
 //
 
+extern uint32_t stap_currentMicros; // Updated on every call to currentMicros()
+
+void stap_initialize(void);
+void stap_delayMicros(uint32_t x);
+void stap_delayMillis(uint32_t x);
+uint32_t stap_timeMicros(void);
+uint32_t stap_timeMillis(void);
+uint32_t stap_memoryFree(void);
 void stap_reboot(bool bootloader);
 
 //
@@ -88,7 +96,6 @@ extern uint8_t nestCount;
 // RX and Servo (PWM) interface
 //
 
-void stap_rxInputInit(void);
 void stap_rxInputPoll(void);
 uint16_t stap_rxFrameCount(void);
 void stap_servoOutputInit(void);
@@ -114,17 +121,6 @@ int stap_hostTransmitChar(uint8_t c);
 void stap_hostFlush();
 
 //
-// System interface
-//
-
-extern uint32_t stap_currentMicros; // Updated on every call to currentMicros()
-void stap_delayMicros(uint32_t x);
-void stap_delayMillis(uint32_t x);
-uint32_t stap_timeMicros(void);
-uint32_t stap_timeMillis(void);
-uint32_t stap_memoryFree(void);
-
-//
 // Gyro interface
 //
 
@@ -141,7 +137,6 @@ bool stap_sensorRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_
 // Altimeter interface
 //
 
-bool stap_baroInit(void);
 bool stap_baroUpdate(void);
 float stap_baroRead(void);
 
@@ -149,7 +144,6 @@ float stap_baroRead(void);
 // I2C interface
 //
 
-void stap_I2cInit(void);
 uint8_t stap_I2cWrite(uint8_t, const uint8_t*, uint8_t, const I2CBuffer_t*, int);
 uint8_t stap_I2cRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
 uint8_t stap_I2cWait(uint8_t);

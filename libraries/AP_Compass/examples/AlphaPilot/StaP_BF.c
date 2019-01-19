@@ -20,17 +20,16 @@
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
 
+void stap_initialize(void)
+{
+}
+
 void stap_reboot(bool bootloader)
 {
   if(bootloader)
     systemResetToBootloader();
   else
     systemReset();
-}
-
-void stap_I2cInit(void)
-{
-  // i2cInit(I2C_DEVICE);
 }
 
 uint8_t stap_I2cWait(uint8_t d)
@@ -156,13 +155,6 @@ bool stap_sensorRead(stap_Vector3f_t *a, stap_Vector3f_t *atti, stap_Vector3f_t 
   return true;
 }
 
-bool stap_baroInit(void)
-{
-  // barometer.init();
-  // barometer.calibrate();
-  return true;
-} 
-
 bool stap_baroUpdate(void)
 {
   // barometer.update();
@@ -179,12 +171,6 @@ float stap_baroRead(void)
 #include "io/serial.h"
 
 extern serialPort_t *stap_serialPort;
-
-
-bool stap_hostInit(void)
-{
-  return true;
-}
 
 int stap_hostReceiveState(void)
 {
@@ -280,22 +266,6 @@ uint32_t stap_memoryFree(void)
   return 2000;
 }
 
-void stap_servoOutputInit(void)
-{
-  /*
-  int i = 0;
-  
-  for(i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
-    setPinState(&pwmOutput[i].pin, 0);
-    configureOutput(&pwmOutput[i].pin);
-    pwmDisable(&pwmOutput[i]);
-    pwmOutput[i].active = false;
-  }
-
-  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
-  */
-}
-
 void stap_servoOutput(int i, float fvalue)
 {
   /*
@@ -317,10 +287,6 @@ void stap_servoOutput(int i, float fvalue)
     output->active = true;
   }
   */
-}
-
-void stap_rxInputInit(void)
-{
 }
 
 void stap_rxInputPoll(void)

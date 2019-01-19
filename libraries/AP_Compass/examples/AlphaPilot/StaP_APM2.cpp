@@ -1,6 +1,7 @@
 extern "C" {
 #include "StaP.h"
 #include "CRC16.h"
+#include "Console.h"
 }
 
 #include <AP_HAL/AP_HAL.h>
@@ -30,14 +31,6 @@ extern "C" void stap_reboot(bool bootloader)
     systemReset();
  */}
 
-extern "C" void stap_I2cInit(void)
-{
-  I2c.begin();
-  I2c.setSpeed(true);
-  I2c.pullup(true);
-  I2c.timeOut(10);
-}
-
 extern "C" uint16_t stap_i2cErrorCount(void)
 {
   return 0;
@@ -63,13 +56,6 @@ extern "C" uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t
   return I2c.read(d, a, as, b, bs);
 }
  
-extern "C" bool stap_gyroInit(void)
-{
-  //  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
-  //  ahrs.init();
-  return true;
-}
-
 extern "C" bool stap_gyroUpdate(void)
 {
   ins.wait_for_sample();
@@ -114,13 +100,6 @@ extern "C" bool stap_sensorRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, sta
   return true;
 }
 
-extern "C" bool stap_baroInit(void)
-{
-  barometer.init();
-  barometer.calibrate();
-  return true;
-} 
-
 extern "C" bool stap_baroUpdate(void)
 {
   barometer.update();
@@ -132,11 +111,6 @@ extern "C" bool stap_baroUpdate(void)
 extern "C" float stap_baroRead(void)
 {
   return (float) barometer.get_altitude();
-}
-
-extern "C" bool stap_hostInit(void)
-{
-  return true;
 }
 
 extern "C" int stap_hostReceiveState(void)
@@ -366,20 +340,6 @@ static void pwmDisable(const struct PWMOutput *output)
    *(output->timer->TCCRA) &= ~outputModeMask[output->pwmCh];
 }
 
-void stap_servoOutputInit(void)
-{
-  int i = 0;
-  
-  for(i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
-    setPinState(&pwmOutput[i].pin, 0);
-    configureOutput(&pwmOutput[i].pin);
-    pwmDisable(&pwmOutput[i]);
-    pwmOutput[i].active = false;
-  }
-
-  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
-}
-
 static uint16_t constrain_period(uint16_t p) {
     if (p > RC_OUTPUT_MAX_PULSEWIDTH)
        return RC_OUTPUT_MAX_PULSEWIDTH;
@@ -457,27 +417,6 @@ ISR(TIMER5_CAPT_vect)
 
 void stap_rxInputInit(void)
 {
-  configureInput(&ppmInputPin, true);
-  
-  STAP_FORBID;
-    
-    TCCR5A = _BV(WGM50) | _BV(WGM51);
-    TCCR5B |= _BV(WGM53) | _BV(WGM52) | _BV(CS51) | _BV(ICES5);
-    OCR5A  = 40000 - 1; // -1 to correct for wrap
-
-    /* OCR5B and OCR5C will be used by RCOutput_APM2. Init to 0xFFFF to prevent premature PWM output */
-    OCR5B  = 0xFFFF;
-    OCR5C  = 0xFFFF;
-
-    /* Enable input capture interrupt */
-    TIMSK5 |= _BV(ICIE5);
-    /*
-  TCCR5B |= (1<<ICES5) | (1<<CS51);
-  TIMSK5 |= 1<<ICIE5;
-  OCR5A  = 40000 - 1; // -1 to correct for wrap
-    */
-    
-  STAP_PERMIT;
 }
 
 void stap_rxInputPoll(void)
@@ -485,6 +424,67 @@ void stap_rxInputPoll(void)
   // We run on PPM interrupt that calls inputSource()
 }
   
+}
+
+extern "C" void stap_initialize(void)
+{
+  consolePrint_P(CS_STRING("I2C... "));
+  consoleFlush();
+
+  I2c.begin();
+  I2c.setSpeed(true);
+  I2c.pullup(true);
+  I2c.timeOut(10);
+
+  consolePrint_P(CS_STRING("AHRS... "));
+  consoleFlush();
+
+  ins.init(AP_InertialSensor::COLD_START, AP_InertialSensor::RATE_50HZ);
+  ahrs.init();
+  
+  consolePrint_P(CS_STRING("Barometer... "));
+  consoleFlush();
+
+  barometer.init();
+  barometer.calibrate();
+  int i = 0;
+  
+  consolePrint_P(CS_STRING("PPM RX... "));
+  consoleFlush();
+  
+  configureInput(&ppmInputPin, true);
+  
+  TCCR5A = _BV(WGM50) | _BV(WGM51);
+  TCCR5B |= _BV(WGM53) | _BV(WGM52) | _BV(CS51) | _BV(ICES5);
+  OCR5A  = 40000 - 1; // -1 to correct for wrap
+
+  /* OCR5B and OCR5C will be used by RCOutput_APM2. Init to 0xFFFF to prevent premature PWM output */
+  OCR5B  = 0xFFFF;
+  OCR5C  = 0xFFFF;
+
+  /* Enable input capture interrupt */
+  TIMSK5 |= _BV(ICIE5);
+  /*
+  TCCR5B |= (1<<ICES5) | (1<<CS51);
+  TIMSK5 |= 1<<ICIE5;
+  OCR5A  = 40000 - 1; // -1 to correct for wrap
+    */
+    
+  STAP_PERMIT;
+  
+  consolePrint_P(CS_STRING("PWM output... "));
+  consoleFlush();
+
+  for(i = 0; i < MAX_SERVO && pwmOutput[i].timer; i++) {
+    setPinState(&pwmOutput[i].pin, 0);
+    configureOutput(&pwmOutput[i].pin);
+    pwmDisable(&pwmOutput[i]);
+    pwmOutput[i].active = false;
+  }
+
+  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
+
+  consolePrintLn_P(CS_STRING("Done."));
 }
 
 
