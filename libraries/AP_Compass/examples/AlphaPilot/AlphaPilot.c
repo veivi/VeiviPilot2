@@ -290,13 +290,13 @@ void sensorTaskSync()
   // Attitude
 
 #ifndef TASK_GYRO_HZ
-  stap_gyroUpdate();
+  gyroTask();
 #endif
 #ifndef TASK_ATTI_HZ
-  stap_attiUpdate();
+  attiTask();
 #endif
 #ifndef TASK_ACC_HZ
-  stap_accUpdate();
+  accTask();
 #endif
 
   stap_Vector3f_t acc, atti, rate;
