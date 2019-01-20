@@ -37,6 +37,6 @@ struct Task {
 
 #define HZ_TO_PERIOD(f) ((uint32_t) (1.0e6f/(f)))
 
-extern struct Task alphaPilotTasks[];
+extern struct Task alphaPilotTasks[], *currentTask;
 
 #endif

@@ -42,6 +42,10 @@ void alphaTask()
 
 void gyroTask()
 {
+#ifdef STAP_PERIOD_GYRO
+  currentTask->period = STAP_PERIOD_GYRO;  // Might not be static
+#endif
+  
   if(!vpStatus.simulatorLink)
     stap_gyroUpdate();
 }
@@ -289,13 +293,13 @@ void sensorTaskSync()
   
   // Attitude
 
-#ifndef TASK_GYRO_HZ
+#ifndef STAP_PERIOD_GYRO
   gyroTask();
 #endif
-#ifndef TASK_ATTI_HZ
+#ifndef STAP_PERIOD_ATTI
   attiTask();
 #endif
-#ifndef TASK_ACC_HZ
+#ifndef STAP_PERIOD_ACC
   accTask();
 #endif
 
@@ -2088,14 +2092,14 @@ void configTaskGroup()
 }
 
 struct Task alphaPilotTasks[] = {
-#ifdef TASK_GYRO_HZ
-  { gyroTask, HZ_TO_PERIOD(TASK_GYRO_HZ), true, 0 },
+#ifdef STAP_PERIOD_GYRO
+  { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },
 #endif
-#ifdef TASK_ATTI_HZ
-  { attiTask, HZ_TO_PERIOD(TASK_ATTI_HZ), true, 0 },
+#ifdef STAP_PERIOD_ATTI
+  { attiTask, STAP_PERIOD_ATTI, true, 0 },
 #endif
-#ifdef TASK_ACC_HZ
-  { accTask, HZ_TO_PERIOD(TASK_ACC_HZ), true, 0 },
+#ifdef STAP_PERIOD_ACC
+  { accTask, STAP_PERIOD_ACC, true, 0 },
 #endif
   { alphaTask, HZ_TO_PERIOD(ALPHA_HZ), true, 0 },
   { airspeedTask, HZ_TO_PERIOD(AIRSPEED_HZ), true, 0 },

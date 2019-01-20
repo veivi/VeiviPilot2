@@ -34,7 +34,7 @@ void stap_reboot(bool bootloader)
 
 uint8_t stap_I2cWait(uint8_t d)
 {
-#ifdef STM32F4
+#ifndef STM32F3
   return 1;
 #else
   bool status = i2cWait(I2C_DEVICE, d);
@@ -46,7 +46,7 @@ uint8_t stap_I2cWait(uint8_t d)
 
 uint16_t stap_i2cErrorCount(void)
 {
-#ifdef STM32F4
+#ifndef STM32F3
   return 0;
 #else
   return i2cGetErrorCounterReset();
@@ -55,7 +55,7 @@ uint16_t stap_i2cErrorCount(void)
 
 uint16_t stap_i2cErrorCode(void)
 {
-#ifdef STM32F4
+#ifndef STM32F3
   return 0;
 #else
   return i2cGetErrorCodeReset();
@@ -75,7 +75,7 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
     total += b[i].size;
   }
 
-#ifdef STM32F4
+#ifndef STM32F3
   if(as == 0)
     return !i2cWriteBuffer(I2C_DEVICE, d, 0xFF, total, buffer);
   else if(as == 1)
@@ -91,7 +91,7 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
 
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-#ifdef STM32F4
+#ifndef STM32F3
   if(as == 0)
     return !i2cRead(I2C_DEVICE, d, 0xFF, bs, b);
   else if(as == 1)
@@ -268,25 +268,7 @@ uint32_t stap_memoryFree(void)
 
 void stap_servoOutput(int i, float fvalue)
 {
-  /*
-  struct PWMOutput *output = NULL;
-
-  if(i >= 0 && i < MAX_SERVO)
-    output = &pwmOutput[i];
-    
-  if(!output || !output->timer)
-    return;
-
-  uint16_t value = NEUTRAL + RANGE*fvalue;
-
-  *(output->timer->OCR[output->pwmCh]) = constrain_period(value) << 1;
-
-  if(!output->active) {
-    configureOutput(&output->pin);
-    pwmEnable(output);
-    output->active = true;
-  }
-  */
+  pwmWriteServo(i, 1500 + 500*fvalue);
 }
 
 void stap_rxInputPoll(void)

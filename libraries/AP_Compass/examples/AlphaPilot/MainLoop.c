@@ -77,6 +77,8 @@ void datagramSerialFlush()
 // Scheduler
 //
 
+struct Task *currentTask;
+
 static bool scheduler()
 {
   struct Task *task = alphaPilotTasks;
@@ -98,6 +100,7 @@ static bool scheduler()
       //      consoleNote("Invoking task ");
       // consolePrintLnUL(task->code);
 
+      currentTask = task;
       task->code();
       status = true; // We had something to do
     }
@@ -107,6 +110,7 @@ static bool scheduler()
 
   //  consoleNote("SX ");
   
+  currentTask = NULL;
   return status;
 }
 

@@ -428,7 +428,7 @@ void stap_rxInputPoll(void)
 
 extern "C" void stap_initialize(void)
 {
-  consolePrint_P(CS_STRING("I2C... "));
+  consoleNote_P(CS_STRING("Initializing I2C... "));
   consoleFlush();
 
   I2c.begin();

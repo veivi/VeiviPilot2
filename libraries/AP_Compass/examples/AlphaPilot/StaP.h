@@ -6,9 +6,13 @@
 #include "BaseI2C.h"
 
 #ifndef AVR
-#define TASK_GYRO_HZ    8000
-#define TASK_ATTI_HZ    1000
-#define TASK_ACC_HZ     1000
+#include "platform.h"
+#include "sensors/gyro.h"
+
+#define STAP_PERIOD_GYRO         gyro.targetLooptime
+#define STAP_PERIOD_GYRO_STATIC  HZ_TO_PERIOD(100)
+#define STAP_PERIOD_ATTI         HZ_TO_PERIOD(100)
+#define STAP_PERIOD_ACC          HZ_TO_PERIOD(1000)
 #endif
 
 //
