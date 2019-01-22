@@ -24,7 +24,7 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
     
     consoleNote_P(CS_STRING("I2C("));
     consolePrint(target->name);
-    consolePrintLn_P(CS_STRING(") FAIL"));
+    consolePrintLn_P(CS_STRING(") ERROR"));
 
     if(target->failed)
       target->backoff += target->backoff/BACKOFF_FRACTION;
