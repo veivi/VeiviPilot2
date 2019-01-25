@@ -138,7 +138,7 @@ bool stap_sensorRead(stap_Vector3f_t *a, stap_Vector3f_t *atti, stap_Vector3f_t 
   
   rot->x = gyroRateDps(FD_ROLL)/RADIAN/10.0f;
   rot->y = -gyroRateDps(FD_PITCH)/RADIAN/10.0f;
-  rot->z = gyroRateDps(FD_YAW)/RADIAN/10.0f;
+  rot->z = -gyroRateDps(FD_YAW)/RADIAN/10.0f;
 
   // Attitude
 
