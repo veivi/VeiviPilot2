@@ -159,6 +159,9 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
     return false;
 }
 
+#define I2C_TIMEOUT_SYNC    0.01e6
+#define I2C_TIMEOUT_STOP    0.1e3
+
 bool i2cSync(I2CDevice device)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
@@ -176,13 +179,45 @@ bool i2cSync(I2CDevice device)
     
     if(state->busy) {
       while (state->busy)
-	if(micros() - start > 0.1e6)
+	if(micros() - start > I2C_TIMEOUT_SYNC)
 	  return i2cHandleHardwareFailure(device);
 
       return !state->error;
     }
     
     return true;
+}
+
+static bool i2cStart(I2CDevice device)
+{
+  if (device == I2CINVALID || device > I2CDEV_COUNT) {
+    return false;
+  }
+
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+
+  if (!I2Cx) {
+    return false;
+  }
+
+  i2cState_t *state = &i2cDevice[device].state;
+  if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
+    if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
+      timeUs_t start = micros();
+	  
+      while (I2Cx->CR1 & I2C_CR1_STOP) {
+	// wait for any stop to finish sending
+	
+	if(micros() - start > I2C_TIMEOUT_STOP)
+	  return i2cHandleHardwareFailure(device);
+      }
+	  
+      I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
+    }
+    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
+  }
+
+  return true;
 }
 
 #define MAX_BUFFER 0x100
@@ -202,7 +237,6 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     }
 
     i2cState_t *state = &i2cDevice[device].state;
-    uint32_t timeout = 100*I2C_DEFAULT_TIMEOUT;
 
     if(!i2cSync(device))
       return false;
@@ -222,17 +256,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     state->busy = 1;
     state->error = false;
 
-    if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
-        if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
-            while (I2Cx->CR1 & I2C_CR1_STOP && --timeout > 0) {; }     // wait for any stop to finish sending
-            if (timeout == 0)
-                return i2cHandleHardwareFailure(device);
-            I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
-        }
-        I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
-    }
-    
-    return true;
+    return i2cStart(device);
 }
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -268,16 +292,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     state->busy = 1;
     state->error = false;
 
-    if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
-        if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
-            while (I2Cx->CR1 & I2C_CR1_STOP && --timeout > 0) {; }     // wait for any stop to finish sending
-            if (timeout == 0)
-                return i2cHandleHardwareFailure(device);
-            I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
-        }
-        I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
-    }
-
+    if(!i2cStart(device))
+      return false;
+    
     return i2cSync(device);
 }
 
