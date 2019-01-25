@@ -65,11 +65,11 @@ uint16_t stap_i2cErrorCode(void)
 uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
 {
   uint8_t buffer[MAX_BUFFER];
-  uint8_t total = 0;
+  uint16_t total = 0;
 
   for(int i = 0; i < c; i++) {
     if(total + b[i].size > MAX_BUFFER)
-      return 1;
+      break;
     
     memcpy(&buffer[total], b[i].data, b[i].size);
     total += b[i].size;

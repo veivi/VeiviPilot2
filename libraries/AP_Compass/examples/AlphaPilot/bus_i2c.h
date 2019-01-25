@@ -64,6 +64,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);
 bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t *addr, uint8_t len, uint8_t* buf);
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
 bool i2cWait(I2CDevice device, uint8_t target_);
+bool i2cDrain(I2CDevice device);
 
 uint16_t i2cGetErrorCounter(void);
 uint16_t i2cGetErrorCounterReset(void);
