@@ -159,6 +159,36 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
     return false;
 }
 
+bool i2cSync(I2CDevice device)
+{
+    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+        return false;
+    }
+
+    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+
+    if (!I2Cx) {
+        return false;
+    }
+
+    i2cState_t *state = &i2cDevice[device].state;
+    timeUs_t start = micros();
+    
+    if(state->busy) {
+      while (state->busy)
+	if(micros() - start > 0.1e6)
+	  return i2cHandleHardwareFailure(device);
+
+      return !state->error;
+    }
+    
+    return true;
+}
+
+#define MAX_BUFFER 0x100
+
+static uint8_t buffer[MAX_BUFFER];
+
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
@@ -174,11 +204,19 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     i2cState_t *state = &i2cDevice[device].state;
     uint32_t timeout = 100*I2C_DEFAULT_TIMEOUT;
 
+    if(!i2cSync(device))
+      return false;
+
+    if(len_ > MAX_BUFFER)
+      len_ = MAX_BUFFER;
+    
+    memcpy(buffer, data, len_);
+    
     state->addr = addr_ << 1;
     state->reg = reg_;
     state->writing = 1;
     state->reading = 0;
-    state->write_p = data;
+    state->write_p = buffer;
     state->read_p = data;
     state->bytes = len_;
     state->busy = 1;
@@ -193,13 +231,8 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
         }
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
     }
-
-    timeout = 100*I2C_DEFAULT_TIMEOUT;
-    while (state->busy && --timeout > 0) {; }
-    if (timeout == 0)
-        return i2cHandleHardwareFailure(device);
-
-    return !(state->error);
+    
+    return true;
 }
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -219,6 +252,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         return false;
     }
 
+    if(!i2cSync(device))
+      return false;
+    
     i2cState_t *state = &i2cDevice[device].state;
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
@@ -242,12 +278,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, ENABLE);            // allow the interrupts to fire off again
     }
 
-    timeout = I2C_DEFAULT_TIMEOUT;
-    while (state->busy && --timeout > 0) {; }
-    if (timeout == 0)
-        return i2cHandleHardwareFailure(device);
-
-    return !(state->error);
+    return i2cSync(device);
 }
 
 static void i2c_er_handler(I2CDevice device) {
