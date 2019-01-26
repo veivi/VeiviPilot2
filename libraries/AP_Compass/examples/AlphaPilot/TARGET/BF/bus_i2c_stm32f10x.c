@@ -190,17 +190,9 @@ bool i2cSync(I2CDevice device)
 
 static bool i2cStart(I2CDevice device)
 {
-  if (device == I2CINVALID || device > I2CDEV_COUNT) {
-    return false;
-  }
-
   I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-
-  if (!I2Cx) {
-    return false;
-  }
-
   i2cState_t *state = &i2cDevice[device].state;
+  
   if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
     if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
       timeUs_t start = micros();
@@ -220,43 +212,36 @@ static bool i2cStart(I2CDevice device)
   return true;
 }
 
-#define MAX_BUFFER 0x100
-
-static uint8_t buffer[MAX_BUFFER];
-
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+bool i2cWriteInitiate(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return false;
-    }
-
-    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-
-    if (!I2Cx) {
-        return false;
-    }
-
-    i2cState_t *state = &i2cDevice[device].state;
-
     if(!i2cSync(device))
       return false;
 
-    if(len_ > MAX_BUFFER)
-      len_ = MAX_BUFFER;
+    i2cState_t *state = &i2cDevice[device].state;
+
+    if(len_ > I2C_MAX_BUFFER)
+      len_ = I2C_MAX_BUFFER;
     
-    memcpy(buffer, data, len_);
+    memcpy(state->buffer, data, len_);
     
     state->addr = addr_ << 1;
     state->reg = reg_;
     state->writing = 1;
     state->reading = 0;
-    state->write_p = buffer;
     state->read_p = data;
     state->bytes = len_;
-    state->busy = 1;
+    state->busy = true;
     state->error = false;
 
     return i2cStart(device);
+}
+
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
+{
+  if(!i2cWriteInitiate(device, addr_, reg_, len_, data))
+    return false;
+  
+  return i2cSync(device);
 }
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -264,38 +249,31 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return i2cWriteBuffer(device, addr_, reg_, 1, &data);
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cReadInitiate(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return false;
-    }
-
-    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-
-    if (!I2Cx) {
-        return false;
-    }
-
     if(!i2cSync(device))
       return false;
     
     i2cState_t *state = &i2cDevice[device].state;
-    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     state->addr = addr_ << 1;
     state->reg = reg_;
     state->writing = 0;
     state->reading = 1;
     state->read_p = buf;
-    state->write_p = buf;
     state->bytes = len;
-    state->busy = 1;
+    state->busy = true;
     state->error = false;
 
-    if(!i2cStart(device))
-      return false;
-    
-    return i2cSync(device);
+    return i2cStart(device);
+}
+
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+{
+  if(!i2cReadInitiate(device, addr_, reg_, len, buf))
+    return false;
+  
+  return i2cSync(device);
 }
 
 static void i2c_er_handler(I2CDevice device) {
@@ -328,7 +306,7 @@ static void i2c_er_handler(I2CDevice device) {
         }
     }
     I2Cx->SR1 &= ~(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR);     // reset all the error bits to clear the interrupt
-    state->busy = 0;
+    state->busy = false;
 }
 
 void i2c_ev_handler(I2CDevice device) {
@@ -427,7 +405,7 @@ void i2c_ev_handler(I2CDevice device) {
     }
     else if (SReg_1 & I2C_SR1_TXE) {                                  // Byte transmitted EV8 / EV8_1
         if (index != -1) {                                              // we dont have a subaddress to send
-            I2Cx->DR = state->write_p[index++];
+            I2Cx->DR = state->buffer[index++];
             if (state->bytes == index)                                         // we have sent all the data
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                // disable TXE to allow the buffer to flush
         }
@@ -442,7 +420,7 @@ void i2c_ev_handler(I2CDevice device) {
         subaddress_sent = 0;                                            // reset this here
         if (final_stop)                                                 // If there is a final stop and no more jobs, bus is inactive, disable interrupts to prevent BTF
             I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);       // Disable EVT and ERR interrupts while bus inactive
-        state->busy = 0;
+        state->busy = false;
     }
 }
 

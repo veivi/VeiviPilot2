@@ -72,9 +72,12 @@ typedef struct i2cState_s {
   uint8_t writing;
   uint8_t reading;
   uint8_t* read_p;
+<<<<<<< HEAD
   uint8_t* write_p;
   const uint8_t *addrPtr;
   uint8_t addrSize;
+=======
+>>>>>>> origin/master
   uint8_t buffer[I2C_MAX_BUFFER];
 } i2cState_t;
 #endif
