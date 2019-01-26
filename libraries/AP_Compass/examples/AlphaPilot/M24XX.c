@@ -55,7 +55,11 @@ bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size)
     
   m24xxWait(addr);
 
-  return basei2cInvoke(&target, basei2cReadWithWord((uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
+  STAP_TRACEON;
+  bool status = basei2cInvoke(&target, basei2cReadWithWord((uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
+  STAP_TRACEOFF;
+
+  return status;
 }
 
 void m24xxFlush(void)

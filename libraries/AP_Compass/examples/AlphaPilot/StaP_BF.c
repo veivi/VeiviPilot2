@@ -20,6 +20,38 @@
 uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
 
+#define TRACE_BUFSIZE 0x200
+char traceBuf[TRACE_BUFSIZE];
+
+volatile int traceLen, traceOverflow;
+volatile bool tracing;
+
+void stap_traceEnable(bool v)
+{
+  tracing = v;
+}
+
+bool stap_trace(const char *s)
+{
+  if(!tracing)
+    return true;
+  
+  int l = strlen(s);
+  if(traceLen + l < TRACE_BUFSIZE) {
+    strcpy(&traceBuf[traceLen], s);
+    traceLen += l;
+    return true;
+  }
+  
+  traceOverflow++;
+  return false;
+}
+
+bool stap_traceInt(int v)
+{
+  return false;
+}
+
 void stap_initialize(void)
 {
 }
@@ -180,6 +212,15 @@ extern serialPort_t *stap_serialPort;
 
 int stap_hostReceiveState(void)
 {
+  if(traceLen > 0) {
+    consoleNote_P(CS_STRING("TRACE : "));
+    consolePrintLn(traceBuf);
+    if(traceOverflow > 0)
+      consoleNoteLn_P(CS_STRING("TRACE OVERFLOW"));
+    traceLen = 0;
+    traceOverflow = 0;
+  }
+  
   if(serialRxBytesWaiting(stap_serialPort))
     return 1;
   return 0;

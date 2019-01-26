@@ -15,6 +15,15 @@
 #define STAP_PERIOD_ACC          HZ_TO_PERIOD(1000)
 #endif
 
+#define STAP_TRACEON  stap_traceEnable(true)
+#define STAP_TRACEOFF stap_traceEnable(false)
+#define STAP_TRACE(s) stap_trace(s)
+#define STAP_TRACEINT(s) stap_traceInt(s)
+
+void stap_traceEnable(bool);
+bool stap_trace(const char *s);
+bool stap_traceInt(int v);
+
 //
 // System interface
 //

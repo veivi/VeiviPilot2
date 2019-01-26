@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include <AlphaPilot/StaP.h>
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
@@ -153,6 +154,7 @@ void I2C3_EV_IRQHandler(void) {
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
+    STAP_TRACE("FAIL ");
     i2cErrorCount++;
     // reinit peripheral + clock out garbage
     i2cInit(device);
@@ -174,6 +176,8 @@ bool i2cSync(I2CDevice device)
         return false;
     }
 
+    STAP_TRACE("SYNC ");
+    
     i2cState_t *state = &i2cDevice[device].state;
     timeUs_t start = micros();
     
@@ -193,6 +197,8 @@ static bool i2cStart(I2CDevice device)
   I2C_TypeDef *I2Cx = i2cDevice[device].reg;
   i2cState_t *state = &i2cDevice[device].state;
   
+  STAP_TRACE("STA ");
+    
   if (!(I2Cx->CR2 & I2C_IT_EVT)) {                                    // if we are restarting the driver
     if (!(I2Cx->CR1 & I2C_CR1_START)) {                             // ensure sending a start
       timeUs_t start = micros();
@@ -335,6 +341,7 @@ void i2c_ev_handler(I2CDevice device) {
     uint8_t SReg_1 = I2Cx->SR1;                                                 // read the status register here
 
     if (SReg_1 & I2C_SR1_SB) {                                                  // we just sent a start - EV5 in ref manual
+      STAP_TRACE("EV5 ");
         I2Cx->CR1 &= ~I2C_CR1_POS;                                              // reset the POS bit so ACK/NACK applied to the current byte
         I2C_AcknowledgeConfig(I2Cx, ENABLE);                                    // make sure ACK is on
         index = 0;                                                              // reset the index
@@ -351,6 +358,7 @@ void i2c_ev_handler(I2CDevice device) {
         }
     }
     else if (SReg_1 & I2C_SR1_ADDR) {                                         // we just sent the address - EV6 in ref manual
+      STAP_TRACE("EV6 ");
         // Read SR1,2 to clear ADDR
         __DMB();                                                                // memory fence to control hardware
         if (state->bytes == 1 && state->reading && subaddress_sent) {             // we are receiving 1 byte - EV6_3
@@ -378,6 +386,7 @@ void i2c_ev_handler(I2CDevice device) {
         final_stop = 1;
         if (state->reading && subaddress_sent) {                         // EV7_2, EV7_3
             if (state->bytes > 2) {                                      // EV7_2
+	      STAP_TRACE("EV7_2 ");
                 I2C_AcknowledgeConfig(I2Cx, DISABLE);                   // turn off ACK
                 state->read_p[index++] = (uint8_t)I2Cx->DR;              // read data N-2
                 I2C_GenerateSTOP(I2Cx, ENABLE);                         // program the Stop
@@ -386,6 +395,7 @@ void i2c_ev_handler(I2CDevice device) {
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);                 // enable TXE to allow the final EV7
             }
             else {                                                    // EV7_3
+	      STAP_TRACE("EV7_3 ");
                 if (final_stop)
                     I2C_GenerateSTOP(I2Cx, ENABLE);                     // program the Stop
                 else
@@ -396,12 +406,13 @@ void i2c_ev_handler(I2CDevice device) {
             }
         }
         else {                                                        // EV8_2, which may be due to a subaddress sent or a write completion
+	  STAP_TRACE("EV8_2 ");
             if (subaddress_sent || (state->writing)) {
+                index++;                                                // to show that the job is complete
                 if (final_stop)
                     I2C_GenerateSTOP(I2Cx, ENABLE);                     // program the Stop
                 else
                     I2C_GenerateSTART(I2Cx, ENABLE);                    // program a rep start
-                index++;                                                // to show that the job is complete
             }
             else {                                                    // We need to send a subaddress
                 I2C_GenerateSTART(I2Cx, ENABLE);                        // program the repeated Start
@@ -409,9 +420,11 @@ void i2c_ev_handler(I2CDevice device) {
             }
         }
         // we must wait for the start to clear, otherwise we get constant BTF
-        while (I2Cx->CR1 & I2C_CR1_START) {; }
+	timeUs_t start = micros();
+        while (I2Cx->CR1 & I2C_CR1_START && micros() - start < I2C_TIMEOUT_STOP);
     }
     else if (SReg_1 & I2C_SR1_RXNE) {                                 // Byte received - EV7
+      STAP_TRACE("EV7 ");
         state->read_p[index++] = (uint8_t)I2Cx->DR;
         if (state->bytes == (index + 3))
             I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                    // disable TXE to allow the buffer to flush so we can get an EV7_2
@@ -419,6 +432,7 @@ void i2c_ev_handler(I2CDevice device) {
             index++;                                                    // to show job is complete
     }
     else if (SReg_1 & I2C_SR1_TXE) {                                  // Byte transmitted EV8 / EV8_1
+      STAP_TRACE("EV8 ");
         if (index > -1) {                                              // we dont have a subaddress to send
             I2Cx->DR = state->buffer[index++];
             if (state->bytes == index)                                         // we have sent all the data
