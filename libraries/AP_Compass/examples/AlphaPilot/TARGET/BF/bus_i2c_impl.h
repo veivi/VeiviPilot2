@@ -67,11 +67,11 @@ typedef volatile struct i2cState_s {
   bool error;
   bool busy;
   uint8_t addr;
-  uint8_t reg;
   uint8_t bytes;
   uint8_t writing;
   uint8_t reading;
-  uint8_t* write_p;
+  const uint8_t *addrPtr;
+  uint8_t addrSize;
   uint8_t buffer[I2C_MAX_BUFFER];
   uint8_t* read_p;
 } i2cState_t;

@@ -76,13 +76,17 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
   }
 
 #ifndef STM32F3
+  return !i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+  /*
   if(as == 0)
-    return !i2cWriteBuffer(I2C_DEVICE, d, 0xFF, total, buffer);
+    return !i2cWriteGeneric(I2C_DEVICE, d, 0, NULL, total, buffer);
   else if(as == 1)
     return !i2cWriteBuffer(I2C_DEVICE, d, a[0], total, buffer);
   else
     return 1;
+  */
 #else
+
   bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 
   return status ? 0 : i2cGetErrorCode();
@@ -92,12 +96,14 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
 #ifndef STM32F3
+  /*
   if(as == 0)
     return !i2cRead(I2C_DEVICE, d, 0xFF, bs, b);
   else if(as == 1)
     return !i2cRead(I2C_DEVICE, d, a[0], bs, b);
   else
-    return 1;
+  return 1;*/
+  return !i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
 #else
   bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
   

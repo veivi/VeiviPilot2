@@ -169,8 +169,11 @@ void storeData(const uint8_t *data, int size)
 
 bool readNVState(void)
 {
-  if(!m24xxRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState)))
+  if(!m24xxRead(stateOffset, (uint8_t*) &nvState, sizeof(nvState))) {
+    consoleNote_P(CS_STRING("NV State read FAILED, using defaults."));
+    defaultState();
     return false;
+  }
   
   consoleNote_P(CS_STRING("  State record CRC = "));
   consolePrintUI(nvState.crc);
