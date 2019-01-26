@@ -61,9 +61,9 @@ typedef struct i2cHardware_s {
 extern const i2cHardware_t i2cHardware[];
 
 #if defined(STM32F1) || defined(STM32F4)
-#define I2C_MAX_BUFFER 0x100
+#define I2C_MAX_BUFFER  0xff
 
-typedef struct i2cState_s {
+typedef volatile struct i2cState_s {
   bool error;
   bool busy;
   uint8_t addr;
@@ -71,14 +71,9 @@ typedef struct i2cState_s {
   uint8_t bytes;
   uint8_t writing;
   uint8_t reading;
-  uint8_t* read_p;
-<<<<<<< HEAD
   uint8_t* write_p;
-  const uint8_t *addrPtr;
-  uint8_t addrSize;
-=======
->>>>>>> origin/master
   uint8_t buffer[I2C_MAX_BUFFER];
+  uint8_t* read_p;
 } i2cState_t;
 #endif
 
@@ -96,7 +91,7 @@ typedef struct i2cDevice_s {
 
     // MCU/Driver dependent member follows
 #if defined(STM32F1) || defined(STM32F4)
-    i2cState_t state;
+  i2cState_t state;
 #endif
 #ifdef USE_HAL_DRIVER
     I2C_HandleTypeDef handle;
