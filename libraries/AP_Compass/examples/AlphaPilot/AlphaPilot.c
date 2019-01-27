@@ -35,17 +35,10 @@ void alphaTask()
   int16_t raw = 0;
   static uint32_t lastMicros;
 
-  if(micros() - lastMicros > 1e6) {
-    lastMicros = micros();
-    STAP_TRACEON;
-  }
-  
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     samplerInput(&alphaSampler, raw);
     stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
-
-  STAP_TRACEOFF;
 }
 
 void gyroTask()

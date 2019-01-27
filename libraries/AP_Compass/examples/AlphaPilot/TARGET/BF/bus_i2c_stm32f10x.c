@@ -154,11 +154,11 @@ void I2C3_EV_IRQHandler(void) {
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
-    STAP_TRACE("FAIL ");
-    i2cErrorCount++;
-    // reinit peripheral + clock out garbage
-    i2cInit(device);
-    return false;
+  STAP_TRACE("FAIL ");
+  i2cErrorCount++;
+  // reinit peripheral + clock out garbage
+  i2cInit(device);
+  return false;
 }
 
 #define I2C_TIMEOUT_SYNC    0.01e6
@@ -176,12 +176,12 @@ bool i2cSync(I2CDevice device)
         return false;
     }
 
-    STAP_TRACE("SYNC ");
-    
     i2cState_t *state = &i2cDevice[device].state;
     timeUs_t start = micros();
     
     if(state->busy) {
+      STAP_TRACE("SYNC ");
+    
       while (state->busy)
 	if(micros() - start > I2C_TIMEOUT_SYNC)
 	  return i2cHandleHardwareFailure(device);
@@ -408,10 +408,10 @@ void i2c_ev_handler(I2CDevice device) {
         else {                                                        // EV8_2, which may be due to a subaddress sent or a write completion
 	  STAP_TRACE("EV8_2 ");
             if (subaddress_sent || (state->writing)) {
-                index++;                                                // to show that the job is complete
-                if (final_stop)
+                if (final_stop) {
+		  index++;                                                // to show that the job is complete
                     I2C_GenerateSTOP(I2Cx, ENABLE);                     // program the Stop
-                else
+                } else
                     I2C_GenerateSTART(I2Cx, ENABLE);                    // program a rep start
             }
             else {                                                    // We need to send a subaddress

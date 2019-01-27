@@ -4,7 +4,7 @@
 #include "StaP.h"
 #include "BaseI2C.h"
 
-#define CACHE_PAGE (1L<<7)
+#define CACHE_PAGE (1L<<6)
 #define PAGE_MASK ~(CACHE_PAGE-1)
 #define M24XX_I2C_ADDR 80
 #define CACHE_TAG(a) ((a) & PAGE_MASK)

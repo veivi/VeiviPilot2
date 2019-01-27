@@ -84,7 +84,8 @@ void configureOutput(const struct PinDescriptor *pin);
 
 #define STAP_FORBID if(!nestCount++) cli()
 #define STAP_PERMIT if(!--nestCount) sei()
-extern uint8_t nestCount;
+
+extern volatile uint8_t nestCount;
 
 extern const struct PinDescriptor led;
 
@@ -93,14 +94,16 @@ extern const struct PinDescriptor led;
 #else
 
 #ifdef ALPHAPILOT
+#include "drivers/system.h"
 #include "drivers/light_led.h"
 
-#define STAP_FORBID // if(!nestCount++) __disable_irq()
-#define STAP_PERMIT // if(!--nestCount) __enable_irq()
+#define STAP_FORBID      __disable_irq(); nestCount++
+#define STAP_PERMIT      if(!--nestCount) __enable_irq()
 #define STAP_LED_ON      LED1_ON
 #define STAP_LED_OFF     LED1_OFF
 
-extern uint8_t nestCount;
+extern volatile uint8_t nestCount;
+
 #endif
 
 #endif

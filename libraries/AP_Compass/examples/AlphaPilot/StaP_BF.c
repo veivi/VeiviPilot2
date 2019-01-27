@@ -17,12 +17,12 @@
 #include "drivers/rx/rx_pwm.h"
 #include "fc/runtime_config.h"
 
-uint8_t nestCount = 0;
+volatile uint8_t nestCount = 0;
 static uint16_t sensorHash = 0xFFFF;
 
-#define TRACE_BUFSIZE 0x200
-char traceBuf[TRACE_BUFSIZE];
+#define TRACE_BUFSIZE 0x300
 
+volatile char traceBuf[TRACE_BUFSIZE];
 volatile int traceLen, traceOverflow;
 volatile bool tracing;
 
@@ -37,14 +37,20 @@ bool stap_trace(const char *s)
     return true;
   
   int l = strlen(s);
-  if(traceLen + l < TRACE_BUFSIZE) {
-    strcpy(&traceBuf[traceLen], s);
-    traceLen += l;
-    return true;
-  }
+  bool success = false;
   
-  traceOverflow++;
-  return false;
+  STAP_FORBID;
+  
+  if(traceLen + l < TRACE_BUFSIZE) {
+    memcpy(&traceBuf[traceLen], s, l+1);
+    traceLen += l;
+    success = true;
+  } else
+    traceOverflow++;
+
+  STAP_PERMIT;
+  
+  return success;
 }
 
 bool stap_traceInt(int v)
@@ -213,12 +219,22 @@ extern serialPort_t *stap_serialPort;
 int stap_hostReceiveState(void)
 {
   if(traceLen > 0) {
-    consoleNote_P(CS_STRING("TRACE : "));
-    consolePrintLn(traceBuf);
-    if(traceOverflow > 0)
-      consoleNoteLn_P(CS_STRING("TRACE OVERFLOW"));
+    char buffer[TRACE_BUFSIZE];
+    bool overflow = traceOverflow > 0;
+    
+    STAP_FORBID;
+    
+    memcpy(buffer, traceBuf, traceLen+1);
     traceLen = 0;
     traceOverflow = 0;
+    
+    STAP_PERMIT;
+    
+    consoleNote_P(CS_STRING("TRACE : "));
+    consolePrintLn(buffer);
+    
+    if(overflow > 0)
+      consoleNoteLn_P(CS_STRING("TRACE OVERFLOW"));
   }
   
   if(serialRxBytesWaiting(stap_serialPort))
