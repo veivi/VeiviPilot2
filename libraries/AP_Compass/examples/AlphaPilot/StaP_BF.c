@@ -72,12 +72,10 @@ void stap_reboot(bool bootloader)
 
 uint8_t stap_I2cWait(uint8_t d)
 {
-#ifndef STM32F3
-  return 1;
-#else
+  //  STAP_TRACEON;
   bool status = i2cWait(I2C_DEVICE, d);
+  //  STAP_TRACEOFF;
   return status ? 0 : i2cGetErrorCode();
-#endif
 }
 
 #define MAX_BUFFER 0x100
@@ -113,40 +111,19 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
     total += b[i].size;
   }
 
-#ifndef STM32F3
-  return !i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
-  /*
-  if(as == 0)
-    return !i2cWriteGeneric(I2C_DEVICE, d, 0, NULL, total, buffer);
-  else if(as == 1)
-    return !i2cWriteBuffer(I2C_DEVICE, d, a[0], total, buffer);
-  else
-    return 1;
-  */
-#else
-
+#ifdef STM32F3
   bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+#else
+  bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+#endif
 
   return status ? 0 : i2cGetErrorCode();
-#endif
 }
 
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-#ifndef STM32F3
-  /*
-  if(as == 0)
-    return !i2cRead(I2C_DEVICE, d, 0xFF, bs, b);
-  else if(as == 1)
-    return !i2cRead(I2C_DEVICE, d, a[0], bs, b);
-  else
-  return 1;*/
-  return !i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
-#else
   bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
-  
   return status ? 0 : i2cGetErrorCode();
-#endif
 }
 
 #include "sensors/acceleration.h"

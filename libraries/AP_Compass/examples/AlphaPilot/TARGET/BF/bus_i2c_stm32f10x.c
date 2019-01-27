@@ -124,7 +124,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
-static volatile uint16_t i2cErrorCount = 0;
+static volatile uint16_t i2cErrorCount = 0, i2cErrorCode = 0;
 
 void I2C1_ER_IRQHandler(void) {
     i2c_er_handler(I2CDEV_1);
@@ -155,6 +155,7 @@ void I2C3_EV_IRQHandler(void) {
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
   STAP_TRACE("FAIL ");
+  i2cErrorCode = 0x10;
   i2cErrorCount++;
   // reinit peripheral + clock out garbage
   i2cInit(device);
@@ -163,6 +164,7 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 
 #define I2C_TIMEOUT_SYNC    0.01e6
 #define I2C_TIMEOUT_STOP    0.1e3
+#define I2C_TIMEOUT_WAIT    8e3
 
 bool i2cSync(I2CDevice device)
 {
@@ -186,6 +188,9 @@ bool i2cSync(I2CDevice device)
 	if(micros() - start > I2C_TIMEOUT_SYNC)
 	  return i2cHandleHardwareFailure(device);
 
+      if(state->error)
+	i2cErrorCode = 0x20;
+      
       return !state->error;
     }
     
@@ -218,7 +223,7 @@ static bool i2cStart(I2CDevice device)
   return true;
 }
 
-bool i2cWriteGenericInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len_, uint8_t *data)
+bool i2cWriteInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len_, uint8_t *data)
 {
     if(!i2cSync(device))
       return false;
@@ -245,7 +250,7 @@ bool i2cWriteGenericInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, 
 
 bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len_, uint8_t *data)
 {
-  if(!i2cWriteGenericInitiate(device, addr_, addrSize, addrPtr, len_, data))
+  if(!i2cWriteInitiate(device, addr_, addrSize, addrPtr, len_, data))
     return false;
   
   return i2cSync(device);
@@ -253,18 +258,15 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t 
 
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-  if(!i2cWriteGenericInitiate(device, addr_, sizeof(reg_), &reg_, len_, data))
-    return false;
-  
-  return i2cSync(device);
+  return i2cWriteGeneric(device, addr_, sizeof(reg_), &reg_, len_, data);
 }
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
-    return i2cWriteBuffer(device, addr_, reg_, 1, &data);
+  return i2cWriteBuffer(device, addr_, reg_, sizeof(data), &data);
 }
 
-bool i2cReadGenericInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len, uint8_t* buf)
+bool i2cReadInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len, uint8_t* buf)
 {
     if(!i2cSync(device))
       return false;
@@ -286,7 +288,7 @@ bool i2cReadGenericInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, u
 
 bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len, uint8_t* buf)
 {
-  if(!i2cReadGenericInitiate(device, addr_, addrSize, addrPtr, len, buf))
+  if(!i2cReadInitiate(device, addr_, addrSize, addrPtr, len, buf))
     return false;
   
   return i2cSync(device);
@@ -295,6 +297,37 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
   return i2cReadGeneric(device, addr_, sizeof(reg_), &reg_, len, buf);
+}
+
+bool i2cWait(I2CDevice device, uint8_t addr_)
+{
+    if(!i2cSync(device))
+      return false;
+
+    i2cState_t *state = &i2cDevice[device].state;
+
+    timeUs_t start = micros();
+    
+    while(micros() - start < I2C_TIMEOUT_WAIT) {
+      state->addr = addr_ << 1;
+      state->addrSize = 0;
+      state->addrPtr = NULL;
+      state->writing = 1;
+      state->reading = 0;
+      state->read_p = NULL;
+      state->bytes = 0;
+      state->busy = true;
+      state->error = false;
+
+      if(!i2cStart(device))
+	return false;
+
+      if(i2cSync(device))
+	return true;
+    }
+
+    i2cErrorCode = 0x30;
+    return false;
 }
 
 static void i2c_er_handler(I2CDevice device) {
@@ -533,6 +566,11 @@ void i2cInit(I2CDevice device)
 uint16_t i2cGetErrorCounter(void)
 {
     return i2cErrorCount;
+}
+
+uint16_t i2cGetErrorCode(void)
+{
+  return i2cErrorCode;
 }
 
 static void i2cUnstick(IO_t scl, IO_t sda)
