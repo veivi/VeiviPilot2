@@ -4,6 +4,7 @@
 #include "Console.h"
 #include "Objects.h"
 #include "DSP.h"
+#include "CRC16.h"
 
 const float stabilityElevExp_c = -1.5;
 const float stabilityAileExp1_c = -1.5;
@@ -168,4 +169,14 @@ float coeffOfLiftInverse(float target)
 
   return center;
 }
+
+void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state)
+{
+  for(uint8_t i = 0; i < size; i++) {
+    *state = crc16_update(*state, 0x0);
+    value[i] = (*state) & 0xFF;
+  }
+}
+
+
 

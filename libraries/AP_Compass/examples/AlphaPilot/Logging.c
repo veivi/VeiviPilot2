@@ -43,19 +43,22 @@ uint32_t logAddr(int32_t index)
 static int uncommitted = 0;
 static uint16_t nextStamp;
 
-static void logWrite(int32_t index, const uint16_t *value, int count)
+static bool logWrite(int32_t index, const uint16_t *value, int count)
 {
+  bool status = false;
+  
   if(logSize < 1)
-    return;
+    return false;
 
   if(index+count > logSize) {
     int32_t p = logSize - index;
-    m24xxWrite(logAddr(index), (const uint8_t*) value, p*sizeof(uint16_t));
-    m24xxWrite(logAddr(0), (const uint8_t*) &value[p], (count-p)*sizeof(uint16_t));
+    status = m24xxWrite(logAddr(index), (const uint8_t*) value, p*sizeof(uint16_t))
+      && m24xxWrite(logAddr(0), (const uint8_t*) &value[p], (count-p)*sizeof(uint16_t));
   } else
-    m24xxWrite(logAddr(index), (const uint8_t*) value, count*sizeof(uint16_t));
+    status = m24xxWrite(logAddr(index), (const uint8_t*) value, count*sizeof(uint16_t));
 
   uncommitted = count;
+  return status;
 }
 
 uint16_t logRead(int32_t index)
@@ -84,15 +87,19 @@ static void logCommit(void)
   uncommitted = 0;
 }
 
-static void logEnterGeneric(const uint16_t *value, int count)
+static bool logEnterGeneric(const uint16_t *value, int count)
 {
-  logWrite(logPtr, value, count);
+  bool status = logWrite(logPtr, value, count);
   logCommit();
 
   nextStamp = ENTRY_VALUE(logEndStamp+1);
   uint16_t buffer[] = { ENTRY_TOKEN(t_stamp), nextStamp };
 
-  logWrite(logPtr, buffer, sizeof(buffer) / sizeof(uint16_t));
+  if(!logWrite(logPtr, buffer, sizeof(buffer) / sizeof(uint16_t)))
+    status = false;
+
+  if(!status)
+    logDisable();
 }
 
 static void logEnter(uint16_t value)

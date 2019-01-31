@@ -152,14 +152,33 @@ void I2C3_EV_IRQHandler(void) {
 }
 #endif
 
-static bool i2cHandleHardwareFailure(I2CDevice device)
+static char digit(uint8_t d)
 {
-  STAP_TRACE("FAIL ");
-  i2cErrorCode = 0x10;
+  if(d < 10)
+    return '0' + d;
+  else
+    return 'a' + d - 10;
+}
+
+static bool i2cReportError(I2CDevice device, uint8_t error)
+{
+  STAP_TRACE("FAIL");
+
+  const char num[] = { digit(error>>4), digit(error & 0xf), ' ', '\0' };
+  STAP_TRACE(num);
+  
+  i2cErrorCode = error;
   i2cErrorCount++;
+  
+  return error != 0;
+}
+
+static bool i2cReset(I2CDevice device, uint8_t error)
+{
+  bool status = i2cReportError(device, error);
   // reinit peripheral + clock out garbage
   i2cInit(device);
-  return false;
+  return status;
 }
 
 #define I2C_TIMEOUT_SYNC    0.01e6
@@ -169,13 +188,13 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 bool i2cSync(I2CDevice device)
 {
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return false;
+      return i2cReportError(device, 0x80);
     }
 
     I2C_TypeDef *I2Cx = i2cDevice[device].reg;
 
     if (!I2Cx) {
-        return false;
+      return i2cReportError(device, 0x81);
     }
 
     i2cState_t *state = &i2cDevice[device].state;
@@ -186,11 +205,8 @@ bool i2cSync(I2CDevice device)
     
       while (state->busy)
 	if(micros() - start > I2C_TIMEOUT_SYNC)
-	  return i2cHandleHardwareFailure(device);
+	  return i2cReset(device, 0x10);
 
-      if(state->error)
-	i2cErrorCode = 0x20;
-      
       return !state->error;
     }
     
@@ -212,7 +228,7 @@ static bool i2cStart(I2CDevice device)
 	// wait for any stop to finish sending
 	
 	if(micros() - start > I2C_TIMEOUT_STOP)
-	  return i2cHandleHardwareFailure(device);
+	  return i2cReset(device, 0x20);
       }
 	  
       I2C_GenerateSTART(I2Cx, ENABLE);                            // send the start for the new job
@@ -225,6 +241,8 @@ static bool i2cStart(I2CDevice device)
 
 bool i2cWriteInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len_, uint8_t *data)
 {
+  STAP_TRACE("WR ");
+  
     if(!i2cSync(device))
       return false;
 
@@ -268,6 +286,8 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cReadInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len, uint8_t* buf)
 {
+  STAP_TRACE("RD ");
+  
     if(!i2cSync(device))
       return false;
     
@@ -301,6 +321,8 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 
 bool i2cWait(I2CDevice device, uint8_t addr_)
 {
+  STAP_TRACE("WAIT ");
+  
     if(!i2cSync(device))
       return false;
 
@@ -326,8 +348,7 @@ bool i2cWait(I2CDevice device, uint8_t addr_)
 	return true;
     }
 
-    i2cErrorCode = 0x30;
-    return false;
+    return i2cReportError(device, 0x30);
 }
 
 static void i2c_er_handler(I2CDevice device) {
@@ -339,8 +360,10 @@ static void i2c_er_handler(I2CDevice device) {
     // Read the I2C1 status register
     uint32_t SR1Register = I2Cx->SR1;
 
-    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR)) // an error
-        state->error = true;
+    if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR))  { // an error
+      i2cReportError(device, 0x40);
+      state->error = true;
+    }
 
     // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
     if (SR1Register & (I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF)) {

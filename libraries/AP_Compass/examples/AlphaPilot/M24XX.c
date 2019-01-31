@@ -1,10 +1,12 @@
 #include <string.h>
+#include <stdlib.h>
 #include "M24XX.h"
 #include "Console.h"
 #include "StaP.h"
 #include "BaseI2C.h"
+#include "Math.h"
 
-#define CACHE_PAGE (1L<<6)
+#define CACHE_PAGE (1L<<3)
 #define PAGE_MASK ~(CACHE_PAGE-1)
 #define M24XX_I2C_ADDR 80
 #define CACHE_TAG(a) ((a) & PAGE_MASK)
@@ -24,28 +26,34 @@ bool m24xxIsOnline(void)
   return basei2cIsOnline(&target);
 }
 
-void m24xxWait(uint32_t addr)
+bool m24xxWait(uint32_t addr)
 {
   if(stap_timeMillis() - lastWriteTime > M24XX_LATENCY)
     // We're cool
-    return;
+    return true;
     
   // Write latency not met, wait for acknowledge
 
-  basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+  return basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 }
 
-void m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes) 
+bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes) 
 {
   if(!basei2cIsOnline(&target))
-    return;
+    return false;
     
-  m24xxWait(addr);
-  basei2cInvoke(&target, basei2cWriteWithWord(  (uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
+  if(!m24xxWait(addr))
+    return false;
+  
+  STAP_TRACEON;
+  bool status = basei2cInvoke(&target, basei2cWriteWithWord(  (uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
+  STAP_TRACEOFF;
 
   lastWriteTime = stap_timeMillis();
+
+  return status;
 }
  
 bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size) 
@@ -53,15 +61,21 @@ bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size)
   if(!basei2cIsOnline(&target))
     return false;
     
-  m24xxWait(addr);
+  if(!m24xxWait(addr))
+    return false;
+  
+  STAP_TRACEON;
   bool status = basei2cInvoke(&target, basei2cReadWithWord((uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
+  STAP_TRACEOFF;
   return status;
 }
 
-void m24xxFlush(void)
+bool m24xxFlush(void)
 {
+  bool status = true;
+  
   if(!cacheModified)
-    return;
+    return true;
     
   int i = 0;
   
@@ -77,13 +91,16 @@ void m24xxFlush(void)
         l++;
       }
 
-      m24xxWriteDirect(cacheTag + i, &cacheData[i], l);
+      if(!m24xxWriteDirect(cacheTag + i, &cacheData[i], l))
+	status = false;
         
       i += l;
     }
   } while(i < CACHE_PAGE);
   
   cacheModified = false;
+
+  return status;
 }
 
 static bool cacheHit(uint32_t addr)
@@ -91,25 +108,26 @@ static bool cacheHit(uint32_t addr)
   return CACHE_TAG(addr) == cacheTag;
 }
 
-static void cacheAlloc(uint32_t addr)
+static bool cacheAlloc(uint32_t addr)
 {
-  m24xxFlush();
+  bool status = m24xxFlush();
   cacheTag = CACHE_TAG(addr);
   cacheValid = false;
+  return status;
 }
 
-static void m24xxWritePrimitive(uint32_t addr, const uint8_t *value, int size)
+static bool m24xxWritePrimitive(uint32_t addr, const uint8_t *value, int size)
 {
   int i = 0;
   
-  if(!cacheHit(addr))
-    cacheAlloc(addr);
+  if(!cacheHit(addr) && !cacheAlloc(addr))
+    return false;
 
   addr &= ~PAGE_MASK;
   
   if(addr+size > CACHE_PAGE) {
     consoleNoteLn_P(CS_STRING("m24xxWritePrimitive() crosses line border, panic"));
-    return;
+    return false;
   }
   
   for(i = 0; i < size; i++) {
@@ -120,23 +138,27 @@ static void m24xxWritePrimitive(uint32_t addr, const uint8_t *value, int size)
   cacheValid = false;
   cacheModified = true;
   m24xxBytesWritten += size;
+
+  return true;
 }
 
-void m24xxWrite(uint32_t addr, const uint8_t *value, int size)
+bool m24xxWrite(uint32_t addr, const uint8_t *value, int size)
 {
-  if(CACHE_TAG(addr) == CACHE_TAG(addr+size-1)) {
+  if(CACHE_TAG(addr) == CACHE_TAG(addr+size-1))
     // Fits one line, fall back to primitive
-    m24xxWritePrimitive(addr, value, size);
-    return;
-  }  
+    return m24xxWritePrimitive(addr, value, size);
      
   uint32_t ptr = addr;
+  bool status = true;
   
   if(CACHE_TAG(ptr) < ptr) {
     // Starts with a partial line
     
     uint32_t extent = CACHE_TAG(ptr) + CACHE_PAGE - ptr;
-    m24xxWritePrimitive(ptr, value, extent);
+
+    if(!m24xxWritePrimitive(ptr, value, extent))
+      status = false;
+    
     if(value)
       value += extent;
     ptr += extent;
@@ -144,17 +166,21 @@ void m24xxWrite(uint32_t addr, const uint8_t *value, int size)
   
   while(ptr+CACHE_PAGE <= addr+size) {
     // Full lines remain
+
+    if(!m24xxWritePrimitive(ptr, value, CACHE_PAGE))
+      status = false;
     
-    m24xxWritePrimitive(ptr, value, CACHE_PAGE);
     if(value)
       value += CACHE_PAGE;
     ptr += CACHE_PAGE;
   }
 
-  if(ptr < addr+size)
-    // Partial line remains
-    
-    m24xxWritePrimitive(ptr, value, addr+size-ptr);
+  // Partial line remains?
+  
+  if(ptr < addr+size && !m24xxWritePrimitive(ptr, value, addr+size-ptr))
+    status = false;
+
+  return status;
 }
 
 int32_t m24xxReadIndirect(uint32_t addr, uint8_t **value, int32_t size)
@@ -197,4 +223,55 @@ bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size)
   }
 
   return true;
+}
+
+#define TEST_SIZE   7
+
+void m24xxTest(void)
+{
+  static bool success = true;
+  static uint16_t state = 0xFFFF;
+  uint32_t addr;
+  uint8_t buf_w[TEST_SIZE], buf_r[TEST_SIZE];
+
+  if(!success)
+    return;
+  
+  pseudoRandom((uint8_t*) &addr, sizeof(addr), &state);
+  pseudoRandom(buf_w, sizeof(buf_w), &state);
+
+  addr = 0x1001 + (addr & 0xFFF0);
+
+  consoleNote_P(CS_STRING("MEMTEST addr "));
+  consolePrintUI(addr);
+
+  consolePrint_P(CS_STRING(" data written "));
+    
+  for(int i = 0; i < TEST_SIZE; i++) {
+    consolePrintUI(buf_w[i]);
+    consolePrint(" ");
+  }
+
+  if(!m24xxWriteDirect(addr, buf_w, TEST_SIZE)) {
+    consolePrintLn_P(CS_STRING("ERROR"));
+    success = false;
+    logDisable();
+  }
+  
+  bzero(buf_r, sizeof(buf_r));
+  m24xxReadDirect(addr, buf_r, TEST_SIZE);
+
+  if(memcmp(buf_w, buf_r, TEST_SIZE)) {
+    consolePrint_P(CS_STRING("read as "));
+    
+    for(int i = 0; i < TEST_SIZE; i++) {
+      consolePrintUI(buf_r[i]);
+      consolePrint(" ");
+    }
+
+    consolePrintLn_P(CS_STRING("FAIL"));
+    success = false;
+    logDisable();
+  } else
+    consolePrintLn_P(CS_STRING("OK"));
 }
