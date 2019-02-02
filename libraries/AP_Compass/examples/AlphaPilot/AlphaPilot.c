@@ -33,12 +33,15 @@ void cacheTask()
 void alphaTask()
 {
   int16_t raw = 0;
-  static uint32_t lastMicros;
 
+  //  STAP_TRACEON;
+  
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     samplerInput(&alphaSampler, raw);
     stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
+
+  //  STAP_TRACEOFF;
 }
 
 void gyroTask()
@@ -2098,7 +2101,7 @@ void testTask()
 }
 
 struct Task alphaPilotTasks[] = {
-  { testTask, HZ_TO_PERIOD(10), false, 0 },
+  { testTask, HZ_TO_PERIOD(100), false, 0 },
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },
 #endif

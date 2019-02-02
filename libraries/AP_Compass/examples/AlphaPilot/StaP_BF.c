@@ -75,7 +75,7 @@ uint8_t stap_I2cWait(uint8_t d)
   //  STAP_TRACEON;
   bool status = i2cWait(I2C_DEVICE, d);
   //  STAP_TRACEOFF;
-  return status ? 0 : i2cGetErrorCode();
+  return status ? 0 : 1; // i2cGetErrorCode();
 }
 
 #define MAX_BUFFER 0x100
@@ -114,16 +114,18 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
 #ifdef STM32F3
   bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 #else
-  bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+  // bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
+  bool status = i2cPollingWrite(I2C_DEVICE, d, as, a, total, buffer);
 #endif
 
-  return status ? 0 : i2cGetErrorCode();
+  return status ? 0 : 1; // i2cGetErrorCode();
 }
 
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
-  return status ? 0 : i2cGetErrorCode();
+  //  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
+  bool status = i2cPollingRead(I2C_DEVICE, d, as, a, bs, b);
+  return status ? 0 : 1; // i2cGetErrorCode();
 }
 
 #include "sensors/acceleration.h"

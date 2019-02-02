@@ -396,7 +396,7 @@ void executeCommand(char *buf)
       break;
 
     case c_dump:
-      logDumpBinary();
+      // logDumpBinary();
       break;
 
     case c_fault:

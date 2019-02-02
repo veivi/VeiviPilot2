@@ -34,7 +34,12 @@ bool m24xxWait(uint32_t addr)
     
   // Write latency not met, wait for acknowledge
 
+#ifdef I2C_MEM_HARD_WAIT
+  while(stap_timeMillis() - lastWriteTime < M24XX_LATENCY);
+  return true;
+#else    
   return basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+#endif
 }
 
 bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes) 
@@ -64,9 +69,9 @@ bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size)
   if(!m24xxWait(addr))
     return false;
   
-  STAP_TRACEON;
+  //  STAP_TRACEON;
   bool status = basei2cInvoke(&target, basei2cReadWithWord((uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
-  STAP_TRACEOFF;
+  //  STAP_TRACEOFF;
   return status;
 }
 
@@ -225,46 +230,72 @@ bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size)
   return true;
 }
 
-#define TEST_SIZE   7
+#define TEST_SIZE   3
 
 void m24xxTest(void)
 {
-  static bool success = true;
+  static bool success = true, initialized = false;
+  timeMs_t startTime;
   static uint16_t state = 0xFFFF;
   uint32_t addr;
-  uint8_t buf_w[TEST_SIZE], buf_r[TEST_SIZE];
+  static uint8_t size = TEST_SIZE;
+  uint8_t buf_w[TEST_SIZE+1], buf_r[TEST_SIZE+1];
 
-  if(!success)
+  if(!initialized) {
+    startTime = stap_timeMillis();
+    initialized = true;
+  }
+  
+  if(stap_timeMillis() - startTime < 4000 || !success)
     return;
   
   pseudoRandom((uint8_t*) &addr, sizeof(addr), &state);
-  pseudoRandom(buf_w, sizeof(buf_w), &state);
+  addr = 0x1000 + (addr & 0xFFF0);
 
-  addr = 0x1001 + (addr & 0xFFF0);
-
+  pseudoRandom(buf_w, size, &state);
+  
   consoleNote_P(CS_STRING("MEMTEST addr "));
   consolePrintUI(addr);
 
   consolePrint_P(CS_STRING(" data written "));
     
-  for(int i = 0; i < TEST_SIZE; i++) {
+  for(int i = 0; i < size; i++) {
     consolePrintUI(buf_w[i]);
     consolePrint(" ");
   }
 
-  if(!m24xxWriteDirect(addr, buf_w, TEST_SIZE)) {
-    consolePrintLn_P(CS_STRING("ERROR"));
+  STAP_TRACEON;
+  
+  if(!m24xxWriteDirect(addr, buf_w, size)) {
+    consolePrint_P(CS_STRING("WRITE ERROR "));
+    consolePrintLnUI(i2cGetErrorCode());
     success = false;
     logDisable();
+    STAP_TRACEOFF;
+    return;
   }
   
+  STAP_TRACEOFF;
+  m24xxWait(addr);
+  STAP_TRACEON;
+  
   bzero(buf_r, sizeof(buf_r));
-  m24xxReadDirect(addr, buf_r, TEST_SIZE);
-
-  if(memcmp(buf_w, buf_r, TEST_SIZE)) {
+  
+  if(!m24xxReadDirect(addr, buf_r, size)) {
+    consolePrint_P(CS_STRING("READ ERROR "));
+    consolePrintLnUI(i2cGetErrorCode());
+    success = false;
+    logDisable();
+    STAP_TRACEOFF;
+    return;
+  }
+  
+  STAP_TRACEOFF;
+  
+  if(memcmp(buf_w, buf_r, size)) {
     consolePrint_P(CS_STRING("read as "));
     
-    for(int i = 0; i < TEST_SIZE; i++) {
+    for(int i = 0; i < size; i++) {
       consolePrintUI(buf_r[i]);
       consolePrint(" ");
     }
@@ -274,4 +305,9 @@ void m24xxTest(void)
     logDisable();
   } else
     consolePrintLn_P(CS_STRING("OK"));
+
+  if(size > 1)
+    size--;
+  else
+    size = TEST_SIZE;
 }
