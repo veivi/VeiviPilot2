@@ -17,12 +17,15 @@
 
 #define STAP_TRACEON  stap_traceEnable(true)
 #define STAP_TRACEOFF stap_traceEnable(false)
+#define STAP_TRACEDIS(h) stap_traceDisregard(h)
 #define STAP_TRACE(s) stap_trace(s)
-#define STAP_TRACEINT(s) stap_traceInt(s)
+#define STAP_TRACE_T(s, t) stap_trace_ ## t(s)
 
-void stap_traceEnable(bool);
+void *stap_traceEnable(bool);
+void stap_traceDisregard(void*);
 bool stap_trace(const char *s);
-bool stap_traceInt(int v);
+bool stap_trace_uint(unsigned int v);
+bool stap_trace_char(char c);
 
 //
 // System interface

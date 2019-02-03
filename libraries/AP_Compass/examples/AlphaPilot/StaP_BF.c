@@ -23,12 +23,28 @@ static uint16_t sensorHash = 0xFFFF;
 #define TRACE_BUFSIZE 0x300
 
 volatile char traceBuf[TRACE_BUFSIZE];
-volatile int traceLen, traceOverflow;
+volatile uint16_t traceLen, traceOverflow;
 volatile bool tracing;
 
-void stap_traceEnable(bool v)
+void *stap_traceEnable(bool v)
 {
+  void *handle = NULL;
+
+  STAP_FORBID;
   tracing = v;
+  if(tracing)
+    handle = (void*) traceLen;
+  STAP_PERMIT;
+  
+  return handle;
+}
+
+void stap_traceDisregard(void *handle)
+{
+  STAP_FORBID;
+  traceLen = (uint16_t) handle;
+  traceBuf[traceLen] = '\0';
+  STAP_PERMIT;
 }
 
 bool stap_trace(const char *s)
@@ -53,9 +69,34 @@ bool stap_trace(const char *s)
   return success;
 }
 
-bool stap_traceInt(int v)
+bool stap_trace_char(char c)
 {
-  return false;
+  const char buf[] = { c, '\0' };
+  return stap_trace(buf);
+}
+  
+bool stap_trace_uint(unsigned int v)
+{
+  char buf[8];
+  uint8_t len;
+
+  while(v > 0 && len < 8) {
+    uint8_t d = v & 0xF;
+    buf[len++] = d < 10 ? '0' + d : 'a' + d - 10;
+    v >>= 4;
+  }
+
+  if(len > 0) {
+    stap_trace("0x");
+
+    while(len-- > 0)
+      stap_trace_char(buf[len]);
+
+    stap_trace(" ");
+  } else
+    stap_trace("0 ");
+  
+  return true;
 }
 
 void stap_initialize(void)
@@ -111,20 +152,31 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
     total += b[i].size;
   }
 
+  void *handle = STAP_TRACEON;
+  
 #ifdef STM32F3
   bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
 #else
-  // bool status = i2cWriteGeneric(I2C_DEVICE, d, as, a, total, buffer);
-  bool status = i2cPollingWrite(I2C_DEVICE, d, as, a, total, buffer);
+  bool status = i2cWriteInitiate(I2C_DEVICE, d, as, a, total, buffer);
 #endif
 
+  STAP_TRACEOFF;
+  
+  if(status)
+    STAP_TRACEDIS(handle);
+  
   return status ? 0 : 1; // i2cGetErrorCode();
 }
 
 uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-  //  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
-  bool status = i2cPollingRead(I2C_DEVICE, d, as, a, bs, b);
+  void *handle = STAP_TRACEON;
+  bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
+  STAP_TRACEOFF;
+  
+  if(status)
+    STAP_TRACEDIS(handle);
+  
   return status ? 0 : 1; // i2cGetErrorCode();
 }
 

@@ -36,6 +36,8 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
+#define I2C_POLL
+
 // Number of bits in I2C protocol phase
 #define LEN_ADDR 7
 #define LEN_RW 1
@@ -47,8 +49,6 @@
 // Allow 500us for clock strech to complete during unstick
 #define UNSTICK_CLK_STRETCH (500/UNSTICK_CLK_US)
 
-static void i2c_er_handler(I2CDevice device);
-static void i2c_ev_handler(I2CDevice device);
 static void i2cUnstick(IO_t scl, IO_t sda);
 
 #ifdef STM32F4
@@ -126,6 +126,11 @@ i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 static volatile uint16_t i2cErrorCount = 0, i2cErrorCode = 0;
 
+#ifndef I2C_POLL
+
+static void i2c_er_handler(I2CDevice device);
+static void i2c_ev_handler(I2CDevice device);
+
 void I2C1_ER_IRQHandler(void) {
     i2c_er_handler(I2CDEV_1);
 }
@@ -151,21 +156,417 @@ void I2C3_EV_IRQHandler(void) {
     i2c_ev_handler(I2CDEV_3);
 }
 #endif
+#endif
 
-static char digit(uint8_t d)
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, const uint8_t *data)
 {
-  if(d < 10)
-    return '0' + d;
-  else
-    return 'a' + d - 10;
+  return i2cWriteGeneric(device, addr_, sizeof(reg_), &reg_, len_, data);
 }
+
+bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
+{
+  return i2cWriteBuffer(device, addr_, reg_, sizeof(data), &data);
+}
+
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+{
+  return i2cReadGeneric(device, addr_, sizeof(reg_), &reg_, len, buf);
+}
+
+void i2cInit(I2CDevice device)
+{
+    if (device == I2CINVALID)
+        return;
+
+    i2cDevice_t *pDev = &i2cDevice[device];
+    const i2cHardware_t *hw = pDev->hardware;
+
+    if (!hw) {
+        return;
+    }
+
+    I2C_TypeDef *I2Cx = hw->reg;
+
+    memset(&pDev->state, 0, sizeof(pDev->state));
+
+    NVIC_InitTypeDef nvic;
+    I2C_InitTypeDef i2cInit;
+
+    IO_t scl = pDev->scl;
+    IO_t sda = pDev->sda;
+
+    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
+
+    // Enable RCC
+    RCC_ClockCmd(hw->rcc, ENABLE);
+
+    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+
+    i2cUnstick(scl, sda);
+
+    // Init pins
+#ifdef STM32F4
+    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
+    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
+#else
+    IOConfigGPIO(scl, IOCFG_I2C);
+    IOConfigGPIO(sda, IOCFG_I2C);
+#endif
+
+    I2C_DeInit(I2Cx);
+    I2C_StructInit(&i2cInit);
+
+    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);               // Disable EVT and ERR interrupts - they are enabled by the first request
+    i2cInit.I2C_Mode = I2C_Mode_I2C;
+    i2cInit.I2C_DutyCycle = I2C_DutyCycle_2;
+    i2cInit.I2C_OwnAddress1 = 0;
+    i2cInit.I2C_Ack = I2C_Ack_Enable;
+    i2cInit.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+
+    if (pDev->overClock) {
+        i2cInit.I2C_ClockSpeed = 800000; // 800khz Maximum speed tested on various boards without issues
+    } else {
+        i2cInit.I2C_ClockSpeed = 400000; // 400khz Operation according specs
+    }
+
+    I2C_Cmd(I2Cx, ENABLE);
+    I2C_Init(I2Cx, &i2cInit);
+
+    I2C_StretchClockCmd(I2Cx, ENABLE);
+
+    // I2C ER Interrupt
+    nvic.NVIC_IRQChannel = hw->er_irq;
+    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER);
+    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER);
+    nvic.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&nvic);
+
+    // I2C EV Interrupt
+    nvic.NVIC_IRQChannel = hw->ev_irq;
+    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV);
+    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV);
+    NVIC_Init(&nvic);
+}
+
+uint16_t i2cGetErrorCounter(void)
+{
+    return i2cErrorCount;
+}
+
+uint16_t i2cGetErrorCode(void)
+{
+  return i2cErrorCode;
+}
+
+static void i2cUnstick(IO_t scl, IO_t sda)
+{
+    int i;
+
+    IOHi(scl);
+    IOHi(sda);
+
+    IOConfigGPIO(scl, IOCFG_OUT_OD);
+    IOConfigGPIO(sda, IOCFG_OUT_OD);
+
+    // Clock out, with SDA high:
+    //   7 data bits
+    //   1 READ bit
+    //   1 cycle for the ACK
+    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
+        // Wait for any clock stretching to finish
+        int timeout = UNSTICK_CLK_STRETCH;
+        while (!IORead(scl) && timeout) {
+            delayMicroseconds(UNSTICK_CLK_US);
+            timeout--;
+        }
+
+        // Pull low
+        IOLo(scl); // Set bus low
+        delayMicroseconds(UNSTICK_CLK_US/2);
+        IOHi(scl); // Set bus high
+        delayMicroseconds(UNSTICK_CLK_US/2);
+    }
+
+    // Generate a stop condition in case there was none
+    IOLo(scl);
+    delayMicroseconds(UNSTICK_CLK_US/2);
+    IOLo(sda);
+    delayMicroseconds(UNSTICK_CLK_US/2);
+
+    IOHi(scl); // Set bus scl high
+    delayMicroseconds(UNSTICK_CLK_US/2);
+    IOHi(sda); // Set bus sda high
+}
+
+#ifdef I2C_POLL
+
+#define I2C_TIMEOUT_TRANSFER    7000   // us
+#define I2C_TIMEOUT_WAIT        100    // us
+
+typedef struct {
+  timeUs_t start, period;
+} timeoutState_t;
+
+#define I2C_TIMEOUT_CONS(p) { micros(), p }
+
+static bool timeoutOccurred(timeoutState_t *state)
+{
+  return state->period > 0 && micros() > state->start+state->period;
+}
+
+bool i2cWaitForFlagTO(I2C_TypeDef *I2Cx, uint32_t flag, FlagStatus status, timeUs_t timeout_)
+{
+  timeoutState_t timeout = I2C_TIMEOUT_CONS(timeout_);
+  
+  while (I2C_GetFlagStatus(I2Cx, flag) != status)
+    if(timeoutOccurred(&timeout))
+      return false;
+
+  return true;
+}
+
+bool i2cWaitForFlag(I2C_TypeDef *I2Cx, uint32_t flag, FlagStatus status)
+{
+  return i2cWaitForFlagTO(I2Cx, flag, status, I2C_TIMEOUT_TRANSFER);
+}
+
+bool i2cWaitForEventTO(I2C_TypeDef *I2Cx, uint32_t event, timeUs_t timeout_)
+{
+  timeoutState_t timeout = I2C_TIMEOUT_CONS(timeout_);
+  
+  while (I2C_CheckEvent(I2Cx, event) != SUCCESS)
+    if(timeoutOccurred(&timeout))
+      return false;
+
+  return true;
+}
+
+bool i2cWaitForEvent(I2C_TypeDef *I2Cx, uint32_t event)
+{
+  return i2cWaitForEventTO(I2Cx, event, I2C_TIMEOUT_TRANSFER);
+}
+
+bool i2cReturnCode(uint16_t code)
+{
+  if(code) {
+    STAP_TRACE("ERR ");
+    STAP_TRACE_T(code, uint);
+
+    i2cErrorCode = code;
+    i2cErrorCount++;
+    return false;
+  }
+  return true;
+}
+
+bool i2cSync(I2CDevice device)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+  
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BUSY, RESET)) {
+    i2cInit(device);
+    return false;
+  }
+
+  return true;
+}
+
+static bool i2cTransmitStart(I2CDevice device, uint8_t addr)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+
+  I2C_GenerateSTART(I2Cx, ENABLE);
+  
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_SB, SET))  // Wait for START
+    return i2cReturnCode(0x01);
+  
+  I2C_ClearFlag(I2Cx, I2C_FLAG_SB);
+  
+  I2C_Send7bitAddress(I2Cx, addr<<1, I2C_Direction_Transmitter);
+
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
+    return i2cReturnCode(0x02);
+
+  (void)I2Cx->SR2;  // Clear ADDR flag
+
+  return true;
+}
+
+static bool i2cTransmit(I2CDevice device, uint8_t size, const uint8_t *message)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+  
+  for(uint8_t i = 0; i < size; i++) {
+    if(!i2cWaitForFlag(I2Cx, I2C_FLAG_TXE, SET))
+      return false;
+    
+    I2C_SendData(I2Cx, message[i]);
+  }
+
+  return true;
+}
+
+static bool i2cReceiveStart(I2CDevice device, uint8_t addr, uint8_t size)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+  
+  I2C_ClearFlag(I2Cx, I2C_FLAG_SB);
+  I2C_GenerateSTART(I2Cx, ENABLE);
+  
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_SB, SET))  // Wait for START
+    return i2cReturnCode(0x02);
+  
+  I2C_Send7bitAddress(I2Cx, addr<<1, I2C_Direction_Receiver);
+
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
+    return i2cReturnCode(0x16);
+
+  I2C_NACKPositionConfig(I2Cx, size != 2 ? I2C_NACKPosition_Current : I2C_NACKPosition_Next);
+
+  I2C_AcknowledgeConfig(I2Cx, size < 3 ? DISABLE : ENABLE);
+  
+  (void)I2Cx->SR2;  // Clear ADDR flag
+}
+
+bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t dataSize, const uint8_t *data)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+  
+  STAP_TRACE("WR ");
+
+  if(!i2cSync(device))
+    return i2cReturnCode(0x22);
+    
+  if(!i2cTransmitStart(device, addr_))
+    return false;
+
+  if(addrSize > 0 && !i2cTransmit(device, addrSize, addrPtr))
+    return i2cReturnCode(0x23);
+
+  if(dataSize > 0 && !i2cTransmit(device, dataSize, data))
+    return i2cReturnCode(0x24);
+  
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_TXE, SET))
+    return i2cReturnCode(0x25);
+      
+  I2C_GenerateSTOP(I2Cx, ENABLE);
+
+  STAP_TRACE("DONE ");
+  
+  return true;
+}
+
+bool i2cWriteInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t dataSize, const uint8_t *data)
+{
+  return i2cWriteGeneric(device, addr_, addrSize, addrPtr, dataSize, data);
+}
+
+bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t dataSize, uint8_t *data)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+
+  if(dataSize < 1)
+    return i2cReturnCode(0xf0);
+  
+  STAP_TRACE("RD ");
+
+  if(!i2cSync(device))
+    return i2cReturnCode(0x12);
+  
+  if(addrSize > 0) {
+    if(!i2cTransmitStart(device, addr_))
+      return false;
+    
+    if(!i2cTransmit(device, addrSize, addrPtr))
+      return i2cReturnCode(0x13);
+
+    if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
+      return i2cReturnCode(0x14);
+  }
+
+  //  i2cReceiveStart(device, addr_, dataSize);
+
+  I2C_GenerateSTART(I2Cx, ENABLE);
+
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_SB, SET))  // Wait for START
+    return i2cReturnCode(0x15);
+  
+  I2C_ClearFlag(I2Cx, I2C_FLAG_SB);
+  /*
+  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
+    return i2cReturnCode(0x15);
+  */
+  I2C_Send7bitAddress(I2Cx, addr_<<1, I2C_Direction_Receiver);
+
+  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
+    return i2cReturnCode(0x16);
+
+  I2C_NACKPositionConfig(I2Cx, dataSize != 2 ? I2C_NACKPosition_Current : I2C_NACKPosition_Next);
+  
+  if(dataSize < 3) {
+    I2C_AcknowledgeConfig(I2Cx, DISABLE);
+  
+    (void)I2Cx->SR2;  // Clear ADDR flag
+
+    if(dataSize < 2) {
+      I2C_GenerateSTOP(I2Cx, ENABLE);
+
+      if(!i2cWaitForFlag(I2Cx, I2C_FLAG_RXNE, SET))
+	return i2cReturnCode(0x17);
+    } else {
+      if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
+	return i2cReturnCode(0x18);
+
+      I2C_GenerateSTOP(I2Cx, ENABLE);
+    }
+    
+    for(uint8_t i = 0; i < dataSize; i++)
+      data[i] = I2C_ReceiveData(I2Cx);
+  } else {
+    I2C_AcknowledgeConfig(I2Cx, ENABLE);
+    
+    (void)I2Cx->SR2;  // Clear ADDR flag
+
+    for(uint8_t i = 0; i < dataSize - 3; i++) {
+      if(!i2cWaitForFlag(I2Cx, I2C_FLAG_RXNE, SET))
+	return i2cReturnCode(0x19);
+      //      if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_RECEIVED))
+      //	return i2cReturnCode(0x19);
+      
+      data[i] = I2C_ReceiveData(I2Cx);
+    }
+
+    if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
+      return i2cReturnCode(0x1A);
+
+    I2C_AcknowledgeConfig(I2Cx, DISABLE);
+
+    data[dataSize-3] = I2C_ReceiveData(I2Cx);
+
+    if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
+      return i2cReturnCode(0x1B);
+
+    data[dataSize-2] = I2C_ReceiveData(I2Cx);
+    data[dataSize-1] = I2C_ReceiveData(I2Cx);
+  }
+
+  STAP_TRACE("DONE ");
+  
+  return true;
+}
+
+#else
+
+#define I2C_TIMEOUT_SYNC    0.01e6
+#define I2C_TIMEOUT_STOP    0.1e3
+#define I2C_TIMEOUT_WAIT    8e3
 
 static bool i2cReportError(I2CDevice device, uint8_t error)
 {
   if(error != 0) {
-    STAP_TRACE("FAIL");
-    const char num[] = { digit(error>>4), digit(error & 0xf), ' ', '\0' };
-    STAP_TRACE(num);
+    STAP_TRACE("ERR ");
+    STAP_TRACE_T(num, uint);
 
     i2cErrorCode = error;
     i2cErrorCount++;
@@ -182,10 +583,6 @@ static bool i2cReset(I2CDevice device, uint8_t error)
   i2cInit(device);
   return status;
 }
-
-#define I2C_TIMEOUT_SYNC    0.01e6
-#define I2C_TIMEOUT_STOP    0.1e3
-#define I2C_TIMEOUT_WAIT    8e3
 
 bool i2cSync(I2CDevice device)
 {
@@ -243,202 +640,7 @@ static bool i2cStart(I2CDevice device)
   return true;
 }
 
-#define I2C_TIMEOUT_TRANSFER    7000   // us
-#define I2C_TIMEOUT_WAIT        100    // us
-
-typedef struct {
-  timeUs_t start, period;
-} timeoutState_t;
-
-#define I2C_TIMEOUT_CONS(p) { micros(), p }
-
-static bool timeoutOccurred(timeoutState_t *state)
-{
-  return state->period > 0 && micros() > state->start+state->period;
-}
-
-bool i2cWaitOnFlagTO(I2C_TypeDef *I2Cx, uint32_t flag, FlagStatus status, timeUs_t timeout_)
-{
-  timeoutState_t timeout = I2C_TIMEOUT_CONS(timeout_);
-  
-  while (I2C_GetFlagStatus(I2Cx, flag) == status)
-    if(timeoutOccurred(&timeout))
-      return false;
-
-  return true;
-}
-
-bool i2cWaitOnFlag(I2C_TypeDef *I2Cx, uint32_t flag, FlagStatus status)
-{
-  return i2cWaitOnFlagTO(I2Cx, flag, status, I2C_TIMEOUT_TRANSFER);
-}
-
-bool i2cWaitForEventTO(I2C_TypeDef *I2Cx, uint32_t event, timeUs_t timeout_)
-{
-  timeoutState_t timeout = I2C_TIMEOUT_CONS(timeout_);
-  
-  while (I2C_CheckEvent(I2Cx, event) != SUCCESS)
-    if(timeoutOccurred(&timeout))
-      return false;
-
-  return true;
-}
-
-bool i2cWaitForEvent(I2C_TypeDef *I2Cx, uint32_t event)
-{
-  return i2cWaitForEventTO(I2Cx, event, I2C_TIMEOUT_TRANSFER);
-}
-
-bool i2cReturnCode(uint16_t code)
-{
-  if(code) {
-    STAP_TRACE("FAIL");
-    const char num[] = { digit(code>>4), digit(code & 0xf), ' ', '\0' };
-    STAP_TRACE(num);
-
-    i2cErrorCode = code;
-    i2cErrorCount++;
-    return false;
-  }
-  return true;
-}
-
-bool i2cPollingWrite(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t dataSize, const uint8_t *data)
-{
-  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-  i2cState_t *state = &i2cDevice[device].state;
-  
-  STAP_TRACE("WRITE ");
-  
-  if(!i2cWaitOnFlag(I2Cx, I2C_FLAG_BUSY, SET))
-    i2cInit(device);
-    
-  I2C_GenerateSTART(I2Cx, ENABLE);
-  
-  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
-    return i2cReturnCode(0x10);
-
-  I2C_Send7bitAddress(I2Cx, addr_<<1, I2C_Direction_Transmitter);
-
-  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-    return i2cReturnCode(0x11);
-  
-  for(uint8_t i = 0; i < addrSize; i++) {
-    I2C_SendData(I2Cx, addrPtr[i]);
-    
-    if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-      return i2cReturnCode(0x12);
-  }
-  
-  if(dataSize > 0) {
-    /*
-    if(addrSize > 0) {
-      if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-	return i2cReturnCode(0x13);
-
-      I2C_GenerateSTART(I2Cx, ENABLE);
-
-      if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
-	return i2cReturnCode(0x14);
-    }
-    */
-    
-    for(uint8_t i = 0; i < dataSize; i++) {
-      I2C_SendData(I2Cx, data[i]);
-      if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-	return i2cReturnCode(0x15);
-    }
-  }
-  
-  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-    return i2cReturnCode(0x16);
-
-  I2C_GenerateSTOP(I2Cx, ENABLE);
-
-  //if(!i2cWaitOnFlag(I2Cx, I2C_FLAG_STOPF, RESET))
-  //    return i2cReturnCode(0x17);
-
-  /* Clear STOPF flag */
-  // I2C_ClearFlag(I2Cx, I2C_FLAG_STOPF);
-  
-  // while(I2C_GetFlagStatus(I2Cx, I2C_FLAG_STOPF) == SUCCESS);
-  
-  STAP_TRACE("OK ");
-  
-  return true;
-}
-
-bool i2cPollingRead(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t dataSize, uint8_t *data)
-{
-  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-  i2cState_t *state = &i2cDevice[device].state;
-
-  STAP_TRACE("READ ");
-
-  dataSize = 1;
-  
-  if(!i2cWaitOnFlag(I2Cx, I2C_FLAG_BUSY, SET))
-    i2cInit(device);
-    
-  I2C_GenerateSTART(I2Cx, ENABLE);
-  
-  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
-    return i2cReturnCode(0x10);
-
-  if(addrSize > 0) {
-    I2C_Send7bitAddress(I2Cx, addr_<<1, I2C_Direction_Transmitter);
-
-    if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-      return i2cReturnCode(0x11);
-  
-    for(uint8_t i = 0; i < addrSize; i++) {
-      I2C_SendData(I2Cx, addrPtr[i]);
-    
-      if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-	return i2cReturnCode(0x12);
-    }
-
-    if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-      return i2cReturnCode(0x13);
-
-    I2C_GenerateSTART(I2Cx, ENABLE);
-
-    if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
-      return i2cReturnCode(0x14);
-  }
-
-  I2C_Send7bitAddress(I2Cx, addr_<<1, I2C_Direction_Receiver);
-
-  if(!i2cWaitOnFlag(I2Cx, I2C_FLAG_ADDR, RESET))
-    return i2cReturnCode(0x18);
-  
-  I2C_AcknowledgeConfig(I2Cx, dataSize < 3 ? DISABLE : ENABLE);
-  I2C_NACKPositionConfig(I2Cx, dataSize == 2 ? I2C_NACKPosition_Next : I2C_NACKPosition_Current);
-
-  (void)I2Cx->SR2;
- 
-  if(dataSize < 2)
-    I2C_GenerateSTOP(I2Cx, ENABLE);
-
-  for(uint8_t i = 0; i < dataSize; i++) {
-    if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_BYTE_RECEIVED))
-      return i2cReturnCode(0x15);
-      
-    data[i] = I2C_ReceiveData(I2Cx);
-  }
-
-  //  if(!i2cWaitOnFlag(I2Cx, I2C_FLAG_STOPF, RESET))
-  //    return i2cReturnCode(0x17);
-
-  /* Clear STOPF flag */
-  //  I2C_ClearFlag(I2Cx, I2C_FLAG_STOPF);
-  
-  STAP_TRACE("OK ");
-  
-  return true;
-}
-
-bool i2cWriteInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len_, uint8_t *data)
+bool i2cWriteInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t len_, const uint8_t *data)
 {
   STAP_TRACE("WR ");
   
@@ -473,16 +675,6 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t 
   return i2cSync(device);
 }
 
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
-{
-  return i2cWriteGeneric(device, addr_, sizeof(reg_), &reg_, len_, data);
-}
-
-bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
-{
-  return i2cWriteBuffer(device, addr_, reg_, sizeof(data), &data);
-}
-
 bool i2cReadInitiate(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *addrPtr, uint8_t len, uint8_t* buf)
 {
   STAP_TRACE("RD ");
@@ -511,11 +703,6 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, uint8_t *
     return false;
   
   return i2cSync(device);
-}
-
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
-{
-  return i2cReadGeneric(device, addr_, sizeof(reg_), &reg_, len, buf);
 }
 
 bool i2cWait(I2CDevice device, uint8_t addr_)
@@ -718,130 +905,5 @@ void i2c_ev_handler(I2CDevice device) {
     }
 }
 
-void i2cInit(I2CDevice device)
-{
-    if (device == I2CINVALID)
-        return;
-
-    i2cDevice_t *pDev = &i2cDevice[device];
-    const i2cHardware_t *hw = pDev->hardware;
-
-    if (!hw) {
-        return;
-    }
-
-    I2C_TypeDef *I2Cx = hw->reg;
-
-    memset(&pDev->state, 0, sizeof(pDev->state));
-
-    NVIC_InitTypeDef nvic;
-    I2C_InitTypeDef i2cInit;
-
-    IO_t scl = pDev->scl;
-    IO_t sda = pDev->sda;
-
-    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
-    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
-
-    // Enable RCC
-    RCC_ClockCmd(hw->rcc, ENABLE);
-
-    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
-
-    i2cUnstick(scl, sda);
-
-    // Init pins
-#ifdef STM32F4
-    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
-    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
-#else
-    IOConfigGPIO(scl, IOCFG_I2C);
-    IOConfigGPIO(sda, IOCFG_I2C);
 #endif
-
-    I2C_DeInit(I2Cx);
-    I2C_StructInit(&i2cInit);
-
-    I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);               // Disable EVT and ERR interrupts - they are enabled by the first request
-    i2cInit.I2C_Mode = I2C_Mode_I2C;
-    i2cInit.I2C_DutyCycle = I2C_DutyCycle_2;
-    i2cInit.I2C_OwnAddress1 = 0;
-    i2cInit.I2C_Ack = I2C_Ack_Enable;
-    i2cInit.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-
-    if (pDev->overClock) {
-        i2cInit.I2C_ClockSpeed = 800000; // 800khz Maximum speed tested on various boards without issues
-    } else {
-        i2cInit.I2C_ClockSpeed = 400000; // 400khz Operation according specs
-    }
-
-    I2C_Cmd(I2Cx, ENABLE);
-    I2C_Init(I2Cx, &i2cInit);
-
-    I2C_StretchClockCmd(I2Cx, ENABLE);
-
-    // I2C ER Interrupt
-    nvic.NVIC_IRQChannel = hw->er_irq;
-    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER);
-    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER);
-    nvic.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&nvic);
-
-    // I2C EV Interrupt
-    nvic.NVIC_IRQChannel = hw->ev_irq;
-    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV);
-    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV);
-    NVIC_Init(&nvic);
-}
-
-uint16_t i2cGetErrorCounter(void)
-{
-    return i2cErrorCount;
-}
-
-uint16_t i2cGetErrorCode(void)
-{
-  return i2cErrorCode;
-}
-
-static void i2cUnstick(IO_t scl, IO_t sda)
-{
-    int i;
-
-    IOHi(scl);
-    IOHi(sda);
-
-    IOConfigGPIO(scl, IOCFG_OUT_OD);
-    IOConfigGPIO(sda, IOCFG_OUT_OD);
-
-    // Clock out, with SDA high:
-    //   7 data bits
-    //   1 READ bit
-    //   1 cycle for the ACK
-    for (i = 0; i < (LEN_ADDR + LEN_RW + LEN_ACK); i++) {
-        // Wait for any clock stretching to finish
-        int timeout = UNSTICK_CLK_STRETCH;
-        while (!IORead(scl) && timeout) {
-            delayMicroseconds(UNSTICK_CLK_US);
-            timeout--;
-        }
-
-        // Pull low
-        IOLo(scl); // Set bus low
-        delayMicroseconds(UNSTICK_CLK_US/2);
-        IOHi(scl); // Set bus high
-        delayMicroseconds(UNSTICK_CLK_US/2);
-    }
-
-    // Generate a stop condition in case there was none
-    IOLo(scl);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOLo(sda);
-    delayMicroseconds(UNSTICK_CLK_US/2);
-
-    IOHi(scl); // Set bus scl high
-    delayMicroseconds(UNSTICK_CLK_US/2);
-    IOHi(sda); // Set bus sda high
-}
-
 #endif

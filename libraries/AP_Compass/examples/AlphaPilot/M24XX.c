@@ -50,11 +50,9 @@ bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes)
   if(!m24xxWait(addr))
     return false;
   
-  STAP_TRACEON;
   bool status = basei2cInvoke(&target, basei2cWriteWithWord(  (uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), 
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
-  STAP_TRACEOFF;
 
   lastWriteTime = stap_timeMillis();
 
@@ -230,7 +228,7 @@ bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size)
   return true;
 }
 
-#define TEST_SIZE   3
+#define TEST_SIZE   7
 
 void m24xxTest(void)
 {
@@ -264,20 +262,15 @@ void m24xxTest(void)
     consolePrint(" ");
   }
 
-  STAP_TRACEON;
-  
   if(!m24xxWriteDirect(addr, buf_w, size)) {
     consolePrint_P(CS_STRING("WRITE ERROR "));
     consolePrintLnUI(i2cGetErrorCode());
     success = false;
     logDisable();
-    STAP_TRACEOFF;
     return;
   }
   
-  STAP_TRACEOFF;
   m24xxWait(addr);
-  STAP_TRACEON;
   
   bzero(buf_r, sizeof(buf_r));
   
@@ -286,11 +279,8 @@ void m24xxTest(void)
     consolePrintLnUI(i2cGetErrorCode());
     success = false;
     logDisable();
-    STAP_TRACEOFF;
     return;
   }
-  
-  STAP_TRACEOFF;
   
   if(memcmp(buf_w, buf_r, size)) {
     consolePrint_P(CS_STRING("read as "));
