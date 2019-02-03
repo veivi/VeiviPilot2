@@ -2097,7 +2097,7 @@ void testTask()
 }
 
 struct Task alphaPilotTasks[] = {
-  { testTask, HZ_TO_PERIOD(3), false, 0 },
+  { testTask, HZ_TO_PERIOD(8/7), false, 0 },
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },
 #endif

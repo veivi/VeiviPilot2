@@ -366,7 +366,7 @@ bool i2cSync(I2CDevice device)
   
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BUSY, RESET)) {
     i2cInit(device);
-    return false;
+    return true;
   }
 
   return true;
@@ -493,10 +493,10 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uin
     return i2cReturnCode(0x15);
   
   I2C_ClearFlag(I2Cx, I2C_FLAG_SB);
-  /*
-  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
-    return i2cReturnCode(0x15);
-  */
+  
+  //  if(!i2cWaitForEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT))
+  //    return i2cReturnCode(0x15);
+
   I2C_Send7bitAddress(I2Cx, addr_<<1, I2C_Direction_Receiver);
 
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
@@ -547,6 +547,8 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uin
     if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
       return i2cReturnCode(0x1B);
 
+    I2C_GenerateSTOP(I2Cx, ENABLE);
+    
     data[dataSize-2] = I2C_ReceiveData(I2Cx);
     data[dataSize-1] = I2C_ReceiveData(I2Cx);
   }
