@@ -97,7 +97,8 @@ typedef enum {
   c_flare,
   c_read,
   c_boot,
-  c_reset
+  c_reset,
+  c_memtest
 } token_t;
 
 typedef enum

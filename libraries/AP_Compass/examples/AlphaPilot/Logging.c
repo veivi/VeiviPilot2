@@ -507,3 +507,74 @@ void logTask()
 
   logObjects();
 }
+
+bool logTest(void)
+{
+  if(logSize < 1)
+    return false;
+
+  consoleNote_P(CS_STRING("Filling with RANDOM"));
+
+  uint16_t state = 0xFFFF;
+  
+  for(int i = 0; i < logSize; i++) {
+    if((i & 0xFFF) == 0) {
+      consolePrint(".");
+      consoleFlush();
+    }
+    
+    uint16_t value = 0;
+    pseudoRandom((uint8_t*) &value, sizeof(value), &state);
+  
+    if(!m24xxWrite(logAddr(i), (const uint8_t*) &value, sizeof(value)))
+      return false;
+  }
+  
+  consoleNL();
+  consoleNote_P(CS_STRING("Checking"));
+  
+  state = 0xFFFF;
+  
+  for(int i = 0; i < logSize; i++) {
+    if((i & 0xFFF) == 0) {
+      consolePrint(".");
+      consoleFlush();
+    }
+    
+    uint16_t value = 0, valueR = 0;
+    pseudoRandom((uint8_t*) &value, sizeof(value), &state);
+    if(!m24xxRead(logAddr(i), (uint8_t*) &valueR, sizeof(valueR)) || value != valueR)
+      return false;
+  }
+
+  consoleNL();
+  consoleNote_P(CS_STRING("Filling with ZERO"));
+  
+  for(int i = 0; i < logSize; i++) {
+    if((i & 0xFFF) == 0) {
+      consolePrint(".");
+      consoleFlush();
+    }
+    
+    uint16_t value = 0;
+    if(!m24xxWrite(logAddr(i), (const uint8_t*) &value, sizeof(value)))
+      return false;
+  }
+  
+  consoleNL();
+  consoleNote_P(CS_STRING("Checking"));
+  
+  for(int i = 0; i < logSize; i++) {
+    if((i & 0xFFF) == 0) {
+      consolePrint(".");
+      consoleFlush();
+    }
+    
+    uint16_t value = 0xFFFF;
+    if(!m24xxRead(logAddr(i), (uint8_t*) &value, sizeof(value)) || value != 0)
+      return false;
+  }
+
+  consoleNL();
+  return true;
+}

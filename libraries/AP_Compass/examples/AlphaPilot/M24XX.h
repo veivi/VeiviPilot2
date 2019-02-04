@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define M24XX_LATENCY 10    // ms
+#define M24XX_LATENCY 7    // ms
 #define I2C_MEM_HARD_WAIT  
 
 extern uint32_t m24xxBytesWritten;

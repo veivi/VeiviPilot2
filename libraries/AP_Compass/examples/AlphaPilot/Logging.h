@@ -13,6 +13,7 @@ bool logReadyVerbose(void);
 bool logInit(uint32_t);
 void logClear(void);
 void logDumpBinary(void);
+bool logTest(void);
 
 void logGeneric(int ch, float value);
 void logMark(void);

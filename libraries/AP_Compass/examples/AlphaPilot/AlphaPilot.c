@@ -2032,16 +2032,7 @@ void heartBeatTask()
   }    
   
   heartBeatCount = 0;
-  
-  if(vpStatus.consoleLink) {
-    static uint32_t count = 0;
-
-    datagramTxStart(DG_HEARTBEAT);
-    datagramTxOut((uint8_t*) &count, sizeof(count));
-    datagramTxEnd();
-  
-    count++;   
-  }
+  consoleFlush();
 }
 
 void blinkTask()
@@ -2097,7 +2088,7 @@ void testTask()
 }
 
 struct Task alphaPilotTasks[] = {
-  { testTask, HZ_TO_PERIOD(3.1), false, 0 },
+  //  { testTask, HZ_TO_PERIOD(3.1), false, 0 },
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },
 #endif

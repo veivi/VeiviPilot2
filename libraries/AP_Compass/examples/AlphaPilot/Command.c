@@ -100,6 +100,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "read", c_read },
   { "reset", c_reset },
   { "boot", c_boot },
+  { "memtest", c_memtest },
   { "", c_invalid }
 };
 
@@ -302,6 +303,14 @@ void executeCommand(char *buf)
       datagramTxEnd();
       stap_delayMillis(500);
       stap_reboot(true);
+      break;
+      
+    case c_memtest:
+      consoleNoteLn_P(CS_STRING("Log memory test "));
+      if(logTest())
+	consoleNoteLn_P(CS_STRING("PASSED"));
+      else
+	consoleNoteLn_P(CS_STRING("FAILED"));
       break;
       
     case c_read:

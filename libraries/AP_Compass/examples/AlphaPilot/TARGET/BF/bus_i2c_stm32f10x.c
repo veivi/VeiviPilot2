@@ -347,7 +347,7 @@ bool i2cWaitForEvent(I2C_TypeDef *I2Cx, uint32_t event)
   return i2cWaitForEventTO(I2Cx, event, I2C_TIMEOUT_TRANSFER);
 }
 
-bool i2cReturnCode(uint16_t code)
+bool i2cReturnCode(I2CDevice device, uint16_t code)
 {
   if(code) {
     STAP_TRACE("ERR ");
@@ -355,6 +355,9 @@ bool i2cReturnCode(uint16_t code)
 
     i2cErrorCode = code;
     i2cErrorCount++;
+
+    i2cInit(device);
+    
     return false;
   }
   return true;
@@ -364,12 +367,7 @@ bool i2cSync(I2CDevice device)
 {
   I2C_TypeDef *I2Cx = i2cDevice[device].reg;
   
-  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BUSY, RESET)) {
-    i2cInit(device);
-    return true;
-  }
-
-  return true;
+  return i2cWaitForFlag(I2Cx, I2C_FLAG_BUSY, RESET);
 }
 
 static bool i2cTransmitStart(I2CDevice device, uint8_t addr)
@@ -379,12 +377,12 @@ static bool i2cTransmitStart(I2CDevice device, uint8_t addr)
   I2C_GenerateSTART(I2Cx, ENABLE);
   
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_SB, SET))  // Wait for START
-    return i2cReturnCode(0x01);
+    return i2cReturnCode(device, 0x01);
   
   I2C_Send7bitAddress(I2Cx, addr<<1, I2C_Direction_Transmitter);
 
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
-    return i2cReturnCode(0x02);
+    return i2cReturnCode(device, 0x02);
 
   (void)I2Cx->SR2;  // Clear ADDR flag
 
@@ -412,12 +410,12 @@ static bool i2cReceiveStart(I2CDevice device, uint8_t addr, uint8_t size)
   I2C_GenerateSTART(I2Cx, ENABLE);
   
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_SB, SET))  // Wait for START
-    return i2cReturnCode(0x03);
+    return i2cReturnCode(device, 0x03);
   
   I2C_Send7bitAddress(I2Cx, addr<<1, I2C_Direction_Receiver);
 
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
-    return i2cReturnCode(0x04);
+    return i2cReturnCode(device, 0x04);
 
   I2C_NACKPositionConfig(I2Cx, size != 2 ? I2C_NACKPosition_Current : I2C_NACKPosition_Next);
 
@@ -433,19 +431,19 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const ui
   STAP_TRACE("WR ");
 
   if(!i2cSync(device))
-    return i2cReturnCode(0x20);
+    return i2cReturnCode(device, 0x20);
     
   if(!i2cTransmitStart(device, addr_))
     return false;
 
   if(addrSize > 0 && !i2cTransmit(device, addrSize, addrPtr))
-    return i2cReturnCode(0x23);
+    return i2cReturnCode(device, 0x23);
 
   if(dataSize > 0 && !i2cTransmit(device, dataSize, data))
-    return i2cReturnCode(0x24);
+    return i2cReturnCode(device, 0x24);
   
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_TXE, SET))
-    return i2cReturnCode(0x25);
+    return i2cReturnCode(device, 0x25);
       
   I2C_GenerateSTOP(I2Cx, ENABLE);
 
@@ -466,17 +464,17 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uin
   STAP_TRACE("RD ");
 
   if(!i2cSync(device))
-    return i2cReturnCode(0x10);
+    return i2cReturnCode(device, 0x10);
   
   if(addrSize > 0) {
     if(!i2cTransmitStart(device, addr_))
       return false;
     
     if(!i2cTransmit(device, addrSize, addrPtr))
-      return i2cReturnCode(0x13);
+      return i2cReturnCode(device, 0x13);
 
     if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
-      return i2cReturnCode(0x14);
+      return i2cReturnCode(device, 0x14);
   }
 
   i2cReceiveStart(device, addr_, dataSize);
@@ -486,10 +484,10 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uin
       I2C_GenerateSTOP(I2Cx, ENABLE);
 
       if(!i2cWaitForFlag(I2Cx, I2C_FLAG_RXNE, SET))
-	return i2cReturnCode(0x17);
+	return i2cReturnCode(device, 0x17);
     } else {
       if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
-	return i2cReturnCode(0x18);
+	return i2cReturnCode(device, 0x18);
 
       I2C_GenerateSTOP(I2Cx, ENABLE);
     }
@@ -499,20 +497,20 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uin
   } else {
     for(uint8_t i = 0; i < dataSize - 3; i++) {
       if(!i2cWaitForFlag(I2Cx, I2C_FLAG_RXNE, SET))
-	return i2cReturnCode(0x19);
+	return i2cReturnCode(device, 0x19);
       
       data[i] = I2C_ReceiveData(I2Cx);
     }
 
     if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
-      return i2cReturnCode(0x1A);
+      return i2cReturnCode(device, 0x1A);
 
     I2C_AcknowledgeConfig(I2Cx, DISABLE);
 
     data[dataSize-3] = I2C_ReceiveData(I2Cx);
 
     if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
-      return i2cReturnCode(0x1B);
+      return i2cReturnCode(device, 0x1B);
 
     I2C_GenerateSTOP(I2Cx, ENABLE);
     
