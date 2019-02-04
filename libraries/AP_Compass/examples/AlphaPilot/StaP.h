@@ -17,10 +17,10 @@
 #endif
 #endif
 
-#define STAP_TRACEON  stap_traceEnable(true)
-#define STAP_TRACEOFF stap_traceEnable(false)
-#define STAP_TRACEDIS(h) stap_traceDisregard(h)
-#define STAP_TRACE(s) // stap_trace(s)
+#define STAP_TRACEON       stap_traceEnable(true)
+#define STAP_TRACEOFF      stap_traceEnable(false)
+#define STAP_TRACEDIS(h)   stap_traceDisregard(h)
+#define STAP_TRACE(s)      // stap_trace(s)
 #define STAP_TRACE_T(s, t) // stap_trace_ ## t(s)
 
 void *stap_traceEnable(bool);
