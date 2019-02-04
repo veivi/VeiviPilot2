@@ -233,7 +233,7 @@ bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size)
 void m24xxTest(void)
 {
   static bool success = true, initialized = false;
-  timeMs_t startTime;
+  static uint32_t startTime;
   static uint16_t state = 0xFFFF;
   uint32_t addr;
   static uint8_t size = TEST_SIZE;
@@ -244,7 +244,7 @@ void m24xxTest(void)
     initialized = true;
   }
   
-  if(stap_timeMillis() - startTime < 4000 || !success)
+  if(stap_timeMillis() - startTime < 2000 || !success)
     return;
   
   pseudoRandom((uint8_t*) &addr, sizeof(addr), &state);
