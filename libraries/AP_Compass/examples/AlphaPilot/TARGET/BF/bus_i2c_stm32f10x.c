@@ -415,9 +415,6 @@ static bool i2cReceiveStart(I2CDevice device, uint8_t addr, uint8_t size)
   if(!i2cWaitForFlagGeneric(I2Cx, 2, flags, SET))  // Wait for ADDR (or AF)
     return i2cReturnCode(device, 0x04);
 
-  //  if(!i2cWaitForFlag(I2Cx, I2C_FLAG_ADDR, SET))  // Wait for ADDR
-  //    return i2cReturnCode(device, 0x04);
-
   I2C_NACKPositionConfig(I2Cx, size != 2 ? I2C_NACKPosition_Current : I2C_NACKPosition_Next);
 
   I2C_AcknowledgeConfig(I2Cx, size < 3 ? DISABLE : ENABLE);
