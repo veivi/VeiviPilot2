@@ -276,7 +276,7 @@ bool logInit(uint32_t maxDuration)
     while(m24xxReadDirect(eepromSize+(1<<10)-1, &dummy, 1))
       eepromSize += 1<<10;
     
-    if(m24xxReadDirect(eepromSize-1, &dummy, 1)) {
+    if(m24xxReadDirect(eepromSize-(1<<10), &dummy, 1) || m24xxReadDirect(eepromSize-(1<<10), &dummy, 1)) {
       consoleNote_P(CS_STRING("EEPROM size = "));
       consolePrintUL(eepromSize/(1<<10));
       consolePrintLn("k bytes");
@@ -513,7 +513,7 @@ bool logTest(void)
   if(logSize < 1)
     return false;
 
-  consoleNote_P(CS_STRING("Filling with RANDOM"));
+  consoleNote_P(CS_STRING("Filling with RANDOM..."));
 
   uint16_t state = 0xFFFF;
   
@@ -531,7 +531,7 @@ bool logTest(void)
   }
   
   consoleNL();
-  consoleNote_P(CS_STRING("Checking"));
+  consoleNote_P(CS_STRING("Checking..."));
   
   state = 0xFFFF;
   
@@ -548,7 +548,7 @@ bool logTest(void)
   }
 
   consoleNL();
-  consoleNote_P(CS_STRING("Filling with ZERO"));
+  consoleNote_P(CS_STRING("Filling with ZERO..."));
   
   for(int i = 0; i < logSize; i++) {
     if((i & 0xFFF) == 0) {
@@ -562,7 +562,7 @@ bool logTest(void)
   }
   
   consoleNL();
-  consoleNote_P(CS_STRING("Checking"));
+  consoleNote_P(CS_STRING("Checking..."));
   
   for(int i = 0; i < logSize; i++) {
     if((i & 0xFFF) == 0) {

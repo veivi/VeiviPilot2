@@ -113,9 +113,11 @@ void stap_reboot(bool bootloader)
 
 uint8_t stap_I2cWait(uint8_t d)
 {
-  //  STAP_TRACEON;
+  void *handle = STAP_TRACEON;
   bool status = i2cWait(I2C_DEVICE, d);
-  //  STAP_TRACEOFF;
+  STAP_TRACEOFF;
+  if(status)
+    STAP_TRACEDIS(handle);
   return status ? 0 : 1; // i2cGetErrorCode();
 }
 

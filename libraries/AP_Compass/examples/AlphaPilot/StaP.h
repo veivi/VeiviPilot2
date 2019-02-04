@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "BaseI2C.h"
 
+#ifdef ALPHAPILOT
 #ifndef AVR
 #include "platform.h"
 #include "sensors/gyro.h"
@@ -14,12 +15,13 @@
 #define STAP_PERIOD_ATTI         HZ_TO_PERIOD(100)
 #define STAP_PERIOD_ACC          HZ_TO_PERIOD(1000)
 #endif
+#endif
 
 #define STAP_TRACEON  stap_traceEnable(true)
 #define STAP_TRACEOFF stap_traceEnable(false)
 #define STAP_TRACEDIS(h) stap_traceDisregard(h)
-#define STAP_TRACE(s) stap_trace(s)
-#define STAP_TRACE_T(s, t) stap_trace_ ## t(s)
+#define STAP_TRACE(s) // stap_trace(s)
+#define STAP_TRACE_T(s, t) // stap_trace_ ## t(s)
 
 void *stap_traceEnable(bool);
 void stap_traceDisregard(void*);

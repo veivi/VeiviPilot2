@@ -28,7 +28,7 @@ bool m24xxIsOnline(void)
 
 bool m24xxWait(uint32_t addr)
 {
-  if(stap_timeMillis() - lastWriteTime > M24XX_LATENCY)
+  if(!lastWriteTime || stap_timeMillis() - lastWriteTime > M24XX_LATENCY)
     // We're cool
     return true;
     
@@ -37,7 +37,7 @@ bool m24xxWait(uint32_t addr)
 #ifdef I2C_MEM_HARD_WAIT
   while(stap_timeMillis() - lastWriteTime < M24XX_LATENCY);
   return true;
-#else    
+#else
   return basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 #endif
 }
@@ -67,9 +67,8 @@ bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size)
   if(!m24xxWait(addr))
     return false;
   
-  //  STAP_TRACEON;
   bool status = basei2cInvoke(&target, basei2cReadWithWord((uint8_t) M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7), (uint16_t) (addr & 0xFFFFL), data, size));
-  //  STAP_TRACEOFF;
+
   return status;
 }
 
@@ -270,7 +269,7 @@ void m24xxTest(void)
     return;
   }
   
-  m24xxWait(addr);
+  //  m24xxWait(addr);
   
   bzero(buf_r, sizeof(buf_r));
   
