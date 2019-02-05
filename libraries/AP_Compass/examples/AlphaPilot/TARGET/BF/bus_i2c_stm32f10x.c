@@ -259,6 +259,20 @@ uint16_t i2cGetErrorCode(void)
   return i2cErrorCode;
 }
 
+uint16_t i2cGetErrorCounterReset(void)
+{
+  uint16_t value = i2cGetErrorCounter();
+  i2cErrorCount = 0;
+  return value;
+}
+
+uint16_t i2cGetErrorCodeReset(void)
+{
+  uint16_t value = i2cGetErrorCode();
+  i2cErrorCode = 0;
+  return value;
+}
+
 static void i2cUnstick(IO_t scl, IO_t sda)
 {
     int i;
