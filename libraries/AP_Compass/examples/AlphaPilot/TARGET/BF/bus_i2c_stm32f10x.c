@@ -405,7 +405,6 @@ static bool i2cTransmitStart(I2CDevice device, uint8_t addr)
   return true;
 }
 
-static bool i2cTransmit(I2CDevice device, uint8_t size, const uint8_t *message)
 {
   I2C_TypeDef *I2Cx = i2cDevice[device].reg;
   
@@ -446,6 +445,7 @@ static bool i2cReceiveStart(I2CDevice device, uint8_t addr, uint8_t size)
   return true;
 }
 
+
 bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uint8_t *addrPtr, uint8_t dataSize, const uint8_t *data)
 {
   I2C_TypeDef *I2Cx = i2cDevice[device].reg;
@@ -462,11 +462,9 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const ui
     I2C_GenerateSTOP(I2Cx, ENABLE);
     return i2cFailure(device, 0x31);
   }
-  
-  if(addrSize > 0 && !i2cTransmit(device, addrSize, addrPtr))
+    
     return i2cFailureReset(device, 0x32);
 
-  if(dataSize > 0 && !i2cTransmit(device, dataSize, data))
     return i2cFailureReset(device, 0x33);
   
   if(!i2cWaitForFlag(I2Cx, I2C_FLAG_TXE, SET))
@@ -502,7 +500,6 @@ bool i2cReadGeneric(I2CDevice device, uint8_t addr_, uint8_t addrSize, const uin
       return i2cFailure(device, 0x41);
     }
     
-    if(!i2cTransmit(device, addrSize, addrPtr))
       return i2cFailureReset(device, 0x42);
 
     if(!i2cWaitForFlag(I2Cx, I2C_FLAG_BTF, SET))
