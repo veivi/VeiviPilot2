@@ -255,8 +255,10 @@ void m24xxTest(void)
   consolePrintUI(addr);
 
   consolePrint_P(CS_STRING(" data written "));
-    
-  for(int i = 0; i < size; i++) {
+
+  int i = 0;
+  
+  for(i = 0; i < size; i++) {
     consolePrintUI(buf_w[i]);
     consolePrint(" ");
   }
@@ -284,7 +286,7 @@ void m24xxTest(void)
   if(memcmp(buf_w, buf_r, size)) {
     consolePrint_P(CS_STRING("read as "));
     
-    for(int i = 0; i < size; i++) {
+    for(i = 0; i < size; i++) {
       consolePrintUI(buf_r[i]);
       consolePrint(" ");
     }

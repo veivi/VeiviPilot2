@@ -2009,7 +2009,9 @@ void actuatorTask()
   if(!vpStatus.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
     return;
 
-  for(int i = 0; i < MAX_SERVO; i++) {
+  int i = 0;
+  
+  for(i = 0; i < MAX_SERVO; i++) {
     if(vpParam.functionMap[i] == fn_gear && !vpMode.gearSelected)
       // We haven't toggled the gear yet, stay inactive
       continue;

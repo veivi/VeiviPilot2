@@ -18,7 +18,7 @@ AP_AHRS_DCM ahrs {ins,  barometer, gps};
 
 NewI2C I2c = NewI2C();
 
-uint8_t nestCount = 0;
+volatile uint8_t nestCount = 0;
 
 
 static uint16_t sensorHash = 0xFFFF;

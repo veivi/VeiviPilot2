@@ -516,8 +516,9 @@ bool logTest(void)
   consoleNote_P(CS_STRING("Filling with RANDOM..."));
 
   uint16_t state = 0xFFFF;
+  int i = 0;
   
-  for(int i = 0; i < logSize; i++) {
+  for(i = 0; i < logSize; i++) {
     if((i & 0xFFF) == 0) {
       consolePrint(".");
       consoleFlush();
@@ -535,7 +536,7 @@ bool logTest(void)
   
   state = 0xFFFF;
   
-  for(int i = 0; i < logSize; i++) {
+  for(i = 0; i < logSize; i++) {
     if((i & 0xFFF) == 0) {
       consolePrint(".");
       consoleFlush();
@@ -550,7 +551,7 @@ bool logTest(void)
   consoleNL();
   consoleNote_P(CS_STRING("Filling with ZERO..."));
   
-  for(int i = 0; i < logSize; i++) {
+  for(i = 0; i < logSize; i++) {
     if((i & 0xFFF) == 0) {
       consolePrint(".");
       consoleFlush();
@@ -564,7 +565,7 @@ bool logTest(void)
   consoleNL();
   consoleNote_P(CS_STRING("Checking..."));
   
-  for(int i = 0; i < logSize; i++) {
+  for(i = 0; i < logSize; i++) {
     if((i & 0xFFF) == 0) {
       consolePrint(".");
       consoleFlush();

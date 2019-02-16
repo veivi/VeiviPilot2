@@ -172,7 +172,9 @@ float coeffOfLiftInverse(float target)
 
 void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state)
 {
-  for(uint8_t i = 0; i < size; i++) {
+  uint8_t i = 0;
+  
+  for(i = 0; i < size; i++) {
     *state = crc16_update(*state, 0x0);
     value[i] = (*state) & 0xFF;
   }
