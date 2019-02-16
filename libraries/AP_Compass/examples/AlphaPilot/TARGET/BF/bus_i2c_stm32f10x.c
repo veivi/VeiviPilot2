@@ -24,7 +24,13 @@
 #include <string.h>
 
 #include "platform.h"
+#ifdef ALPHAPILOT
 #include <AlphaPilot/StaP.h>
+#else
+#define STAP_TRACE(s)
+#define STAP_TRACE_T(v,t)
+#endif
+
 
 #if defined(USE_I2C) && !defined(SOFT_I2C)
 
@@ -491,6 +497,30 @@ bool i2cReceiveLoop(I2CDevice device, uint8_t size, uint8_t *message)
 
   return true;
 }  
+
+/*
+
+typedef enum { i2c_idle, i2c_transmit, i2c_receive } I2CDirection_t;
+
+typedef struct I2CTransferUnit {
+  I2CDirection_t dir;
+  uint8_t *buffer;
+  uint8_t size;
+} I2CTransferUnit_t;
+
+bool i2cTransfer(I2CDevice device, uint8_t target, int num, I2CTransferUnit_t *job)
+{
+  I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+  
+  STAP_TRACE("TRA ");
+
+  if(!i2cSync(device))
+    return i2cFailureReset(device, 0x50);
+    
+  for(int i = 0; i < num; i++) {
+  }
+}
+*/
 
 bool i2cWriteGeneric(I2CDevice device, uint8_t target, uint8_t addrSize, const uint8_t *addr, uint8_t dataSize, const uint8_t *data)
 {

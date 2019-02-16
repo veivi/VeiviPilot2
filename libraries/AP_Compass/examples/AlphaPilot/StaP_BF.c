@@ -13,6 +13,7 @@
 #include "io/serial.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "flight/servos.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/rx/rx_pwm.h"
 #include "fc/runtime_config.h"

@@ -2006,12 +2006,10 @@ float (*functionTable[])(void) = {
 
 void actuatorTask()
 {
-  int i = 0;
-  
   if(!vpStatus.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
     return;
 
-  for(i = 0; i < MAX_SERVO; i++) {
+  for(int i = 0; i < MAX_SERVO; i++) {
     if(vpParam.functionMap[i] == fn_gear && !vpMode.gearSelected)
       // We haven't toggled the gear yet, stay inactive
       continue;
