@@ -165,7 +165,7 @@ float coeffOfLiftInverse(float target)
       consolePrintLnF(target);
       return -1e6;
     }
-  } while(fabs(approx - target) > 0.001);
+  } while(fabs(approx - target) > 0.0005);
 
   return center;
 }

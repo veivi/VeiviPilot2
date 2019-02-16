@@ -400,7 +400,7 @@ void monitorTask()
   // PPM monitoring
 
   if(!inputSourceGood())
-    ; //lastPPMWarn = stap_currentMicros;
+    lastPPMWarn = stap_currentMicros;
   
   // I2C errors
 
@@ -2088,7 +2088,6 @@ void testTask()
 }
 
 struct Task alphaPilotTasks[] = {
-  //  { testTask, HZ_TO_PERIOD(103.1), false, 0 },
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },
 #endif
