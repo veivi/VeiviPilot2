@@ -2082,11 +2082,6 @@ void configTaskGroup()
     deriveParams();
 }
 
-void testTask()
-{
-  m24xxTest();
-}
-
 struct Task alphaPilotTasks[] = {
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },

@@ -105,7 +105,6 @@ extern "C" bool stap_baroUpdate(void)
   barometer.update();
   barometer.accumulate();
   return true;
-  return true;
 }
 
 extern "C" float stap_baroRead(void)
