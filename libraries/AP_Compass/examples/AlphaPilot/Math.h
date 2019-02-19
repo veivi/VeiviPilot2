@@ -13,7 +13,7 @@
 #define CIRCLE (2*PI_F)
 #define RADIAN (180/PI_F)
 
-extern const float stabilityElevExp_c, stabilityAileExp1_c, stabilityAileExp2_c , stabilityPusherExp_c, stabilityRudExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
+extern const float stabilityElevExp_c, stabilityAileExp1_c, stabilityAileExp2_c , stabilityPusherExp_c, stabilityRudExp_c, yawDamperExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
 
 float signf(float x);
 float sq(float x);

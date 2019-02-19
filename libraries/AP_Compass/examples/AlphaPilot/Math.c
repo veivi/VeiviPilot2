@@ -9,7 +9,8 @@
 const float stabilityElevExp_c = -1.5;
 const float stabilityAileExp1_c = -1.5;
 const float stabilityAileExp2_c = 1.0;
-const float stabilityRudExp_c = -2.0;
+const float stabilityRudExp_c = -1.5;
+const float yawDamperExp_c = -2.0;
 const float stabilityPusherExp_c = -0.5;
 
 const float airDensity_c = 1.225;

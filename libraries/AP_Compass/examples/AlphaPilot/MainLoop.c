@@ -157,6 +157,7 @@ void mainLoopSetup()
 
   pidCtrlInit(&elevCtrl);
   pidCtrlInit(&pushCtrl);
+  pidCtrlInit(&rudderCtrl);
   pidCtrlInit(&throttleCtrl);
   pidCtrlInitUnwinding(&aileCtrl);
   pidCtrlSetRange(&aileCtrl, RATIO(2/3));

@@ -18,7 +18,7 @@ bool paramsModified = false;
 uint32_t lastPPMWarn;
 float fieldStrength;
 
-PIDCtrl_t elevCtrl, pushCtrl, throttleCtrl, aileCtrl;
+PIDCtrl_t elevCtrl, pushCtrl, rudderCtrl, throttleCtrl, aileCtrl;
 Sampler_t alphaSampler, iasSampler;
 SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter, flapActuator;
 SWAvg_t liftFilter;

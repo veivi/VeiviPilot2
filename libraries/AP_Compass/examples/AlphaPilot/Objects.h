@@ -53,7 +53,7 @@ struct FeatureRecord {
 
 struct FlightState {
   float IAS, dynP, alpha;
-  float accX, accY, accZ, acc, alt, bank, pitch, rollR, pitchR, yawR;
+  float accX, accY, accZ, acc, alt, bank, pitch, rollR, pitchR, yawR, ball;
   uint16_t heading;
   float accDir, relWind, slope;
 };
@@ -68,7 +68,7 @@ struct InputState {
 struct ControlState {
   float testGain;
   float o_P, r_Mix, yd_P, t_Mix;
-  float s_Ku_ref, i_Ku_ref, yd_P_ref;
+  float s_Ku_ref, i_Ku_ref, yd_P_ref, r_Ku_ref;
   float elevTrim, targetAlpha, targetPressure, targetPitchR, minThrottle;
   float elevPredict, ailePredict, aileNeutral, pusher;
   uint8_t gearSel, flapSel;
@@ -90,7 +90,7 @@ struct GPSFix {
 // Control and signal processing
 //
 
-extern PIDCtrl_t aileCtrl, elevCtrl, pushCtrl, throttleCtrl;
+extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl, throttleCtrl;
 extern Sampler_t alphaSampler, iasSampler;
 extern SWAvg_t liftFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, rollAccelLimiter, trimRateLimiter;

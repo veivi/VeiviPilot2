@@ -37,6 +37,7 @@ const struct ParamRecord paramDefaults = {
   .alphaMax = { 12.0f/RADIAN, 12.0f/RADIAN },
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
+  .r_Ku_C = 100, .r_Tu = 0.25, 
   .r_Mix = 0.1,
   .at_Ku = 1, .at_Tu = 2.0,
   .cc_Ku = 3, .cc_Tu = 1.5,

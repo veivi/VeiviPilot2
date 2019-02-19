@@ -351,7 +351,7 @@ void sensorTaskSync()
   // Derived values
   //
     
-  damperInput(&ball, atan2f(-vpFlight.accY, fabs(vpFlight.accZ))/(15.0/RADIAN));
+  vpFlight.ball = atan2f(-vpFlight.accY, fabs(vpFlight.accZ));
   damperInput(&iasFilter, vpFlight.IAS);
   damperInput(&iasFilterSlow, vpFlight.IAS);
   vpFlight.slope = vpFlight.alpha - vpParam.offset - vpFlight.pitch;
@@ -997,6 +997,7 @@ void configurationTask()
 
   float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
   float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
+  float r_Ku = scaleByIAS(vpParam.r_Ku_C, stabilityRudExp_c);
 
   //   Aileron
   
@@ -1010,9 +1011,13 @@ void configurationTask()
   
   pidCtrlSetZNPID(&pushCtrl, i_Ku*scale, vpParam.i_Tu);
 
+  //   Rudder
+  
+  pidCtrlSetZNPI(&rudderCtrl, r_Ku*scale, vpParam.r_Tu);
+
   //   Yaw damper
   
-  vpControl.yd_P = scaleByIAS(vpParam.yd_C, stabilityRudExp_c) * scale;
+  vpControl.yd_P = scaleByIAS(vpParam.yd_C, yawDamperExp_c) * scale;
   
   if(vpMode.slowFlight)
     pidCtrlSetZNPI(&throttleCtrl, vpParam.at_Ku, vpParam.at_Tu);
@@ -1082,6 +1087,12 @@ void configurationTask()
       vpFeature.pusher = false;
       break;
       
+    case 9:
+      // Auto rudder gain
+         
+      pidCtrlSetPID(&rudderCtrl, vpControl.testGain = testGainExpo(vpControl.r_Ku_ref), 0, 0);
+      break;
+            
     case 10:
       // Aileron to rudder mix
 
@@ -1122,6 +1133,7 @@ void configurationTask()
     // Track s_Ku until a test is activated
     
     vpControl.s_Ku_ref = s_Ku;
+    vpControl.r_Ku_ref = r_Ku;
     vpControl.i_Ku_ref = i_Ku;
     vpControl.yd_P_ref = vpControl.yd_P;
   }
@@ -1259,7 +1271,7 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" alt = "));
 	consolePrintF(vpFlight.alt);
 	consolePrint_P(CS_STRING(" ball = "));
-	consolePrintFP(damperOutput(&ball), 2);
+	consolePrintFP(vpFlight.ball, 2);
 	break;
 
       case 5:
@@ -1388,7 +1400,7 @@ void gaugeTask()
 	break;
 
       case 16:
-	p = 8*clamp(damperOutput(&ball), -1, 1);
+	p = 8*clamp(damperInput(&ball, vpFlight.ball)/(15.0/RADIAN), -1, 1);
 	consolePrint("|");
 	if(p < 0) {
 	  consoleTab(8+p);
@@ -1752,6 +1764,17 @@ void aileronModule()
 void rudderModule()
 {
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
+    
+  if(vpInput.rudderPilotInput || vpStatus.weightOnWheels) {
+    // Pilot input is present or WoW, the stick applies directly
+    pidCtrlReset(&rudderCtrl, 0, 0);
+  } else {
+    // No pilot input, try to keep the ball centered
+
+   pidCtrlInput(&rudderCtrl, vpFlight.ball, controlCycle);
+  }
+    
+  vpOutput.rudder += pidCtrlOutput(&rudderCtrl);
   vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
 }
 

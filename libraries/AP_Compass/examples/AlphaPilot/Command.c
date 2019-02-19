@@ -25,6 +25,8 @@ const struct Command commands[] CS_QUALIFIER = {
   { "alt_ff", c_ff, e_ff_curve, &vpParam.coeff_FF[1] },
   { "stabilizer_pid_zn", c_stabilizer_pid_zn,
     e_float, &vpParam.s_Ku_C, &vpParam.s_Tu },
+  { "rudder_pid_zn", c_rudder_pid_zn,
+    e_float, &vpParam.r_Ku_C, &vpParam.r_Tu },
   { "rmix", c_rmix, e_float, &vpParam.r_Mix },
   { "tmix", c_tmix, e_float, &vpParam.t_Mix, &vpParam.t_Expo },
   { "edefl", c_edefl, e_angle90, &vpParam.elevDefl },

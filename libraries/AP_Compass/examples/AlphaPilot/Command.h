@@ -67,6 +67,7 @@ typedef enum {
   c_alpha,
   c_stabilizer_pid_zn,
   c_inner_pid_zn,
+  c_rudder_pid_zn,
   c_outer_p,
   c_rmix,
   c_tmix,

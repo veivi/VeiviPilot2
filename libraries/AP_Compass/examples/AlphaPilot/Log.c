@@ -17,7 +17,8 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define PITCH    &vpFlight.pitch
 #define PITCHR   &vpFlight.pitchR
 #define HEADING  &vpFlight.heading
-#define YAWR     &vpFlight.yawR
+#define YAWR     &vpFlight.ball
+#define BALL     &vpFlight.yawR
 #define AILESTK  &vpInput.aile
 #define ELEVSTK  &vpInput.elev
 #define THROSTK  &vpInput.throttle
@@ -45,6 +46,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define PITCHR NULL
 #define HEADING NULL
 #define YAWR NULL
+#define BALL NULL
 #define AILESTK NULL
 #define ELEVSTK NULL
 #define THROSTK NULL
@@ -75,6 +77,7 @@ struct LogChannel logChannels[] = {
   [lc_pitchr] =  { "PRTE",   lt_angle,    -720, 720,    PITCHR },
   [lc_head] =    { "HEAD",   lt_integer,   0, 359,      HEADING },
   [lc_yawr] =    { "YRTE",   lt_angle,    -720, 720,    YAWR },
+  [lc_ball] =    { "BALL",   lt_angle,    -90, 90,      BALL },
   [lc_aile] =    { "AILE",   lt_real,     -1.5, 1.5,    AILE },
   [lc_elev] =    { "ELEV",   lt_real,     -1.5, 1.5,    ELEV },
   [lc_elev_p] =  { "ELEP",   lt_real,     -1.5, 1.5,    ELEV_P },

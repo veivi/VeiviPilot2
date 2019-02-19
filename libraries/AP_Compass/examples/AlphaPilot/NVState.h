@@ -53,6 +53,7 @@ struct ParamRecord {
   float alphaMax[2];
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;
+  float r_Ku_C, r_Tu;
   float r_Mix;
   float at_Ku, at_Tu;
   float cc_Ku, cc_Tu;
