@@ -179,20 +179,15 @@ bool stap_gyroUpdate(void)
   return true;
 }
 
+static rollAndPitchTrims_t trims = { 0, 0 };
+
 bool stap_accUpdate(void)
 {
-  static rollAndPitchTrims_t trims;
-  
   accUpdate(stap_timeMicros(), &trims);
 }
 
 bool stap_attiUpdate(void)
 {
-  if(vpStatus.armed)
-    ENABLE_ARMING_FLAG(ARMED);
-  else
-    DISABLE_ARMING_FLAG(ARMED);
-    
   imuUpdateAttitude(stap_timeMicros());
 }
 
