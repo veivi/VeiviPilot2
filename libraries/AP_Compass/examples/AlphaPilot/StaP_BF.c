@@ -213,7 +213,7 @@ bool stap_sensorRead(stap_Vector3f_t *a, stap_Vector3f_t *atti, stap_Vector3f_t 
   // Acceleration
  
   a->x = acc.accADC[X]/200;
-  a->y = acc.accADC[Y]/200;
+  a->y = -acc.accADC[Y]/200;
   a->z = acc.accADC[Z]/200;
 
   return true;

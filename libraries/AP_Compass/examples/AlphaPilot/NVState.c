@@ -37,7 +37,7 @@ const struct ParamRecord paramDefaults = {
   .alphaMax = { 12.0f/RADIAN, 12.0f/RADIAN },
   .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
   .s_Ku_C = 400, .s_Tu = 0.25, 
-  .r_Ku_C = 100, .r_Tu = 0.25, 
+  .r_Ku_C = 0.1, .r_Tu = 0.25, 
   .r_Mix = 0.1,
   .at_Ku = 1, .at_Tu = 2.0,
   .cc_Ku = 3, .cc_Tu = 1.5,
@@ -264,6 +264,11 @@ void printParams()
   consolePrintFP(vpParam.s_Ku_C, 4);
   consolePrint_P(CS_STRING(" Tu = "));
   consolePrintLnFP(vpParam.s_Tu, 4);
+  consoleNoteLn_P(CS_STRING("  Auto-rudder"));
+  consoleNote_P(CS_STRING("    Ku*IAS^1.5 = "));
+  consolePrintFP(vpParam.r_Ku_C, 4);
+  consolePrint_P(CS_STRING(" Tu = "));
+  consolePrintLnFP(vpParam.r_Tu, 4);
   consoleNoteLn_P(CS_STRING("  Yaw damper"));
   consoleNote_P(CS_STRING("    P*IAS^2 = "));
   consolePrintLnFP(vpParam.yd_C, 4);

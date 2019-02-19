@@ -94,7 +94,7 @@ extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl, throttleCtrl;
 extern Sampler_t alphaSampler, iasSampler;
 extern SWAvg_t liftFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, rollAccelLimiter, trimRateLimiter;
-extern Damper_t iasFilter, iasFilterSlow, ball, accAvg;
+extern Damper_t iasFilter, iasFilterSlow, accAvg;
 extern Washout_t yawDamper;
 
 // struct GPSFix gpsFix;

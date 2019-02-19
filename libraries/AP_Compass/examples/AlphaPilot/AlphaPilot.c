@@ -1400,7 +1400,7 @@ void gaugeTask()
 	break;
 
       case 16:
-	p = 8*clamp(damperInput(&ball, vpFlight.ball)/(15.0/RADIAN), -1, 1);
+	p = 8*clamp(vpFlight.ball/(15.0/RADIAN), -1, 1);
 	consolePrint("|");
 	if(p < 0) {
 	  consoleTab(8+p);
@@ -1765,8 +1765,8 @@ void rudderModule()
 {
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
     
-  if(vpInput.rudderPilotInput || vpStatus.weightOnWheels) {
-    // Pilot input is present or WoW, the stick applies directly
+  if(vpInput.rudderPilotInput || vpMode.takeOff || vpStatus.weightOnWheels) {
+    // Pilot input is present/takeoff mode/WoW, the stick applies directly
     pidCtrlReset(&rudderCtrl, 0, 0);
   } else {
     // No pilot input, try to keep the ball centered
