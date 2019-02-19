@@ -351,7 +351,7 @@ void sensorTaskSync()
   // Derived values
   //
     
-  damperInput(&ball, vpFlight.accY);
+  damperInput(&ball, atan2f(-vpFlight.accY, fabs(vpFlight.accZ))/(15.0/RADIAN));
   damperInput(&iasFilter, vpFlight.IAS);
   damperInput(&iasFilterSlow, vpFlight.IAS);
   vpFlight.slope = vpFlight.alpha - vpParam.offset - vpFlight.pitch;
@@ -400,7 +400,7 @@ void monitorTask()
   // PPM monitoring
 
   if(!inputSourceGood())
-    lastPPMWarn = stap_currentMicros;
+    ; // lastPPMWarn = stap_currentMicros;
   
   // I2C errors
 
@@ -1204,6 +1204,7 @@ void gaugeTask()
     uint16_t tmp = 0;
     uint8_t i = 0, g = 0;
     float j = 0;
+    int p = 0;
 	
     for(g = 0; g < gaugeCount; g++) {
       switch(gaugeVariable[g]) {
@@ -1386,6 +1387,26 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(")"));
 	break;
 
+      case 16:
+	p = 8*clamp(damperOutput(&ball), -1, 1);
+	consolePrint("|");
+	if(p < 0) {
+	  consoleTab(8+p);
+	  consolePrint("o");
+	}
+	consoleTab(8);
+	if(p == 0)
+	  consolePrint("0");
+	else
+	  consolePrint("|");
+	if(p > 0) {
+	  consoleTab(8+p);
+	  consolePrint("o");
+	}
+	consoleTab(16);
+	consolePrint("|");
+	break;
+	
       case 20:
 	consolePrint_P(CS_STRING(" log bw = "));
 	consolePrintI((int) logBandWidth);

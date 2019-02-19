@@ -169,7 +169,7 @@ void mainLoopSetup()
   slopeInit(&trimRateLimiter, 3/RADIAN);
   slopeInit(&rollAccelLimiter, 0);
   
-  damperInit(&ball, 0.5*CONTROL_HZ, 0);
+  damperInit(&ball, 0.075*CONTROL_HZ, 0);
   damperInit(&iasFilter, 2, 0);
   damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
   damperInit(&accAvg, 2*CONTROL_HZ, G);
