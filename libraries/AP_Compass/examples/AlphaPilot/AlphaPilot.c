@@ -1003,12 +1003,9 @@ void configurationTask()
   
   pidCtrlSetZNPID(&aileCtrl, s_Ku*scale, vpParam.s_Tu);
 
-  //   Elevator inner loop
+  //   Elevator inner loop and pusher
   
   pidCtrlSetZNPID(&elevCtrl, i_Ku*scale, vpParam.i_Tu);
-
-  //   Elevator pusher
-  
   pidCtrlSetZNPID(&pushCtrl, i_Ku*scale, vpParam.i_Tu);
 
   //   Rudder
@@ -1029,7 +1026,7 @@ void configurationTask()
   vpControl.t_Mix = vpParam.t_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0f/2)/vpParam.aileDefl);
-  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.1f);
+  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.15f);
   
   //
   // Apply test mode
