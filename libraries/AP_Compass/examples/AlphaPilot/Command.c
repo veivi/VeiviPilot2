@@ -365,8 +365,7 @@ void executeCommand(char *buf)
 
     case c_rollrate:
       if(numParams > 0) {
-	vpParam.roll_C
-	  = param[0]/RADIAN/powf(vpDerived.minimumIAS, stabilityAileExp2_c);
+	vpParam.roll_C = param[0]/RADIAN/powf(vpDerived.minimumIAS, 1);
 	consoleNote_P(CS_STRING("Roll rate K = "));
 	consolePrintLnF(vpParam.roll_C);
 	storeNVState();

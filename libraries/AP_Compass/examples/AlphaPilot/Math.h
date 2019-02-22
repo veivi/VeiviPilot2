@@ -13,7 +13,7 @@
 #define CIRCLE (2*PI_F)
 #define RADIAN (180/PI_F)
 
-extern const float stabilityElevExp_c, stabilityAileExp1_c, stabilityAileExp2_c , stabilityPusherExp_c, stabilityRudExp_c, yawDamperExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
+extern const float stabGainExp_c, yawDamperExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
 
 float signf(float x);
 float sq(float x);
@@ -29,8 +29,8 @@ float alphaPredict(float x);
 float alphaPredictInverse(float x);
 float rollRatePredict(float r);
 float rollRatePredictInverse(float x);
-float scaleByIAS(float k, float p);
-// float scaleByRelativeIAS(float k, float p);
+float scaleByIAS_E(float k, float p);
+float scaleByIAS(float k);
 float effIAS();
 float effDP();
 void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state);

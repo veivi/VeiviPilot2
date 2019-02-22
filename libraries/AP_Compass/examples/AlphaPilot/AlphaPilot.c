@@ -592,7 +592,7 @@ void statusTask()
     // We may be in a flare
 
     if(!vpStatus.flare)
-      consoleNoteLn_P(CS_STRING("We seem to ba FLARING"));
+      consoleNoteLn_P(CS_STRING("We seem to be FLARING"));
     
     vpStatus.flare = true;
     lastFlare = stap_currentMicros;
@@ -995,9 +995,9 @@ void configurationTask()
   
   // Default controller settings
 
-  float s_Ku = scaleByIAS(vpParam.s_Ku_C, stabilityAileExp1_c);
-  float i_Ku = scaleByIAS(vpParam.i_Ku_C, stabilityElevExp_c);
-  float r_Ku = scaleByIAS(vpParam.r_Ku_C, stabilityRudExp_c);
+  float s_Ku = scaleByIAS_E(vpParam.s_Ku_C, stabGainExp_c);
+  float i_Ku = scaleByIAS_E(vpParam.i_Ku_C, stabGainExp_c);
+  float r_Ku = scaleByIAS_E(vpParam.r_Ku_C, stabGainExp_c);
 
   //   Aileron
   
@@ -1017,7 +1017,7 @@ void configurationTask()
 
   //   Yaw damper
   
-  vpControl.yd_P = scaleByIAS(vpParam.yd_C, yawDamperExp_c) * scale;
+  vpControl.yd_P = scaleByIAS_E(vpParam.yd_C, yawDamperExp_c) * scale;
   
   if(vpMode.slowFlight)
     pidCtrlSetZNPI(&throttleCtrl, vpParam.at_Ku, vpParam.at_Tu);
@@ -1583,7 +1583,7 @@ void gpsTask()
 //
 
 const float pusherBoost_c = 0.2f;
-const float pusherBias_c = -2.5f/RADIAN;
+const float pusherBias_c = -2.0f/RADIAN;
 
 void elevatorModule()
 {
@@ -1763,18 +1763,23 @@ void aileronModule()
 
 void rudderModule()
 {
+  // Apply stick input
+  
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
     
-  if(vpInput.rudderPilotInput || vpMode.takeOff || vpStatus.weightOnWheels) {
-    // Pilot input is present/takeoff mode/WoW, the stick applies directly
+  if(vpInput.rudderPilotInput || vpMode.takeOff || vpStatus.weightOnWheels)
+    // Pilot input is present/takeoff mode/WoW, keep auto-rudder reset
     pidCtrlReset(&rudderCtrl, 0, 0);
-  } else {
-    // No pilot input, try to keep the ball centered
-
+  else
+    // No pilot input, auto-rudder is active
    pidCtrlInput(&rudderCtrl, vpFlight.ball, controlCycle);
-  }
-    
+
+  // Apply auto-rudder
+  
   vpOutput.rudder += pidCtrlOutput(&rudderCtrl);
+
+  // Apply yaw damper
+  
   vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
 }
 
@@ -1860,7 +1865,7 @@ void mixingTask()
   
   vpOutput.elev =
     constrainServoOutput(vpOutput.elev
-			 + scaleByIAS(vpControl.t_Mix, -2)
+			 + scaleByIAS_E(vpControl.t_Mix, -2)
 			 * powf(pidCtrlOutput(&throttleCtrl), vpParam.t_Expo));
 
   // Aile to rudder mix

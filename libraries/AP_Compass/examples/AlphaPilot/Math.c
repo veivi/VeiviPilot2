@@ -6,12 +6,8 @@
 #include "DSP.h"
 #include "CRC16.h"
 
-const float stabilityElevExp_c = -1.5;
-const float stabilityAileExp1_c = -1.5;
-const float stabilityAileExp2_c = 1.0;
-const float stabilityRudExp_c = -1.5;
+const float stabGainExp_c = -1.5;
 const float yawDamperExp_c = -2.0;
-const float stabilityPusherExp_c = -0.5;
 
 const float airDensity_c = 1.225;
 
@@ -86,17 +82,15 @@ float alphaPredict(float y)
 
 float rollRatePredict(float pos)
 {
-  return expo(pos, vpParam.expo)
-    * scaleByIAS(vpParam.roll_C, stabilityAileExp2_c);
+  return expo(pos, vpParam.expo) * scaleByIAS(vpParam.roll_C);
 }
 
 float rollRatePredictInverse(float rate)
 {
-  return clamp(expo(rate/scaleByIAS(vpParam.roll_C, stabilityAileExp2_c),
-		    1/vpParam.expo), -1, 1);
+  return clamp(expo(rate/scaleByIAS(vpParam.roll_C), 1/vpParam.expo), -1, 1);
 }
 
-float scaleByIAS(float k, float expo)
+float scaleByIAS_E(float k, float expo)
 {
   float ias = effIAS();
   
@@ -107,17 +101,10 @@ float scaleByIAS(float k, float expo)
   return k * powf(ias, expo);
 }
 
-/*
-float scaleByIAS(float k, float expo)
+float scaleByIAS(float k)
 {
-  return genericScaleByIAS(k, 1, expo);
+  return scaleByIAS_E(k, 1);
 }
-
-float scaleByRelativeIAS(float k, float expo)
-{
-  return genericScaleByIAS(k, vpDerived.minimumIAS, expo);
-}
-*/
 
 float dynamicPressure(float ias)
 {
@@ -166,7 +153,7 @@ float coeffOfLiftInverse(float target)
       consolePrintLnF(target);
       return -1e6;
     }
-  } while(fabs(approx - target) > 0.0005);
+  } while(fabsf(approx - target) > 0.0005f);
 
   return center;
 }
