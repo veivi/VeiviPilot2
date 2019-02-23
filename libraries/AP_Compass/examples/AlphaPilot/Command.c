@@ -61,7 +61,6 @@ const struct Command commands[] CS_QUALIFIER = {
   { "thrust", c_thrust, e_float, &vpParam.thrust },
   { "virtual", c_virtual, e_bool, &vpParam.virtualOnly },
   { "sensor", c_sensor, e_bool, &vpParam.sensorOrient },
-  { "flaperon", c_elevon, e_bool, &vpParam.flaperon },
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
   { "pmargin", c_pmargin, e_angle, &vpParam.pushMargin },
   { "yawdamper", c_yawdamper, e_float, &vpParam.yd_C },

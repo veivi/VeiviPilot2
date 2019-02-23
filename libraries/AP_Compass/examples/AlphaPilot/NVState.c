@@ -357,8 +357,6 @@ void printParams()
   consolePrintLn_P(CS_STRING(")"));
   consoleNote_P(CS_STRING("  Servo rate = "));
   consolePrintLnF(vpParam.servoRate);
-  if(vpParam.flaperon)
-    consoleNoteLn_P(CS_STRING("  Flaperon ENABLED"));
 
   consoleNote_P(CS_STRING("  We"));
   if(!vpParam.haveGear)

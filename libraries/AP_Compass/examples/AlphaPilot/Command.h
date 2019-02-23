@@ -36,8 +36,6 @@ typedef enum {
   c_weight,
   c_fuel,
   c_thrust,
-  c_elevon,
-  c_vtail,
   c_margin,
   c_yawdamper,
   c_at_zn,
