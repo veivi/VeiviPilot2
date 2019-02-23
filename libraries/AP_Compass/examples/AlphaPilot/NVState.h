@@ -18,12 +18,12 @@ typedef enum {
   fn_gear,
   fn_steering,
   fn_brake,
-  fn_leftaileron, fn_rightaileron,
-  fn_leftcanard, fn_rightcanard,
-  fn_leftelevon, fn_rightelevon,
-  fn_lefttail, fn_righttail,
-  fn_leftflap, fn_rightflap,
-  fn_leftthrustvert, fn_rightthrustvert,
+  fn_flaperon1, fn_flaperon2,
+  fn_canard1, fn_canard2,
+  fn_elevon1, fn_elevon2,
+  fn_tail1, fn_tail2,
+  fn_flap1, fn_flap2,
+  fn_thrustvert1, fn_thrustvert2,
   fn_thrusthoriz,
   fn_gearinv,
   fn_invalid
@@ -80,6 +80,7 @@ struct ParamRecord {
   };
 
 struct DerivedParams {
+  bool valid;
   bool haveRetracts, haveFlaps;
   float totalMass;
   float assumedFlap;
@@ -112,6 +113,7 @@ bool readNVState(void);
 void storeNVState(void);
 void printParams(void);
 void deriveParams();
+void derivedInvalidate();
 int maxModels(void);
 void readData(uint8_t *data, int size);
 void storeData(const uint8_t *data, int size);

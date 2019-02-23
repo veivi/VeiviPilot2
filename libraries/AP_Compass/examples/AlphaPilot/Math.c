@@ -32,11 +32,13 @@ float signf(float x)
 
 float effIAS()
 {
+  deriveParams();
   return fmaxf(vpFlight.IAS, vpDerived.minimumIAS);
 }
 
 float effDP()
 {
+  deriveParams();
   return fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
 }
 
@@ -62,6 +64,7 @@ float constrainServoOutput(float value)
 
 float alphaPredictInverse(float x)
 {
+  deriveParams();
   if(vpDerived.coeff_FF[2] != 0.0f && x > vpDerived.apexAlpha)
     return vpDerived.apexElev;
   else
@@ -70,6 +73,7 @@ float alphaPredictInverse(float x)
 
 float alphaPredict(float y)
 {
+  deriveParams();
   const float a = vpDerived.coeff_FF[2], b = vpDerived.coeff_FF[1], c = vpDerived.coeff_FF[0];
   
   if(a == 0.0f)
@@ -118,6 +122,7 @@ float dynamicPressureInverse(float pressure)
 
 float coeffOfLiftGeneric(float aoa, const float coeff[])
 {
+  deriveParams();
   aoa = clamp(aoa, -vpDerived.maxAlpha, vpDerived.maxAlpha);
   return polynomial(CoL_degree, aoa, coeff);
 }
@@ -134,6 +139,8 @@ float coeffOfLiftClean(float aoa)
 
 float coeffOfLiftInverse(float target)
 {
+  deriveParams();
+  
   float left = -vpDerived.maxAlpha, right = vpDerived.maxAlpha;
   float center = 0, approx = 0;
 

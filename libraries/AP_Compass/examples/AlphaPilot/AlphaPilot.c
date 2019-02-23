@@ -287,7 +287,7 @@ void sensorTaskSync()
 
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1f;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
-    
+
   vpFlight.dynP = samplerMean(&iasSampler) * factor_c
     / cosf(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
@@ -929,7 +929,8 @@ void configurationTask()
   // TakeOff mode disabled when airspeed detected (or fails)
 
   if(vpMode.takeOff && vpStatus.positiveIAS
-     && (vpFlight.IAS > vpDerived.minimumIAS || vpFlight.alpha > vpDerived.thresholdAlpha))  {
+     && (vpFlight.IAS > vpDerived.minimumIAS
+	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
     consoleNoteLn_P(CS_STRING("TakeOff COMPLETED"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
@@ -1913,13 +1914,13 @@ float elevatorFn()
   return vpParam.elevDefl*vpOutput.elev + vpParam.elevNeutral;
 }
 
-float leftElevonFn()
+float elevon1Fn()
 {
     return vpParam.aileDefl*vpOutput.aile - vpParam.elevDefl*vpOutput.elev
       + vpParam.aileNeutral;
 }
 
-float rightElevonFn()
+float elevon2Fn()
 {
   return vpParam.aileDefl*vpOutput.aile + vpParam.elevDefl*vpOutput.elev
     + vpParam.elevNeutral;
@@ -1930,19 +1931,19 @@ float aileronFn()
     return vpParam.aileDefl*vpOutput.aile + vpParam.aileNeutral;
 }
 
-float flaperonFn()
+static float flaperon()
 {
-  return vpParam.flaperon ? vpParam.flapDefl*vpOutput.flap : 0;
+  return vpParam.flapDefl*vpOutput.flap;
 }
 
-float leftAileronFn()
+float flaperon1Fn()
 {
-  return aileronFn() + flaperonFn();
+  return aileronFn() + flaperon();
 }
 
-float rightAileronFn()
+float flaperon2Fn()
 {
-  return aileronFn() - flaperonFn();
+  return aileronFn() - flaperon();
 }
 
 float rudderFn()
@@ -1950,34 +1951,34 @@ float rudderFn()
   return vpParam.rudderNeutral + vpParam.rudderDefl*vpOutput.rudder;
 }
 
-float leftTailFn()
+float tail1Fn()
 {
   return vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder 
     + vpParam.elevNeutral;
 }
 
-float rightTailFn()
+float tail2Fn()
 {
   return -vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder
     + vpParam.rudderNeutral;
 }
 
-float leftCanardFn()
+float canard1Fn()
 {
   return vpParam.canardNeutral + vpParam.canardDefl*vpOutput.elev;
 }
 
-float rightCanardFn()
+float canard2Fn()
 {
-  return -leftCanardFn();
+  return -canard1Fn();
 }
 
-float leftThrustVertFn()
+float thrustVert1Fn()
 {
   return vpParam.vertNeutral + vpParam.vertDefl*vpOutput.thrustVert;
 }
 
-float rightThrustVertFn()
+float thrustVert2Fn()
 {
   return vpParam.vertNeutral - vpParam.vertDefl*vpOutput.thrustVert;
 }
@@ -1995,12 +1996,12 @@ float steeringFn()
     return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
 }
 
-float leftFlapFn()
+float flap1Fn()
 {
   return vpParam.flapNeutral + vpParam.flapDefl*vpOutput.flap;
 }
 
-float rightFlapFn()
+float flap2Fn()
 {
   return vpParam.flap2Neutral - vpParam.flapDefl*vpOutput.flap;
 }
@@ -2034,18 +2035,18 @@ float (*functionTable[])(void) = {
   [fn_gear] = gearFn,
   [fn_steering] = steeringFn,
   [fn_brake] = brakeFn,
-  [fn_leftaileron] = leftAileronFn,
-  [fn_rightaileron] = rightAileronFn,
-  [fn_leftcanard] = leftCanardFn,
-  [fn_rightcanard] = rightCanardFn,
-  [fn_leftelevon] = leftElevonFn,
-  [fn_rightelevon] = rightElevonFn,
-  [fn_lefttail] = leftTailFn,
-  [fn_righttail] = rightTailFn,
-  [fn_leftflap] = leftFlapFn,
-  [fn_rightflap] = rightFlapFn,
-  [fn_leftthrustvert] = leftThrustVertFn,
-  [fn_rightthrustvert] = rightThrustVertFn,
+  [fn_flaperon1] = flaperon1Fn,
+  [fn_flaperon2] = flaperon2Fn,
+  [fn_canard1] = canard1Fn,
+  [fn_canard2] = canard2Fn,
+  [fn_elevon1] = elevon1Fn,
+  [fn_elevon2] = elevon2Fn,
+  [fn_tail1] = tail1Fn,
+  [fn_tail2] = tail2Fn,
+  [fn_flap1] = flap1Fn,
+  [fn_flap2] = flap2Fn,
+  [fn_thrustvert1] = thrustVert1Fn,
+  [fn_thrustvert2] = thrustVert2Fn,
   [fn_thrusthoriz] = thrustHorizFn,
   [fn_gearinv] = gearFnInv
 };
@@ -2110,6 +2111,7 @@ void simulatorLinkTask()
 
 void controlTaskGroup()
 {
+  deriveParams();
   sensorTaskSync();
   receiverTask();
   controlTask();
@@ -2119,13 +2121,15 @@ void controlTaskGroup()
 
 void configTaskGroup()
 {
+  if(vpOutput.flap != vpDerived.assumedFlap)
+    // Flap setting has changed
+    derivedInvalidate();
+  
+  deriveParams();
+  
   statusTask();
   configurationTask();
   trimTask();
-
-  if(vpOutput.flap != vpDerived.assumedFlap)
-    // Update CoL curve
-    deriveParams();
 }
 
 struct Task alphaPilotTasks[] = {

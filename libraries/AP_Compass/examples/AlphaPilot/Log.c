@@ -17,8 +17,8 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define PITCH    &vpFlight.pitch
 #define PITCHR   &vpFlight.pitchR
 #define HEADING  &vpFlight.heading
-#define YAWR     &vpFlight.ball
-#define BALL     &vpFlight.yawR
+#define YAWR     &vpFlight.yawR
+#define BALL     &vpFlight.ball
 #define AILESTK  &vpInput.aile
 #define ELEVSTK  &vpInput.elev
 #define THROSTK  &vpInput.throttle

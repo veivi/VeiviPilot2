@@ -282,6 +282,8 @@ void executeCommand(char *buf)
 	break;
       }
     }
+
+    derivedInvalidate();
   } else {
     //
     // Complex
@@ -368,7 +370,7 @@ void executeCommand(char *buf)
 	vpParam.roll_C = param[0]/RADIAN/powf(vpDerived.minimumIAS, 1);
 	consoleNote_P(CS_STRING("Roll rate K = "));
 	consolePrintLnF(vpParam.roll_C);
-	storeNVState();
+	vpDerived.valid = false;
       }
       break;
           
@@ -478,10 +480,6 @@ void executeCommand(char *buf)
       logClear();
       break;
 
-    case c_init:
-      // logInit();
-      break;
-
     case c_stop:
       logDisable();
       break;
@@ -537,40 +535,40 @@ void executeCommand(char *buf)
 	
 	switch(paramText[1][0]) {
 	case 'L':
-	  fn = fn_leftaileron;
+	  fn = fn_flaperon1;
 	  break;
 	case 'R':
-	  fn = fn_rightaileron;
+	  fn = fn_flaperon2;
 	  break;
 	case 'c':
-	  fn = fn_leftcanard;
+	  fn = fn_canard1;
 	  break;
 	case 'C':
-	  fn = fn_rightcanard;
+	  fn = fn_canard2;
 	  break;
 	case 'v':
-	  fn = fn_leftelevon;
+	  fn = fn_elevon1;
 	  break;
 	case 'V':
-	  fn = fn_rightelevon;
+	  fn = fn_elevon2;
 	  break;
 	case 'f':
-	  fn = fn_leftflap;
+	  fn = fn_flap1;
 	  break;
 	case 'F':
-	  fn = fn_rightflap;
+	  fn = fn_flap2;
 	  break;
 	case 't':
-	  fn = fn_lefttail;
+	  fn = fn_tail1;
 	  break;
 	case 'T':
-	  fn = fn_righttail;
+	  fn = fn_tail2;
 	  break;
 	case 'y':
-	  fn = fn_leftthrustvert;
+	  fn = fn_thrustvert1;
 	  break;
 	case 'Y':
-	  fn = fn_rightthrustvert;
+	  fn = fn_thrustvert2;
 	  break;
 	case 'x':
 	  fn = fn_thrusthoriz;
@@ -618,40 +616,40 @@ void executeCommand(char *buf)
 	  consoleTab(10);
 
 	  switch(vpParam.functionMap[i]) {
-	  case fn_leftaileron:
-	    consolePrintLn_P(CS_STRING("aileron (left)"));
+	  case fn_flaperon1:
+	    consolePrintLn_P(CS_STRING("flaperon (left)"));
 	    break;
-	  case fn_rightaileron:
-	    consolePrintLn_P(CS_STRING("aileron (right)"));
+	  case fn_flaperon2:
+	    consolePrintLn_P(CS_STRING("flaperon (right)"));
 	    break;
-	  case fn_leftflap:
+	  case fn_flap1:
 	    consolePrintLn_P(CS_STRING("flap (left)"));
 	    break;
-	  case fn_rightflap:
+	  case fn_flap2:
 	    consolePrintLn_P(CS_STRING("flap (right)"));
 	    break;
-	  case fn_leftcanard:
+	  case fn_canard1:
 	    consolePrintLn_P(CS_STRING("canard (left)"));
 	    break;
-	  case fn_rightcanard:
+	  case fn_canard2:
 	    consolePrintLn_P(CS_STRING("canard (right)"));
 	    break;
-	  case fn_lefttail:
+	  case fn_tail1:
 	    consolePrintLn_P(CS_STRING("tail (left)"));
 	    break;
-	  case fn_righttail:
+	  case fn_tail2:
 	    consolePrintLn_P(CS_STRING("tail (right)"));
 	    break;
-	  case fn_leftthrustvert:
+	  case fn_thrustvert1:
 	    consolePrintLn_P(CS_STRING("vertical thrust (left)"));
 	    break;
-	  case fn_rightthrustvert:
+	  case fn_thrustvert2:
 	    consolePrintLn_P(CS_STRING("vertical thrust (right)"));
 	    break;
-	  case fn_leftelevon:
+	  case fn_elevon1:
 	    consolePrintLn_P(CS_STRING("elevon (left)"));
 	    break;
-	  case fn_rightelevon:
+	  case fn_elevon2:
 	    consolePrintLn_P(CS_STRING("elevon (right)"));
 	    break;
 	  case fn_aileron:

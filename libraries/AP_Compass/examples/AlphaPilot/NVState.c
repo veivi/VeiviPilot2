@@ -20,50 +20,7 @@ struct DerivedParams vpDerived;
 
 const struct ParamRecord paramDefaults = {
   .crc = 0,
-  .name = "Invalid",
-  .i2c_clkDiv = 12,
-  .i2c_5048B = 0x40, .i2c_24L256 = 0x50, 
-  .alphaRef = 0,
-  .aileNeutral = 0, .aile2Neutral = 0, .aileDefl = -45.0/90,
-  .elevNeutral = 0, .elevDefl = 45.0/90,
-  .flapNeutral = 0, .flap2Neutral = 0, .flapDefl = 45.0/90,
-  .rudderNeutral = 0, .rudderDefl = 45.0/90,
-  .steerNeutral = 0, .steerDefl = 45.0/90, .steerPark = 0,
-  .brakeNeutral = 0, .brakeDefl = 45.0/90,
-  .canardNeutral = 0, .canardDefl = 45.0/90,
-  .vertNeutral = 0, .vertDefl = 45.0/90,
-  .horizNeutral = 0, .horizDefl = 45.0/90,
-  .functionMap = {0},
-  .alphaMax = { 12.0f/RADIAN, 12.0f/RADIAN },
-  .i_Ku_C = 100, .i_Tu = 0.25, .o_P = 0.3, 
-  .s_Ku_C = 400, .s_Tu = 0.25, 
-  .r_Ku_C = 0.1, .r_Tu = 0.25, 
-  .r_Mix = 0.1,
-  .at_Ku = 1, .at_Tu = 2.0,
-  .cc_Ku = 3, .cc_Tu = 1.5,
-  .coeff_FF = {{0, 0, 0}, {0, 0, 0}},
-  .t_Mix = 0.0f, .t_Expo = 1.0f,
-  .maxPitch = 45/RADIAN,
-  .roll_C = 0.1,
-  .coeff_CoL = { { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }},
-  .servoRate = 60/0.09,
-  .takeoffTrim = 0.25,
-  .weightDry = 1,
-  .fuel = 0.5,
-  .thrust = 0,
-  .thresholdMargin = 0.15,
-  .pushMargin = 1.0f/RADIAN,
-  .yd_C = 5,
-  .offset = -0.4f/RADIAN,
-  .flaperon = 0,
-  .virtualOnly = true,
-  .haveGear = true,
-  .wowCalibrated = false,
-  .sensorOrient = false,
-  .expo = 0.8,
-  .floor = -1,
-  .flare = 0.5
-};
+  .name = "Invalid" };
 
 const struct NVStateRecord stateDefaults = {
   .crc = 0,
@@ -125,16 +82,16 @@ bool setModel(int model, bool verbose)
   
   if(paramRecordCrc(&vpParam) != vpParam.crc) {
     if(verbose)
-      consolePrintLn_P(CS_STRING(" CORRUPT, using defaults")); 
-    vpParam = paramDefaults;
+      consolePrintLn_P(CS_STRING(" CORRUPT, using defaults"));
+    defaultParams();
     isGood = false;
   } else if(verbose)
     consolePrintLn_P(CS_STRING(" OK"));
 
+  vpDerived.valid = false;
+  
   if(verbose)
     printParams();
-  else
-    deriveParams();
   
   return isGood;
 }
@@ -451,14 +408,23 @@ static void interpolate_FF(float c, float r[])
   interpolate_vector(FF_degree+1, c, r, vpParam.coeff_FF[0], vpParam.coeff_FF[1]);
 }
 
+void derivedInvalidate()
+{
+  vpDerived.valid = false;
+}
+
 void deriveParams()
 {
+  if(vpDerived.valid)
+    return;
+  
+  vpDerived.valid = true;
+  
   int i = 0;
   
   // Do we have rectracts and/or flaps?
 
-  vpDerived.haveRetracts = false;
-  vpDerived.haveFlaps = vpParam.flaperon;
+  vpDerived.haveRetracts = vpDerived.haveFlaps = false;
 
   if(vpParam.haveGear) {
     for(i = 0; i < MAX_SERVO; i++)
@@ -469,8 +435,10 @@ void deriveParams()
   }
 
   for(i = 0; i < MAX_SERVO; i++)
-    if(vpParam.functionMap[i] == fn_leftflap
-       || vpParam.functionMap[i] == fn_rightflap) {
+    if(vpParam.functionMap[i] == fn_flap1
+       || vpParam.functionMap[i] == fn_flap2
+       || vpParam.functionMap[i] == fn_flaperon1
+       || vpParam.functionMap[i] == fn_flaperon2) {
       vpDerived.haveFlaps = true;
       break;
     }
