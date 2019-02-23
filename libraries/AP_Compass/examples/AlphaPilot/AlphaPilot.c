@@ -2006,14 +2006,14 @@ float flap2Fn()
   return vpParam.flap2Neutral - vpParam.flapDefl*vpOutput.flap;
 }
 
-float gearFn()
+float gear1Fn()
 {
   return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
-float gearFnInv()
+float gear2Fn()
 {
-  return -gearFn();
+  return -gear1Fn();
 }
 
 float brakeFn()
@@ -2032,7 +2032,7 @@ float (*functionTable[])(void) = {
   [fn_elevator] = elevatorFn,
   [fn_rudder] = rudderFn,
   [fn_throttle] = throttleFn,
-  [fn_gear] = gearFn,
+  [fn_gear1] = gear1Fn,
   [fn_steering] = steeringFn,
   [fn_brake] = brakeFn,
   [fn_flaperon1] = flaperon1Fn,
@@ -2048,7 +2048,7 @@ float (*functionTable[])(void) = {
   [fn_thrustvert1] = thrustVert1Fn,
   [fn_thrustvert2] = thrustVert2Fn,
   [fn_thrusthoriz] = thrustHorizFn,
-  [fn_gearinv] = gearFnInv
+  [fn_gear2] = gear2Fn
 };
 
 void actuatorTask()
@@ -2059,7 +2059,8 @@ void actuatorTask()
   int i = 0;
   
   for(i = 0; i < MAX_SERVO; i++) {
-    if(vpParam.functionMap[i] == fn_gear && !vpMode.gearSelected)
+    if((vpParam.functionMap[i] == fn_gear1
+       || vpParam.functionMap[i] == fn_gear2) && !vpMode.gearSelected)
       // We haven't toggled the gear yet, stay inactive
       continue;
     

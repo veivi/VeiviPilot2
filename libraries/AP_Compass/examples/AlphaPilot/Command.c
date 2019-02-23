@@ -582,10 +582,10 @@ void executeCommand(char *buf)
 	  fn = fn_rudder;
 	  break;
 	case 'g':
-	  fn = fn_gear;
+	  fn = fn_gear1;
 	  break;
 	case 'G':
-	  fn = fn_gearinv;
+	  fn = fn_gear2;
 	  break;
 	case 'b':
 	  fn = fn_brake;
@@ -663,11 +663,11 @@ void executeCommand(char *buf)
 	  case fn_throttle:
 	    consolePrintLn_P(CS_STRING("throttle"));
 	    break;
-	  case fn_gear:
+	  case fn_gear1:
 	    consolePrintLn_P(CS_STRING("landing gear"));
 	    break;
-	  case fn_gearinv:
-	    consolePrintLn_P(CS_STRING("landing gear (inv)"));
+	  case fn_gear2:
+	    consolePrintLn_P(CS_STRING("landing gear (rev)"));
 	    break;
 	  case fn_steering:
 	    consolePrintLn_P(CS_STRING("nose wheel"));

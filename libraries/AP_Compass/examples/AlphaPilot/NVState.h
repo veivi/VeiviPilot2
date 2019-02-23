@@ -15,7 +15,7 @@ typedef enum {
   fn_elevator,
   fn_rudder,
   fn_throttle,
-  fn_gear,
+  fn_gear1,
   fn_steering,
   fn_brake,
   fn_flaperon1, fn_flaperon2,
@@ -25,7 +25,7 @@ typedef enum {
   fn_flap1, fn_flap2,
   fn_thrustvert1, fn_thrustvert2,
   fn_thrusthoriz,
-  fn_gearinv,
+  fn_gear2,
   fn_invalid
 } function_t;
 
