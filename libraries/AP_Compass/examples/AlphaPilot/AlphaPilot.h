@@ -8,7 +8,6 @@
 // Configuration
 //
 
-#define THROTTLE_SIGN        1
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 #define FLAP_STEPS           2
 

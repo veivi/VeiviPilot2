@@ -15,6 +15,7 @@
 #include "Logging.h"
 #include "Button.h"
 #include "TOCTest.h"
+#include "Function.h"
 
 //
 // Periodic tasks
@@ -1906,150 +1907,8 @@ void controlTask()
 }
 
 //
-// Actuator functions
+// Actuator output
 //
-
-float elevatorFn()
-{
-  return vpParam.elevDefl*vpOutput.elev + vpParam.elevNeutral;
-}
-
-float elevon1Fn()
-{
-    return vpParam.aileDefl*vpOutput.aile - vpParam.elevDefl*vpOutput.elev
-      + vpParam.aileNeutral;
-}
-
-float elevon2Fn()
-{
-  return vpParam.aileDefl*vpOutput.aile + vpParam.elevDefl*vpOutput.elev
-    + vpParam.elevNeutral;
-}
-
-float aileronFn()
-{
-    return vpParam.aileDefl*vpOutput.aile + vpParam.aileNeutral;
-}
-
-static float flaperon()
-{
-  return vpParam.flapDefl*vpOutput.flap;
-}
-
-float flaperon1Fn()
-{
-  return aileronFn() + flaperon();
-}
-
-float flaperon2Fn()
-{
-  return aileronFn() - flaperon();
-}
-
-float rudderFn()
-{
-  return vpParam.rudderNeutral + vpParam.rudderDefl*vpOutput.rudder;
-}
-
-float tail1Fn()
-{
-  return vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder 
-    + vpParam.elevNeutral;
-}
-
-float tail2Fn()
-{
-  return -vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder
-    + vpParam.rudderNeutral;
-}
-
-float canard1Fn()
-{
-  return vpParam.canardNeutral + vpParam.canardDefl*vpOutput.elev;
-}
-
-float canard2Fn()
-{
-  return -canard1Fn();
-}
-
-float thrustVert1Fn()
-{
-  return vpParam.vertNeutral + vpParam.vertDefl*vpOutput.thrustVert;
-}
-
-float thrustVert2Fn()
-{
-  return vpParam.vertNeutral - vpParam.vertDefl*vpOutput.thrustVert;
-}
-
-float thrustHorizFn()
-{
-  return vpParam.horizNeutral + vpParam.horizDefl*vpOutput.thrustHoriz;
-}
-
-float steeringFn()
-{
-  if(vpDerived.haveRetracts && vpControl.gearSel)
-    return vpParam.steerPark;
-  else
-    return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
-}
-
-float flap1Fn()
-{
-  return vpParam.flapNeutral + vpParam.flapDefl*vpOutput.flap;
-}
-
-float flap2Fn()
-{
-  return vpParam.flap2Neutral - vpParam.flapDefl*vpOutput.flap;
-}
-
-float gear1Fn()
-{
-  return -RATIO(2/3)*(vpControl.gearSel*2-1);
-}
-
-float gear2Fn()
-{
-  return -gear1Fn();
-}
-
-float brakeFn()
-{
-  return vpParam.brakeDefl*vpOutput.brake + vpParam.brakeNeutral;
-}
-
-float throttleFn()
-{
-  return THROTTLE_SIGN*RATIO(2/3)*(2*pidCtrlOutput(&throttleCtrl) - 1);
-}
-
-float (*functionTable[])(void) = {
-  [fn_null] = NULL,
-  [fn_aileron] = aileronFn,
-  [fn_elevator] = elevatorFn,
-  [fn_rudder] = rudderFn,
-  [fn_throttle] = throttleFn,
-  [fn_gear1] = gear1Fn,
-  [fn_steering] = steeringFn,
-  [fn_brake] = brakeFn,
-  [fn_flaperon1] = flaperon1Fn,
-  [fn_flaperon2] = flaperon2Fn,
-  [fn_canard1] = canard1Fn,
-  [fn_canard2] = canard2Fn,
-  [fn_elevon1] = elevon1Fn,
-  [fn_elevon2] = elevon2Fn,
-  [fn_tail1] = tail1Fn,
-  [fn_tail2] = tail2Fn,
-  [fn_flap1] = flap1Fn,
-  [fn_flap2] = flap2Fn,
-  [fn_thrustvert1] = thrustVert1Fn,
-  [fn_thrustvert2] = thrustVert2Fn,
-  [fn_thrusthoriz] = thrustHorizFn,
-  [fn_gear2] = gear2Fn
-};
 
 void actuatorTask()
 {
@@ -2059,13 +1918,17 @@ void actuatorTask()
   int i = 0;
   
   for(i = 0; i < MAX_SERVO; i++) {
-    if((vpParam.functionMap[i] == fn_gear1
-       || vpParam.functionMap[i] == fn_gear2) && !vpMode.gearSelected)
+    bool reverse = vpParam.functionMap[i] < 0;
+    function_t function = ABS(vpParam.functionMap[i]);
+
+    if(function == fn_gear && !vpMode.gearSelected)
       // We haven't toggled the gear yet, stay inactive
       continue;
-    
-    if(functionTable[vpParam.functionMap[i]])
-      stap_servoOutput(i, clamp(functionTable[vpParam.functionMap[i]](), -1, 1));
+
+    float value = 0;
+
+    if(functionInvoke(function, &value))
+      stap_servoOutput(i, clamp(reverse ? -value : value, -1, 1));
   }
 }
 

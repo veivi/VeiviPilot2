@@ -9,26 +9,6 @@
 #define MAX_SERVO    11
 #define MAX_PARAMS MAX_SERVO
 
-typedef enum {
-  fn_null,
-  fn_aileron,
-  fn_elevator,
-  fn_rudder,
-  fn_throttle,
-  fn_gear1,
-  fn_steering,
-  fn_brake,
-  fn_flaperon1, fn_flaperon2,
-  fn_canard1, fn_canard2,
-  fn_elevon1, fn_elevon2,
-  fn_tail1, fn_tail2,
-  fn_flap1, fn_flap2,
-  fn_thrustvert1, fn_thrustvert2,
-  fn_thrusthoriz,
-  fn_gear2,
-  fn_invalid
-} function_t;
-
 // Parameters and non-volatile state
 
 #define CoL_degree 4
@@ -47,7 +27,7 @@ struct ParamRecord {
   float canardNeutral, canardDefl;
   float vertNeutral, vertDefl;
   float horizNeutral, horizDefl;
-  uint8_t functionMap[MAX_SERVO]; 
+  int8_t functionMap[MAX_SERVO]; 
   float alphaMax[2];
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;

@@ -22,14 +22,8 @@ void consoleHeartbeat()
   static uint32_t last;
   
   if(vpStatus.consoleLink && stap_timeMillis() - last > 1e3) {
-    static uint32_t count = 0;
-
     datagramTxStart(DG_HEARTBEAT);
-    datagramTxOut((uint8_t*) &count, sizeof(count));
     datagramTxEnd();
-  
-    count++;
-
     last = stap_timeMillis();
   }
 }

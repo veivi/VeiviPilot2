@@ -7,6 +7,7 @@
 #include "Logging.h"
 #include "Datagram.h"
 #include "Console.h"
+#include "Function.h"
 #include "RxInput.h"
 #include "Math.h"
 #include "NVState.h"
@@ -529,164 +530,10 @@ void executeCommand(char *buf)
       break;
       
     case c_function:
-      if(numParams > 1 && param[0] >= 0 && param[0] < MAX_SERVO) {
-	function_t fn = fn_invalid;
-	
-	switch(paramText[1][0]) {
-	case 'L':
-	  fn = fn_flaperon1;
-	  break;
-	case 'R':
-	  fn = fn_flaperon2;
-	  break;
-	case 'c':
-	  fn = fn_canard1;
-	  break;
-	case 'C':
-	  fn = fn_canard2;
-	  break;
-	case 'v':
-	  fn = fn_elevon1;
-	  break;
-	case 'V':
-	  fn = fn_elevon2;
-	  break;
-	case 'f':
-	  fn = fn_flap1;
-	  break;
-	case 'F':
-	  fn = fn_flap2;
-	  break;
-	case 't':
-	  fn = fn_tail1;
-	  break;
-	case 'T':
-	  fn = fn_tail2;
-	  break;
-	case 'y':
-	  fn = fn_thrustvert1;
-	  break;
-	case 'Y':
-	  fn = fn_thrustvert2;
-	  break;
-	case 'x':
-	  fn = fn_thrusthoriz;
-	  break;
-	case 'a':
-	  fn = fn_aileron;
-	  break;
-	case 'e':
-	  fn = fn_elevator;
-	  break;
-	case 'r':
-	  fn = fn_rudder;
-	  break;
-	case 'g':
-	  fn = fn_gear1;
-	  break;
-	case 'G':
-	  fn = fn_gear2;
-	  break;
-	case 'b':
-	  fn = fn_brake;
-	  break;
-	case 's':
-	  fn = fn_steering;
-	  break;
-	case 'p':
-	  fn = fn_throttle;
-	  break;
-	case '-':
-	  fn = fn_null;
-	  break;
-	}
-
-	if(fn != fn_invalid)
-	  vpParam.functionMap[(uint8_t) param[0]] = fn;
-	else
-	  consoleNoteLn_P(CS_STRING("Invalid function"));
-      } else {
-	consoleNoteLn_P(CS_STRING("SERVO  FUNCTION"));
-	consoleNoteLn_P(CS_STRING("---------------------"));
-
-	for(i = 0; i < MAX_SERVO; i++) {
-	  consoleNote_P(CS_STRING("  "));
-	  consolePrintI(i);
-	  consoleTab(10);
-
-	  switch(vpParam.functionMap[i]) {
-	  case fn_flaperon1:
-	    consolePrintLn_P(CS_STRING("flaperon (left)"));
-	    break;
-	  case fn_flaperon2:
-	    consolePrintLn_P(CS_STRING("flaperon (right)"));
-	    break;
-	  case fn_flap1:
-	    consolePrintLn_P(CS_STRING("flap (left)"));
-	    break;
-	  case fn_flap2:
-	    consolePrintLn_P(CS_STRING("flap (right)"));
-	    break;
-	  case fn_canard1:
-	    consolePrintLn_P(CS_STRING("canard (left)"));
-	    break;
-	  case fn_canard2:
-	    consolePrintLn_P(CS_STRING("canard (right)"));
-	    break;
-	  case fn_tail1:
-	    consolePrintLn_P(CS_STRING("tail (left)"));
-	    break;
-	  case fn_tail2:
-	    consolePrintLn_P(CS_STRING("tail (right)"));
-	    break;
-	  case fn_thrustvert1:
-	    consolePrintLn_P(CS_STRING("vertical thrust (left)"));
-	    break;
-	  case fn_thrustvert2:
-	    consolePrintLn_P(CS_STRING("vertical thrust (right)"));
-	    break;
-	  case fn_elevon1:
-	    consolePrintLn_P(CS_STRING("elevon (left)"));
-	    break;
-	  case fn_elevon2:
-	    consolePrintLn_P(CS_STRING("elevon (right)"));
-	    break;
-	  case fn_aileron:
-	    consolePrintLn_P(CS_STRING("aileron"));
-	    break;
-	  case fn_elevator:
-	    consolePrintLn_P(CS_STRING("elevator"));
-	    break;
-	  case fn_rudder:
-	    consolePrintLn_P(CS_STRING("rudder"));
-	    break;
-	  case fn_throttle:
-	    consolePrintLn_P(CS_STRING("throttle"));
-	    break;
-	  case fn_gear1:
-	    consolePrintLn_P(CS_STRING("landing gear"));
-	    break;
-	  case fn_gear2:
-	    consolePrintLn_P(CS_STRING("landing gear (rev)"));
-	    break;
-	  case fn_steering:
-	    consolePrintLn_P(CS_STRING("nose wheel"));
-	    break;
-	  case fn_brake:
-	    consolePrintLn_P(CS_STRING("brake"));
-	    break;
-	  case fn_thrusthoriz:
-	    consolePrintLn_P(CS_STRING("horizontal thrust"));
-	    break;
-	  case fn_null:
-	    consolePrintLn_P(CS_STRING("---"));
-	    break;
-	  default:
-	    consolePrintLn_P(CS_STRING("<invalid>"));
-	    break;
-	  }
-	}
-      }
+      if(numParams < 2)
+	functionSet(0, NULL);
+      else
+	functionSet(param[0], &paramText[1][0]);
       break;
 
     default:
@@ -745,7 +592,7 @@ static void backupParamEntry(const struct Command *e)
 
     case e_map:
       for(j = 0; j < MAX_SERVO; j++) {
-	consolePrintUI8(((uint8_t*) e->var[i])[j]);
+	consolePrintI(((int8_t*) e->var[i])[j]);
 	consolePrint(" ");
       }
       break;
