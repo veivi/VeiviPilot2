@@ -1918,17 +1918,14 @@ void actuatorTask()
   int i = 0;
   
   for(i = 0; i < MAX_SERVO; i++) {
-    bool reverse = vpParam.functionMap[i] < 0;
-    function_t function = ABS(vpParam.functionMap[i]);
-
-    if(function == fn_gear && !vpMode.gearSelected)
+    if(ABS(vpParam.functionMap[i]) == fn_gear && !vpMode.gearSelected)
       // We haven't toggled the gear yet, stay inactive
       continue;
 
     float value = 0;
 
-    if(functionInvoke(function, &value))
-      stap_servoOutput(i, clamp(reverse ? -value : value, -1, 1));
+    if(functionInvoke(vpParam.functionMap[i], &value))
+      stap_servoOutput(i, clamp(value, -1, 1));
   }
 }
 

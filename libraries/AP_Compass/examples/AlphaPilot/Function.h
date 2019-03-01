@@ -25,12 +25,7 @@ typedef enum {
   fn_invalid
 } function_t;
 
-struct FnDescriptor {
-  const char *name;
-  float (*code)(void);
-};
-
 void functionSet(uint8_t ch, const char *name);
-bool functionInvoke(function_t fn, float *result);
+bool functionInvoke(int8_t fn, float *result);
 
 #endif

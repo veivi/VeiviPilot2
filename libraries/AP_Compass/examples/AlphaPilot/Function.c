@@ -116,6 +116,11 @@ float throttleFn()
   return THROTTLE_SIGN*RATIO(2/3)*(2*pidCtrlOutput(&throttleCtrl) - 1);
 }
 
+struct FnDescriptor {
+  const char *name;
+  float (*code)(void);
+};
+
 struct FnDescriptor functionTable[] = {
   [fn_null] = { "-", NULL },
   [fn_aileron] = { "aile", aileronFn },
@@ -193,11 +198,15 @@ void functionSet(uint8_t ch, const char *name)
   }
 }
 
-bool functionInvoke(function_t fn, float *result)
+bool functionInvoke(int8_t fn, float *result)
 {
-  if(fn >= 0 && fn < fn_invalid && functionTable[fn].code) {
-    *result = functionTable[fn].code();
+  function_t i = ABS(fn);
+    
+  if(i < fn_invalid && functionTable[i].code) {
+    *result = functionTable[i].code();
+    if(fn < 0)
+      *result = -*result;
     return true;
-  }
-  return false;
+  } else
+    return false;
 }
