@@ -497,7 +497,7 @@ void statusTask()
       consoleNoteLn_P(CS_STRING("Pitot failed, positive IAS ASSUMED"));
       vpStatus.positiveIAS = true;
     }
-  } else if(damperOutput(&iasFilter) < vpDerived.minimumIAS*RATIO(2/3)) {
+  } else if(damperOutput(&iasFilter) < vpDerived.minimumIAS*RATIO(4/5)) {
     if(!vpStatus.positiveIAS)
       lastIAS = stap_currentMicros;
     else if(stap_currentMicros - lastIAS > 0.3e6f) {
@@ -927,9 +927,9 @@ void configurationTask()
     vpMode.wingLeveler = false;
   }
 
-  // TakeOff mode disabled when airspeed detected (or fails)
+  // TakeOff mode disabled when airspeed detected
 
-  if(vpMode.takeOff && vpStatus.positiveIAS
+  if(vpInput.throttle > 0.8 && vpMode.takeOff && vpStatus.positiveIAS
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
     consoleNoteLn_P(CS_STRING("TakeOff COMPLETED"));
