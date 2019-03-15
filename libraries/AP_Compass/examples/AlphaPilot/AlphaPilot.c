@@ -87,7 +87,7 @@ void displayTask()
       cleared = true;
     }
     
-    //    return;    
+    return;    
   } else
     cleared = false;
 
