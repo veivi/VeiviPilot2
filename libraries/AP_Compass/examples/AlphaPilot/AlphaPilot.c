@@ -187,8 +187,8 @@ void airspeedTask()
 
 void configTaskGroup();
 
-#define NZ_BIG RATIO(7.5/100)
-#define NZ_SMALL RATIO(3/100)
+#define NZ_BIG RATIO(5/100)
+#define NZ_SMALL RATIO(2.5/100)
 
 void receiverTask()
 {
