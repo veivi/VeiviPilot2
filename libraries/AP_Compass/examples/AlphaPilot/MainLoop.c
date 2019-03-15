@@ -49,7 +49,7 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
       }
 
       memcpy(&sensorData, data, sizeof(sensorData));
-      simTimeStamp = stap_timeMicros();
+      simTimeStamp = stap_currentMicros;
       simFrames++;    
     }
     break;

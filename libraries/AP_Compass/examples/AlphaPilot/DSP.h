@@ -96,19 +96,14 @@ void samplerFinalize(Sampler_t*);
 void samplerInput(Sampler_t*, int16_t v);
 float samplerMean(Sampler_t*);
 
-/*
-const int MedianWindow_c = 3;
+#define MEDIANWINDOW  3
   
-class Median3Filter {  
-  public:
-    void input(float v);
-    float output();
-    
-  private:
-    float memory[MedianWindow_c];
-    int ptr;
-};
-*/
+typedef struct MedianFilter {  
+  float memory[MEDIANWINDOW];
+  float state;
+} MedianFilter_t;
 
+float medianInput(MedianFilter_t *i, float v);
+float medianOutput(MedianFilter_t *i);
 
 #endif

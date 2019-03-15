@@ -185,10 +185,10 @@ void airspeedTask()
   }
 }
 
-void configurationTask();
+void configTaskGroup();
 
-#define NZ_BIG RATIO(10/100)
-#define NZ_SMALL RATIO(5/100)
+#define NZ_BIG RATIO(7.5/100)
+#define NZ_SMALL RATIO(3/100)
 
 void receiverTask()
 {
@@ -210,7 +210,7 @@ void receiverTask()
 
 #ifdef CH_RUD 
   if(inputValid(CH_RUD))
-    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_SMALL, &vpInput.rudderPilotInput);
+    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_BIG, &vpInput.rudderPilotInput);
 #else
   vpInput.rudder = 0;
 #endif
@@ -250,6 +250,8 @@ void receiverTask()
     vpInput.elev = 1;
   }
 
+  medianInput(&elevFilter, vpInput.elev);
+
   //
   // RX failsafe detection
   //
@@ -262,7 +264,7 @@ void receiverTask()
       vpMode.radioFailSafe = true;
       vpMode.alphaFailSafe = vpMode.sensorFailSafe = vpMode.takeOff = false;
       // Allow the config task to react synchronously
-      configurationTask();
+      configTaskGroup();
     }
   } else if(vpMode.radioFailSafe) {
     consoleNoteLn_P(CS_STRING("Radio failsafe mode DISABLED"));
@@ -583,7 +585,7 @@ void statusTask()
 
   static uint32_t lastFlare;
   
-  if(!vpMode.test && vpMode.slowFlight
+  if(!(vpMode.test && nvState.testNum > 0) && vpMode.slowFlight
      && vpControl.gearSel == 0
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
      && vpFlight.IAS < (1.1f + vpParam.thresholdMargin)*vpDerived.minimumIAS
@@ -932,7 +934,7 @@ void configurationTask()
   if(vpInput.throttle > 0.8 && vpMode.takeOff && vpStatus.positiveIAS
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
-    consoleNoteLn_P(CS_STRING("TakeOff COMPLETED"));
+    consoleNoteLn_P(CS_STRING("We're assumed to have TAKEN OFF"));
     vpMode.takeOff = false;
     vpStatus.aloft = true;
     
@@ -1095,7 +1097,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
 
-      vpControl.r_Mix = vpControl.testGain = testGainLinear(vpParam.r_Mix/1.2f, vpParam.r_Mix*1.2f);
+      vpControl.r_Mix = vpControl.testGain = testGainLinear(0, vpParam.r_Mix*1.5f);
       break;
 
     case 11:
@@ -1178,7 +1180,8 @@ void trimTask()
      && prevMode != vpMode.slowFlight) {
     if(vpMode.slowFlight) {
       // Into slow flight: maintain alpha with current stick
-      vpControl.elevTrim = alphaPredictInverse(vpFlight.alpha) - vpInput.elev;
+      vpControl.elevTrim = alphaPredictInverse(vpFlight.alpha)
+	- medianOutput(&elevFilter);
     } else {
       // Maintain elevator position with current stick
       vpControl.elevTrim = vpOutput.elev - vpInput.elev;
@@ -1587,23 +1590,24 @@ const float pusherBias_c = -2.0f/RADIAN;
 void elevatorModule()
 {
   const float shakerLimit = RATIO(1/3);
-
+  const float effElev = medianOutput(&elevFilter);
+  
   vpInput.stickForce =
-    vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
+    vpMode.radioFailSafe ? 0 : fmaxf(effElev-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
     = mixValue(vpInput.stickForce,
 	       vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
   vpOutput.elev =
-    applyExpoTrim(vpInput.elev,
+    applyExpoTrim(effElev,
 		  vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
-
+  
   if(vpStatus.flare) {
     const float flareAlpha = 
       mixValue(vpParam.flare * vpInput.stickForce,
-	       vpControl.targetAlpha, alphaPredict(vpInput.elev));
+	       vpControl.targetAlpha, alphaPredict(effElev));
 
     vpControl.targetAlpha = fmaxf(vpControl.targetAlpha, flareAlpha);
   }

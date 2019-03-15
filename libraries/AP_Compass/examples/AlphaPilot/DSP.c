@@ -82,18 +82,28 @@ float quantize(float value, float *state, int numSteps)
   return (float) *state / numSteps;
 }
 
-/*
-void Median3Filter::input(float v)
+float medianInput(MedianFilter_t *ins, float v)
 {
-  memory[ptr++] = v;
-  if(ptr > MedianWindow_c-1) ptr = 0;
+  memcpy(&ins->memory[0], &ins->memory[1], sizeof(float)*(MEDIANWINDOW-1));
+  ins->memory[MEDIANWINDOW-1] = v;
+
+  int i = 1;
+  float maxSlope = 0.0;
+  
+  for(i = 1; i < MEDIANWINDOW; i++)
+    maxSlope = MAX(maxSlope, ins->memory[i] - ins->memory[i-1]);
+
+  if(maxSlope < 0.4)
+    ins->state = v;
+
+  return medianOutput(ins);
 }
 
-float Median3Filter::output(void)
+float medianOutput(MedianFilter_t *instance)
 {
-  return max(min(memory[0],memory[1]), min(max(memory[0],memory[1]),memory[2]));
+  return instance->state;
+  // return MAX(MIN(i->memory[0],i->memory[1]), MIN(MAX(i->memory[0],i->memory[1]),i->memory[2]));
 }
-*/
 
 bool damperInit(Damper_t *damper, float tau, float state)
 {
