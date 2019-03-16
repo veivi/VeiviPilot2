@@ -20,7 +20,6 @@ float fieldStrength;
 
 PIDCtrl_t elevCtrl, pushCtrl, rudderCtrl, throttleCtrl, aileCtrl;
 Sampler_t alphaSampler, iasSampler;
-MedianFilter_t elevFilter;
 SlopeLimiter_t aileActuator, rollAccelLimiter, trimRateLimiter, flapActuator;
 SWAvg_t liftFilter;
 Damper_t iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;

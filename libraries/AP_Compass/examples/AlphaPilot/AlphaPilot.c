@@ -250,8 +250,6 @@ void receiverTask()
     vpInput.elev = 1;
   }
 
-  medianInput(&elevFilter, vpInput.elev);
-
   //
   // RX failsafe detection
   //
@@ -1179,12 +1177,14 @@ void trimTask()
   if(vpStatus.positiveIAS && !vpStatus.alphaUnreliable
      && prevMode != vpMode.slowFlight) {
     if(vpMode.slowFlight) {
-      // Into slow flight: maintain alpha with current stick
-      vpControl.elevTrim = alphaPredictInverse(vpFlight.alpha)
-	- medianOutput(&elevFilter);
+      // Into slow flight
+      //   Maintain alpha with current stick
+      vpControl.elevTrim += alphaPredictInverse(vpFlight.alpha)
+	- alphaPredictInverse(vpControl.targetAlpha);
     } else {
-      // Maintain elevator position with current stick
-      vpControl.elevTrim = vpOutput.elev - vpInput.elev;
+      // Out of slow flight
+      //   Maintain elevator position with current stick
+      vpControl.elevTrim += vpOutput.elev - vpControl.elevPredict;
     }
     
     consoleNote_P(CS_STRING("Elev trim adjusted to "));
@@ -1589,8 +1589,9 @@ const float pusherBias_c = -2.0f/RADIAN;
 
 void elevatorModule()
 {
+  static MedianFilter_t elevFilter;
   const float shakerLimit = RATIO(1/3);
-  const float effElev = medianOutput(&elevFilter);
+  const float effElev = medianInput(&elevFilter, vpInput.elev);
   
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(effElev-shakerLimit, 0)/(1-shakerLimit);
