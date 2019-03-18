@@ -584,6 +584,7 @@ void statusTask()
   static uint32_t lastFlare;
   
   if(!(vpMode.test && nvState.testNum > 0) && vpMode.slowFlight
+     && vpParam.haveGear
      && vpControl.gearSel == 0
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
      && vpFlight.IAS < (1.1f + vpParam.thresholdMargin)*vpDerived.minimumIAS
@@ -1028,7 +1029,7 @@ void configurationTask()
   vpControl.t_Mix = vpParam.t_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0f/2)/vpParam.aileDefl);
-  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.15f);
+  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.05f);
   
   //
   // Apply test mode
@@ -1771,7 +1772,8 @@ void rudderModule()
   
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
     
-  if(vpInput.rudderPilotInput || vpMode.takeOff || vpStatus.weightOnWheels)
+  if(vpInput.rudderPilotInput || vpMode.takeOff || vpStatus.weightOnWheels
+     || vpMode.sensorFailSafe)
     // Pilot input is present/takeoff mode/WoW, keep auto-rudder reset
     pidCtrlReset(&rudderCtrl, 0, 0);
   else
