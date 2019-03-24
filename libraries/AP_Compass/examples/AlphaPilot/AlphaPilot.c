@@ -1029,7 +1029,6 @@ void configurationTask()
   vpControl.t_Mix = vpParam.t_Mix;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0f/2)/vpParam.aileDefl);
-  slopeSet(&rollAccelLimiter, rollRatePredict(1) / 0.05f);
   
   //
   // Apply test mode
@@ -1121,12 +1120,6 @@ void configurationTask()
 	vpFeature.stabilizeBank = vpFeature.keepLevel = true;
 	vpControl.aileNeutral = vpOutput.aile;
       }
-      break;
-      
-    case 17:
-      // Roll acceleration
-      
-      slopeSet(&rollAccelLimiter, rollRatePredict(1)/(vpControl.testGain = testGainLinear(0.01,2)));
       break;
     }
   } else { 
@@ -1746,10 +1739,6 @@ void aileronModule()
       vpOutput.aile -= vpFlight.bank + vpFlight.rollR/32;
   }
 
-  //   Apply angular accel limiter
-
-  targetRollR = slopeInput(&rollAccelLimiter, targetRollR, controlCycle);
-  
   //   Apply controller output + feedforward
   
   vpControl.ailePredict = rollRatePredictInverse(targetRollR);

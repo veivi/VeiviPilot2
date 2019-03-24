@@ -168,7 +168,6 @@ void mainLoopSetup()
   slopeInit(&aileActuator, 0);
   slopeInit(&flapActuator, 0.5);
   slopeInit(&trimRateLimiter, 3/RADIAN);
-  slopeInit(&rollAccelLimiter, 0);
   
   damperInit(&iasFilter, 2, 0);
   damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
