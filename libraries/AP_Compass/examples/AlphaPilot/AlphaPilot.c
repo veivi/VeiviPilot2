@@ -1202,7 +1202,8 @@ void trimTask()
   } else
     vpControl.elevTrim =
       clamp(vpControl.elevTrim,
-	    fminf(-0.15f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
+	    // fminf(-0.15f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
+	    0,
 	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
