@@ -33,8 +33,8 @@ struct ParamRecord {
   float s_Ku_C, s_Tu;
   float r_Ku_C, r_Tu;
   float r_Mix;
-  float at_Ku, at_Tu;
-  float cc_Ku, cc_Tu;
+  float idle, lag;
+  float dummy1, dummy2;
   float coeff_FF[2][FF_degree+1];
   float t_Mix, t_Expo;
   float maxPitch;

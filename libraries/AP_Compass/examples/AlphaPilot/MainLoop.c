@@ -159,7 +159,7 @@ void mainLoopSetup()
   pidCtrlInit(&pushCtrl);
   pidCtrlInitUnwinding(&rudderCtrl);
   pidCtrlSetRange(&rudderCtrl, RATIO(1/8));
-  pidCtrlInit(&throttleCtrl);
+  turbineInit(&engine, 0, 0);
   pidCtrlInitUnwinding(&aileCtrl);
   pidCtrlSetRange(&aileCtrl, RATIO(2/3));
 
@@ -174,6 +174,8 @@ void mainLoopSetup()
   damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
   damperInit(&accAvg, 2*CONTROL_HZ, G);
 
+  turbineInit(&engine, 2*CONTROL_HZ, 0);
+  
   washoutInit(&yawDamper, 0.4*CONTROL_HZ, 0);
   
   swAvgInit(&liftFilter, CONFIG_HZ/4);

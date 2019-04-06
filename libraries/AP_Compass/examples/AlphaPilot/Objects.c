@@ -18,12 +18,13 @@ bool paramsModified = false;
 uint32_t lastPPMWarn;
 float fieldStrength;
 
-PIDCtrl_t elevCtrl, pushCtrl, rudderCtrl, throttleCtrl, aileCtrl;
+PIDCtrl_t elevCtrl, pushCtrl, rudderCtrl, aileCtrl;
 Sampler_t alphaSampler, iasSampler;
 SlopeLimiter_t aileActuator, trimRateLimiter, flapActuator;
 SWAvg_t liftFilter;
 Damper_t iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
 Washout_t yawDamper;
+Turbine_t engine;
 
 struct SimLinkSensor sensorData;
 uint16_t simFrames;

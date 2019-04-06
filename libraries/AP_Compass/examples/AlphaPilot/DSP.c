@@ -331,3 +331,45 @@ float samplerMean(Sampler_t *f)
   }  
   return f->value;
 }
+
+bool turbineInit(Turbine_t *i, float tau, float state)
+{
+  turbineSetTau(i, tau);
+  turbineReset(i, state);
+  return true;
+}
+
+void turbineFinalize(Turbine_t *i)
+{
+}
+
+void turbineReset(Turbine_t *i, float v)
+{
+  i->state = v;
+}
+
+void turbineSetTau(Turbine_t *i, float tau)
+{
+  i->tau = 1.0f / (0.1 + tau);
+}
+
+float turbineInput(Turbine_t *i, float v)
+{
+  const float idle_c = 0.3f, boost_c = 5;
+
+  if(v > i->state) {
+    i->state += boost_c*(v - i->state)*i->tau
+      *square((i->state + idle_c)/(1 + idle_c));
+    i->state = clamp(i->state, 0, v);
+  } else {
+    i->state -= MIN(boost_c * (i->state - v) * i->tau, 0.8*i->tau);
+    i->state = clamp(i->state, v, 1);
+  }
+  
+  return turbineOutput(i);
+}
+
+float turbineOutput(Turbine_t *i)
+{
+  return i->state;
+}

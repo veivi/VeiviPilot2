@@ -113,7 +113,7 @@ float brakeFn()
 
 float throttleFn()
 {
-  return THROTTLE_SIGN*RATIO(2/3)*(2*pidCtrlOutput(&throttleCtrl) - 1);
+  return THROTTLE_SIGN*RATIO(2/3)*(2*turbineOutput(&engine) - 1);
 }
 
 struct FnDescriptor {

@@ -55,7 +55,7 @@ struct FlightState {
   float IAS, dynP, alpha;
   float accX, accY, accZ, acc, alt, bank, pitch, rollR, pitchR, yawR, ball;
   uint16_t heading;
-  float accDir, relWind, slope;
+  float accDir, relWind;
 };
 
 struct InputState {
@@ -90,12 +90,13 @@ struct GPSFix {
 // Control and signal processing
 //
 
-extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl, throttleCtrl;
+extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl;
 extern Sampler_t alphaSampler, iasSampler;
 extern SWAvg_t liftFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, trimRateLimiter;
 extern Damper_t iasFilter, iasFilterSlow, accAvg;
 extern Washout_t yawDamper;
+extern Turbine_t engine;
 
 // struct GPSFix gpsFix;
 

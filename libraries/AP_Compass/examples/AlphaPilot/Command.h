@@ -38,11 +38,11 @@ typedef enum {
   c_thrust,
   c_margin,
   c_yawdamper,
-  c_at_zn,
-  c_cc_zn,
   c_offset,
   c_floor,
   c_sensor,
+  c_idle,
+  c_lag,
 
   c_dump,
   c_max,

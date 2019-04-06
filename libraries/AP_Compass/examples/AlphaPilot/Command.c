@@ -17,8 +17,6 @@
 const struct Command commands[] CS_QUALIFIER = {
   { "name", c_name, e_string, &vpParam.name },
   { "as5048b_ref", c_5048b_ref, e_uint16, &vpParam.alphaRef },
-  { "at_zn", c_at_zn, e_float, &vpParam.at_Ku, &vpParam.at_Tu },
-  { "cc_zn", c_cc_zn, e_float, &vpParam.cc_Ku, &vpParam.cc_Tu },
   { "inner_pid_zn", c_inner_pid_zn,
     e_float, &vpParam.i_Ku_C, &vpParam.i_Tu },
   { "outer_p", c_outer_p, e_float, &vpParam.o_P },
@@ -30,6 +28,8 @@ const struct Command commands[] CS_QUALIFIER = {
     e_float, &vpParam.r_Ku_C, &vpParam.r_Tu },
   { "rmix", c_rmix, e_float, &vpParam.r_Mix },
   { "tmix", c_tmix, e_float, &vpParam.t_Mix, &vpParam.t_Expo },
+  { "idle", c_idle, e_float, &vpParam.idle },
+  { "lag", c_lag, e_float, &vpParam.lag },
   { "edefl", c_edefl, e_angle90, &vpParam.elevDefl },
   { "eneutral", c_eneutral, e_angle90, &vpParam.elevNeutral },
   { "takeoff", c_takeoff, e_percent, &vpParam.takeoffTrim },

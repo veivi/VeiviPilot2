@@ -355,7 +355,6 @@ void sensorTaskSync()
   vpFlight.ball = atan2f(-vpFlight.accY, fabs(vpFlight.accZ));
   damperInput(&iasFilter, vpFlight.IAS);
   damperInput(&iasFilterSlow, vpFlight.IAS);
-  vpFlight.slope = vpFlight.alpha - vpParam.offset - vpFlight.pitch;
 }
 
 void sensorTaskSlow()
@@ -1018,12 +1017,11 @@ void configurationTask()
   //   Yaw damper
   
   vpControl.yd_P = scaleByIAS_E(vpParam.yd_C, yawDamperExp_c) * scale;
-  
-  if(vpMode.slowFlight)
-    pidCtrlSetZNPI(&throttleCtrl, vpParam.at_Ku, vpParam.at_Tu);
-  else
-    pidCtrlSetZNPI(&throttleCtrl, vpParam.cc_Ku, vpParam.cc_Tu);
 
+  //   Turbine lag
+
+  turbineSetTau(&engine, vpParam.lag*CONTROL_HZ);
+  
   vpControl.o_P = vpParam.o_P;
   vpControl.r_Mix = vpParam.r_Mix;
   vpControl.t_Mix = vpParam.t_Mix;
@@ -1096,18 +1094,6 @@ void configurationTask()
       // Aileron to rudder mix
 
       vpControl.r_Mix = vpControl.testGain = testGainLinear(0, vpParam.r_Mix*1.5f);
-      break;
-
-    case 11:
-      // Autothrottle gain (Z-N)
-      
-      pidCtrlSetPID(&throttleCtrl, vpControl.testGain = testGainExpo(vpParam.at_Ku), 0, 0);
-      break;
-      
-    case 12:
-      // Autothrottle gain (empirical)
-      
-      pidCtrlSetZNPI(&throttleCtrl, vpControl.testGain = testGainExpo(vpParam.at_Ku), vpParam.at_Tu);
       break;
 
     case 13:
@@ -1375,12 +1361,6 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" ("));
 	consolePrintFP(vpFlight.IAS, 1);
 	consolePrint_P(CS_STRING(")"));
-	consoleTab(40);
-	consolePrint_P(CS_STRING(" slope = "));
-	consolePrintFP(vpFlight.slope*RADIAN, 1);
-	consoleTab(55);
-	consolePrint_P(CS_STRING(" THR(auto) = "));
-	consolePrintFP(pidCtrlOutput(&throttleCtrl), 2);
 	break;
 	
       case 14:
@@ -1414,6 +1394,12 @@ void gaugeTask()
 	}
 	consoleTab(16);
 	consolePrint("|");
+	break;
+
+      case 17:
+	consoleTab(turbineOutput(&engine) * 20);
+	consolePrint("*");
+	consoleTab(20);
 	break;
 	
       case 20:
@@ -1780,30 +1766,20 @@ void rudderModule()
 }
 
 //
-//   Autothrottle
+//   Throttle
 //
   
 void throttleModule()
 {
-  const float glideSlope = 3.0f/RADIAN;
-  
-  pidCtrlSetRangeAB(&throttleCtrl, vpControl.minThrottle, vpInput.throttle);
-    
-  if((!vpMode.takeOff && !vpStatus.aloft) || vpMode.radioFailSafe)
-    pidCtrlReset(&throttleCtrl, 0, 0);
-  
-  else if(vpMode.autoThrottle) {
-    float thrError = 0;
-    
-    if(vpMode.slowFlight)
-      thrError = vpFlight.slope - glideSlope*(RATIO(3/2) - 3*vpInput.throttle);
-    else
-      thrError = 1 - vpFlight.dynP/vpControl.targetPressure;
-
-    pidCtrlInput(&throttleCtrl, thrError, controlCycle);
-
-  } else 
-    pidCtrlReset(&throttleCtrl, vpInput.throttle, 0);
+  if(vpMode.takeOff)
+    turbineReset(&engine, vpInput.throttle);
+  else if(!vpStatus.aloft || vpMode.radioFailSafe)
+    turbineReset(&engine, 0);
+  else {
+    float thr = (vpParam.wowCalibrated && !vpStatus.weightOnWheels) ?
+      (vpParam.idle + vpInput.throttle*(1 - vpParam.idle)) : vpInput.throttle;
+    turbineInput(&engine, thr);
+  }
 }
 
 //
@@ -1862,7 +1838,7 @@ void mixingTask()
   vpOutput.elev =
     constrainServoOutput(vpOutput.elev
 			 + scaleByIAS_E(vpControl.t_Mix, -2)
-			 * powf(pidCtrlOutput(&throttleCtrl), vpParam.t_Expo));
+			 * powf(turbineOutput(&engine), vpParam.t_Expo));
 
   // Aile to rudder mix
 
@@ -1958,7 +1934,7 @@ void simulatorLinkTask()
   if(vpStatus.simulatorLink && vpStatus.armed) {
     struct SimLinkControl control = { .aileron = vpOutput.aile,
 				      .elevator = -vpOutput.elev,
-				      .throttle = pidCtrlOutput(&throttleCtrl),
+				      .throttle = turbineOutput(&engine),
 				      .rudder = vpOutput.rudder };
 
     datagramTxStart(DG_SIMLINK);

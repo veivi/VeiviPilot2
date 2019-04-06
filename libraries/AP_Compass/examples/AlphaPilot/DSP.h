@@ -106,4 +106,15 @@ typedef struct MedianFilter {
 float medianInput(MedianFilter_t *i, float v);
 float medianOutput(MedianFilter_t *i);
 
+typedef struct Turbine_s {
+  float tau, state;
+} Turbine_t;
+
+bool turbineInit(Turbine_t*, float tau, float state);
+void turbineFinalize(Turbine_t*);
+void turbineReset(Turbine_t*, float v);
+void turbineSetTau(Turbine_t*, float tau);
+float turbineInput(Turbine_t*, float v);
+float turbineOutput(Turbine_t*);
+
 #endif
