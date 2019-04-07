@@ -1096,6 +1096,12 @@ void configurationTask()
       vpControl.r_Mix = vpControl.testGain = testGainLinear(0, vpParam.r_Mix*1.5f);
       break;
 
+    case 11:
+      // Turbine lag
+
+      turbineSetTau(&engine, CONTROL_HZ*(vpControl.testGain = testGainLinear(vpParam.lag*1.5f, 0)));
+      break;
+      
     case 13:
       // Disable stabilization for max roll rate test
 
@@ -1772,14 +1778,18 @@ void rudderModule()
 void throttleModule()
 {
   if(vpMode.takeOff)
+    // Taking off, don't want lag
     turbineReset(&engine, vpInput.throttle);
   else if(!vpStatus.aloft || vpMode.radioFailSafe)
+    // Not taking off or aloft, keep closed
     turbineReset(&engine, 0);
-  else {
-    float thr = (vpParam.wowCalibrated && !vpStatus.weightOnWheels) ?
-      (vpParam.idle + vpInput.throttle*(1 - vpParam.idle)) : vpInput.throttle;
-    turbineInput(&engine, thr);
-  }
+  else if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
+    // We've landed, direct control is nice so we can stop for full stop
+    // landings and get back up quickly for touch and gos
+    turbineReset(&engine, vpInput.throttle);
+  else
+    // We're flying, apply idle and lag settings
+    turbineInput(&engine, vpParam.idle + vpInput.throttle*(1 - vpParam.idle));
 }
 
 //
