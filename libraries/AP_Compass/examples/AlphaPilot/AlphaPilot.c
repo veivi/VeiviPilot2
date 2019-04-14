@@ -107,7 +107,7 @@ void displayTask()
     
   // PPM freq
   
-  obdMove(16-5, 1);
+  obdMove(DISP_COLS-5, 1);
   uint8_t freq = (uint8_t) ppmFreq;
   char buffer1[] =
     { '0' + (freq / 10), '0' + (freq % 10), ' ', 'H', 'z', '\0'};
@@ -116,7 +116,7 @@ void displayTask()
   // Status
   
   if(!vpStatus.armed) {
-    obdMove(16-8, 0);
+    obdMove(DISP_COLS-8, 0);
     obdPrintAttr("DISARMED", true);
 
     for(i = 0; i < MAX_CH; i++) {
@@ -132,7 +132,7 @@ void displayTask()
     
     return;
   } else if(vpMode.takeOff) {
-    obdMove(16-7, 0);
+    obdMove(DISP_COLS-7, 0);
     obdPrintAttr("TAKEOFF", (count>>2) & 1);
   } else {
     char buffer[] =
@@ -140,8 +140,8 @@ void displayTask()
 	(char) ('0' + nvState.testNum % 10),
 	' ',
 	vpFlight.alpha > 0 ? '/' : '\\',
-	'\0' };
-    obdMove(16-strlen(buffer), 0);
+	' ', '\0' };
+    obdMove(DISP_COLS-strlen(buffer), 0);
     obdPrint(buffer);
   }
 
@@ -151,14 +151,14 @@ void displayTask()
     bool status = tocTestStatus(tocReportDisplay);
 
    if(vpMode.radioFailSafe) {
-      obdMove(0,7);
+      obdMove(0, DISP_ROWS);
       obdPrint("   ");
       obdPrintAttr("RADIO FAIL", (count>>2) & 1);
       obdPrint("   ");
     } else {
       // T/O/C test status
 
-      obdMove(0,7);
+      obdMove(0, DISP_ROWS);
       obdPrint("T/O/C ");
 
       if(!status)
@@ -767,27 +767,6 @@ void configurationTask()
 	  consoleNoteLn_P(CS_STRING("Gear DOWN"));
       }
     }
-    
-    vpMode.autoThrottle = false;
-
-  } else if(buttonDepressed(&GEARBUTTON) && !vpMode.autoThrottle) {
-    //
-    // CONTINUOUS: Autothrottle engage
-    //
-    
-    if(vpMode.slowFlight && vpInput.throttle < RATIO(1/3)) {
-      vpControl.minThrottle = 0;
-      vpMode.autoThrottle = true;
-      
-    } else if(!vpMode.slowFlight && vpInput.throttle > RATIO(1/3)
-	    && vpFlight.IAS > RATIO(3/2)*vpDerived.minimumIAS) {
-      vpControl.targetPressure = dynamicPressure(vpFlight.IAS);
-      vpControl.minThrottle = vpInput.throttle/8;
-      vpMode.autoThrottle = true;
-    }
-
-    if(vpMode.autoThrottle)
-      consoleNoteLn_P(CS_STRING("Autothrottle ENABLED"));
   }
 
   //
@@ -849,15 +828,6 @@ void configurationTask()
     } 
   }
     
-  //
-  // Autothrottle disable
-  //
-
-  if(vpMode.autoThrottle && vpMode.slowFlight == (vpInput.throttle > RATIO(1/3))) {
-    consoleNoteLn_P(CS_STRING("Autothrottle DISABLED"));
-    vpMode.autoThrottle = false;
-  }
-  
   //
   // Logging control
   //

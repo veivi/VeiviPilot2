@@ -158,7 +158,7 @@ void mainLoopSetup()
   pidCtrlInit(&elevCtrl);
   pidCtrlInit(&pushCtrl);
   pidCtrlInitUnwinding(&rudderCtrl);
-  pidCtrlSetRange(&rudderCtrl, RATIO(1/8));
+  pidCtrlSetRange(&rudderCtrl, RATIO(1/3));
   turbineInit(&engine, 0, 0);
   pidCtrlInitUnwinding(&aileCtrl);
   pidCtrlSetRange(&aileCtrl, RATIO(2/3));
