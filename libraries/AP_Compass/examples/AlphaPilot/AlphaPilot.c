@@ -151,14 +151,14 @@ void displayTask()
     bool status = tocTestStatus(tocReportDisplay);
 
    if(vpMode.radioFailSafe) {
-      obdMove(0, DISP_ROWS);
+      obdMove(0, DISP_ROWS-1);
       obdPrint("   ");
       obdPrintAttr("RADIO FAIL", (count>>2) & 1);
       obdPrint("   ");
     } else {
       // T/O/C test status
 
-      obdMove(0, DISP_ROWS);
+      obdMove(0, DISP_ROWS-1);
       obdPrint("T/O/C ");
 
       if(!status)
