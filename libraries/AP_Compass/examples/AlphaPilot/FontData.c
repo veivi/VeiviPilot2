@@ -2,6 +2,7 @@
 #include "SSD1306.h"
 #include "StaP.h"
 
+const uint8_t fontWidth = 8;
 const uint8_t fontData[] CS_QUALIFIER = {
 0, 0, 0, 0, 0, 0, 0, 0, // NULL
 0, 0, 0, 0, 0, 0, 0, 0, // NULL

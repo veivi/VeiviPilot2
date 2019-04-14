@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include "SSD1306.h"
 #include "DSP.h"
 #include "StaP.h"
@@ -7,8 +8,6 @@
 //
 // OLED display interface
 //
-
-extern const uint8_t fontData[];
 
 #define SSD1306_128_64 1
 
@@ -75,7 +74,7 @@ extern const uint8_t fontData[];
 #define SSD1306_TOKEN_DATA     (1<<6)
 #define SSD1306_TOKEN_COMMAND  0
 
-static uint8_t displayBuffer[DISP_ROWS*DISP_COLS];
+static uint8_t *displayBuffer;
 static uint8_t cursorCol, cursorRow;
 static int8_t modifiedLeft[DISP_ROWS], modifiedRight[DISP_ROWS];
 static bool inverseVideo = false;
@@ -136,6 +135,10 @@ static void markModified(uint8_t col)
 static void nprint(const char *s, uint8_t l)
 {
   int i = 0;
+
+  if(!displayBuffer)
+    // Failed to allocate
+    return;
   
   for(i = 0; i < l; i++) {
     uint8_t c = s ? s[i] : '\0';
@@ -193,6 +196,13 @@ void obdRefresh()
   if(!basei2cIsOnline(&target)) {
     initialized = false;
     return;
+  }
+  
+  if(!displayBuffer) {
+    displayBuffer = malloc(DISP_ROWS*DISP_COLS);
+    if(!displayBuffer)
+      return;
+    memset(displayBuffer, '\0', DISP_ROWS*DISP_COLS);
   }
   
   if(!initialized) {
