@@ -1878,7 +1878,7 @@ void actuatorTask()
     float value = 0;
 
     if(functionInvoke(vpParam.functionMap[i], &value))
-      stap_servoOutput(i, clamp(value, -1, 1));
+      stap_servoOutput(i, clamp(value, -RATIO(5/4), RATIO(5/4)));
   }
 }
 

@@ -422,7 +422,7 @@ void deriveParams()
 
   if(vpParam.haveGear) {
     for(i = 0; i < MAX_SERVO; i++)
-      if(vpParam.functionMap[i] == fn_gear) {
+      if(ABS(vpParam.functionMap[i]) == fn_gear) {
 	vpDerived.haveRetracts = true;
 	break;
       }
