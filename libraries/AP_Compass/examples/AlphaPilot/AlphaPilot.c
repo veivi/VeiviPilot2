@@ -1555,7 +1555,7 @@ void elevatorModule()
     pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/8));
   else
     // Weight not on wheels, allow more authority
-    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(2/3));
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/2));
   
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(effElev-shakerLimit, 0)/(1-shakerLimit);
