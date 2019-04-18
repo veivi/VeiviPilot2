@@ -1549,6 +1549,13 @@ void elevatorModule()
   static MedianFilter_t elevFilter;
   const float shakerLimit = RATIO(1/3);
   const float effElev = medianInput(&elevFilter, vpInput.elev);
+
+  if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
+    // Limit elevator nose-up wind up when weight is on wheels
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/8));
+  else
+    // Weight not on wheels, allow more authority
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(2/3));
   
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(effElev-shakerLimit, 0)/(1-shakerLimit);
