@@ -41,7 +41,8 @@ typedef enum {  lc_alpha,
                 lc_status, 
                 lc_trim, 
                 lc_test, 
-                lc_gain, 
+                lc_gain,
+		lc_fuel,
                 lc_channels } ChannelId_t;
 
 typedef enum {

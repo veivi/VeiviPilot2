@@ -34,6 +34,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define GAIN     &vpControl.testGain
 #define TEST     &testEncoded
 #define ALTI     &vpFlight.alt
+#define FUEL     &vpStatus.fuel
 #else
 #define ALPHA NULL
 #define DYNP NULL
@@ -62,6 +63,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define GAIN NULL
 #define TEST NULL
 #define ALTI NULL
+#define FUEL NULL
 #endif
 
 struct LogChannel logChannels[] = {
@@ -91,6 +93,7 @@ struct LogChannel logChannels[] = {
   [lc_status] =  { "STAT",   lt_integer,   0, 1,        STATUS },
   [lc_trim] =    { "TRIM",   lt_percent,   -100, 100,   TRIM },
   [lc_test] =    { "TEST",   lt_integer,   0, 1,        TEST },
-  [lc_gain] =    { "GAIN",   lt_real,      0, 50,       GAIN }
+  [lc_gain] =    { "GAIN",   lt_real,      0, 50,       GAIN },
+  [lc_fuel] =    { "FUEL",   lt_real,      0, 30,       FUEL }
 };
 

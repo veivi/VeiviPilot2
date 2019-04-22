@@ -37,5 +37,6 @@ void consolePrintLnI(int v);
 void consolePrintLnUI(unsigned int v);
 void consolePrintLnL(long v);
 void consolePrintLnUL(unsigned long v);
+void consolePrintPoly(int degree, float *coeff, int p);
 
 #endif

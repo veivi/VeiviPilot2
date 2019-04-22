@@ -42,16 +42,21 @@ float effDP()
   return fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
 }
 
+float totalMass()
+{
+  return vpParam.weightDry + vpStatus.fuel;
+}
+
 float nominalPitchRateLevel(float bank, float target)
 {
-  const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
+  const float CoL = coeffOfLift(target), m = totalMass();
   
   return 1/effIAS() * effDP() * CoL * sq(sinf(bank)) / m;
 }
 
 float nominalPitchRate(float bank, float pitch, float target)
 {
-  const float CoL = coeffOfLift(target), m = vpDerived.totalMass;
+  const float CoL = coeffOfLift(target), m = totalMass();
 
   return
     1/effIAS() * (effDP() * CoL / m - G * cosf(bank) * cosf(pitch-target)); 

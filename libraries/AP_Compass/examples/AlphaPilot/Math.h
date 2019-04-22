@@ -33,6 +33,7 @@ float scaleByIAS_E(float k, float p);
 float scaleByIAS(float k);
 float effIAS();
 float effDP();
+float totalMass(void);
 void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state);
 
 #endif

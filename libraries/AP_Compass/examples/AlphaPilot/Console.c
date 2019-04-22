@@ -334,3 +334,20 @@ void consolePrintLnUL(unsigned long v)
   consoleNL();
 }
 
+void consolePrintPoly(int degree, float *coeff, int p)
+{
+  int i = 0;
+  
+  for(i = 0; i < degree+1; i++) {
+    if(i > 0)
+      consolePrint_P(CS_STRING(" + "));
+    consolePrintFP(coeff[i], p);
+    if(i > 0) {
+      consolePrint_P(CS_STRING(" x"));
+      if(i > 1) {
+	consolePrint("^");
+	consolePrintI(i);
+      }
+    }
+  }
+}

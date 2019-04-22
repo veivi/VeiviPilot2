@@ -72,6 +72,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "floor", c_floor, e_int16, &vpParam.floor },
   { "map", c_map, e_map, &vpParam.functionMap },
   { "flare", c_flare, e_float, &vpParam.flare },
+  { "flow", c_flow, e_fuel_curve, &vpParam.coeff_Flow },
   { "trim", c_trim },
   { "ping", c_ping },
   { "model", c_model },
@@ -278,6 +279,11 @@ void executeCommand(char *buf)
 
       case e_ff_curve:
 	for(k = 0; k < FF_degree+1; k++)
+	  ((float*) command.var[i])[k] = param[i+k];
+	break;
+
+      case e_fuel_curve:
+	for(k = 0; k < FuelFlow_degree+1; k++)
 	  ((float*) command.var[i])[k] = param[i+k];
 	break;
       }
@@ -609,6 +615,14 @@ static void backupParamEntry(const struct Command *e)
 	consolePrintF(((float*) e->var[i])[j]);
 	consolePrint(" ");
       }
+      break;
+
+    case e_fuel_curve:
+      for(j = 0; j < FuelFlow_degree+1; j++) {
+	consolePrintF(((float*) e->var[i])[j]);
+	consolePrint(" ");
+      }
+      break;
     }
   }
 

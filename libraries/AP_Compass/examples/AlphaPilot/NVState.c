@@ -90,9 +90,14 @@ bool setModel(int model, bool verbose)
     consolePrintLn_P(CS_STRING(" OK"));
 
   vpDerived.valid = false;
+  vpStatus.fuel = vpParam.fuel;
   
-  if(verbose)
+  if(verbose) {
     printParams();
+    consoleNote_P(CS_STRING("Fuel quantity set to "));
+    consolePrintFP(vpStatus.fuel, 3);
+    consolePrintLn_P(CS_STRING(" kg"));
+  }
   
   return isGood;
 }
@@ -158,7 +163,7 @@ void storeNVState(void)
 
 void printParams()
 {
-  int i = 0, j = 0;
+  int j = 0;
   
   deriveParams();
     
@@ -167,13 +172,13 @@ void printParams()
   consolePrintLn_P(CS_STRING("\""));
   
   consoleNote_P(CS_STRING("  Weight(dry) = "));
-  consolePrintFP(vpDerived.totalMass, 3);
+  consolePrintFP(totalMass(), 3);
   consolePrint_P(CS_STRING("("));
   consolePrintFP(vpParam.weightDry, 3);
   consolePrint_P(CS_STRING(") kg  thrust = "));
   consolePrintFP(vpParam.thrust, 3);
   consolePrint_P(CS_STRING(" kg ("));
-  consolePrintFP(vpParam.thrust/vpDerived.totalMass*100, 0);
+  consolePrintFP(vpParam.thrust/totalMass()*100, 0);
   consolePrintLn_P(CS_STRING("% of weight)"));
   consoleNote_P(CS_STRING("  AS5048B ref = "));
   consolePrintLnUI(vpParam.alphaRef);
@@ -186,13 +191,7 @@ void printParams()
   consolePrintLnFP(vpParam.o_P, 4);
   consoleNoteLn_P(CS_STRING("  Elev feedforward A+Bx+Cx^2"));
   consoleNote_P(CS_STRING("    "));
-  for(i = 0; i < FF_degree+1; i++) {
-    if(i > 0)
-      consolePrint_P(CS_STRING(" + "));
-    consolePrintFP(vpDerived.coeff_FF[i], 4);
-    consolePrint_P(CS_STRING(" x^"));
-    consolePrintI(i);
-  }
+  consolePrintPoly(FF_degree, vpDerived.coeff_FF, 4);
   consolePrint_P(CS_STRING("  (eff alpha range = "));
   consolePrintF(alphaPredict(-1.0)*RADIAN);
   consolePrint_P(CS_STRING(" ... "));
@@ -202,13 +201,7 @@ void printParams()
     consoleNoteLn_P(CS_STRING("    Feedforward, clean vs full flaps"));
     for(j = 0; j < 2; j++) {
       consoleNote_P(CS_STRING("      "));
-      for(i = 0; i < FF_degree+1; i++) {
-	if(i > 0)
-	  consolePrint_P(CS_STRING(" + "));
-	consolePrintFP(vpParam.coeff_FF[j][i], 4);
-	consolePrint_P(CS_STRING(" x^"));
-	consolePrintI(i);
-      }
+      consolePrintPoly(FF_degree, vpParam.coeff_FF[j], 4);
       consoleNL();
     }
   }
@@ -235,6 +228,13 @@ void printParams()
   consolePrintFP(vpParam.idle, 2);
   consolePrint_P(CS_STRING(" lag = "));
   consolePrintLnFP(vpParam.lag, 2);
+  consoleNote_P(CS_STRING("    Fuel flow = "));
+  consolePrintPoly(FuelFlow_degree, vpParam.coeff_Flow, 1);
+  consolePrint_P(CS_STRING(" ("));
+  consolePrintFP(polynomial(FuelFlow_degree, 0, vpParam.coeff_Flow), 1);
+  consolePrint_P(CS_STRING(" ... "));
+  consolePrintFP(polynomial(FuelFlow_degree, 1, vpParam.coeff_Flow), 1);
+  consolePrintLn_P(CS_STRING(" g/min)"));
   consoleNote_P(CS_STRING("  Climb pitch(max) = "));
   consolePrintFP(vpParam.maxPitch*RADIAN, 2);
   consolePrint_P(CS_STRING("  alt(floor) = "));
@@ -270,13 +270,7 @@ void printParams()
   consolePrintLnF(vpDerived.stallAlpha*RADIAN);
   consoleNoteLn_P(CS_STRING("  Coeff of lift"));
   consoleNote_P(CS_STRING("    "));
-  for(i = 0; i < CoL_degree+1; i++) {
-    if(i > 0)
-      consolePrint_P(CS_STRING(" + "));
-    consolePrintFP(vpDerived.coeff_CoL[i], 4);
-    consolePrint_P(CS_STRING(" x^"));
-    consolePrintI(i);
-  }
+  consolePrintPoly(CoL_degree, vpDerived.coeff_CoL, 4);
   consolePrint_P(CS_STRING(" (max = "));
   consolePrintFP(vpDerived.maxCoeffOfLift, 4);
   consolePrintLn(")");
@@ -284,13 +278,7 @@ void printParams()
     consoleNoteLn_P(CS_STRING("    CoL clean vs full flaps"));
     for(j = 0; j < 2; j++) {
       consoleNote_P(CS_STRING("      "));
-      for(i = 0; i < CoL_degree+1; i++) {
-	if(i > 0)
-	  consolePrint_P(CS_STRING(" + "));
-	consolePrintFP(vpParam.coeff_CoL[j][i], 4);
-	consolePrint_P(CS_STRING(" x^"));
-	consolePrintI(i);
-      }
+      consolePrintPoly(CoL_degree, vpParam.coeff_CoL[j], 4);
       consoleNL();
     }
   }
@@ -437,10 +425,6 @@ void deriveParams()
       break;
     }
 
-  // Total mass
-
-  vpDerived.totalMass = vpParam.weightDry + vpParam.fuel;
-
   // Max alpha and curve interpolation
 
   vpDerived.assumedFlap = vpOutput.flap;
@@ -468,7 +452,7 @@ void deriveParams()
 
   // Stall IAS
   
-  vpDerived.minimumDynP = G * vpDerived.totalMass / vpDerived.maxCoeffOfLift;
+  vpDerived.minimumDynP = G * totalMass() / vpDerived.maxCoeffOfLift;
   vpDerived.minimumIAS = dynamicPressureInverse(vpDerived.minimumDynP);
   
   //

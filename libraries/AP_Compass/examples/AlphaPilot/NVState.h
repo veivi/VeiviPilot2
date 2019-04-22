@@ -13,6 +13,7 @@
 
 #define CoL_degree 4
 #define FF_degree 2
+#define FuelFlow_degree 2
 
 struct ParamRecord {
   uint16_t crc;
@@ -54,12 +55,12 @@ struct ParamRecord {
   int16_t floor;
   float flare;
   bool gearLock;
+  float coeff_Flow[FuelFlow_degree+1];
   };
 
 struct DerivedParams {
   bool valid;
   bool haveRetracts, haveFlaps;
-  float totalMass;
   float assumedFlap;
   float coeff_FF[FF_degree+1];
   float coeff_CoL[CoL_degree+1];

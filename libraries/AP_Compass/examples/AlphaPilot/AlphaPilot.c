@@ -457,6 +457,30 @@ static void failsafeDisable()
 
 void statusTask()
 {
+  // Cycle time
+  
+  static uint32_t statusCycleEnded;
+  float statusCycle = 0.0f;
+  
+  if(statusCycleEnded > 0)
+    statusCycle = (stap_currentMicros - statusCycleEnded)/1.0e6;
+  
+  statusCycleEnded = stap_currentMicros;
+  
+  //
+  // Fuel quantity
+  //
+
+  if(vpMode.running) {
+    vpStatus.fuel -=
+      polynomial(FuelFlow_degree, clamp(vpInput.throttle, 0, 1),
+		 vpParam.coeff_Flow)
+      * statusCycle / 1000 / 60; // Convert g/min to kg/s
+    
+    if(vpStatus.fuel < 0)
+      vpStatus.fuel = 0;
+  }
+  
   //
   // Alpha/IAS sensor status
   //
@@ -660,8 +684,8 @@ void statusTask()
   //
 
   const float
-    weight = vpDerived.totalMass * G,
-    lift = vpDerived.totalMass * vpFlight.accZ * cosf(vpFlight.pitch),
+    weight = totalMass() * G,
+    lift = totalMass() * vpFlight.accZ * cosf(vpFlight.pitch),
     liftAvg = swAvgInput(&liftFilter, lift),
     liftExpected = coeffOfLift(vpFlight.alpha) * vpFlight.dynP,
     liftMax = vpDerived.maxCoeffOfLift * vpFlight.dynP;
@@ -827,16 +851,25 @@ void configurationTask()
       vpMode.wingLeveler = true;
     } 
   }
-    
+
+  //
+  // Engine start detection
+  //
+  
+  if(!vpMode.running && vpMode.takeOff && vpInput.throttle > 0.90f) {
+    consoleNoteLn_P(CS_STRING("Engine is assumed RUNNING"));
+    vpMode.running = true;
+  }
+
   //
   // Logging control
   //
   
   if(vpMode.dontLog)
     logDisable();
-  else if(vpMode.takeOff && vpInput.throttle > 0.90f)
+  else if(vpMode.takeOff && vpInput.throttle > 0.90f) {
     logEnable();
-  else if(vpStatus.aloft && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
+  } else if(vpStatus.aloft && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
     logEnable();
   else if(vpStatus.fullStop)
     logDisable();
@@ -1185,16 +1218,16 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" ("));
 	consolePrintFP(fieldStrength*100, 1);
 	consolePrint_P(CS_STRING("%)"));
-	consoleTab(25);
+	consoleTab(22);
 	consolePrint_P(CS_STRING(" IAS,K(m/s) = "));
 	consolePrintI((int) (vpFlight.IAS/KNOT));
 	consolePrint_P(CS_STRING(" ("));
 	consolePrintFP(vpFlight.IAS, 1);
 	consolePrint_P(CS_STRING(")"));
-	consoleTab(50);
+	consoleTab(44);
 	consolePrint_P(CS_STRING(" hdg = "));
 	consolePrintI(vpFlight.heading);
-	consoleTab(65);
+	consoleTab(55);
 	consolePrint_P(CS_STRING(" alt = "));
 
 	tmp = vpFlight.alt/FOOT;
@@ -1382,6 +1415,12 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" log bw = "));
 	consolePrintI((int) logBandWidth);
 	break;
+
+      case 21:
+	consolePrint_P(CS_STRING(" fuel qty = "));
+	consolePrintFP(vpStatus.fuel, 2);
+	break;
+	
       }
     }
 

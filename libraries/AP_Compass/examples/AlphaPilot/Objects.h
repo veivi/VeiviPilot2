@@ -1,3 +1,4 @@
+
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
@@ -25,6 +26,7 @@ struct StatusRecord {
   bool belowFloor;
   bool flare;
   float load;
+  float fuel;
 };
 
 struct ModeRecord {
@@ -34,6 +36,7 @@ struct ModeRecord {
   bool sensorFailSafe;
   bool radioFailSafe;
   bool bankLimiter;
+  bool running;
   bool takeOff;
   bool wingLeveler;
   bool slowFlight;
