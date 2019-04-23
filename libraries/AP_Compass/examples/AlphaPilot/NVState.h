@@ -15,8 +15,11 @@
 #define FF_degree 2
 #define FuelFlow_degree 2
 
+#define PARAM_VERSION 1U
+
 struct ParamRecord {
   uint16_t crc;
+  uint16_t version;
   char name[NAME_LEN+1];
   uint16_t alphaRef;
   float aileNeutral, aile2Neutral, aileDefl;
@@ -34,8 +37,6 @@ struct ParamRecord {
   float s_Ku_C, s_Tu;
   float r_Ku_C, r_Tu;
   float r_Mix;
-  float idle, lag;
-  float dummy1, dummy2;
   float coeff_FF[2][FF_degree+1];
   float t_Mix, t_Expo;
   float maxPitch;
@@ -56,7 +57,8 @@ struct ParamRecord {
   float flare;
   bool gearLock;
   float coeff_Flow[FuelFlow_degree+1];
-  };
+  float idle, lag;
+};
 
 struct DerivedParams {
   bool valid;

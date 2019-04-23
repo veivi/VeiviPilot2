@@ -21,6 +21,7 @@ struct DerivedParams vpDerived;
 
 const struct ParamRecord paramDefaults = {
   .crc = 0,
+  .version = PARAM_VERSION,
   .name = "Invalid" };
 
 const struct NVStateRecord stateDefaults = {
@@ -77,11 +78,14 @@ bool setModel(int model, bool verbose)
     consolePrintLnUI(model);
     consoleNote_P(CS_STRING("  Model record CRC = "));
     consolePrintUI(vpParam.crc);
+    consolePrint_P(CS_STRING(" Ver = "));
+    consolePrintUI(vpParam.version);
   }
   
   bool isGood = true;
   
-  if(paramRecordCrc(&vpParam) != vpParam.crc) {
+  if(paramRecordCrc(&vpParam) != vpParam.crc
+     || vpParam.version != PARAM_VERSION) {
     if(verbose)
       consolePrintLn_P(CS_STRING(" CORRUPT, using defaults"));
     defaultParams();
@@ -90,14 +94,9 @@ bool setModel(int model, bool verbose)
     consolePrintLn_P(CS_STRING(" OK"));
 
   vpDerived.valid = false;
-  vpStatus.fuel = vpParam.fuel;
   
-  if(verbose) {
+  if(isGood && verbose)
     printParams();
-    consoleNote_P(CS_STRING("Fuel quantity set to "));
-    consolePrintFP(vpStatus.fuel, 3);
-    consolePrintLn_P(CS_STRING(" kg"));
-  }
   
   return isGood;
 }
@@ -172,7 +171,7 @@ void printParams()
   consolePrintLn_P(CS_STRING("\""));
   
   consoleNote_P(CS_STRING("  Weight(dry) = "));
-  consolePrintFP(totalMass(), 3);
+  consolePrintFP(vpParam.weightDry + vpParam.fuel, 3);
   consolePrint_P(CS_STRING("("));
   consolePrintFP(vpParam.weightDry, 3);
   consolePrint_P(CS_STRING(") kg  thrust = "));

@@ -853,12 +853,28 @@ void configurationTask()
   }
 
   //
-  // Engine start detection
+  // Engine start/stop detection
   //
   
   if(!vpMode.running && vpMode.takeOff && vpInput.throttle > 0.90f) {
     consoleNoteLn_P(CS_STRING("Engine is assumed RUNNING"));
     vpMode.running = true;
+  }
+
+  if(vpInput.throttle < -0.5) {
+    if(vpMode.running) {
+      consoleNoteLn_P(CS_STRING("Engine assumed STOPPED"));
+      vpMode.running = false;
+    }
+
+    // Reset fuel quantity
+
+    if(vpStatus.fuel != vpParam.fuel) {
+      vpStatus.fuel = vpParam.fuel;
+      consoleNote_P(CS_STRING("Fuel quantity reset to "));
+      consolePrintFP(vpStatus.fuel, 3);
+      consolePrintLn_P(CS_STRING(" kg"));
+    }
   }
 
   //
