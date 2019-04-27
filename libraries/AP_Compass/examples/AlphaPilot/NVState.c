@@ -292,52 +292,32 @@ void printParams()
   consoleNoteLn_P(CS_STRING("  Elevator"));
   consoleNote_P(CS_STRING("    deflection = "));
   consolePrintF(vpParam.elevDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintF(vpParam.elevNeutral*90);
   consolePrint_P(CS_STRING(" trim%(takeoff) = "));
   consolePrintLnF(vpParam.takeoffTrim*100);
   consoleNoteLn_P(CS_STRING("  Aileron"));
   consoleNote_P(CS_STRING("    deflection = "));
-  consolePrintF(vpParam.aileDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintF(vpParam.aileNeutral*90);
-  consolePrint_P(CS_STRING(" ("));
-  consolePrintF(vpParam.aile2Neutral*90);
-  consolePrintLn_P(CS_STRING(")"));
+  consolePrintLnF(vpParam.aileDefl*90);
   consoleNoteLn_P(CS_STRING("  Canard"));
   consoleNote_P(CS_STRING("    deflection = "));
-  consolePrintF(vpParam.canardDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintLnF(vpParam.canardNeutral*90);
+  consolePrintLnF(vpParam.canardDefl*90);
   consoleNoteLn_P(CS_STRING("  Vector "));
   consoleNote_P(CS_STRING("    vertical deflection = "));
-  consolePrintF(vpParam.vertDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintLnF(vpParam.vertNeutral*90);
+  consolePrintLnF(vpParam.vertDefl*90);
   consoleNote_P(CS_STRING("    horizontal deflection = "));
-  consolePrintF(vpParam.horizDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintLnF(vpParam.horizNeutral*90);
+  consolePrintLnF(vpParam.horizDefl*90);
   consoleNoteLn_P(CS_STRING("  Rudder"));
   consoleNote_P(CS_STRING("    deflection = "));
   consolePrintF(vpParam.rudderDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintF(vpParam.rudderNeutral*90);
   consolePrint_P(CS_STRING(" aile mix = "));
   consolePrintLnF(vpParam.r_Mix);
   consoleNoteLn_P(CS_STRING("  Steering"));
   consoleNote_P(CS_STRING("    deflection = "));
   consolePrintF(vpParam.steerDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintLnF(vpParam.steerNeutral*90);
+  consolePrint_P(CS_STRING(" trim = "));
+  consolePrintLnF(vpParam.steerTrim*90);
   consoleNoteLn_P(CS_STRING("  Flap"));
   consoleNote_P(CS_STRING("    defl = "));
-  consolePrintF(vpParam.flapDefl*90);
-  consolePrint_P(CS_STRING(" neutral = "));
-  consolePrintF(vpParam.flapNeutral*90);
-  consolePrint_P(CS_STRING(" ("));
-  consolePrintF(vpParam.flap2Neutral*90);
-  consolePrintLn_P(CS_STRING(")"));
+  consolePrintLnF(vpParam.flapDefl*90);
   consoleNote_P(CS_STRING("  Servo rate = "));
   consolePrintLnF(vpParam.servoRate);
 
@@ -416,8 +396,7 @@ void deriveParams()
   }
 
   for(i = 0; i < MAX_SERVO; i++)
-    if(vpParam.functionMap[i] == fn_flap1
-       || vpParam.functionMap[i] == fn_flap2
+    if(vpParam.functionMap[i] == fn_flap
        || vpParam.functionMap[i] == fn_flaperon1
        || vpParam.functionMap[i] == fn_flaperon2) {
       vpDerived.haveFlaps = true;

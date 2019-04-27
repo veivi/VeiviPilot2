@@ -15,23 +15,24 @@
 #define FF_degree 2
 #define FuelFlow_degree 2
 
-#define PARAM_VERSION 1U
+#define PARAM_VERSION 2U
 
 struct ParamRecord {
   uint16_t crc;
   uint16_t version;
   char name[NAME_LEN+1];
   uint16_t alphaRef;
-  float aileNeutral, aile2Neutral, aileDefl;
-  float elevNeutral, elevDefl;
-  float flapNeutral, flap2Neutral, flapDefl;
-  float rudderNeutral, rudderDefl;
-  float steerNeutral, steerDefl, steerPark;
-  float brakeNeutral, brakeDefl;
-  float canardNeutral, canardDefl;
-  float vertNeutral, vertDefl;
-  float horizNeutral, horizDefl;
   int8_t functionMap[MAX_SERVO]; 
+  float neutral[MAX_SERVO]; 
+  float aileDefl;
+  float elevDefl;
+  float flapDefl;
+  float rudderDefl;
+  float steerDefl, steerPark, steerTrim;
+  float brakeDefl;
+  float canardDefl;
+  float vertDefl;
+  float horizDefl;
   float alphaMax[2];
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;

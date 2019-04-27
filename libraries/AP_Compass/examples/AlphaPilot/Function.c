@@ -11,24 +11,22 @@
 
 float elevatorFn()
 {
-  return vpParam.elevDefl*vpOutput.elev + vpParam.elevNeutral;
+  return vpParam.elevDefl*vpOutput.elev;
 }
 
 float elevon1Fn()
 {
-    return vpParam.aileDefl*vpOutput.aile - vpParam.elevDefl*vpOutput.elev
-      + vpParam.aileNeutral;
+  return vpParam.aileDefl*vpOutput.aile - vpParam.elevDefl*vpOutput.elev;
 }
 
 float elevon2Fn()
 {
-  return vpParam.aileDefl*vpOutput.aile + vpParam.elevDefl*vpOutput.elev
-    + vpParam.elevNeutral;
+  return vpParam.aileDefl*vpOutput.aile + vpParam.elevDefl*vpOutput.elev;
 }
 
 float aileronFn()
 {
-    return vpParam.aileDefl*vpOutput.aile + vpParam.aileNeutral;
+  return vpParam.aileDefl*vpOutput.aile;
 }
 
 static float flaperon()
@@ -48,24 +46,22 @@ float flaperon2Fn()
 
 float rudderFn()
 {
-  return vpParam.rudderNeutral + vpParam.rudderDefl*vpOutput.rudder;
+  return vpParam.rudderDefl*vpOutput.rudder;
 }
 
 float tail1Fn()
 {
-  return vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder 
-    + vpParam.elevNeutral;
+  return vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder;
 }
 
 float tail2Fn()
 {
-  return vpParam.elevDefl*vpOutput.elev - vpParam.rudderDefl*vpOutput.rudder
-    + vpParam.rudderNeutral;
+  return vpParam.elevDefl*vpOutput.elev - vpParam.rudderDefl*vpOutput.rudder;
 }
 
 float canard1Fn()
 {
-  return vpParam.canardNeutral + vpParam.canardDefl*vpOutput.elev;
+  return vpParam.canardDefl*vpOutput.elev;
 }
 
 float canard2Fn()
@@ -75,12 +71,12 @@ float canard2Fn()
 
 float thrustVertFn()
 {
-  return vpParam.vertNeutral + vpParam.vertDefl*vpOutput.thrustVert;
+  return vpParam.vertDefl*vpOutput.thrustVert;
 }
 
 float thrustHorizFn()
 {
-  return vpParam.horizNeutral + vpParam.horizDefl*vpOutput.thrustHoriz;
+  return vpParam.horizDefl*vpOutput.thrustHoriz;
 }
 
 float steeringFn()
@@ -88,17 +84,12 @@ float steeringFn()
   if(vpDerived.haveRetracts && vpControl.gearSel)
     return vpParam.steerPark;
   else
-    return vpParam.steerNeutral + vpParam.steerDefl*vpOutput.steer;
+    return vpParam.steerTrim + vpParam.steerDefl*vpOutput.steer;
 }
 
-float flap1Fn()
+float flapFn()
 {
-  return vpParam.flapNeutral + vpParam.flapDefl*vpOutput.flap;
-}
-
-float flap2Fn()
-{
-  return vpParam.flap2Neutral - vpParam.flapDefl*vpOutput.flap;
+  return vpParam.flapDefl*vpOutput.flap;
 }
 
 float gearFn()
@@ -108,7 +99,7 @@ float gearFn()
 
 float brakeFn()
 {
-  return vpParam.brakeDefl*vpOutput.brake + vpParam.brakeNeutral;
+  return vpParam.brakeDefl*vpOutput.brake;
 }
 
 float throttleFn()
@@ -138,8 +129,7 @@ struct FnDescriptor functionTable[] = {
   [fn_elevon2] = { "elevon2", elevon2Fn },
   [fn_tail1] = { "tail1", tail1Fn },
   [fn_tail2] = { "tail2", tail2Fn },
-  [fn_flap1] = { "flap1", flap1Fn },
-  [fn_flap2] = { "flap2", flap2Fn },
+  [fn_flap] = { "flap", flapFn },
   [fn_thrustvert] = { "vert", thrustVertFn },
   [fn_thrusthoriz] = { "horiz", thrustHorizFn }
 };
@@ -149,8 +139,8 @@ void functionSet(uint8_t ch, const char *name)
   int i = 0;
   
   if(ch > MAX_SERVO-1 || !name) {
-    consoleNoteLn_P(CS_STRING("SERVO  FUNCTION"));
-    consoleNoteLn_P(CS_STRING("---------------------"));
+    consoleNoteLn_P(CS_STRING("SERVO  FUNCTION  NEUTRAL"));
+    consoleNoteLn_P(CS_STRING("------------------------"));
 
     for(i = 0; i < MAX_SERVO; i++) {
       bool reverse = vpParam.functionMap[i] < 0;
@@ -162,7 +152,10 @@ void functionSet(uint8_t ch, const char *name)
       if(reverse)
 	consolePrint("-");
 
-      consolePrintLn(functionTable[ABS(vpParam.functionMap[i])].name);
+      consolePrint(functionTable[ABS(vpParam.functionMap[i])].name);
+
+      consoleTab(20);
+      consolePrintLnFP(vpParam.neutral[i]*90, 1);
     }
 
     consoleNoteLn("");

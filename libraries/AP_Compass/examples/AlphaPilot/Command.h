@@ -11,27 +11,15 @@ typedef enum {
   c_5048b_ref,
 
   c_lock,
-  c_ezero,
-  c_eneutral,
   c_edefl,
-  c_azero,
-  c_aneutral,
   c_adefl,
-  c_rzero,
-  c_rneutral,
   c_rdefl,
-  c_sneutral,
   c_sdefl,
   c_park,
-  c_bneutral,
   c_bdefl,
-  c_fneutral,
   c_fdefl,
-  c_cneutral,
   c_cdefl,
-  c_vneutral,
   c_vdefl,
-  c_hneutral,
   c_hdefl,
   c_weight,
   c_fuel,
@@ -92,7 +80,9 @@ typedef enum {
   c_wow,
   c_wheels,
   c_map,
+  c_nmap,
   c_function,
+  c_neutral,
   c_airspeed,
   c_flare,
   c_read,
@@ -102,7 +92,7 @@ typedef enum {
 } token_t;
 
 typedef enum
-  { e_int8, e_uint16, e_int16, e_angle, e_angle90, e_percent, e_float, e_string, e_bool, e_map, e_col_curve, e_ff_curve, e_fuel_curve } varType_t;
+  { e_int8, e_uint16, e_int16, e_angle, e_angle90, e_percent, e_float, e_string, e_bool, e_map, e_nmap, e_col_curve, e_ff_curve, e_fuel_curve } varType_t;
 
 struct Command {
   char name[MAX_NAME_LEN];

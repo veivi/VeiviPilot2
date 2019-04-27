@@ -1159,9 +1159,9 @@ void trimTask()
     //
 
     if(vpInput.rudderPilotInput && !vpControl.gearSel && !vpStatus.positiveIAS) {
-      vpParam.steerNeutral +=
+      vpParam.steerTrim +=
 	signf(vpParam.steerDefl)*signf(vpInput.rudder)*steerTrimRate/TRIM_HZ;
-      vpParam.steerNeutral = clamp(vpParam.steerNeutral, -1, 1);
+      vpParam.steerTrim = clamp(vpParam.steerTrim, -1, 1);
       // paramsModified = true;
     }
 
@@ -1213,8 +1213,8 @@ void trimTask()
   } else
     vpControl.elevTrim =
       clamp(vpControl.elevTrim,
-	    // fminf(-0.15f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
-	    0,
+	    // fmaxf(-0.10f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
+	    -0.15f,
 	    alphaPredictInverse(vpDerived.thresholdAlpha));
 }
 
@@ -1939,8 +1939,10 @@ void actuatorTask()
 
     float value = 0;
 
-    if(functionInvoke(vpParam.functionMap[i], &value))
+    if(functionInvoke(vpParam.functionMap[i], &value)) {
+      value += vpParam.neutral[i];
       stap_servoOutput(i, clamp(value, -RATIO(5/4), RATIO(5/4)));
+    }
   }
 }
 

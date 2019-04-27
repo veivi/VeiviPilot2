@@ -31,26 +31,16 @@ const struct Command commands[] CS_QUALIFIER = {
   { "idle", c_idle, e_float, &vpParam.idle },
   { "lag", c_lag, e_float, &vpParam.lag },
   { "edefl", c_edefl, e_angle90, &vpParam.elevDefl },
-  { "eneutral", c_eneutral, e_angle90, &vpParam.elevNeutral },
   { "takeoff", c_takeoff, e_percent, &vpParam.takeoffTrim },
   { "adefl", c_adefl, e_angle90, &vpParam.aileDefl },
-  { "aneutral", c_aneutral, e_angle90, &vpParam.aileNeutral, &vpParam.aile2Neutral },
   { "rdefl", c_rdefl, e_angle90, &vpParam.rudderDefl },
-  { "rneutral", c_rneutral, e_angle90, &vpParam.rudderNeutral },
   { "sdefl", c_sdefl, e_angle90, &vpParam.steerDefl },
-  { "sneutral", c_sneutral, e_angle90, &vpParam.steerNeutral },
   { "spark", c_park, e_angle90, &vpParam.steerPark },
   { "fdefl", c_fdefl, e_angle90, &vpParam.flapDefl },
-  { "fneutral", c_fneutral,
-    e_angle90, &vpParam.flapNeutral, &vpParam.flap2Neutral },
   { "bdefl", c_bdefl, e_angle90, &vpParam.brakeDefl },
-  { "bneutral", c_bneutral, e_angle90, &vpParam.brakeNeutral },
   { "cdefl", c_cdefl, e_angle90, &vpParam.canardDefl },
-  { "cneutral", c_cneutral, e_angle90, &vpParam.canardNeutral },
   { "vdefl", c_vdefl, e_angle90, &vpParam.vertDefl },
-  { "vneutral", c_vneutral, e_angle90, &vpParam.vertNeutral },
   { "hdefl", c_hdefl, e_angle90, &vpParam.horizDefl },
-  { "hneutral", c_hneutral, e_angle90, &vpParam.horizNeutral },
   { "roll_k", c_roll_k, e_float, &vpParam.roll_C, &vpParam.expo },
   { "servorate", c_servorate, e_float, &vpParam.servoRate },
   { "col_ab", c_col, e_col_curve, &vpParam.coeff_CoL[0] },
@@ -71,6 +61,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "lock", c_lock, e_bool, &vpParam.gearLock },
   { "floor", c_floor, e_int16, &vpParam.floor },
   { "map", c_map, e_map, &vpParam.functionMap },
+  { "nmap", c_nmap, e_nmap, &vpParam.neutral },
   { "flare", c_flare, e_float, &vpParam.flare },
   { "flow", c_flow, e_fuel_curve, &vpParam.coeff_Flow },
   { "trim", c_trim },
@@ -100,6 +91,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "gear", c_gear },
   { "fault", c_fault },
   { "function", c_function },
+  { "neutral", c_neutral },
   { "read", c_read },
   { "reset", c_reset },
   { "boot", c_boot },
@@ -270,6 +262,11 @@ void executeCommand(char *buf)
       case e_map:
 	for(k = 0; k < MAX_SERVO; k++)
 	  ((uint8_t*) command.var[i])[k] = param[i+k];
+	break;
+	
+      case e_nmap:
+	for(k = 0; k < MAX_SERVO; k++)
+	  ((float*) command.var[i])[k] = param[i+k]/90;
 	break;
 	
       case e_col_curve:
@@ -542,6 +539,11 @@ void executeCommand(char *buf)
 	functionSet(param[0], &paramText[1][0]);
       break;
 
+    case c_neutral:
+      if(numParams > 1 && param[0] >= 0 && param[0] <= MAX_SERVO)
+	vpParam.neutral[(int) param[0]] = param[1]/90;
+      break;
+
     default:
       consolePrint_P(CS_STRING("Sorry, command not implemented: \""));
       consolePrint(buf);
@@ -599,6 +601,13 @@ static void backupParamEntry(const struct Command *e)
     case e_map:
       for(j = 0; j < MAX_SERVO; j++) {
 	consolePrintI(((int8_t*) e->var[i])[j]);
+	consolePrint(" ");
+      }
+      break;
+
+    case e_nmap:
+      for(j = 0; j < MAX_SERVO; j++) {
+	consolePrintF(((float*) e->var[i])[j]*90);
 	consolePrint(" ");
       }
       break;

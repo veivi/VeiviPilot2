@@ -11,6 +11,7 @@ typedef enum {
   fn_aileron,
   fn_elevator,
   fn_rudder,
+  fn_flap,
   fn_throttle,
   fn_gear,
   fn_steering,
@@ -19,7 +20,6 @@ typedef enum {
   fn_canard1, fn_canard2,
   fn_elevon1, fn_elevon2,
   fn_tail1, fn_tail2,
-  fn_flap1, fn_flap2,
   fn_thrustvert,
   fn_thrusthoriz,
   fn_invalid
