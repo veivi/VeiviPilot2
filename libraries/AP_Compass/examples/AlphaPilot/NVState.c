@@ -287,7 +287,7 @@ void printParams()
   consoleNote_P(CS_STRING("  Roll rate K (expo) = "));
   consolePrintFP(vpParam.roll_C, 3);
   consolePrint_P(CS_STRING(" ("));
-  consolePrintFP(vpParam.expo, 3);
+  consolePrintFP(vpParam.roll_Expo, 3);
   consolePrintLn(")");
   consoleNoteLn_P(CS_STRING("  Elevator"));
   consoleNote_P(CS_STRING("    deflection = "));
@@ -339,9 +339,6 @@ void printParams()
     if(!vpParam.wowCalibrated)
       consolePrint_P(CS_STRING(" NOT"));  
     consolePrintLn_P(CS_STRING(" CALIBRATED"));
-
-    if(vpParam.gearLock) 
-      consoleNoteLn_P(CS_STRING("    Gear is LOCKED DOWN"));
   } else
     vpParam.wowCalibrated = false;
 }

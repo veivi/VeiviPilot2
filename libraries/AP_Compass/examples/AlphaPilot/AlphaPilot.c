@@ -571,7 +571,7 @@ void statusTask()
   //
 
   vpFlight.accDir = atan2(vpFlight.accZ, -vpFlight.accX);
-  vpFlight.relWind = vpStatus.fault == 3 ? vpFlight.accDir : vpFlight.alpha - vpParam.offset;
+  vpFlight.relWind = vpStatus.fault == 3 ? vpFlight.accDir : vpFlight.alpha - vpParam.alphaOffset;
   
   if(vpStatus.alphaFailed) {
       // Failed alpha is also unreliable
@@ -778,18 +778,13 @@ void configurationTask()
     //
 
     if(vpDerived.haveRetracts) {
-      if(vpParam.gearLock) {
-	vpControl.gearSel = 0;
-	consoleNoteLn_P(CS_STRING("Gear is LOCKED DOWN"));
-      } else {
-	vpControl.gearSel = !vpControl.gearSel;
-	vpMode.gearSelected = true;
+      vpControl.gearSel = !vpControl.gearSel;
+      vpMode.gearSelected = true;
 
-	if(vpControl.gearSel)
-	  consoleNoteLn_P(CS_STRING("Gear UP"));
-	else
-	  consoleNoteLn_P(CS_STRING("Gear DOWN"));
-      }
+      if(vpControl.gearSel)
+	consoleNoteLn_P(CS_STRING("Gear UP"));
+      else
+	consoleNoteLn_P(CS_STRING("Gear DOWN"));
     }
   }
 
@@ -1390,7 +1385,7 @@ void gaugeTask()
 	
       case 14:
        consolePrint_P(CS_STRING(" roll_k = "));
-       consolePrintFP(vpFlight.rollR/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.expo)/vpFlight.IAS, 3);
+       consolePrintFP(vpFlight.rollR/expo(vpOutput.aile-vpControl.aileNeutral, vpParam.roll_Expo)/vpFlight.IAS, 3);
        break;
        
       case 15:

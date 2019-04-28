@@ -10,7 +10,6 @@ typedef enum {
   c_invalid,
   c_5048b_ref,
 
-  c_lock,
   c_edefl,
   c_adefl,
   c_rdefl,

@@ -15,13 +15,18 @@
 #define FF_degree 2
 #define FuelFlow_degree 2
 
-#define PARAM_VERSION 2U
+#define PARAM_VERSION 3U
 
 struct ParamRecord {
   uint16_t crc;
   uint16_t version;
   char name[NAME_LEN+1];
   uint16_t alphaRef;
+  float alphaOffset;
+  float alphaMax[2];
+  float maxPitch;
+  float thresholdMargin, pushMargin;
+  float flare;
   int8_t functionMap[MAX_SERVO]; 
   float neutral[MAX_SERVO]; 
   float aileDefl;
@@ -33,30 +38,23 @@ struct ParamRecord {
   float canardDefl;
   float vertDefl;
   float horizDefl;
-  float alphaMax[2];
   float i_Ku_C, i_Tu, o_P;
   float s_Ku_C, s_Tu;
   float r_Ku_C, r_Tu;
   float r_Mix;
-  float coeff_FF[2][FF_degree+1];
+  float yd_C;
   float t_Mix, t_Expo;
-  float maxPitch;
-  float roll_C;
+  float roll_C, roll_Expo;
+  float coeff_FF[2][FF_degree+1];
   float coeff_CoL[2][CoL_degree+1];
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, thrust;
-  float thresholdMargin, pushMargin;
-  float yd_C;
-  float offset;
   bool virtualOnly;
   bool haveGear;
   bool wowCalibrated;
   bool sensorOrient;
-  float expo;
   int16_t floor;
-  float flare;
-  bool gearLock;
   float coeff_Flow[FuelFlow_degree+1];
   float idle, lag;
 };
