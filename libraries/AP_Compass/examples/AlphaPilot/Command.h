@@ -15,6 +15,7 @@ typedef enum {
   c_adefl,
   c_rdefl,
   c_sdefl,
+  c_strim,
   c_park,
   c_bdefl,
   c_fdefl,

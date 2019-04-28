@@ -35,6 +35,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "adefl", c_adefl, e_angle90, &vpParam.aileDefl },
   { "rdefl", c_rdefl, e_angle90, &vpParam.rudderDefl },
   { "sdefl", c_sdefl, e_angle90, &vpParam.steerDefl },
+  { "strim", c_strim, e_angle90, &vpParam.steerTrim },
   { "spark", c_park, e_angle90, &vpParam.steerPark },
   { "fdefl", c_fdefl, e_angle90, &vpParam.flapDefl },
   { "bdefl", c_bdefl, e_angle90, &vpParam.brakeDefl },
