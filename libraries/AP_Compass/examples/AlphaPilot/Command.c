@@ -51,6 +51,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "climb", c_climb, e_angle, &vpParam.maxPitch },
   { "weight", c_weight, e_float, &vpParam.weightDry },
   { "fuel", c_fuel, e_float, &vpParam.fuel },
+  { "battery", c_battery, e_float, &vpParam.battery },
   { "thrust", c_thrust, e_float, &vpParam.thrust },
   { "virtual", c_virtual, e_bool, &vpParam.virtualOnly },
   { "sensor", c_sensor, e_bool, &vpParam.sensorOrient },

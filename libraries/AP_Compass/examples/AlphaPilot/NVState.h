@@ -15,7 +15,7 @@
 #define FF_degree 2
 #define FuelFlow_degree 2
 
-#define PARAM_VERSION 3U
+#define PARAM_VERSION 4U
 
 struct ParamRecord {
   uint16_t crc;
@@ -49,7 +49,7 @@ struct ParamRecord {
   float coeff_CoL[2][CoL_degree+1];
   float servoRate;
   float takeoffTrim;
-  float weightDry, fuel, thrust;
+  float weightDry, fuel, battery, thrust;
   bool virtualOnly;
   bool haveGear;
   bool wowCalibrated;

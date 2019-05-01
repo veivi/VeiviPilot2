@@ -170,11 +170,16 @@ void printParams()
   consolePrint(vpParam.name);
   consolePrintLn_P(CS_STRING("\""));
   
-  consoleNote_P(CS_STRING("  Weight(dry) = "));
-  consolePrintFP(vpParam.weightDry + vpParam.fuel, 3);
-  consolePrint_P(CS_STRING("("));
+  consoleNote_P(CS_STRING("  Weight(dry, fuel, batt) = "));
+  consolePrintFP(vpParam.weightDry + vpParam.fuel + vpParam.battery, 3);
+  consolePrint_P(CS_STRING(" ("));
   consolePrintFP(vpParam.weightDry, 3);
-  consolePrint_P(CS_STRING(") kg  thrust = "));
+  consolePrint_P(CS_STRING(", "));
+  consolePrintFP(vpParam.fuel, 3);
+  consolePrint_P(CS_STRING(", "));
+  consolePrintFP(vpParam.battery, 3);
+  consolePrintLn_P(CS_STRING(") kg"));
+  consoleNote_P(CS_STRING("    Thrust = "));
   consolePrintFP(vpParam.thrust, 3);
   consolePrint_P(CS_STRING(" kg ("));
   consolePrintFP(vpParam.thrust/totalMass()*100, 0);

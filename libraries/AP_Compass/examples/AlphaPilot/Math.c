@@ -44,7 +44,7 @@ float effDP()
 
 float totalMass()
 {
-  return vpParam.weightDry + vpStatus.fuel;
+  return vpParam.weightDry + vpParam.battery + vpStatus.fuel;
 }
 
 float nominalPitchRateLevel(float bank, float target)
