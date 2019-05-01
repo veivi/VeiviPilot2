@@ -1846,10 +1846,22 @@ void ancillaryModule()
   // Brake
   //
     
-  if(vpControl.gearSel == 1 || vpInput.elev > 0)
+  if(vpControl.gearSel == 1) {
+    vpControl.parking = false;
     vpOutput.brake = 0;
-  else
-    vpOutput.brake = -vpInput.elev;
+  } else {
+    float pedal = clamp(-vpInput.elev, 0, 1);
+    static bool depressed;
+
+    if(pedal > 0.8)
+      depressed = true;
+    else if(depressed && pedal < 0.5) {
+      depressed = false;
+      vpControl.parking = !vpStatus.positiveIAS && buttonState(&TRIMBUTTON);
+    }
+    
+    vpOutput.brake = (depressed || vpControl.parking) ? 1 : pedal;
+  }
 }
 
 //

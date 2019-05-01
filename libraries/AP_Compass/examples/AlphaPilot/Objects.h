@@ -75,6 +75,7 @@ struct ControlState {
   float elevTrim, targetAlpha, targetPitchR;
   float elevPredict, ailePredict, aileNeutral, pusher;
   uint8_t gearSel, flapSel;
+  bool parking;
 };
 
 struct OutputState {
