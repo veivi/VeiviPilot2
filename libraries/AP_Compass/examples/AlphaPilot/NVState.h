@@ -15,12 +15,13 @@
 #define FF_degree 2
 #define FuelFlow_degree 2
 
-#define PARAM_VERSION 4U
+#define PARAM_VERSION 5U
 
 struct ParamRecord {
   uint16_t crc;
   uint16_t version;
   char name[NAME_LEN+1];
+  float dimension;
   uint16_t alphaRef;
   float alphaOffset;
   float alphaMax[2];
@@ -61,6 +62,7 @@ struct ParamRecord {
 
 struct DerivedParams {
   bool valid;
+  float takeoffMass;
   bool haveRetracts, haveFlaps;
   float assumedFlap;
   float coeff_FF[FF_degree+1];

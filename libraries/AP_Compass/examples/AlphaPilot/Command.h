@@ -34,6 +34,7 @@ typedef enum {
   c_lag,
   c_flow,
 
+  c_pitch,
   c_dump,
   c_max,
   c_virtual,
@@ -89,7 +90,9 @@ typedef enum {
   c_read,
   c_boot,
   c_reset,
-  c_memtest
+  c_memtest,
+  c_scale,
+  c_dimension 
 } token_t;
 
 typedef enum

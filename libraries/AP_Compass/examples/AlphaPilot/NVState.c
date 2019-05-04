@@ -22,7 +22,8 @@ struct DerivedParams vpDerived;
 const struct ParamRecord paramDefaults = {
   .crc = 0,
   .version = PARAM_VERSION,
-  .name = "Invalid" };
+  .name = "Invalid",
+  .dimension = 1.0f };
 
 const struct NVStateRecord stateDefaults = {
   .crc = 0,
@@ -170,8 +171,10 @@ void printParams()
   consolePrint(vpParam.name);
   consolePrintLn_P(CS_STRING("\""));
   
-  consoleNote_P(CS_STRING("  Weight(dry, fuel, batt) = "));
-  consolePrintFP(vpParam.weightDry + vpParam.fuel + vpParam.battery, 3);
+  consoleNote_P(CS_STRING("    Dimension = "));
+  consolePrintLnFP(vpParam.dimension, 3);
+  consoleNote_P(CS_STRING("  Weight (dry, fuel, batt) = "));
+  consolePrintFP(vpDerived.takeoffMass, 3);
   consolePrint_P(CS_STRING(" ("));
   consolePrintFP(vpParam.weightDry, 3);
   consolePrint_P(CS_STRING(", "));
@@ -182,7 +185,7 @@ void printParams()
   consoleNote_P(CS_STRING("    Thrust = "));
   consolePrintFP(vpParam.thrust, 3);
   consolePrint_P(CS_STRING(" kg ("));
-  consolePrintFP(vpParam.thrust/totalMass()*100, 0);
+  consolePrintFP(vpParam.thrust/vpDerived.takeoffMass*100, 0);
   consolePrintLn_P(CS_STRING("% of weight)"));
   consoleNote_P(CS_STRING("  AS5048B ref = "));
   consolePrintLnUI(vpParam.alphaRef);
@@ -378,12 +381,16 @@ void derivedInvalidate()
 
 void deriveParams()
 {
+  int i = 0;
+  
   if(vpDerived.valid)
     return;
   
   vpDerived.valid = true;
-  
-  int i = 0;
+
+  // Takeoff mass
+
+  vpDerived.takeoffMass = vpParam.weightDry + vpParam.fuel + vpParam.battery;
   
   // Do we have rectracts and/or flaps?
 

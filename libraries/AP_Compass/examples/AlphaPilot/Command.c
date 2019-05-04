@@ -31,6 +31,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "tmix", c_tmix, e_float, &vpParam.t_Mix, &vpParam.t_Expo },
   { "idle", c_idle, e_float, &vpParam.idle },
   { "lag", c_lag, e_float, &vpParam.lag },
+  { "dimension", c_dimension, e_float, &vpParam.dimension },
   { "edefl", c_edefl, e_angle90, &vpParam.elevDefl },
   { "takeoff", c_takeoff, e_percent, &vpParam.takeoffTrim },
   { "adefl", c_adefl, e_angle90, &vpParam.aileDefl },
@@ -97,6 +98,8 @@ const struct Command commands[] CS_QUALIFIER = {
   { "reset", c_reset },
   { "boot", c_boot },
   { "memtest", c_memtest },
+  { "scale", c_scale },
+  { "pitch", c_pitch },
   { "", c_invalid }
 };
 
@@ -217,7 +220,7 @@ void executeCommand(char *buf)
     
   } else if(command.var[0]) {
     //
-    // Simple variable
+    // A simple variable
     //
 
     int k = 0;
@@ -290,7 +293,7 @@ void executeCommand(char *buf)
     derivedInvalidate();
   } else {
     //
-    // Complex
+    // A complex command
     //
 
     float offset = 0.0;
@@ -545,12 +548,50 @@ void executeCommand(char *buf)
 	vpParam.neutral[(int) param[0]] = param[1]/90;
       break;
 
+    case c_scale:
+      if(numParams > 0 && param[0] != vpParam.dimension) {
+	const float scale = param[0]/vpParam.dimension;
+	
+	consoleNote_P(CS_STRING("Dimension changed to "));
+	consolePrintF(param[0]);
+	consolePrint_P(CS_STRING(" (scale by "));
+	consolePrintF(scale);
+	consolePrintLn(")");
+
+	// Scale CoL by square
+
+	for(i = 0; i < 2; i++) {
+	  for(j = 0; j < CoL_degree+1; j++)
+	    vpParam.coeff_CoL[i][j] *= square(scale);
+	}
+
+	vpParam.dimension = param[0];
+      }
+      break;
+
+    case c_pitch:
+      if(numParams > 0) {
+	vpParam.maxPitch = param[0]/RADIAN;
+	
+	if(vpParam.thrust < vpDerived.takeoffMass) {
+	  float max = asin(vpParam.thrust/vpDerived.takeoffMass);
+	  if(vpParam.maxPitch > max) {
+	    consoleNote_P(CS_STRING("Max pitch limited to "));
+	    consolePrintLnF(max*RADIAN);
+	    vpParam.maxPitch = max;
+	  }
+	}
+      }
+      break;
+      
     default:
       consolePrint_P(CS_STRING("Sorry, command not implemented: \""));
       consolePrint(buf);
       consolePrintLn("\"");
       break;
     }
+
+    derivedInvalidate();
   }
 }
 
