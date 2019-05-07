@@ -98,7 +98,7 @@ bool toc_test_pitot(bool reset)
 
 bool toc_test_attitude(bool reset)
 {
-  return fabsf(vpFlight.pitch) < 10/RADIAN && fabsf(vpFlight.bank) < 5/RADIAN;
+  return fabsf(vpFlight.pitch) < 15/RADIAN && fabsf(vpFlight.bank) < 5/RADIAN;
 }
 
 bool toc_test_gyro(bool reset)
