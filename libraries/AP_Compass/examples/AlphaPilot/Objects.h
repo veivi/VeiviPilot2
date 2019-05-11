@@ -121,7 +121,6 @@ extern float logBandWidth, ppmFreq, simInputFreq;
 extern uint32_t simTimeStamp, idleMicros;
 extern const int maxParams;
 extern uint8_t gaugeCount, gaugeVariable[];
-extern bool paramsModified;
 extern uint32_t lastPPMWarn;
 extern float fieldStrength;
 

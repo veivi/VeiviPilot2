@@ -24,11 +24,6 @@
 void cacheTask()
 {
   m24xxFlush();
-  
-  if(paramsModified) {
-    storeParams();
-    paramsModified = false;
-  }
 }
 
 void alphaTask()
@@ -1157,7 +1152,6 @@ void trimTask()
       vpParam.steerTrim +=
 	signf(vpParam.steerDefl)*signf(vpInput.rudder)*steerTrimRate/TRIM_HZ;
       vpParam.steerTrim = clamp(vpParam.steerTrim, -1, 1);
-      // paramsModified = true;
     }
 
     //
@@ -1859,7 +1853,7 @@ void ancillaryModule()
       depressed = false;
       vpControl.parking = !vpStatus.positiveIAS && buttonState(&TRIMBUTTON);
     }
-    
+      
     vpOutput.brake = (depressed || vpControl.parking) ? 1 : pedal;
   }
 }

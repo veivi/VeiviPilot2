@@ -14,7 +14,6 @@ float controlCycle;
 float logBandWidth, ppmFreq, simInputFreq;
 uint32_t idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
-bool paramsModified = false;
 uint32_t lastPPMWarn;
 float fieldStrength;
 
