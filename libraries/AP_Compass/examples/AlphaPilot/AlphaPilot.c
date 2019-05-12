@@ -1733,7 +1733,7 @@ void aileronModule()
       if(vpMode.slowFlight)
 	// Weak leveling
 	targetRollR
-	  -= vpControl.o_P*clamp(vpFlight.bank, -2.0f/RADIAN, 2.0f/RADIAN);
+	  -= vpControl.o_P*clamp(vpFlight.bank, -1.0f/RADIAN, 1.0f/RADIAN);
 
       // Bank limiter
       

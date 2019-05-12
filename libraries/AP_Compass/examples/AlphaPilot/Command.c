@@ -100,6 +100,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "memtest", c_memtest },
   { "scale", c_scale },
   { "pitch", c_pitch },
+  { "launch", c_launch },
   { "", c_invalid }
 };
 
@@ -582,6 +583,12 @@ void executeCommand(char *buf)
 	  }
 	}
       }
+      break;
+
+    case c_launch:
+      // Simulate takeoff
+      vpMode.takeOff = false;
+      vpStatus.aloft = true;
       break;
       
     default:

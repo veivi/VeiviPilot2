@@ -150,7 +150,8 @@ bool toc_test_rstick(bool reset)
 bool toc_test_lstick_range(bool reset)
 {
   static struct TOCRangeTestState stateThr;
-  bool status = toc_test_range_generic(&stateThr, reset, CH_THRO, -1, 1);
+  bool status = toc_test_range_generic(&stateThr, reset, CH_THRO,
+				       vpParam.coeff_Flow[0] == 0 ? 0 : -1, 1);
 
 #if RX_CHANNELS >= 8
   static struct TOCRangeTestState stateRudder;

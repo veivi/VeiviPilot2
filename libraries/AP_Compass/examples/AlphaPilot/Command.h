@@ -92,7 +92,8 @@ typedef enum {
   c_reset,
   c_memtest,
   c_scale,
-  c_dimension 
+  c_dimension,
+  c_launch
 } token_t;
 
 typedef enum
