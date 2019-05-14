@@ -152,8 +152,11 @@ void functionSet(uint8_t ch, const char *name)
       if(reverse)
 	consolePrint("-");
 
-      consolePrint(functionTable[ABS(vpParam.functionMap[i])].name);
-
+      if(ABS(vpParam.functionMap[i]) < fn_invalid)
+	consolePrint(functionTable[ABS(vpParam.functionMap[i])].name);
+      else
+	consolePrint_P(CS_STRING("*invalid*"));
+      
       consoleTab(20);
       consolePrintLnFP(vpParam.neutral[i]*90, 1);
     }
@@ -161,7 +164,7 @@ void functionSet(uint8_t ch, const char *name)
     consoleNoteLn("");
     consoleNote_P(CS_STRING("AVAILABLE FUNCTIONS: "));
 
-    for(i = 0; i < sizeof(functionTable)/sizeof(struct FnDescriptor); i++) {
+    for(i = 0; i < fn_invalid; i++) {
       if(i > 0)
 	consolePrint(", ");
       consolePrint(functionTable[i].name);
