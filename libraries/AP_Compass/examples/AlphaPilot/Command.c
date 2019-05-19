@@ -132,8 +132,10 @@ void printCoeffElement(float y0, float y1, float x, float v)
     int y = col0 + (col1-col0) * v / y1;
 
     if(y < col0) {
-      consoleTab(y);
-      consolePrint("*");
+      if(y >= 10) {
+	consoleTab(y);
+	consolePrint("*");
+      }
       consoleTab(col0);
       consolePrint("|");
       consoleTab(col1);
@@ -480,7 +482,7 @@ void executeCommand(char *buf)
       consoleNoteLn_P(CS_STRING("Coeff of lift"));
   
       for(aR = -0.5; aR < 1.1; aR += 0.1)
-	printCoeffElement(-0.2, 1, vpDerived.maxAlpha*aR*RADIAN,
+	printCoeffElement(-0.3, 1, vpDerived.maxAlpha*aR*RADIAN,
 			  coeffOfLift(vpDerived.maxAlpha*aR)/vpDerived.maxCoeffOfLift);
       break;
       

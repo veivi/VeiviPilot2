@@ -1626,15 +1626,21 @@ void elevatorModule()
   else
     slopeReset(&trimRateLimiter, vpControl.targetAlpha);
     
-  if(vpFeature.alphaHold)
+  if(vpFeature.alphaHold) {
+    const float maxPitch =
+      mixValue(1 - vpDerived.minimumDynP/vpFlight.dynP,
+	       asin(turbineOutput(&engine)
+		    *vpParam.thrust/vpDerived.takeoffMass)
+	       + vpControl.targetAlpha,
+	       vpParam.maxPitch);
+    
     vpControl.targetPitchR =
       nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
-	      -30.0f/RADIAN - vpFlight.pitch,
-	      clamp(vpParam.maxPitch, 30.0f/RADIAN, 80.0f/RADIAN) - vpFlight.pitch)
+	      -30.0f/RADIAN - vpFlight.pitch, maxPitch - vpFlight.pitch)
       * vpControl.o_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
-  else
+  } else
     vpControl.targetPitchR = vpInput.elevExpo*PI_F/2;
 
   vpControl.elevPredict =
