@@ -631,14 +631,14 @@ void statusTask()
      || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
     if(!vpStatus.stall)
       lastStall = stap_currentMicros;
-    else if(stap_currentMicros - lastStall > 0.1e6) {
+    else if(stap_currentMicros - lastStall > 0.05e6) {
       consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
       vpStatus.stall = false;
     }
   } else {
     if(vpStatus.stall)
       lastStall = stap_currentMicros;
-    else if(stap_currentMicros - lastStall > 0.1e6) {
+    else if(stap_currentMicros - lastStall > 0.05e6) {
       consoleNoteLn_P(CS_STRING("We're STALLING"));
       vpStatus.stall = true;
     }
@@ -1586,7 +1586,7 @@ void gpsTask()
 //
 
 const float pusherBoost_c = 0.2f;
-const float pusherBias_c = -2.0f/RADIAN;
+const float pusherBias_c = -1.0f/RADIAN;
 
 void elevatorModule()
 {
@@ -1671,9 +1671,9 @@ void elevatorModule()
     // Pusher
 
 #ifdef HARD_PUSHER
-    pidCtrlSetRangeAB(&pushCtrl, vpOutput.elev*RATIO(1/4), vpOutput.elev);
+    pidCtrlSetRangeAB(&pushCtrl, vpOutput.elev*RATIO(1/3), vpOutput.elev);
 #else
-    pidCtrlSetRangeAB(&pushCtrl, -vpOutput.elev*RATIO(3/4), 0);
+    pidCtrlSetRangeAB(&pushCtrl, -vpOutput.elev*RATIO(2/3), 0);
 #endif
 
     vpControl.pusher = 0;
