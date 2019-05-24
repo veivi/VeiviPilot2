@@ -489,6 +489,8 @@ void statusTask()
   //
 
   if(vpStatus.canopyClosed || vpStatus.aloft) {
+    // Assume we are disconnected from the overflow tank
+    
     vpStatus.fuel -=
       polynomial(FuelFlow_degree, clamp(vpInput.throttle, 0, 1),
 		 vpParam.coeff_Flow)
@@ -496,6 +498,14 @@ void statusTask()
     
     if(vpStatus.fuel < 0)
       vpStatus.fuel = 0;
+    
+  } else if(vpStatus.fuel != vpParam.fuel) {
+    // Assume we are being topped up
+    
+    vpStatus.fuel = vpParam.fuel;
+    consoleNote_P(CS_STRING("Fuel assumed TOPPED UP ("));
+    consolePrintFP(vpStatus.fuel, 3);
+    consolePrintLn_P(CS_STRING(" kg)"));
   }
   
   //
@@ -1420,7 +1430,7 @@ void gaugeTask()
 
       case 21:
 	consolePrint_P(CS_STRING(" fuel qty = "));
-	consolePrintFP(vpStatus.fuel, 2);
+	consolePrintFP(vpStatus.fuel, 3);
 	break;
 	
       }
