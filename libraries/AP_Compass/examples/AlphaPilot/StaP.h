@@ -171,5 +171,13 @@ uint8_t stap_I2cWait(uint8_t);
 uint16_t stap_i2cErrorCount(void);
 uint16_t stap_i2cErrorCode(void);
 
+//
+// Canopy latch interface
+//
+
+extern const struct PinDescriptor latch;
+
+#define STAP_CANOPY_CLOSED  (getPinState(&latch) == 0)
+
 #endif
 

@@ -96,8 +96,17 @@ bool setModel(int model, bool verbose)
 
   vpDerived.valid = false;
   
-  if(isGood && verbose)
-    printParams();
+  if(isGood) {
+    if(verbose)
+      printParams();
+
+    if(vpStatus.fuel != vpParam.fuel) {
+      vpStatus.fuel = vpParam.fuel;
+      consoleNote_P(CS_STRING("Fuel quantity reset to "));
+      consolePrintFP(vpStatus.fuel, 3);
+      consolePrintLn_P(CS_STRING(" kg"));
+    }
+  }
   
   return isGood;
 }

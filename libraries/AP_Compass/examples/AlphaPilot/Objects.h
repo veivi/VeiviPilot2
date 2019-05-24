@@ -19,6 +19,7 @@ struct StatusRecord {
   bool stall;
   bool weightOnWheels;
   bool aloft;
+  bool canopyClosed;
   int fault;
   bool alphaFailed;
   bool alphaUnreliable;
@@ -36,7 +37,6 @@ struct ModeRecord {
   bool sensorFailSafe;
   bool radioFailSafe;
   bool bankLimiter;
-  bool running;
   bool takeOff;
   bool wingLeveler;
   bool slowFlight;

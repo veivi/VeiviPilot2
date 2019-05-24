@@ -201,6 +201,7 @@ extern const struct PortDescriptor portTable[];
 extern const portName_t pcIntPort[];
 extern const uint8_t pcIntMask[];
 const struct PinDescriptor led = { PortA, 5 };
+const struct PinDescriptor latch = { PortF, 0 };
 
 const struct PortDescriptor portTable[] = {
   [PortA] = { &PINA, &PORTA, &DDRA },
@@ -424,7 +425,6 @@ void stap_rxInputPoll(void)
 }
   
 }
-
 extern "C" void stap_initialize(void)
 {
   consoleNote_P(CS_STRING("Initializing I2C... "));
@@ -483,6 +483,8 @@ extern "C" void stap_initialize(void)
 
   pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
 
+  configureInput(&latch, true);
+  
   consolePrintLn_P(CS_STRING("Done."));
 }
 

@@ -194,7 +194,7 @@ void mainLoopSetup()
   consoleNote_P(CS_STRING("Initialized, "));
   consolePrintUL(stap_memoryFree());
   consolePrintLn_P(CS_STRING(" bytes free."));
-  
+
   datagramTxStart(DG_INITIALIZED);
   datagramTxEnd();
 }

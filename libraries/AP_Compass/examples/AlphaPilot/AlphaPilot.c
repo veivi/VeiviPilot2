@@ -461,12 +461,34 @@ void statusTask()
     statusCycle = (stap_currentMicros - statusCycleEnded)/1.0e6;
   
   statusCycleEnded = stap_currentMicros;
+
+  //
+  // Canopy open/closed
+  //
+
+  static uint32_t lastCanopy;
+  
+  if(STAP_CANOPY_CLOSED) {
+    if(vpStatus.canopyClosed)
+      lastCanopy = stap_currentMicros;
+    else if(stap_currentMicros - lastCanopy > 0.5e6) {
+      consoleNoteLn_P(CS_STRING("Canopy is CLOSED"));
+      vpStatus.canopyClosed = true;
+    }
+  } else {
+    if(!vpStatus.canopyClosed)
+      lastCanopy = stap_currentMicros;
+    else if(stap_currentMicros - lastCanopy > 0.5e6) {
+      consoleNoteLn_P(CS_STRING("Canopy is OPEN"));
+      vpStatus.canopyClosed = false;
+    }
+  }
   
   //
   // Fuel quantity
   //
 
-  if(vpMode.running) {
+  if(vpStatus.canopyClosed || vpStatus.aloft) {
     vpStatus.fuel -=
       polynomial(FuelFlow_degree, clamp(vpInput.throttle, 0, 1),
 		 vpParam.coeff_Flow)
@@ -840,31 +862,6 @@ void configurationTask()
       consoleNoteLn_P(CS_STRING("Wing leveler ENABLED"));
       vpMode.wingLeveler = true;
     } 
-  }
-
-  //
-  // Engine start/stop detection
-  //
-  
-  if(!vpMode.running && vpMode.takeOff && vpInput.throttle > 0.90f) {
-    consoleNoteLn_P(CS_STRING("Engine is assumed RUNNING"));
-    vpMode.running = true;
-  }
-
-  if(vpInput.throttle < -0.5) {
-    if(vpMode.running) {
-      consoleNoteLn_P(CS_STRING("Engine assumed STOPPED"));
-      vpMode.running = false;
-    }
-
-    // Reset fuel quantity
-
-    if(vpStatus.fuel != vpParam.fuel) {
-      vpStatus.fuel = vpParam.fuel;
-      consoleNote_P(CS_STRING("Fuel quantity reset to "));
-      consolePrintFP(vpStatus.fuel, 3);
-      consolePrintLn_P(CS_STRING(" kg"));
-    }
   }
 
   //
