@@ -1635,7 +1635,7 @@ void elevatorModule()
     
   if(vpFeature.alphaHold) {
     const float maxPitch =
-      mixValue(1 - vpDerived.minimumDynP/vpFlight.dynP,
+      mixValue(1 - vpDerived.minimumDynP/effDP(),
 	       asin(turbineOutput(&engine)*vpParam.thrust/totalMass())
 	       + vpControl.targetAlpha,
 	       vpParam.maxPitch);
