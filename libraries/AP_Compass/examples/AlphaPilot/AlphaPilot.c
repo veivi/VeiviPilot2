@@ -639,7 +639,7 @@ void statusTask()
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
      && vpFlight.IAS < (1.1f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
-     && vpInput.throttle < 0.15f
+     && vpInput.throttle < 0.3f
      && vpInput.stickForce > RATIO(1/4)) {
     // We may be in a flare
 
@@ -1639,7 +1639,7 @@ void elevatorModule()
 	       asin(turbineOutput(&engine)*vpParam.thrust/totalMass())
 	       + vpControl.targetAlpha,
 	       vpParam.maxPitch);
-    
+      
     vpControl.targetPitchR =
       nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
       + clamp(vpControl.targetAlpha - vpFlight.alpha,
