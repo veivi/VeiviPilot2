@@ -637,7 +637,7 @@ void statusTask()
      && vpParam.haveGear
      && vpControl.gearSel == 0
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
-     && vpFlight.IAS < (1.1f + vpParam.thresholdMargin)*vpDerived.minimumIAS
+     && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
      && vpInput.throttle < 0.4f
      && vpInput.stickForce > RATIO(1/4)) {
