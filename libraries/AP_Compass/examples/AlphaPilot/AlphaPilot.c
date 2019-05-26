@@ -639,7 +639,7 @@ void statusTask()
      && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
      && vpFlight.IAS < (1.1f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
-     && vpInput.throttle < 0.3f
+     && vpInput.throttle < 0.4f
      && vpInput.stickForce > RATIO(1/4)) {
     // We may be in a flare
 
