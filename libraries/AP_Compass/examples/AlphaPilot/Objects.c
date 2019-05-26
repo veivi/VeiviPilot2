@@ -21,7 +21,7 @@ PIDCtrl_t elevCtrl, pushCtrl, rudderCtrl, aileCtrl;
 Sampler_t alphaSampler, iasSampler;
 SlopeLimiter_t aileActuator, trimRateLimiter, flapActuator;
 SWAvg_t liftFilter, primaryIASDataFilter;
-Damper_t dynPFilter, accAvg, iasEntropy, alphaEntropy;
+Damper_t avgDynP, accAvg, iasEntropy, alphaEntropy;
 Washout_t yawDamper;
 Turbine_t engine;
 

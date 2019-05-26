@@ -28,6 +28,7 @@ struct StatusRecord {
   bool flare;
   float load;
   float fuel;
+  float mass;
 };
 
 struct ModeRecord {
@@ -56,7 +57,8 @@ struct FeatureRecord {
 
 struct FlightState {
   float IAS, dynP, alpha;
-  float avgDynP, relativeIAS, relativeEffIAS;
+  float effIAS, effDynP;
+  float relativeIAS, relativeEffIAS;
   float accX, accY, accZ, acc, alt, bank, pitch, rollR, pitchR, yawR, ball;
   uint16_t heading;
   float accDir, relWind;
@@ -102,7 +104,7 @@ extern SWAvg_t primaryIASDataFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, trimRateLimiter;
 extern Washout_t yawDamper;
 extern Turbine_t engine;
-extern Damper_t dynPFilter, accAvg;
+extern Damper_t avgDynP, accAvg;
 
 // struct GPSFix gpsFix;
 

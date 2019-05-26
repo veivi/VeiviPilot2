@@ -362,8 +362,9 @@ void sensorTaskSync()
   deriveParams();
   
   vpFlight.ball = atan2f(-vpFlight.accY, fabs(vpFlight.accZ));
-  vpFlight.avgDynP = damperInput(&dynPFilter, vpFlight.dynP);
-  
+
+  vpFlight.effIAS = fmaxf(vpFlight.IAS, vpDerived.minimumIAS);
+  vpFlight.effDynP = fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
   vpFlight.relativeIAS = vpFlight.IAS / vpDerived.minimumIAS;
   vpFlight.relativeEffIAS = fmaxf(vpFlight.relativeIAS, 1.0f);
 }
@@ -501,7 +502,7 @@ void statusTask()
   }
   
   //
-  // Fuel quantity
+  // Fuel quantity & total mass
   //
 
   if(vpStatus.canopyClosed || vpStatus.aloft) {
@@ -524,6 +525,8 @@ void statusTask()
     consolePrintLn_P(CS_STRING(" kg)"));
   }
   
+  vpStatus.mass = vpParam.weightDry + vpParam.battery + vpStatus.fuel;
+  
   //
   // Alpha/IAS sensor status
   //
@@ -537,10 +540,12 @@ void statusTask()
   // Pitot block detection
   //
   
-  static uint32_t iasLastAlive;
+  static uint32_t iasLastAlive; 
+
+  damperInput(&avgDynP, vpFlight.dynP);
 
   if(vpFlight.relativeIAS < RATIO(1/3)
-     || fabsf(vpFlight.dynP - vpFlight.avgDynP) > dynamicPressure(1.0f)) {
+     || fabsf(vpFlight.dynP - damperOutput(&avgDynP)) > dynamicPressure(1.0f)) {
     if(vpStatus.pitotBlocked) {
       consoleNoteLn_P(CS_STRING("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
@@ -728,8 +733,8 @@ void statusTask()
   //
 
   const float
-    weight = totalMass() * G,
-    lift = totalMass() * vpFlight.accZ * cosf(vpFlight.pitch),
+    weight = vpStatus.mass * G,
+    lift = vpStatus.mass * vpFlight.accZ * cosf(vpFlight.pitch),
     liftAvg = swAvgInput(&liftFilter, lift),
     liftExpected = coeffOfLift(vpFlight.alpha) * vpFlight.dynP,
     liftMax = vpDerived.maxCoeffOfLift * vpFlight.dynP;
@@ -1290,7 +1295,7 @@ void gaugeTask()
 	consoleTab(40);
 	consolePrintF(vpFlight.dynP);
 	consoleTab(50);
-	consolePrintF(vpFlight.avgDynP);
+	consolePrintF(damperOutput(&avgDynP));
 	break;
 	
       case 4:
@@ -1459,6 +1464,8 @@ void gaugeTask()
       case 21:
 	consolePrint_P(CS_STRING(" fuel qty = "));
 	consolePrintFP(vpStatus.fuel, 3);
+	consoleTab(20);
+	consolePrintFP(vpStatus.mass, 3);
 	break;
 	
       }
@@ -1665,7 +1672,7 @@ void elevatorModule()
     const float maxPitch =
       mixValue(1/sq(vpFlight.relativeEffIAS),
 	       vpParam.maxPitch,
-	       asin(turbineOutput(&engine)*vpParam.thrust/totalMass())
+	       asin(turbineOutput(&engine)*vpParam.thrust/vpStatus.mass)
 	       + vpControl.targetAlpha);
       
     vpControl.targetPitchR =

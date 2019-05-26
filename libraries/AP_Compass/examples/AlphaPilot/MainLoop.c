@@ -175,8 +175,9 @@ void mainLoopSetup()
   washoutInit(&yawDamper, 0.4*CONTROL_HZ, 0);
   
   swAvgInit(&primaryIASDataFilter, CONTROL_HZ/8);
-  damperInit(&dynPFilter, 4*CONTROL_HZ, 0);
-  damperInit(&accAvg, 2*CONTROL_HZ, G);
+
+  damperInit(&avgDynP, 8*CONFIG_HZ, 0);
+  damperInit(&accAvg, 4*CONFIG_HZ, G);
   swAvgInit(&liftFilter, CONFIG_HZ/4);
 
   // Initial gear state is DOWN

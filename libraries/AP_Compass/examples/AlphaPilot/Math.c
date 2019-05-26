@@ -30,36 +30,19 @@ float signf(float x)
     return 0.0;
 }
 
-float effIAS()
-{
-  deriveParams();
-  return fmaxf(vpFlight.IAS, vpDerived.minimumIAS);
-}
-
-float effDP()
-{
-  deriveParams();
-  return fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
-}
-
-float totalMass()
-{
-  return vpParam.weightDry + vpParam.battery + vpStatus.fuel;
-}
-
 float nominalPitchRateLevel(float bank, float target)
 {
-  const float CoL = coeffOfLift(target), m = totalMass();
+  const float CoL = coeffOfLift(target), m = vpStatus.mass;
   
-  return 1/effIAS() * effDP() * CoL * sq(sinf(bank)) / m;
+  return 1/vpFlight.effIAS * vpFlight.effDynP * CoL * sq(sinf(bank)) / m;
 }
 
 float nominalPitchRate(float bank, float pitch, float target)
 {
-  const float CoL = coeffOfLift(target), m = totalMass();
+  const float CoL = coeffOfLift(target), m = vpStatus.mass;
 
   return
-    1/effIAS() * (effDP() * CoL / m - G * cosf(bank) * cosf(pitch-target)); 
+    1/vpFlight.effIAS * (vpFlight.effDynP * CoL / m - G * cosf(bank) * cosf(pitch-target)); 
 }
 
 float constrainServoOutput(float value)
@@ -101,7 +84,7 @@ float rollRatePredictInverse(float rate)
 
 float scaleByIAS_E(float k, float expo)
 {
-  float ias = effIAS();
+  float ias = vpFlight.effIAS;
   
   if(vpStatus.pitotFailed || vpStatus.pitotBlocked)
     // Failsafe value chosen to be ... on the safe side

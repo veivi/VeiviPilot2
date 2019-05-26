@@ -439,7 +439,7 @@ void deriveParams()
 
   // Stall IAS
   
-  vpDerived.minimumDynP = G * totalMass() / vpDerived.maxCoeffOfLift;
+  vpDerived.minimumDynP = G * vpStatus.mass / vpDerived.maxCoeffOfLift;
   vpDerived.minimumIAS = dynamicPressureInverse(vpDerived.minimumDynP);
   
   //
