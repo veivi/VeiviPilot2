@@ -56,6 +56,7 @@ struct FeatureRecord {
 
 struct FlightState {
   float IAS, dynP, alpha;
+  float avgDynP, relativeIAS, relativeEffIAS;
   float accX, accY, accZ, acc, alt, bank, pitch, rollR, pitchR, yawR, ball;
   uint16_t heading;
   float accDir, relWind;
@@ -97,10 +98,11 @@ struct GPSFix {
 extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl;
 extern Sampler_t alphaSampler, iasSampler;
 extern SWAvg_t liftFilter;
+extern SWAvg_t primaryIASDataFilter;
 extern SlopeLimiter_t aileActuator, flapActuator, trimRateLimiter;
-extern Damper_t iasFilter, iasFilterSlow, accAvg;
 extern Washout_t yawDamper;
 extern Turbine_t engine;
+extern Damper_t dynPFilter, accAvg;
 
 // struct GPSFix gpsFix;
 

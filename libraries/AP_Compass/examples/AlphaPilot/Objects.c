@@ -20,8 +20,8 @@ float fieldStrength;
 PIDCtrl_t elevCtrl, pushCtrl, rudderCtrl, aileCtrl;
 Sampler_t alphaSampler, iasSampler;
 SlopeLimiter_t aileActuator, trimRateLimiter, flapActuator;
-SWAvg_t liftFilter;
-Damper_t iasFilter, iasFilterSlow, accAvg, iasEntropy, alphaEntropy;
+SWAvg_t liftFilter, primaryIASDataFilter;
+Damper_t dynPFilter, accAvg, iasEntropy, alphaEntropy;
 Washout_t yawDamper;
 Turbine_t engine;
 

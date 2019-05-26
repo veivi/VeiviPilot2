@@ -134,7 +134,7 @@ void mainLoopSetup()
 {  
   vpStatus.consoleLink = true; // Assume we have link until otherwise etc...
 
-  stap_delayMillis(2000);
+  stap_delayMillis(1000);
   
   consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
@@ -170,14 +170,13 @@ void mainLoopSetup()
   slopeInit(&flapActuator, 0.5);
   slopeInit(&trimRateLimiter, 3/RADIAN);
   
-  damperInit(&iasFilter, 2, 0);
-  damperInit(&iasFilterSlow, 3*CONTROL_HZ, 0);
-  damperInit(&accAvg, 2*CONTROL_HZ, G);
-
   turbineInit(&engine, 2*CONTROL_HZ, 0);
   
   washoutInit(&yawDamper, 0.4*CONTROL_HZ, 0);
   
+  swAvgInit(&primaryIASDataFilter, CONTROL_HZ/8);
+  damperInit(&dynPFilter, 4*CONTROL_HZ, 0);
+  damperInit(&accAvg, 2*CONTROL_HZ, G);
   swAvgInit(&liftFilter, CONFIG_HZ/4);
 
   // Initial gear state is DOWN

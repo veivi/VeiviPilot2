@@ -284,7 +284,10 @@ void sensorTaskSync()
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1f;
   const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
 
-  vpFlight.dynP = samplerMean(&iasSampler) * factor_c
+  bool primaryIASDataIsPressure = true;
+  
+  float primaryIASData
+    = samplerMean(&iasSampler) * factor_c
     / cosf(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
   // Attitude
@@ -326,8 +329,10 @@ void sensorTaskSync()
   // Simulator link overrides
   
   if(vpStatus.simulatorLink) {
+    primaryIASDataIsPressure = false;
+    primaryIASData = sensorData.ias*1852/60/60;
+    
     vpFlight.alpha = sensorData.alpha/RADIAN;
-    vpFlight.IAS = sensorData.ias*1852/60/60;
     vpFlight.rollR = sensorData.rrate;
     vpFlight.pitchR = sensorData.prate;
     vpFlight.yawR = sensorData.yrate;
@@ -337,19 +342,30 @@ void sensorTaskSync()
     vpFlight.accX = sensorData.accx*FOOT;
     vpFlight.accY = sensorData.accy*FOOT;
     vpFlight.accZ = -sensorData.accz*FOOT;
-    
-    vpFlight.dynP = dynamicPressure(vpFlight.IAS);
-    
-  } else 
-    vpFlight.IAS = dynamicPressureInverse(vpFlight.dynP);
+  }
 
+  //
+  // Primary IAS data filtering
+  //
+  
+  primaryIASData = swAvgInput(&primaryIASDataFilter, primaryIASData);
+
+  if(primaryIASDataIsPressure)
+    vpFlight.IAS = dynamicPressureInverse(vpFlight.dynP = primaryIASData);
+  else
+    vpFlight.dynP = dynamicPressure(vpFlight.IAS = primaryIASData);
+  
   //
   // Derived values
   //
     
+  deriveParams();
+  
   vpFlight.ball = atan2f(-vpFlight.accY, fabs(vpFlight.accZ));
-  damperInput(&iasFilter, vpFlight.IAS);
-  damperInput(&iasFilterSlow, vpFlight.IAS);
+  vpFlight.avgDynP = damperInput(&dynPFilter, vpFlight.dynP);
+  
+  vpFlight.relativeIAS = vpFlight.IAS / vpDerived.minimumIAS;
+  vpFlight.relativeEffIAS = fmaxf(vpFlight.relativeIAS, 1.0f);
 }
 
 void sensorTaskSlow()
@@ -523,15 +539,16 @@ void statusTask()
   
   static uint32_t iasLastAlive;
 
-  if(vpFlight.IAS < vpDerived.minimumIAS/3 || fabsf(vpFlight.IAS - damperOutput(&iasFilterSlow)) > 0.5f) {
+  if(vpFlight.relativeIAS < RATIO(1/3)
+     || fabsf(vpFlight.dynP - vpFlight.avgDynP) > dynamicPressure(1.0f)) {
     if(vpStatus.pitotBlocked) {
       consoleNoteLn_P(CS_STRING("Pitot block CLEARED"));
       vpStatus.pitotBlocked = false;
     }
     
     iasLastAlive = stap_currentMicros;
-  } else if(!vpStatus.simulatorLink
-	    && stap_currentMicros - iasLastAlive > 10e6 && !vpStatus.pitotBlocked) {
+  } else if(stap_currentMicros - iasLastAlive > 10e6
+	    && !vpStatus.pitotBlocked) {
     consoleNoteLn_P(CS_STRING("Pitot appears BLOCKED"));
     vpStatus.pitotBlocked = true;
   }
@@ -547,7 +564,7 @@ void statusTask()
       consoleNoteLn_P(CS_STRING("Pitot failed, positive IAS ASSUMED"));
       vpStatus.positiveIAS = true;
     }
-  } else if(damperOutput(&iasFilter) < vpDerived.minimumIAS*RATIO(4/5)) {
+  } else if(vpFlight.relativeIAS < RATIO(4/5)) {
     if(!vpStatus.positiveIAS)
       lastIAS = stap_currentMicros;
     else if(stap_currentMicros - lastIAS > 0.3e6f) {
@@ -1264,6 +1281,17 @@ void gaugeTask()
 	consolePrintF(vpControl.targetPitchR*RADIAN);
 	consolePrint_P(CS_STRING(")"));
 	break;
+
+      case 3:
+	consolePrint_P(CS_STRING(" relative IAS(eff) = "));
+	consolePrintF(vpFlight.relativeIAS);
+	consoleTab(30);
+	consolePrintF(vpFlight.relativeEffIAS);
+	consoleTab(40);
+	consolePrintF(vpFlight.dynP);
+	consoleTab(50);
+	consolePrintF(vpFlight.avgDynP);
+	break;
 	
       case 4:
 	consolePrint_P(CS_STRING(" bank = "));
@@ -1635,10 +1663,10 @@ void elevatorModule()
     
   if(vpFeature.alphaHold) {
     const float maxPitch =
-      mixValue(1 - vpDerived.minimumDynP/effDP(),
+      mixValue(1/sq(vpFlight.relativeEffIAS),
+	       vpParam.maxPitch,
 	       asin(turbineOutput(&engine)*vpParam.thrust/totalMass())
-	       + vpControl.targetAlpha,
-	       vpParam.maxPitch);
+	       + vpControl.targetAlpha);
       
     vpControl.targetPitchR =
       nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)

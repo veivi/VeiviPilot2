@@ -145,16 +145,16 @@ float applyNullZoneBlind(float value, float nz)
   return applyNullZone(value, nz, NULL);
 }
 
-#define EXPO 0.4
-#define HALF_RATE 0.4
+#define EXPO 0.35f
+#define HALF_RATE 0.4f
 
 float applyExpo(float value)
 {
-  const float p = 1.0 - powf(vpDerived.minimumIAS / effIAS(), 1.5),
-    rate = vpMode.halfRate ? mixValue(p, 1, HALF_RATE) : 1,
-    expo = 1.1 + vpMode.halfRate ? 0 : ( EXPO * p );
-  
-  return rate*sign(value)*powf(fabsf(value), expo);
+  const float index = 1.0 - powf(1/vpFlight.relativeEffIAS, 1.5),
+    rate_c = vpMode.halfRate ? mixValue(index, 1, HALF_RATE) : 1,
+    expo_c = 1.1 + EXPO * ( vpMode.halfRate ? 0 : index );
+
+  return rate_c*sign(value)*powf(fabsf(value), expo_c);
 }
 
 float applyExpoTrim(float value, float trim)
