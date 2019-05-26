@@ -99,7 +99,6 @@ const struct Command commands[] CS_QUALIFIER = {
   { "boot", c_boot },
   { "memtest", c_memtest },
   { "scale", c_scale },
-  { "pitch", c_pitch },
   { "launch", c_launch },
   { "", c_invalid }
 };
@@ -569,21 +568,6 @@ void executeCommand(char *buf)
 	}
 
 	vpParam.dimension = param[0];
-      }
-      break;
-
-    case c_pitch:
-      if(numParams > 0) {
-	vpParam.maxPitch = param[0]/RADIAN;
-	
-	if(vpParam.thrust < vpDerived.takeoffMass) {
-	  float max = asin(vpParam.thrust/vpDerived.takeoffMass);
-	  if(vpParam.maxPitch > max) {
-	    consoleNote_P(CS_STRING("Max pitch limited to "));
-	    consolePrintLnF(max*RADIAN);
-	    vpParam.maxPitch = max;
-	  }
-	}
       }
       break;
 

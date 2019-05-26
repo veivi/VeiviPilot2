@@ -34,7 +34,6 @@ typedef enum {
   c_lag,
   c_flow,
 
-  c_pitch,
   c_dump,
   c_max,
   c_virtual,
