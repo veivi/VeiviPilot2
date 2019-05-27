@@ -103,8 +103,18 @@ void consolePanic_P(const char *s)
   consolePrintLn_P(s);
   consoleNoteLn("// HALT/REBOOT");
   consoleFlush();
-  delay(5000);
+  stap_delayMillis(5000);
   stap_reboot(false);
+}
+
+void consoleAssert(bool value, const char *msg)
+{
+  if(vpMode.silent || value)
+    return;
+
+  consoleNote_P(CS_STRING("ASSERTION FAILURE : "));
+  consolePrintLn_P(msg);
+  consolePanic_P(CS_STRING(""));
 }
 
 void consolevNotef(const char *s, va_list argp)
@@ -182,6 +192,11 @@ void consolePrint_P(const char *s)
 
 void consolePrintFP(float v, int p)
 {
+  if(isinf(v))
+    consolePrint("inf");
+  else if(isnan(v))
+    consolePrint("nan");
+  else {
   if(v < 0.0) {
     consoleOut('-');
     v = -v;
@@ -203,6 +218,7 @@ void consolePrintFP(float v, int p)
       printDigit(((uint32_t) f) % 10);
       p--;
     }
+  }
   }
 }
 

@@ -64,7 +64,7 @@ struct DerivedParams {
   bool valid;
   float takeoffMass;
   bool haveRetracts, haveFlaps;
-  float assumedFlap;
+  float assumedFlap, assumedMass;
   float coeff_FF[FF_degree+1];
   float coeff_CoL[CoL_degree+1];
   float minimumIAS, minimumDynP, zeroLiftAlpha,

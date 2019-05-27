@@ -29,7 +29,9 @@ extern "C" void stap_reboot(bool bootloader)
     systemResetToBootloader();
   else
     systemReset();
- */}
+ */
+  while(1);
+}
 
 extern "C" uint16_t stap_i2cErrorCount(void)
 {

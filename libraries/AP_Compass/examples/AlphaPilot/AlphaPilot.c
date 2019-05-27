@@ -2047,8 +2047,9 @@ void controlTaskGroup()
 
 void configTaskGroup()
 {
-  if(vpOutput.flap != vpDerived.assumedFlap)
-    // Flap setting has changed
+  if(vpOutput.flap != vpDerived.assumedFlap
+     || fabsf(vpStatus.mass - vpDerived.assumedMass) > 0.05f)
+    // Flap setting or mass has changed
     derivedInvalidate();
   
   deriveParams();

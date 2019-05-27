@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "StaP.h"
 
+void consoleAssert(bool, const char *);
 void consoleFlush();
 void consoleCR();
 void consoleNL();

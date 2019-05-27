@@ -219,7 +219,7 @@ void mainLoop()
       idling = true;
       
       if(!logReady(false))
-      	logInit(10);
+	logInit(10);
 
       idleStarted = stap_timeMicros();
     }

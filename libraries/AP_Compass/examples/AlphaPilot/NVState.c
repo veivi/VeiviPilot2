@@ -412,16 +412,19 @@ void deriveParams()
       break;
     }
 
-  // Max alpha and curve interpolation
-
+  // Store the assumed values for flaps and mass
+  
   vpDerived.assumedFlap = vpOutput.flap;
+  vpDerived.assumedMass = vpStatus.mass;
+
+  // Max alpha and curve interpolation
 
   const float expo_c = 0.8;
   
   const float effFlap
     // = vpDerived.haveFlaps ? powf(vpOutput.flap, vpParam.expo) : 0;
     // = vpDerived.haveFlaps ? vpOutput.flap : 0;
-    = vpDerived.haveFlaps ? powf(vpOutput.flap, expo_c) : 0;
+    = vpDerived.haveFlaps ? powf(vpDerived.assumedFlap, expo_c) : 0;
   
   vpDerived.maxAlpha = interpolate(effFlap, vpParam.alphaMax);
   
@@ -439,7 +442,7 @@ void deriveParams()
 
   // Stall IAS
   
-  vpDerived.minimumDynP = G * vpStatus.mass / vpDerived.maxCoeffOfLift;
+  vpDerived.minimumDynP = G * vpDerived.assumedMass / vpDerived.maxCoeffOfLift;
   vpDerived.minimumIAS = dynamicPressureInverse(vpDerived.minimumDynP);
   
   //
