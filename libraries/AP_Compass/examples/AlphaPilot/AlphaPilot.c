@@ -661,7 +661,7 @@ void statusTask()
      && (vpDerived.haveRetracts || vpInput.throttle < 0.05f)
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
-     && vpInput.stickForce > RATIO(1/4)) {
+     && vpInput.stickForce > RATIO(1/3)) {
     // We may be in a flare
 
     if(!vpStatus.flare)
@@ -1631,9 +1631,7 @@ const float pusherBias_c = -1.0f/RADIAN;
 
 void elevatorModule()
 {
-  static MedianFilter_t elevFilter;
   const float shakerLimit = RATIO(1/3);
-  const float effElev = medianInput(&elevFilter, vpInput.elev);
 
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
     // Limit elevator nose-up wind up when weight is on wheels
@@ -1643,13 +1641,13 @@ void elevatorModule()
     pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/2));
   
   vpInput.stickForce =
-    vpMode.radioFailSafe ? 0 : fmaxf(effElev-shakerLimit, 0)/(1-shakerLimit);
+    vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
   const float effMaxAlpha
     = mixValue(vpInput.stickForce,
 	       vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
   vpOutput.elev =
-    applyExpoTrim(effElev,
+    applyExpoTrim(vpInput.elev,
 		  vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
@@ -1657,7 +1655,7 @@ void elevatorModule()
   if(vpStatus.flare) {
     const float flareAlpha = 
       mixValue(vpParam.flare * vpInput.stickForce,
-	       vpControl.targetAlpha, alphaPredict(effElev));
+	       vpControl.targetAlpha, alphaPredict(vpInput.elev));
 
     vpControl.targetAlpha = fmaxf(vpControl.targetAlpha, flareAlpha);
   }
@@ -1671,9 +1669,9 @@ void elevatorModule()
     const float maxPitch =
       mixValue(1/sq(vpFlight.relativeEffIAS),
 	       vpParam.maxPitch,
-	       asin(turbineOutput(&engine)*vpParam.thrust/vpStatus.mass)
-	       + 10.0f/RADIAN
-	       + vpControl.targetAlpha);
+	       fminf(vpParam.maxPitch,
+		     asin(turbineOutput(&engine)*vpParam.thrust/vpStatus.mass)
+		     + 2.0f/RADIAN + vpControl.targetAlpha));
       
     vpControl.targetPitchR =
       nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)
