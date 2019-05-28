@@ -656,12 +656,11 @@ void statusTask()
   static uint32_t lastFlare;
   
   if(!(vpMode.test && nvState.testNum > 0) && vpMode.slowFlight
-     && vpParam.haveGear
      && vpControl.gearSel == 0
-     && (vpDerived.haveRetracts || vpStatus.simulatorLink || vpFlight.alt < 5 )
+     && vpInput.throttle < 0.4f
+     && (vpDerived.haveRetracts || vpInput.throttle < 0.05f)
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
-     && vpInput.throttle < 0.4f
      && vpInput.stickForce > RATIO(1/4)) {
     // We may be in a flare
 
@@ -1673,6 +1672,7 @@ void elevatorModule()
       mixValue(1/sq(vpFlight.relativeEffIAS),
 	       vpParam.maxPitch,
 	       asin(turbineOutput(&engine)*vpParam.thrust/vpStatus.mass)
+	       + 10.0f/RADIAN
 	       + vpControl.targetAlpha);
       
     vpControl.targetPitchR =
