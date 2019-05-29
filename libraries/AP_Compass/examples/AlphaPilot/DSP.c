@@ -103,16 +103,6 @@ void damperSetTau(Damper_t *damper, float t)
   damper->tau = DAMPER_TAU(t);
 }
 
-bool washoutInit(Washout_t *i, float tau, float state)
-{
-  i->state = state;
-  return damperInit(&i->dc, tau, state);
-}
-
-void washoutFinalize(Washout_t *i)
-{
-}
-
 void washoutReset(Washout_t *i, float v)
 {
   i->state = v;
@@ -247,17 +237,6 @@ float samplerMean(Sampler_t *f)
     f->warn = true;
   }  
   return f->value;
-}
-
-bool turbineInit(Turbine_t *i, float tau, float state)
-{
-  turbineSetTau(i, tau);
-  turbineReset(i, state);
-  return true;
-}
-
-void turbineFinalize(Turbine_t *i)
-{
 }
 
 void turbineReset(Turbine_t *i, float v)

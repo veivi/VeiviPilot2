@@ -143,7 +143,6 @@ void mainLoopSetup()
   // Read the non-volatile state
 
   if(!readNVState())
-    // consolePanic_P(CS_STRING("NV State read failed."));
     consoleNote_P(CS_STRING("NV State read failed."));
     
   consoleNote_P(CS_STRING("Current model is "));
