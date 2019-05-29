@@ -20,14 +20,12 @@ float polynomial(int deg, float x, const float c[]);
 
 typedef struct SWAvg {
   int window;
-  int memorySize;
   float *memory, sum;
   int ptr;
 } SWAvg_t;
 
-#define SWAVG_CONS(l) { l, 0, NULL };
+#define SWAVG_CONS(w) { w, NULL, 0.0f, 0 };
 
-void swAvgSetWindow(SWAvg_t *, int w);
 float swAvgInput(SWAvg_t *, float v);
 float swAvgOutput(SWAvg_t *);
     

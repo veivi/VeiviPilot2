@@ -126,35 +126,18 @@ float washoutOutput(Washout_t *i)
   return i->state - damperOutput(&i->dc);
 }
     
-static void swAvgFinalize(SWAvg_t *f)
-{
-  if(f->memory)
-    free(f->memory);
-
-  f->memory = NULL;
-  f->memorySize = 0;
-}
-
 static bool swAvgValidate(SWAvg_t *f)
 {
-  if(f->memory && f->window == f->memorySize)
+  if(f->memory)
     return true;
 
-  swAvgFinalize(f);
-
   f->sum = 0.0;
-  f->memorySize = f->window;
-  f->memory = malloc(sizeof(float)*f->memorySize);
+  f->memory = malloc(sizeof(float)*f->window);
 
   if(f->memory)
-    memset(f->memory, '\0', sizeof(float)*f->memorySize);
+    memset(f->memory, '\0', sizeof(float)*f->window);
 
   return f->memory != NULL;
-}
-
-void swAvgSetWindow(SWAvg_t *f, int w)
-{
-  f->window = w;
 }
 
 float swAvgInput(SWAvg_t *f, float v)
