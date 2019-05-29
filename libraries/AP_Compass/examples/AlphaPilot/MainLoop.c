@@ -153,33 +153,6 @@ void mainLoopSetup()
   
   setModel(nvState.model, true);
                 
-  // Static controller settings & filters
-
-  pidCtrlInit(&elevCtrl);
-  pidCtrlInit(&pushCtrl);
-  pidCtrlInitUnwinding(&rudderCtrl);
-  pidCtrlSetRange(&rudderCtrl, RATIO(1/3));
-  turbineInit(&engine, 0, 0);
-  pidCtrlInitUnwinding(&aileCtrl);
-  pidCtrlSetRange(&aileCtrl, RATIO(2/3));
-
-  samplerInit(&alphaSampler);
-  samplerInit(&iasSampler);
-  
-  slopeInit(&aileActuator, 0);
-  slopeInit(&flapActuator, 0.5);
-  slopeInit(&trimRateLimiter, 3/RADIAN);
-  
-  turbineInit(&engine, 2*CONTROL_HZ, 0);
-  
-  washoutInit(&yawDamper, 0.4*CONTROL_HZ, 0);
-  
-  swAvgInit(&primaryIASDataFilter, CONTROL_HZ/8);
-
-  damperInit(&avgDynP, 8*CONFIG_HZ, 0);
-  damperInit(&accAvg, 4*CONFIG_HZ, G);
-  swAvgInit(&liftFilter, CONFIG_HZ/4);
-
   // Initial gear state is DOWN
   
   vpControl.gearSel = 0;

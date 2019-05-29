@@ -82,36 +82,6 @@ float quantize(float value, float *state, int numSteps)
   return (float) *state / numSteps;
 }
 
-float medianInput(MedianFilter_t *ins, float v)
-{
-  memcpy(&ins->memory[0], &ins->memory[1], sizeof(float)*(MEDIANWINDOW-1));
-  ins->memory[MEDIANWINDOW-1] = v;
-
-  int i = 1;
-  float maxSlope = 0.0;
-  
-  for(i = 1; i < MEDIANWINDOW; i++)
-    maxSlope = MAX(maxSlope, ins->memory[i] - ins->memory[i-1]);
-
-  if(maxSlope < 0.4)
-    ins->state = v;
-
-  return medianOutput(ins);
-}
-
-float medianOutput(MedianFilter_t *instance)
-{
-  return instance->state;
-  // return MAX(MIN(i->memory[0],i->memory[1]), MIN(MAX(i->memory[0],i->memory[1]),i->memory[2]));
-}
-
-bool damperInit(Damper_t *damper, float tau, float state)
-{
-  damper->state = state;
-  damperSetTau(damper, tau);
-  return true;
-}
-
 float damperInput(Damper_t *damper, float v)
 {
   damper->state = mixValue(damper->tau, damper->state, v);
@@ -130,7 +100,7 @@ float damperOutput(Damper_t *damper)
 
 void damperSetTau(Damper_t *damper, float t)
 {
-  damper->tau = 1.0 / (1 + t);
+  damper->tau = DAMPER_TAU(t);
 }
 
 bool washoutInit(Washout_t *i, float tau, float state)
@@ -166,33 +136,43 @@ float washoutOutput(Washout_t *i)
   return i->state - damperOutput(&i->dc);
 }
     
-bool swAvgInit(SWAvg_t *f, int w)
-{
-  f->sum = 0.0;
-  f->windowLen = w;
-  f->memory = malloc(sizeof(float)*w);
-
-  if(f->memory)
-    memset(f->memory, '\0', sizeof(float)*w);
-  
-  return f->memory != NULL;
-}
-
-void swAvgFinalize(SWAvg_t *f)
+static void swAvgFinalize(SWAvg_t *f)
 {
   if(f->memory)
     free(f->memory);
 
   f->memory = NULL;
-  f->windowLen = 0;
+  f->memorySize = 0;
+}
+
+static bool swAvgValidate(SWAvg_t *f)
+{
+  if(f->memory && f->window == f->memorySize)
+    return true;
+
+  swAvgFinalize(f);
+
+  f->sum = 0.0;
+  f->memorySize = f->window;
+  f->memory = malloc(sizeof(float)*f->memorySize);
+
+  if(f->memory)
+    memset(f->memory, '\0', sizeof(float)*f->memorySize);
+
+  return f->memory != NULL;
+}
+
+void swAvgSetWindow(SWAvg_t *f, int w)
+{
+  f->window = w;
 }
 
 float swAvgInput(SWAvg_t *f, float v)
 {
-  if(!f->memory)
+  if(!swAvgValidate(f))
     return 0;
   
-  f->ptr = (f->ptr + 1) % f->windowLen;
+  f->ptr = (f->ptr + 1) % f->window;
 
   f->sum -= f->memory[f->ptr];
   f->sum += f->memory[f->ptr] = v;
@@ -202,61 +182,7 @@ float swAvgInput(SWAvg_t *f, float v)
 
 float swAvgOutput(SWAvg_t *f)
 {
-  return (float) f->sum / f->windowLen;
-}
-    
-bool delayInit(Delay_t *f, int m)
-{
-  f->ptr = 0;
-  f->delay = f->delayMax = m;
-  f->memory = malloc(sizeof(float)*m);
-
-  if(f->memory)
-    memset(f->memory, '\0', sizeof(float)*m);
-
-  return f->memory != NULL;
-}
-
-void delayFinalize(Delay_t *d)
-{
-  if(d->memory)
-    free(d->memory);
-  
-  d->memory = NULL;
-  d->delay = d->delayMax = 0;
-}
-
-void delaySet(Delay_t *d, int a)
-{
-  if(a < 0 || a > d->delayMax-1)
-     a = d->delayMax-1;
-
-  d->delay = a;
-}
-
-float delayInput(Delay_t *d, float v)
-{
-  d->ptr = (d->ptr + 1) % d->delayMax;
-  d->memory[d->ptr] = v;
-    
-  return delayOutput(d);
-}
-  
-float delayOutput(Delay_t *d)
-{
-  if(!d->memory)
-    return 0;
-  
-  return d->memory[(d->ptr+d->delayMax-d->delay)%d->delayMax];
-}
-
-bool derivatorInit(Derivator_t *d)
-{
-  return true;
-}
-
-void derivatorFinalize(Derivator_t *d)
-{
+  return (float) f->sum / f->window;
 }
 
 float derivatorInput(Derivator_t *d, float v, float dt)
@@ -302,15 +228,6 @@ void slopeSet(SlopeLimiter_t *f, float v)
 void slopeReset(SlopeLimiter_t *f, float v)
 {
   f->state = v;
-}
-
-bool samplerInit(Sampler_t *f)
-{
-  return true;
-}
-
-void samplerFinalize(Sampler_t *f)
-{
 }
 
 void samplerInput(Sampler_t *f, int16_t v)
