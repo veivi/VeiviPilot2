@@ -1710,9 +1710,9 @@ void elevatorModule()
     // Pusher
 
 #ifdef HARD_PUSHER
-    pidCtrlSetRangeAB(&pushCtrl, vpOutput.elev*RATIO(1/3), vpOutput.elev);
+    pidCtrlSetRangeAB(&pushCtrl, vpOutput.elev*RATIO(1/4), vpOutput.elev);
 #else
-    pidCtrlSetRangeAB(&pushCtrl, -vpOutput.elev*RATIO(2/3), 0);
+    pidCtrlSetRangeAB(&pushCtrl, -vpOutput.elev*RATIO(3/4), 0);
 #endif
 
     vpControl.pusher = 0;
