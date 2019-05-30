@@ -52,25 +52,27 @@ void inputSource(const uint16_t *pulse, int numCh)
 {
   static uint32_t prev;
   uint32_t current = stap_timeMicros(), cycle = current - prev;
-  int i = 0;
+
+  ppmFrames++;
 
   if(prev > 0 && cycle > 30000)
     ppmWarnSlow = true;
 
-  if(numCh < RX_CHANNELS)
-    ppmWarnShort = true;
-
   prev = current;
   
-  ppmFrames++;
+  if(numCh < RX_CHANNELS)
+    ppmWarnShort = true;
+  else {
+    int i = 0;
+    
+    for(i = 0; i < RX_CHANNELS; i++) {
+      rxInput[i].alive = true;
+      rxInput[i].pulseWidth = pulse[i];              
 
-  for(i = 0; i < MIN(RX_CHANNELS, numCh); i++) {
-    rxInput[i].alive = true;
-    rxInput[i].pulseWidth = pulse[i];              
-
-    if(calibrating) {
-      nvState.rxMin[i] = MIN(rxInput[i].pulseWidth, nvState.rxMin[i]);
-      nvState.rxMax[i] = MAX(rxInput[i].pulseWidth, nvState.rxMax[i]);
+      if(calibrating) {
+	nvState.rxMin[i] = MIN(rxInput[i].pulseWidth, nvState.rxMin[i]);
+	nvState.rxMax[i] = MAX(rxInput[i].pulseWidth, nvState.rxMax[i]);
+      }
     }
   }
 }

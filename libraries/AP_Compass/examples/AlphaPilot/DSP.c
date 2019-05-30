@@ -126,7 +126,7 @@ float washoutOutput(Washout_t *i)
   return i->state - damperOutput(&i->dc);
 }
     
-static bool swAvgValidate(SWAvg_t *f)
+static bool swAvgAllocate(SWAvg_t *f)
 {
   if(f->memory)
     return true;
@@ -142,20 +142,21 @@ static bool swAvgValidate(SWAvg_t *f)
 
 float swAvgInput(SWAvg_t *f, float v)
 {
-  if(!swAvgValidate(f))
-    return 0;
+  if(swAvgAllocate(f)) {
+    f->ptr = (f->ptr + 1) % f->window;
+    f->sum -= f->memory[f->ptr];
+    f->sum += f->memory[f->ptr] = v;
+  }
   
-  f->ptr = (f->ptr + 1) % f->window;
-
-  f->sum -= f->memory[f->ptr];
-  f->sum += f->memory[f->ptr] = v;
-    
   return swAvgOutput(f);
 }
 
 float swAvgOutput(SWAvg_t *f)
 {
-  return (float) f->sum / f->window;
+  if(f->memory)
+    return f->sum / f->window;
+  else
+    return NAN;
 }
 
 float derivatorInput(Derivator_t *d, float v, float dt)
@@ -170,16 +171,6 @@ float derivatorInput(Derivator_t *d, float v, float dt)
 float derivatorOutput(Derivator_t *d)
 {
   return (d->value - d->prev) / d->delta;
-}
-
-bool slopeInit(SlopeLimiter_t *f, float r)
-{
-  slopeSet(f, r);
-  return true;
-}
-
-void slopeFinalize(SlopeLimiter_t *f)
-{
 }
 
 float slopeInput(SlopeLimiter_t *f, float v, float dt)

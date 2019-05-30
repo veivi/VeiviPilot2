@@ -412,7 +412,7 @@ void monitorTask()
   // PPM monitoring
 
   if(!inputSourceGood())
-    ; // lastPPMWarn = stap_currentMicros;
+    lastPPMWarn = stap_currentMicros;
   
   // I2C errors
 

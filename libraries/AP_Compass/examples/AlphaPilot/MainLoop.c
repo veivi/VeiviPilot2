@@ -150,7 +150,9 @@ void mainLoopSetup()
   
   // Param record
   
-  setModel(nvState.model, true);
+  setModel(nvState.model, false);
+  consoleNote_P(CS_STRING("  Model name "));
+  consolePrintLn(vpParam.name);
                 
   // Initial gear state is DOWN
   

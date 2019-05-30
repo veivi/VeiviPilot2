@@ -29,7 +29,7 @@ extern "C" void stap_reboot(bool bootloader)
     systemResetToBootloader();
   else
     systemReset();
- */
+*/
   while(1);
 }
 
