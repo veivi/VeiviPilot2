@@ -502,6 +502,10 @@ void executeCommand(char *buf)
       break;
 
     case c_report:
+      consoleNote_P(CS_STRING("Free mem "));
+      consolePrintUL(stap_memoryFree());
+      consolePrintLn_P(CS_STRING(" bytes"));
+      
       consoleNote_P(CS_STRING("Load = "));
       consolePrintLnFP(vpStatus.load*100,1);
       consoleNote_P(CS_STRING("PPM frequency = "));

@@ -29,7 +29,7 @@ bool toc_test_link(bool reset)
 
 bool toc_test_ram(bool reset)
 {
-  return stap_memoryFree() > (1<<9);
+  return stap_memoryFree() > (1<<10);
 }
 
 bool toc_test_load(bool reset)
