@@ -9,7 +9,6 @@ struct FlightState vpFlight;
 struct InputState vpInput;
 struct ControlState vpControl;
 struct OutputState vpOutput;
-// struct GPSFix gpsFix;
 
 float controlCycle;
 float logBandWidth, ppmFreq;
@@ -29,7 +28,7 @@ PIDCtrl_t pushCtrl = PIDCTRL_CONS(1);
 PIDCtrl_t rudderCtrl = PIDCTRL_U_CONS(RATIO(1/3));
 PIDCtrl_t aileCtrl = PIDCTRL_U_CONS(RATIO(2/3));
 Damper_t avgDynP = DAMPER_CONS(8*CONFIG_HZ, 0);
-Damper_t accAvg = DAMPER_CONS(4*CONFIG_HZ, 9.81);
+Damper_t accAvg = DAMPER_CONS(4*CONFIG_HZ, G);
 Sampler_t alphaSampler = SAMPLER_CONS;
 Sampler_t iasSampler = SAMPLER_CONS;
 SlopeLimiter_t aileActuator = SLOPE_CONS(0);

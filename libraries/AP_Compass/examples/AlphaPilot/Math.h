@@ -5,15 +5,19 @@
 #include <math.h>
 
 //
-//
+// Various constants
 //
 
 #define RATIO(v) (v ## .0f)
-#define PI_F 3.141592654f
-#define CIRCLE (2*PI_F)
-#define RADIAN (180/PI_F)
+#define PI_F    3.141592654f
+#define CIRCLE  (2*PI_F)
+#define RADIAN  (180/PI_F)
+#define G       9.81f
+#define FOOT    12*25.4f/1000
+#define KNOT    1852.0f/60/60
+#define PSF     47.880259f
 
-extern const float stabGainExp_c, yawDamperExp_c, airDensity_c, G, FOOT, KNOT, PSF, servoOutputRange_c;
+extern const float stabGainExp_c, yawDamperExp_c, airDensity_c;
 
 float signf(float x);
 float sq(float x);

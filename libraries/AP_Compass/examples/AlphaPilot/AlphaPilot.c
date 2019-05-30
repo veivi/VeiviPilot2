@@ -1987,7 +1987,7 @@ void actuatorTask()
 
     if(functionInvoke(vpParam.functionMap[i], &value)) {
       value += vpParam.neutral[i];
-      stap_servoOutput(i, clamp(value, -RATIO(5/4), RATIO(5/4)));
+      stap_servoOutput(i, constrainServoOutput(value));
     }
   }
 }
