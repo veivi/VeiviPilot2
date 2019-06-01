@@ -170,10 +170,7 @@ void airspeedTask()
 {
   int16_t raw = 0;
 
-  if(!MS4525DO_isOnline())
-    // The sensor is offline, start calibrating when it comes back
-    MS4525DO_calibrate();
-  else if(MS4525DO_pressure(&raw)) {
+  if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     // We got a good value
     samplerInput(&iasSampler, raw);
     stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
