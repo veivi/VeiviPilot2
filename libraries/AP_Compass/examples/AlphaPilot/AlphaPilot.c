@@ -1982,10 +1982,8 @@ void actuatorTask()
 
     float value = 0;
 
-    if(functionInvoke(vpParam.functionMap[i], &value)) {
-      value += vpParam.neutral[i];
-      stap_servoOutput(i, constrainServoOutput(value));
-    }
+    if(functionInvoke(vpParam.functionMap[i], &value))
+      stap_servoOutput(i, constrainServoOutput(value + vpParam.neutral[i]));
   }
 }
 
