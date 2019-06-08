@@ -9,39 +9,14 @@
 // Actuator functions
 //
 
-float elevatorFn()
-{
-  return vpParam.elevDefl*vpOutput.elev;
-}
-
-float elevon1Fn()
-{
-  return vpParam.aileDefl*vpOutput.aile - vpParam.elevDefl*vpOutput.elev;
-}
-
-float elevon2Fn()
-{
-  return vpParam.aileDefl*vpOutput.aile + vpParam.elevDefl*vpOutput.elev;
-}
-
 float aileronFn()
 {
   return vpParam.aileDefl*vpOutput.aile;
 }
 
-static float flaperon()
+float elevatorFn()
 {
-  return vpParam.flapDefl*vpOutput.flap;
-}
-
-float flaperon1Fn()
-{
-  return aileronFn() + flaperon();
-}
-
-float flaperon2Fn()
-{
-  return aileronFn() - flaperon();
+  return vpParam.elevDefl*vpOutput.elev;
 }
 
 float rudderFn()
@@ -49,14 +24,39 @@ float rudderFn()
   return vpParam.rudderDefl*vpOutput.rudder;
 }
 
+float flapFn()
+{
+  return vpParam.flapDefl*vpOutput.flap;
+}
+
+float elevon1Fn()
+{
+  return aileronFn() - elevatorFn();
+}
+
+float elevon2Fn()
+{
+  return aileronFn() + elevatorFn();
+}
+
+float flaperon1Fn()
+{
+  return aileronFn() + flapFn();
+}
+
+float flaperon2Fn()
+{
+  return aileronFn() - flapFn();
+}
+
 float tail1Fn()
 {
-  return vpParam.elevDefl*vpOutput.elev + vpParam.rudderDefl*vpOutput.rudder;
+  return elevatorFn() + rudderFn();
 }
 
 float tail2Fn()
 {
-  return vpParam.elevDefl*vpOutput.elev - vpParam.rudderDefl*vpOutput.rudder;
+  return elevatorFn() - rudderFn();
 }
 
 float canard1Fn()
@@ -85,11 +85,6 @@ float steeringFn()
     return vpParam.steerPark;
   else
     return vpParam.steerTrim + vpParam.steerDefl*vpOutput.steer;
-}
-
-float flapFn()
-{
-  return vpParam.flapDefl*vpOutput.flap;
 }
 
 float gearFn()

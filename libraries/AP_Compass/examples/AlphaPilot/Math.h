@@ -13,8 +13,8 @@
 #define CIRCLE  (2*PI_F)
 #define RADIAN  (180/PI_F)
 #define G       9.81f
-#define FOOT    12*25.4f/1000
-#define KNOT    1852.0f/60/60
+#define FOOT    (12*25.4f/1000)
+#define KNOT    (1852.0f/60/60)
 #define PSF     47.880259f
 
 extern const float stabGainExp_c, yawDamperExp_c, airDensity_c;

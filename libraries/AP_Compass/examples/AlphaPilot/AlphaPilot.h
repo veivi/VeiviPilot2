@@ -15,14 +15,14 @@
 // Periodic task timing
 //
 
-#define CONTROL_HZ 50
-#define CONFIG_HZ (CONTROL_HZ/3.0f)
+#define CONTROL_HZ 50.0f
+#define CONFIG_HZ (CONTROL_HZ/3)
 #define ALPHA_HZ (CONTROL_HZ*4)
 #define AIRSPEED_HZ (CONTROL_HZ*2)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 2
 #define LED_TICK 30
-#define LOG_HZ (CONTROL_HZ/4.0f)
+#define LOG_HZ (CONTROL_HZ/3)
 #define LOG_HZ_COMMIT 3
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
