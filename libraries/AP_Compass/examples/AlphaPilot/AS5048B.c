@@ -14,20 +14,20 @@ bool AS5048B_read(uint8_t addr, uint8_t *storage, uint8_t bytes)
   return basei2cInvoke(&target, basei2cReadWithByte(AS5048_ADDRESS, addr, storage, bytes));
 }
 
-bool AS5048B_readWord(uint8_t addr, uint16_t *result)
+bool AS5048B_readWord(uint8_t addr, AS5048_word_t *result)
 {
-  uint8_t buf[sizeof(uint16_t)];
+  uint8_t buf[sizeof(AS5048_word_t)];
   uint8_t status = AS5048B_read(addr, buf, sizeof(buf));
   
   if(status && result)
-    *result = ((((uint16_t) buf[0]) << 6) + (buf[1] & 0x3F))<<2;
+    *result = ((((AS5048_word_t) buf[0]) << 6) + (buf[1] & 0x3F))<<2;
 
   return status;
 }
 
-bool AS5048B_alpha(int16_t *result)
+bool AS5048B_alpha(AS5048_alpha_t *result)
 {
-  uint16_t raw = 0;
+  AS5048_word_t raw = 0;
   uint8_t status = AS5048B_readWord(AS5048B_ANGLMSB_REG, &raw);
 
   basei2cEntropySample(&target, raw);
@@ -36,14 +36,14 @@ bool AS5048B_alpha(int16_t *result)
     raw = ~raw;
 
   if(status && result)
-    *result = (int16_t) (raw - vpParam.alphaRef);
+    *result = (AS5048_alpha_t) (raw - vpParam.alphaRef);
   
   return status;
 }
 
-bool AS5048B_field(uint16_t *result)
+bool AS5048B_field(AS5048_field_t *result)
 {
-  uint16_t raw = 0;
+  AS5048_word_t raw = 0;
   uint8_t status = AS5048B_readWord(AS5048B_MAGNMSB_REG, &raw);
   
   if(status && result)

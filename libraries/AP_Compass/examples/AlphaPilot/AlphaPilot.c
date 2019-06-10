@@ -1,4 +1,5 @@
 #include <string.h>
+#include <limits.h>
 #include "AlphaPilot.h"
 #include "StaP.h"
 #include "Objects.h"
@@ -28,7 +29,7 @@ void cacheTask()
 
 void alphaTask()
 {
-  int16_t raw = 0;
+  AS5048_alpha_t raw = 0;
 
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     samplerInput(&alphaSampler, raw);
@@ -274,12 +275,13 @@ void sensorTaskSync()
   // Alpha input
 
   vpFlight.alpha =
-    2 * PI_F * samplerMean(&alphaSampler) / (1L<<(8*sizeof(int16_t)));
+    2 * PI_F * samplerMean(&alphaSampler) / (1L<<(CHAR_BIT*sizeof(int16_t)));
   
   // Dynamic pressure, corrected for alpha
 
   const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1f;
-  const float factor_c = pascalsPerPSI_c * range_c / (1L<<(8*sizeof(uint16_t)));
+  const float factor_c
+    = pascalsPerPSI_c * range_c / (1L<<(CHAR_BIT*sizeof(uint16_t)));
 
   bool primaryIASDataIsPressure = true;
   
@@ -321,7 +323,7 @@ void sensorTaskSync()
 
   // Altitude data acquisition
 
-  //  stap_baroUpdate();
+  stap_baroUpdate();
   
   // Simulator link overrides
   
@@ -377,10 +379,10 @@ void sensorTaskSlow()
 
   // Alpha sensor field strength
 
-  uint16_t raw = 0;
+  AS5048_field_t raw = 0;
   
   if(AS5048B_isOnline() && AS5048B_field(&raw))
-    fieldStrength = (float) raw / (1L<<16);
+    fieldStrength = (float) raw / (1L<<(CHAR_BIT*sizeof(raw)));
 }
 
 void monitorTask()
