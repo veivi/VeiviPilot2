@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "AS5048B.h"
 
 #define NAME_LEN     8
 #define MAX_CH       8
@@ -22,7 +23,7 @@ struct ParamRecord {
   uint16_t version;
   char name[NAME_LEN+1];
   float dimension;
-  uint16_t alphaRef;
+  AS5048_word_t alphaRef;
   float alphaOffset;
   float alphaMax[2];
   float maxPitch;
