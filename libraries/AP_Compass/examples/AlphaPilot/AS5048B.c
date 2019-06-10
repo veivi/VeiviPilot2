@@ -41,7 +41,7 @@ bool AS5048B_alpha(AS5048_alpha_t *result)
   return status;
 }
 
-bool AS5048B_field(AS5048_field_t *result)
+bool AS5048B_field(AS5048_word_t *result)
 {
   AS5048_word_t raw = 0;
   uint8_t status = AS5048B_readWord(AS5048B_MAGNMSB_REG, &raw);

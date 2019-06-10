@@ -379,7 +379,7 @@ void sensorTaskSlow()
 
   // Alpha sensor field strength
 
-  AS5048_field_t raw = 0;
+  AS5048_word_t raw = 0;
   
   if(AS5048B_isOnline() && AS5048B_field(&raw))
     fieldStrength = (float) raw / (1L<<(CHAR_BIT*sizeof(raw)));

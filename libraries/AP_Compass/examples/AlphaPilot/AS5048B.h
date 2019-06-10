@@ -7,12 +7,11 @@
 
 typedef uint16_t AS5048_word_t;
 typedef int16_t AS5048_alpha_t;
-typedef uint16_t AS5048_field_t;
 
 bool AS5048B_isOnline(void);
 bool AS5048B_alpha(AS5048_alpha_t *result);
 float AS5048B_entropy(void);
-bool AS5048B_field(AS5048_field_t *result);
+bool AS5048B_field(AS5048_word_t *result);
 
 //
 // Reg map
