@@ -1779,11 +1779,12 @@ void aileronModule()
 	targetRollR
 	  -= vpControl.o_P*clamp(vpFlight.bank, -1.0f/RADIAN, 1.0f/RADIAN);
 
-      // Bank limiter
-      
-      targetRollR = clamp(targetRollR,
-			  (-maxBank - vpFlight.bank) * vpControl.o_P,
-			  (maxBank - vpFlight.bank) * vpControl.o_P);
+      // Bank limiter, disabled on extreme pitch up
+
+      if(vpFlight.pitch < 70/RADIAN)
+	targetRollR = clamp(targetRollR,
+			    (-maxBank - vpFlight.bank) * vpControl.o_P,
+			    (maxBank - vpFlight.bank) * vpControl.o_P);
     }
 
     pidCtrlInput(&aileCtrl, targetRollR - vpFlight.rollR, controlCycle);
@@ -1806,7 +1807,8 @@ void aileronModule()
   //   Constrain & rate limit
   
   vpOutput.aile
-    = slopeInput(&aileActuator, constrainServoOutput(vpOutput.aile), controlCycle);
+    = slopeInput(&aileActuator,
+		 constrainServoOutput(vpOutput.aile), controlCycle);
 }
 
 //
