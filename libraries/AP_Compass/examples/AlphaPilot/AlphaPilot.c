@@ -1748,7 +1748,7 @@ void elevatorModule()
 
 void aileronModule()
 {
-  float maxBank = 45.0f/RADIAN;
+  float maxBank = 60/RADIAN;
 
   if(vpMode.radioFailSafe) {
     maxBank = 15.0f/RADIAN;
