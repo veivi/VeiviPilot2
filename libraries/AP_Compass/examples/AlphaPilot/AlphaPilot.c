@@ -1072,35 +1072,34 @@ void configurationTask()
     switch(nvState.testNum) {
     case 1:
       // Wing stabilizer gain
-         
       vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;
-      pidCtrlSetPID(&aileCtrl, vpControl.testGain = testGainExpo(vpControl.s_Ku_ref), 0, 0);
+      pidCtrlSetPID(&aileCtrl, vpControl.testGain
+		    = testGainExpo(vpControl.s_Ku_ref), 0, 0);
       break;
             
     case 2:
       // Elevator stabilizer gain, outer loop disabled
-         
       vpFeature.stabilizePitch = true;
       vpFeature.alphaHold = false;
-      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(vpControl.i_Ku_ref), 0, 0);
+      pidCtrlSetPID(&elevCtrl, vpControl.testGain
+		    = testGainExpo(vpControl.i_Ku_ref), 0, 0);
       break;
          
     case 3:
       // Elevator stabilizer gain, outer loop enabled
-         
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
-      pidCtrlSetPID(&elevCtrl, vpControl.testGain = testGainExpo(vpControl.i_Ku_ref), 0, 0);
+      pidCtrlSetPID(&elevCtrl, vpControl.testGain
+		    = testGainExpo(vpControl.i_Ku_ref), 0, 0);
       break;
          
     case 4:
       // Auto alpha outer loop gain
-         
       vpFeature.stabilizePitch = vpFeature.alphaHold = true;
       vpControl.o_P = vpControl.testGain = testGainExpo(vpParam.o_P);
       break;
 
     case 5:
-      // Max alpha tests, just flare disabled (because in test mode)
+      // Max alpha tests, just to disable flare with fixed gear planes
       break;
 
     case 6:
@@ -1110,37 +1109,36 @@ void configurationTask()
 
     case 7:
       // Throttle-elev mix
-      
-      vpControl.t_Mix = vpControl.testGain = testGainLinear(0, vpParam.t_Mix*1.2f);
+      vpControl.t_Mix = vpControl.testGain
+	= testGainLinear(0, vpParam.t_Mix*1.5f);
       break;
       
     case 8:
-      // Stall behavior test
-      
+      // Stall behavior i.e. pusher disabled
       vpFeature.pusher = false;
       break;
       
     case 9:
       // Auto rudder gain
-         
-      pidCtrlSetPID(&rudderCtrl, vpControl.testGain = testGainExpo(vpControl.r_Ku_ref), 0, 0);
+      pidCtrlSetPID(&rudderCtrl, vpControl.testGain
+		    = testGainExpo(vpControl.r_Ku_ref), 0, 0);
       break;
             
     case 10:
       // Aileron to rudder mix
-
-      vpControl.r_Mix = vpControl.testGain = testGainLinear(0, vpParam.r_Mix*1.5f);
+      vpControl.r_Mix = vpControl.testGain
+	= testGainLinear(0, vpParam.r_Mix*1.5f);
       break;
 
     case 11:
       // Turbine lag
-
-      turbineSetTau(&engine, CONTROL_HZ*(vpControl.testGain = testGainLinear(vpParam.lag*1.5f, 0)));
+      turbineSetTau(&engine,
+		    CONTROL_HZ*(vpControl.testGain
+				= testGainLinear(vpParam.lag*1.5f, 0)));
       break;
       
     case 13:
       // Disable stabilization for max roll rate test
-
       if(vpInput.ailePilotInput) {
 	vpFeature.stabilizeBank = vpMode.bankLimiter
 	  = vpFeature.keepLevel = false;
