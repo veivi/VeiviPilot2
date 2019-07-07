@@ -14,7 +14,7 @@ float clamp(float value, float a, float b);
 float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);
 float randomNum(float small, float large);
-uint32_t randomUInt32();
+uint32_t randomUInt32(void);
 float quantize(float value, float *state, int numSteps);
 float polynomial(int deg, float x, const float c[]);
 

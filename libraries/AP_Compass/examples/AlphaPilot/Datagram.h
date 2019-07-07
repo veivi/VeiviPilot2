@@ -23,7 +23,7 @@ bool datagramRxInputChar(const uint8_t c);
 
 extern void datagramInterpreter(uint8_t t, uint8_t *data, int size);
 extern void datagramSerialOut(uint8_t);
-extern void datagramSerialFlush();
+extern void datagramSerialFlush(void);
 extern void datagramRxError(const char *);
   
 extern uint16_t maxDatagramSize;

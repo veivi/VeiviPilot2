@@ -1753,7 +1753,7 @@ void aileronModule()
     if(vpStatus.stall)
       vpInput.aile = vpInput.aileExpo = 0;
   } else if(vpFeature.alphaHold)
-    maxBank /= 1 + alphaPredict(vpControl.elevTrim)/vpDerived.thresholdAlpha/2;
+    maxBank /= 1 + square(1/vpFlight.relativeEffIAS);
   
   float targetRollR = rollRatePredict(vpInput.aileExpo);
   

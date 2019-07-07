@@ -34,7 +34,7 @@ Sampler_t iasSampler = SAMPLER_CONS;
 SlopeLimiter_t aileActuator = SLOPE_CONS(0);
 SlopeLimiter_t trimRateLimiter = SLOPE_CONS(3/RADIAN);
 SlopeLimiter_t flapActuator = SLOPE_CONS(0.5);
-Washout_t yawDamper = WASHOUT_CONS(0.25*CONTROL_HZ, 0);
+Washout_t yawDamper = WASHOUT_CONS(0.5*CONTROL_HZ, 0);
 Turbine_t engine;
 SWAvg_t liftFilter = SWAVG_CONS(CONFIG_HZ/4);
 SWAvg_t primaryIASDataFilter = SWAVG_CONS(CONTROL_HZ/8);
