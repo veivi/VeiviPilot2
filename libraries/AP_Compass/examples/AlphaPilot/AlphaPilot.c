@@ -1127,7 +1127,7 @@ void configurationTask()
     case 10:
       // Aileron to rudder mix
       vpControl.r_Mix = vpControl.testGain
-	= testGainLinear(0, vpParam.r_Mix*1.5f);
+	= testGainLinear(0, 1);
       break;
 
     case 11:
@@ -1831,9 +1831,12 @@ void rudderModule()
   
   vpOutput.rudder += pidCtrlOutput(&rudderCtrl);
 
-  // Apply yaw damper
+  // Apply yaw damper (unless there's pilot input on rudder)
   
-  vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
+  if(vpInput.rudderPilotInput)
+    washoutReset(&yawDamper, 0);
+  else
+    vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
 }
 
 //
