@@ -19,10 +19,13 @@
 uint16_t maxDatagramSize = MAX_DG_SIZE;
 uint8_t datagramRxStore[MAX_DG_SIZE];
 
-void datagramRxError(const char *error)
+void datagramRxError(const char *error, uint16_t code)
 {
   consoleNote_P(CS_STRING("DG "));
-  consolePrintLn(error);
+  consolePrint(error);
+  consolePrint(" (");
+  consolePrintUI(code);
+  consolePrintLn(")");
 }
   
 void datagramInterpreter(uint8_t t, uint8_t *data, int size)
@@ -65,12 +68,16 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
 
 void datagramSerialOut(uint8_t c)
 {
-  stap_hostTransmitChar(c);
+  if(vpStatus.consoleLink)
+    stap_hostTransmitChar(c);
+  else
+    stap_telemetryTransmitChar(c);    
 }
 
 void datagramSerialFlush()
 {
   stap_hostFlush();
+  stap_telemetryFlush();
 }
 
 //

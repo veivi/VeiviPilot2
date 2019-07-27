@@ -90,7 +90,7 @@ void displayTask()
   // Model name
   
   obdMove(0, 0);
-  obdPrint(vpParam.name);
+  obdPrintAttr(vpParam.name, vpStatus.consoleLink);
   obdPrint("\n");
 
   // CPU load
@@ -146,7 +146,7 @@ void displayTask()
     
     bool status = tocTestStatus(tocReportDisplay);
 
-   if(vpMode.radioFailSafe) {
+    if(vpMode.radioFailSafe) {
       obdMove(0, DISP_ROWS-1);
       obdPrint("   ");
       obdPrintAttr("RADIO FAIL", (count>>2) & 1);
@@ -164,7 +164,7 @@ void displayTask()
 
       obdPrint("   ");
     }
-  }
+  }  
 }
 
 void airspeedTask()
@@ -383,6 +383,16 @@ void sensorTaskSlow()
   
   if(AS5048B_isOnline() && AS5048B_field(&raw))
     fieldStrength = (float) raw / (1L<<(CHAR_BIT*sizeof(raw)));
+}
+
+void telemetryTask()
+{
+  struct TelemetryData data = { .alpha = vpFlight.alpha,
+				.IAS = vpFlight.IAS };
+
+  datagramTxStart(DG_TELEMETRY);
+  datagramTxOut((const uint8_t*) &data, sizeof(data));
+  datagramTxEnd();
 }
 
 void monitorTask()
@@ -2073,6 +2083,7 @@ struct Task alphaPilotTasks[] = {
   { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, 0 },
   { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true, 0 },
   { communicationTask, HZ_TO_PERIOD(100), true, 0 },
+  { telemetryTask, HZ_TO_PERIOD(TELEMETRY_HZ), true, 0 },
   // { gpsTask, HZ_TO_PERIOD(100) },
   { blinkTask, HZ_TO_PERIOD(LED_TICK), false, 0 },
   { obdRefresh, HZ_TO_PERIOD(40), false, 0 },

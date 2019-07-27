@@ -142,6 +142,15 @@ int stap_hostTransmitChar(uint8_t c);
 void stap_hostFlush(void);
 
 //
+// Telemetry interface
+//
+
+int stap_telemetryTransmitState(void);
+int stap_telemetryTransmit(const uint8_t *buffer, int size);
+int stap_telemetryTransmitChar(uint8_t c);
+void stap_telemetryFlush(void);
+
+//
 // Gyro interface
 //
 

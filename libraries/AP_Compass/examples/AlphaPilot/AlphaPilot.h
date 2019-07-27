@@ -19,6 +19,7 @@
 #define CONFIG_HZ (CONTROL_HZ/3)
 #define ALPHA_HZ (CONTROL_HZ*4)
 #define AIRSPEED_HZ (CONTROL_HZ*2)
+#define TELEMETRY_HZ (CONTROL_HZ/5)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 2
 #define LED_TICK 30

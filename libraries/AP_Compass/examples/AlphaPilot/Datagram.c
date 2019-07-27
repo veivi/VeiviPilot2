@@ -74,9 +74,9 @@ static bool datagramRxEnd(void)
             datagramsGood++;
 	    datagramInterpreter(datagramRxStore[0], &datagramRxStore[1], datagramSize-3);
         } else
-	  datagramRxError("CRC FAIL");
+	  datagramRxError("CRC FAIL", crcReceived);
     } else
-      datagramRxError("TOO SHORT");
+      datagramRxError("TOO SHORT", datagramSize);
     
     datagramSize = 0;
     return success;
@@ -98,7 +98,7 @@ bool datagramRxInputChar(const uint8_t c)
       busy = true;
       datagramSize = 0;
     } else
-      datagramRxError("BAD START");
+      datagramRxError("BAD START", c);
     
     flagCnt = 0;
   } else if(++flagCnt > 1) {

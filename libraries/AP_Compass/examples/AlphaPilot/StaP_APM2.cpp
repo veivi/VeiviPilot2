@@ -134,25 +134,47 @@ extern "C" uint8_t stap_hostReceiveChar(void)
 
 extern "C" int stap_hostTransmitState(void)
 {
-  return 1;
+  return hal.console->txspace();
 }
 
 extern "C" int stap_hostTransmit(const uint8_t *buffer, int size)
 {
-  while(size-- > 0)
-    stap_hostTransmitChar(*buffer++);
-  return 0;
+  return hal.console->write(buffer, size);
 }
 
 extern "C" int stap_hostTransmitChar(uint8_t c)
 {
-  hal.uartA->write(c);
-  return 1;
+  return stap_hostTransmit(&c, 1);
 }
 
 extern "C" void stap_hostFlush()
 {
-  // hal.uartA->flush();
+}
+
+extern "C" int stap_telemetryTransmitState(void)
+{
+  return hal.uartB->txspace();
+}
+
+extern "C" int stap_telemetryTransmit(const uint8_t *buffer, int size)
+{
+  static bool initd = false;
+
+  if(!initd) {
+    hal.uartB->begin(57600);
+    initd = true;
+  }
+  
+  return hal.uartB->write(buffer, size);
+}
+
+extern "C" int stap_telemetryTransmitChar(uint8_t c)
+{
+  return stap_telemetryTransmit(&c, 1);
+}
+
+extern "C" void stap_telemetryFlush()
+{
 }
 
 void stap_entropyDigest(const uint8_t *value, int size)
@@ -429,6 +451,8 @@ void stap_rxInputPoll(void)
 }
 extern "C" void stap_initialize(void)
 {
+
+  
   consoleNote_P(CS_STRING("Initializing I2C... "));
   consoleFlush();
 
