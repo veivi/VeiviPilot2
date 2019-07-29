@@ -11,7 +11,7 @@ const float yawDamperExp_c = -2.0;
 const float airDensity_c = 1.225;
 const float servoOutputRange_c = RATIO(5/4);
 
-float sq(float x)
+float square(float x)
 {
   return x * x;
 }
@@ -30,7 +30,7 @@ float nominalPitchRateLevel(float bank, float target)
 {
   const float CoL = coeffOfLift(target), m = vpStatus.mass;
   
-  return 1/vpFlight.effIAS * vpFlight.effDynP * CoL * sq(sinf(bank)) / m;
+  return 1/vpFlight.effIAS * vpFlight.effDynP * CoL * square(sinf(bank)) / m;
 }
 
 float nominalPitchRate(float bank, float pitch, float target)
@@ -65,7 +65,7 @@ float alphaPredict(float y)
   else if(y > vpDerived.apexElev)
     return vpDerived.apexAlpha;
   else
-    return (-b+sqrtf(sq(b)-4*a*(c - y)))/(2*a);
+    return (-b+sqrtf(square(b)-4*a*(c - y)))/(2*a);
 }
 
 float rollRatePredict(float pos)
@@ -96,7 +96,7 @@ float scaleByIAS(float k)
 
 float dynamicPressure(float ias)
 {
-    return airDensity_c * sq(ias) / 2;
+    return airDensity_c * square(ias) / 2;
 }
 
 float dynamicPressureInverse(float pressure)

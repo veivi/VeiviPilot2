@@ -96,6 +96,11 @@ extern const struct PinDescriptor led;
 
 #define STAP_LED_OFF     setPinState(&led, false)
 #define STAP_LED_ON     setPinState(&led, true)
+
+extern const struct PinDescriptor latch;
+
+#define STAP_CANOPY_CLOSED  (getPinState(&latch) == 0)
+
 #else
 
 #ifdef ALPHAPILOT
@@ -108,6 +113,8 @@ extern const struct PinDescriptor led;
 #define STAP_LED_OFF     LED1_OFF
 
 extern volatile uint8_t nestCount;
+
+#define STAP_CANOPY_CLOSED  0
 
 #endif
 
@@ -184,9 +191,6 @@ uint16_t stap_i2cErrorCode(void);
 // Canopy latch interface
 //
 
-extern const struct PinDescriptor latch;
-
-#define STAP_CANOPY_CLOSED  (getPinState(&latch) == 0)
 
 #endif
 

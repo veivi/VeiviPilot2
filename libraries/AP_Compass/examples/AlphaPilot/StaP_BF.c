@@ -307,6 +307,16 @@ void stap_hostFlush()
   while(!isSerialTransmitBufferEmpty(stap_serialPort));
 }
 
+int stap_telemetryTransmitChar(uint8_t c)
+{
+  return stap_hostTransmitChar(c);
+}
+
+void stap_telemetryFlush()
+{
+  return stap_hostFlush();
+}
+
 void stap_entropyDigest(const uint8_t *value, int size)
 {
   sensorHash = crc16(sensorHash, value, size);

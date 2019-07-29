@@ -598,11 +598,11 @@ void statusTask()
   // Movement detection
   //
   
-  vpFlight.acc = sqrtf(sq(vpFlight.accX) + sq(vpFlight.accY) + sq(vpFlight.accZ));
+  vpFlight.acc = sqrtf(square(vpFlight.accX) + square(vpFlight.accY) + square(vpFlight.accZ));
   
   damperInput(&accAvg, vpFlight.acc);
 
-  float turnRate = sqrtf(sq(vpFlight.rollR) + sq(vpFlight.pitchR) + sq(vpFlight.yawR));
+  float turnRate = sqrtf(square(vpFlight.rollR) + square(vpFlight.pitchR) + square(vpFlight.yawR));
   
   bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
     || turnRate > 10.0f/RADIAN
@@ -1674,7 +1674,7 @@ void elevatorModule()
     
   if(vpFeature.alphaHold) {
     const float maxPitch =
-      mixValue(1/sq(vpFlight.relativeEffIAS),
+      mixValue(1/square(vpFlight.relativeEffIAS),
 	       vpParam.maxPitch,
 	       fminf(vpParam.maxPitch,
 		     asin(turbineOutput(&engine)*vpParam.thrust/vpStatus.mass)
