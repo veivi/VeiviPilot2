@@ -568,7 +568,7 @@ void executeCommand(char *buf)
 
 	for(i = 0; i < 2; i++) {
 	  for(j = 0; j < CoL_degree+1; j++)
-	    vpParam.coeff_CoL[i][j] *= square(scale);
+	    vpParam.coeff_CoL[i][j] *= sqrf(scale);
 	}
 
 	vpParam.dimension = param[0];

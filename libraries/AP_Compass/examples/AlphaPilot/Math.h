@@ -20,7 +20,7 @@
 extern const float stabGainExp_c, yawDamperExp_c, airDensity_c;
 
 float signf(float x);
-float square(float x);
+float sqrf(float x);
 float nominalPitchRate(float bank, float pitch, float target);
 float nominalPitchRateLevel(float bank, float target);
 float constrainServoOutput(float value);

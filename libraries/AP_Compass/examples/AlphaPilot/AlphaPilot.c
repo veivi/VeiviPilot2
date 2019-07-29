@@ -598,11 +598,11 @@ void statusTask()
   // Movement detection
   //
   
-  vpFlight.acc = sqrtf(square(vpFlight.accX) + square(vpFlight.accY) + square(vpFlight.accZ));
+  vpFlight.acc = sqrtf(sqrf(vpFlight.accX) + sqrf(vpFlight.accY) + sqrf(vpFlight.accZ));
   
   damperInput(&accAvg, vpFlight.acc);
 
-  float turnRate = sqrtf(square(vpFlight.rollR) + square(vpFlight.pitchR) + square(vpFlight.yawR));
+  float turnRate = sqrtf(sqrf(vpFlight.rollR) + sqrf(vpFlight.pitchR) + sqrf(vpFlight.yawR));
   
   bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
     || turnRate > 10.0f/RADIAN
@@ -1674,7 +1674,7 @@ void elevatorModule()
     
   if(vpFeature.alphaHold) {
     const float maxPitch =
-      mixValue(1/square(vpFlight.relativeEffIAS),
+      mixValue(1/sqrf(vpFlight.relativeEffIAS),
 	       vpParam.maxPitch,
 	       fminf(vpParam.maxPitch,
 		     asin(turbineOutput(&engine)*vpParam.thrust/vpStatus.mass)
@@ -1763,7 +1763,7 @@ void aileronModule()
     if(vpStatus.stall)
       vpInput.aile = vpInput.aileExpo = 0;
   } else if(vpFeature.alphaHold)
-    maxBank /= 1 + square(1/vpFlight.relativeEffIAS);
+    maxBank /= 1 + sqrf(1/vpFlight.relativeEffIAS);
   
   float targetRollR = rollRatePredict(vpInput.aileExpo);
   

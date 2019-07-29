@@ -450,9 +450,9 @@ void deriveParams()
   //
   
   vpDerived.thresholdAlpha =
-    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin));
+    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin));
   vpDerived.shakerAlpha =
-    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/square(1 + vpParam.thresholdMargin/2));
+    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin/2));
   vpDerived.pusherAlpha = vpDerived.maxAlpha - fmaxf(vpParam.pushMargin, 0);
   
   vpDerived.stallAlpha = vpDerived.maxAlpha - fminf(vpParam.pushMargin, 0);
