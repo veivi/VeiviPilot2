@@ -17,9 +17,8 @@
 
 #define CONTROL_HZ 50.0f
 #define CONFIG_HZ (CONTROL_HZ/3)
-#define ALPHA_HZ (CONTROL_HZ*4)
-#define AIRSPEED_HZ (CONTROL_HZ*2)
-#define TELEMETRY_HZ (CONTROL_HZ/5)
+#define ALPHA_HZ (CONTROL_HZ*3)
+#define AIRSPEED_HZ (CONTROL_HZ*3)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 2
 #define LED_TICK 30
@@ -28,6 +27,13 @@
 #define LOG_HZ_FLUSH 5
 #define HEARTBEAT_HZ 1
   
+//
+// Downlink (telemetry) max latencies
+//
+
+#define MAX_LATENCY_STATUS    0.05e6
+#define MAX_LATENCY_DATA      0.2e6
+
 struct Task {
   void (*code)(void);
   uint32_t period;

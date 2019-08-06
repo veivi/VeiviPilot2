@@ -18,6 +18,7 @@
 
 uint16_t maxDatagramSize = MAX_DG_SIZE;
 uint8_t datagramRxStore[MAX_DG_SIZE];
+bool datagramLocalOnly;
 
 void datagramRxError(const char *error, uint16_t code)
 {
@@ -70,7 +71,8 @@ void datagramSerialOut(uint8_t c)
 {
   if(vpStatus.consoleLink)
     stap_hostTransmitChar(c);
-  else
+
+  if(!datagramLocalOnly)
     stap_telemetryTransmitChar(c);    
 }
 
@@ -175,9 +177,6 @@ void mainLoopSetup()
   consoleNote_P(CS_STRING("Initialized, "));
   consolePrintUL(stap_memoryFree());
   consolePrintLn_P(CS_STRING(" bytes free."));
-
-  datagramTxStart(DG_INITIALIZED);
-  datagramTxEnd();
 }
 
 void mainLoop() 

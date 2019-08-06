@@ -184,11 +184,13 @@ static rollAndPitchTrims_t trims = { 0, 0 };
 bool stap_accUpdate(void)
 {
   accUpdate(stap_timeMicros(), &trims);
+  return true;
 }
 
 bool stap_attiUpdate(void)
 {
   imuUpdateAttitude(stap_timeMicros());
+  return true;
 }
 
 bool stap_sensorRead(stap_Vector3f_t *a, stap_Vector3f_t *atti, stap_Vector3f_t *rot)
@@ -314,7 +316,7 @@ int stap_telemetryTransmitChar(uint8_t c)
 
 void stap_telemetryFlush()
 {
-  return stap_hostFlush();
+  stap_hostFlush();
 }
 
 void stap_entropyDigest(const uint8_t *value, int size)

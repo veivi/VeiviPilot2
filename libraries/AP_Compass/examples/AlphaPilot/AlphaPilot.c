@@ -387,12 +387,6 @@ void sensorTaskSlow()
 
 void telemetryTask()
 {
-  struct TelemetryData data = { .alpha = vpFlight.alpha,
-				.IAS = vpFlight.IAS };
-
-  datagramTxStart(DG_TELEMETRY);
-  datagramTxOut((const uint8_t*) &data, sizeof(data));
-  datagramTxEnd();
 }
 
 void monitorTask()
@@ -401,7 +395,10 @@ void monitorTask()
  
   // Load measurement
 
-  vpStatus.load = vpStatus.load/2 + (1.0f - (float) idleMicros/(stap_currentMicros - prevMonitor))/2;
+  vpStatus.load =
+    mixValue(RATIO(1/5), vpStatus.load,
+	     1.0f - (float) idleMicros/(stap_currentMicros - prevMonitor));
+  
   idleMicros = 0;
 
   // PPM monitoring
@@ -2029,15 +2026,67 @@ void blinkTask()
     STAP_LED_ON;
 }
 
-void simulatorLinkTask()
+void downlinkTask()
 {
+  //
+  // Telemetry(Status)
+  //
+
+  static uint32_t lastStatus;
+
+  if(stap_currentMicros - lastStatus > MAX_LATENCY_STATUS) {
+    uint16_t status =
+      (logReady(false) ? (1<<5) : 0)
+      | (vpMode.radioFailSafe ? (1<<4) : 0)
+      | (vpStatus.alphaUnreliable ? (1<<3) : 0);
+    
+    if(!vpStatus.alphaUnreliable)
+      status |=
+	(vpFlight.alpha > vpDerived.maxAlpha ? (1<<2) : 0)
+	| (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0)
+	| (vpFlight.alpha > vpDerived.thresholdAlpha ? (1<<0) : 0);
+  
+    datagramTxStart(DG_STATUS);
+    datagramTxOut(&status, sizeof(status));
+    datagramTxEnd();
+
+    lastStatus = stap_currentMicros;
+  }
+
+  //
+  // Telemetry(Data)
+  //
+  
+  static uint32_t lastData;
+
+  if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
+    float buffet = clamp((vpFlight.alpha - vpDerived.shakerAlpha)
+			 / (vpDerived.maxAlpha - vpDerived.shakerAlpha),
+			 0, 1);
+    
+    struct TelemetryData data = { .load = vpStatus.load,
+				  .alpha = vpFlight.alpha,
+				  .buffet = buffet,
+				  .IAS = vpFlight.IAS };
+
+    datagramTxStart(DG_TELEMETRY);
+    datagramTxOut((const uint8_t*) &data, sizeof(data));
+    datagramTxEnd();
+
+    lastData = stap_currentMicros;
+  }
+  
+  //
+  // Sim link if connected
+  //
+  
   if(vpStatus.simulatorLink && vpStatus.armed) {
     struct SimLinkControl control = { .aileron = vpOutput.aile,
 				      .elevator = -vpOutput.elev,
 				      .throttle = turbineOutput(&engine),
 				      .rudder = vpOutput.rudder };
 
-    datagramTxStart(DG_SIMLINK);
+    datagramTxStartLocal(DG_SIMLINK);
     datagramTxOut((const uint8_t*) &control, sizeof(control));
     datagramTxEnd();
   }
@@ -2050,7 +2099,7 @@ void controlTaskGroup()
   receiverTask();
   controlTask();
   actuatorTask();
-  simulatorLinkTask();
+  downlinkTask();
 }
 
 void configTaskGroup()
@@ -2083,7 +2132,6 @@ struct Task alphaPilotTasks[] = {
   { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, 0 },
   { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true, 0 },
   { communicationTask, HZ_TO_PERIOD(100), true, 0 },
-  { telemetryTask, HZ_TO_PERIOD(TELEMETRY_HZ), true, 0 },
   // { gpsTask, HZ_TO_PERIOD(100) },
   { blinkTask, HZ_TO_PERIOD(LED_TICK), false, 0 },
   { obdRefresh, HZ_TO_PERIOD(40), false, 0 },

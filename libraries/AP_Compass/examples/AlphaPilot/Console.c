@@ -3,6 +3,7 @@
 #include "Datagram.h"
 #include "Console.h"
 #include "Objects.h"
+#include "NVState.h"
 
 void consolevNotef(const char *s, va_list argp);
 void consoleNotef(const char *s, ...);
@@ -17,12 +18,13 @@ static uint8_t outputBuf[BUF_SIZE];
 static uint8_t bufPtr;
 static int column;
 
-void consoleHeartbeat()
+static void consoleHeartbeat()
 {
   static uint32_t last;
   
-  if(vpStatus.consoleLink && stap_timeMillis() - last > 1e3) {
+  if(stap_timeMillis() - last > 0.8e3) {
     datagramTxStart(DG_HEARTBEAT);
+    datagramTxOut(vpParam.name, NAME_LEN);
     datagramTxEnd();
     last = stap_timeMillis();
   }
@@ -30,8 +32,6 @@ void consoleHeartbeat()
 
 void consoleFlush()
 {
-  consoleHeartbeat();
-  
   if(bufPtr > 0) {
     datagramTxStart(DG_CONSOLE);
     datagramTxOut(outputBuf, bufPtr);
@@ -39,11 +39,13 @@ void consoleFlush()
   }
   
   bufPtr = 0;
+
+  consoleHeartbeat();
 }
 
 void consoleOut(const uint8_t c)
 {
-  if(!vpStatus.consoleLink || vpMode.silent)
+  if(vpMode.silent)
     return;
   
   if(bufPtr > BUF_SIZE-1)

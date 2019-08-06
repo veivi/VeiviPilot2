@@ -45,6 +45,12 @@ void datagramTxStart(uint8_t dg)
   datagramTxOutByte((const uint8_t) dg);
 }
 
+void datagramTxStartLocal(uint8_t dg)
+{
+  datagramLocalOnly = true;
+  datagramTxStart(dg);
+}
+
 void datagramTxEnd(void)
 {
   uint16_t buf = crcState;
@@ -52,6 +58,7 @@ void datagramTxEnd(void)
   outputBreak();
   datagramSerialFlush();
   lastTx = stap_currentMicros;
+  datagramLocalOnly = false;
 }
 
 static void storeByte(const uint8_t c)

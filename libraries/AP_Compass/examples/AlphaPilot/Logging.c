@@ -392,9 +392,6 @@ bool logInit(uint32_t maxDuration)
     consolePrintLnUI(logEndStamp);
     
     logState = stop_c;
-    
-    datagramTxStart(DG_READY);
-    datagramTxEnd();
     return true;
 
   default:
