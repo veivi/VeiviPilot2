@@ -218,7 +218,7 @@ void logDumpBinary(void)
   
   strncpy(info.name, vpParam.name, NAME_LEN);
 
-  datagramTxStart(DG_LOGINFO);    
+  datagramTxStartLocal(DG_LOGINFO);    
   datagramTxOut((const uint8_t*) &info, sizeof(info));
   datagramTxEnd();
 
@@ -232,7 +232,7 @@ void logDumpBinary(void)
 
   int32_t total = 0, block = 0;
 
-  datagramTxStart(DG_LOGDATA);
+  datagramTxStartLocal(DG_LOGDATA);
 
   while(total < logLen) {
     uint8_t *buffer = NULL;
@@ -246,7 +246,7 @@ void logDumpBinary(void)
     
     if(block > 1024-1) {
       datagramTxEnd();
-      datagramTxStart(DG_LOGDATA);
+      datagramTxStartLocal(DG_LOGDATA);
       block = 0;
     }
 
@@ -257,7 +257,7 @@ void logDumpBinary(void)
 
   // Finish with an empty block
   
-  datagramTxStart(DG_LOGDATA);
+  datagramTxStartLocal(DG_LOGDATA);
   datagramTxEnd();
 }
 
