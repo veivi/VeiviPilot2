@@ -100,6 +100,8 @@ static bool logEnterGeneric(const uint16_t *value, int count)
 
   if(!status)
     logDisable();
+
+  return status;
 }
 
 static void logEnter(uint16_t value)
@@ -492,6 +494,7 @@ void logTask()
 		    vpStatus.positiveIAS,
 		    vpControl.gearSel == 1,
 		    vpStatus.stall,
+		    vpStatus.flare,
 		    vpStatus.alphaFailed,
 		    vpStatus.alphaUnreliable,
 		    vpStatus.pitotFailed,

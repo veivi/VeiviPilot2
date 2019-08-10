@@ -147,10 +147,6 @@ extern "C" int stap_hostTransmitChar(uint8_t c)
   return stap_hostTransmit(&c, 1);
 }
 
-extern "C" void stap_hostFlush()
-{
-}
-
 extern "C" int stap_telemetryTransmitState(void)
 {
   return hal.uartB->txspace();
@@ -173,7 +169,7 @@ extern "C" int stap_telemetryTransmitChar(uint8_t c)
   return stap_telemetryTransmit(&c, 1);
 }
 
-extern "C" void stap_telemetryFlush()
+extern "C" void stap_telemetrySync()
 {
 }
 

@@ -663,9 +663,10 @@ void statusTask()
   
   if(!(vpMode.test && nvState.testNum > 0) && vpMode.slowFlight
      && vpControl.gearSel == 0
-     && vpInput.throttle < 0.4f
-     && (vpDerived.haveRetracts || vpInput.throttle < 0.05f)
+     && vpInput.throttle < 0.3f
+     && (vpParam.haveGear || vpInput.throttle < 0.05f)
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
+     && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
      && vpInput.stickForce > RATIO(1/3)) {
     // We may be in a flare
@@ -1630,8 +1631,8 @@ void gpsTask()
 //   Elevator
 //
 
-const float pusherBoost_c = 0.2f;
-const float pusherBias_c = -1.0f/RADIAN;
+const float pusherBoost_c = 0.3f;
+const float pusherBias_c = -5.0f/RADIAN;
 
 void elevatorModule()
 {
@@ -1690,13 +1691,10 @@ void elevatorModule()
     alphaPredictInverse(vpControl.targetAlpha);
 
   if(vpFeature.stabilizePitch) {
-    if(vpStatus.stall) {
-      // Apply a fixed pitch rate bias
-      vpControl.targetPitchR += pusherBias_c;
-
-      // Only apply target if it's less than the current rate
-      vpControl.targetPitchR = fminf(vpControl.targetPitchR, vpFlight.pitchR);
-    }
+    if(vpStatus.stall)
+      // Only apply target if it's less than the current rate + bias
+      vpControl.targetPitchR =
+	fminf(vpControl.targetPitchR, vpFlight.pitchR +  pusherBias_c);
     
     pidCtrlInput(&elevCtrl, vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
     
@@ -1724,11 +1722,13 @@ void elevatorModule()
     if(vpFeature.pusher) {
       // Pusher active
         
-      const float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, vpControl.targetAlpha)
+      float target = nominalPitchRate(vpFlight.bank, vpFlight.pitch, vpControl.targetAlpha)
 	+ (effMaxAlpha - vpFlight.alpha) * vpControl.o_P
-	* (1 + (vpStatus.stall ? pusherBoost_c : 0) )
-	+ (vpStatus.stall ? pusherBias_c : 0);
-
+	* (1 + (vpStatus.stall ? pusherBoost_c : 0) );
+      
+      if(vpStatus.stall)
+	target = fminf(target, vpFlight.pitchR + pusherBias_c);
+      
       pidCtrlInput(&pushCtrl, target - vpFlight.pitchR, controlCycle);
 
 #ifdef HARD_PUSHER
@@ -2047,7 +2047,7 @@ void downlinkTask()
 	| (vpFlight.alpha > vpDerived.thresholdAlpha ? (1<<0) : 0);
   
     datagramTxStart(DG_STATUS);
-    datagramTxOut(&status, sizeof(status));
+    datagramTxOut((uint8_t*) &status, sizeof(status));
     datagramTxEnd();
 
     lastStatus = stap_currentMicros;

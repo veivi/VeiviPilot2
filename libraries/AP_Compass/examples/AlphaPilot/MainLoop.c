@@ -76,12 +76,6 @@ void datagramSerialOut(uint8_t c)
     stap_telemetryTransmitChar(c);    
 }
 
-void datagramSerialFlush()
-{
-  stap_hostFlush();
-  stap_telemetryFlush();
-}
-
 //
 // Scheduler
 //

@@ -56,7 +56,6 @@ void datagramTxEnd(void)
   uint16_t buf = crcState;
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
-  datagramSerialFlush();
   lastTx = stap_currentMicros;
   datagramLocalOnly = false;
 }
