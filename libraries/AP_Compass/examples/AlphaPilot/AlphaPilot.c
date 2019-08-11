@@ -1232,12 +1232,13 @@ void trimTask()
       
     vpControl.elevTrim = vpMode.slowFlight
       ? alphaPredictInverse(vpDerived.thresholdAlpha) : vpParam.takeoffTrim;
-  } else
+    vpStatus.trimLimited = false;
+  } else 
     vpControl.elevTrim =
-      clamp(vpControl.elevTrim,
-	    // fmaxf(-0.10f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
-	    -0.15f,
-	    alphaPredictInverse(vpDerived.thresholdAlpha));
+      clampStatus(vpControl.elevTrim,
+	    fminf(-0.15f, alphaPredictInverse(vpDerived.zeroLiftAlpha)),
+	    alphaPredictInverse(vpDerived.thresholdAlpha),
+	    &vpStatus.trimLimited);
 }
 
 void gaugeTask()
@@ -2036,7 +2037,8 @@ void downlinkTask()
 
   if(stap_currentMicros - lastStatus > MAX_LATENCY_STATUS) {
     uint16_t status =
-      (logReady(false) ? (1<<5) : 0)
+      ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
+      | (logReady(false) ? (1<<5) : 0)
       | (vpMode.radioFailSafe ? (1<<4) : 0)
       | (vpStatus.alphaUnreliable ? (1<<3) : 0);
     
@@ -2051,6 +2053,7 @@ void downlinkTask()
     datagramTxEnd();
 
     lastStatus = stap_currentMicros;
+    vpStatus.trimLimited = false;
   }
 
   //

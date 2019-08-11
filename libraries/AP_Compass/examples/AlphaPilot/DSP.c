@@ -30,6 +30,11 @@ float sign(float x)
 
 float clamp(float value, float a, float b)
 {
+  return clampStatus(value, a, b, NULL);
+}
+
+float clampStatus(float value, float a, float b, bool *status)
+{
   if(a > b) {
     // Swap limits
     float t = a;
@@ -37,12 +42,20 @@ float clamp(float value, float a, float b)
     b = t;
   }
 
-  if(value > a && value < b)
+  if(value >= a && value <= b) {
+    if(status)
+      *status = false;
+    
     return value;  
-  else if(value <= a)
-    return a;
-  else if(value >= b)
-    return b;
+  } else {
+    if(status)
+      *status = true;
+    
+    if(value < a)
+      return a;
+    else if(value > b)
+      return b;
+  }
 
   // All comparisons failed, must be NaN or some such
   

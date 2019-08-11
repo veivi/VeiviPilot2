@@ -23,6 +23,7 @@ struct StatusRecord {
   int fault;
   bool alphaFailed;
   bool alphaUnreliable;
+  bool trimLimited;
   bool upright;
   bool belowFloor;
   bool flare;

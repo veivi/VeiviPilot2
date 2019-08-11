@@ -11,6 +11,7 @@
 
 float sign(float x);
 float clamp(float value, float a, float b);
+float clampStatus(float value, float a, float b, bool *status);
 float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);
 float randomNum(float small, float large);
