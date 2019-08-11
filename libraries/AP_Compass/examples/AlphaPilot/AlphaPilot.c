@@ -1632,7 +1632,7 @@ void gpsTask()
 //
 
 const float pusherBoost_c = 0.3f;
-const float pusherBias_c = -5.0f/RADIAN;
+const float pusherBias_c = -3.5f/RADIAN;
 
 void elevatorModule()
 {
@@ -2065,7 +2065,7 @@ void downlinkTask()
 			 0, 1);
     
     struct TelemetryData data = { .load = vpStatus.load,
-				  .alpha = vpFlight.alpha,
+				  .alpha = vpFlight.alpha/vpDerived.maxAlpha,
 				  .buffet = buffet,
 				  .IAS = vpFlight.IAS };
 
