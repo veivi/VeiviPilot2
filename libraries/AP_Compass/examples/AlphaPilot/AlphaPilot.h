@@ -31,8 +31,9 @@
 // Downlink (telemetry) max latencies
 //
 
-#define MAX_LATENCY_STATUS    0.05e6
-#define MAX_LATENCY_DATA      0.2e6
+#define MAX_LATENCY_STATUS    0.075e6
+#define MAX_LATENCY_DATA      0.15e6
+#define MAX_LATENCY_CONFIG    0.9e6
 
 struct Task {
   void (*code)(void);

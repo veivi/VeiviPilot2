@@ -20,7 +20,8 @@ bool datagramRxInputChar(const uint8_t c);
 #define DG_SIMLINK       8
 #define DG_PING          9
 #define DG_DISCONNECT    10
-#define DG_TELEMETRY     11
+#define DG_AIRDATA       11
+#define DG_CONFIG        12
 
 extern void datagramInterpreter(uint8_t t, uint8_t *data, int size);
 extern void datagramSerialOut(uint8_t);
@@ -39,9 +40,15 @@ struct SimLinkSensor {
 };
 
 struct TelemetryData {
-  float load;
-  float alpha, buffet;
+  float alpha;
   float IAS;
+};
+
+struct TelemetryConfig {
+  float load;
+  float trim;
+  float maxAlpha, shakerAlpha, threshAlpha, minAlpha;
+  float stallIAS;
 };
 
 struct SimLinkControl {

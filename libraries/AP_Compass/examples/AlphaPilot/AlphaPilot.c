@@ -2029,11 +2029,11 @@ void blinkTask()
 
 void downlinkTask()
 {
+  static uint32_t lastStatus, lastData, lastConfig;
+
   //
   // Telemetry(Status)
   //
-
-  static uint32_t lastStatus;
 
   if(stap_currentMicros - lastStatus > MAX_LATENCY_STATUS) {
     uint16_t status =
@@ -2054,29 +2054,41 @@ void downlinkTask()
 
     lastStatus = stap_currentMicros;
     vpStatus.trimLimited = false;
-  }
 
-  //
-  // Telemetry(Data)
-  //
+  } else if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
+    //
+    // Telemetry(Data)
+    //
   
-  static uint32_t lastData;
-
-  if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
-    float buffet = clamp((vpFlight.alpha - vpDerived.shakerAlpha)
-			 / (vpDerived.maxAlpha - vpDerived.shakerAlpha),
-			 0, 1);
-    
-    struct TelemetryData data = { .load = vpStatus.load,
-				  .alpha = vpFlight.alpha/vpDerived.maxAlpha,
-				  .buffet = buffet,
+    struct TelemetryData data = { .alpha = vpFlight.alpha,
 				  .IAS = vpFlight.IAS };
 
-    datagramTxStart(DG_TELEMETRY);
+    datagramTxStart(DG_AIRDATA);
     datagramTxOut((const uint8_t*) &data, sizeof(data));
     datagramTxEnd();
 
     lastData = stap_currentMicros;
+
+  } else if(stap_currentMicros - lastConfig > MAX_LATENCY_CONFIG) {
+    //
+    // Telemetry(Configuration)
+    //
+  
+    struct TelemetryConfig config = {
+      .load = vpStatus.load,
+      .trim = alphaPredict(vpControl.elevTrim),
+      .maxAlpha = vpDerived.maxAlpha,
+      .shakerAlpha = vpDerived.shakerAlpha,
+      .threshAlpha = vpDerived.thresholdAlpha,
+      .minAlpha = alphaPredict(-0.2f),
+      .stallIAS = vpDerived.minimumIAS
+    };
+
+    datagramTxStart(DG_CONFIG);
+    datagramTxOut((const uint8_t*) &config, sizeof(config));
+    datagramTxEnd();
+
+    lastConfig = stap_currentMicros;
   }
   
   //
