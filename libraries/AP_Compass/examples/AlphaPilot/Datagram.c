@@ -28,6 +28,9 @@ void datagramTxOutByte(const uint8_t c)
 
 void datagramTxOut(const uint8_t *data, int l)
 {
+  if(l > DG_TRANSMIT_MAX)
+    l = DG_TRANSMIT_MAX;
+  
   while(l-- > 0)
     datagramTxOutByte(*data++);
 }

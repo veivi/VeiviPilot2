@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define DG_TRANSMIT_MAX (1<<7)
+
 void datagramTxStart(uint8_t );
 void datagramTxStartLocal(uint8_t );
 void datagramTxOutByte(const uint8_t c);
@@ -26,7 +28,6 @@ bool datagramRxInputChar(const uint8_t c);
 
 extern void datagramInterpreter(uint8_t t, uint8_t *data, int size);
 extern void datagramSerialOut(uint8_t);
-extern void datagramSerialFlush(void);
 extern void datagramRxError(const char *, uint16_t code);
   
 extern uint16_t maxDatagramSize;

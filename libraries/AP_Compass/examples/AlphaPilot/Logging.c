@@ -240,7 +240,7 @@ void logDumpBinary(void)
     uint8_t *buffer = NULL;
 
     int good = m24xxReadIndirect(logAddr(logIndex(total-logLen)),
-				 &buffer, sizeof(uint16_t)*(logLen-total));
+				 &buffer, MIN(DG_TRANSMIT_MAX, sizeof(uint16_t)*(logLen-total)));
 
     datagramTxOut(buffer, good);
 
