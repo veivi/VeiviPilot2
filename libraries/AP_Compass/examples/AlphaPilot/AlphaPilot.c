@@ -19,6 +19,17 @@
 #include "Function.h"
 
 //
+//
+//
+
+void annunciatorTalk(const char *text)
+{
+  datagramTxStart(DG_ANNUNCIATOR);
+  datagramTxOut((const uint8_t*) text, strlen(text));
+  datagramTxEnd();
+}
+
+//
 // Periodic tasks
 //
 
@@ -671,8 +682,10 @@ void statusTask()
      && vpInput.stickForce > RATIO(1/3)) {
     // We may be in a flare
 
-    if(!vpStatus.flare)
+    if(!vpStatus.flare) {
       consoleNoteLn_P(CS_STRING("We seem to be FLARING"));
+      annunciatorTalk("Flare");
+    }
     
     vpStatus.flare = true;
     lastFlare = stap_currentMicros;
@@ -785,6 +798,7 @@ void configurationTask()
   if(buttonDoublePulse(&TRIMBUTTON) && !vpStatus.armed &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
+    annunciatorTalk("ARMED");
     vpStatus.armed = true;
     buttonReset(&GEARBUTTON);
     buttonReset(&LEVELBUTTON);
@@ -836,10 +850,13 @@ void configurationTask()
       vpControl.gearSel = !vpControl.gearSel;
       vpMode.gearSelected = true;
 
-      if(vpControl.gearSel)
+      if(vpControl.gearSel) {
 	consoleNoteLn_P(CS_STRING("Gear UP"));
-      else
+	annunciatorTalk("Gear up");
+      } else {
 	consoleNoteLn_P(CS_STRING("Gear DOWN"));
+	annunciatorTalk("Gear down");
+      }
     }
   }
 
@@ -851,12 +868,14 @@ void configurationTask()
     // Continuous: half-rate enable
     
     consoleNoteLn_P(CS_STRING("Half-rate ENABLED"));
+    annunciatorTalk("Half rate");
     vpMode.halfRate = true;
     
   } else if(buttonSinglePulse(&RATEBUTTON) && vpMode.halfRate) {
     // Single pulse: half-rate disable
     
     consoleNoteLn_P(CS_STRING("Half-rate DISABLED"));
+    annunciatorTalk("Full rate");
     vpMode.halfRate = false;
   }
 
@@ -882,10 +901,12 @@ void configurationTask()
 
       if(tocTestStatus(tocReportConsole)) {
 	consoleNoteLn_P(CS_STRING("T/o configuration is GOOD"));
+	annunciatorTalk("Takeoff configuration OK");
 	vpStatus.aloft = false;
       } else {
 	consolePrintLn("");
 	consoleNoteLn_P(CS_STRING("T/o configuration test FAILED"));
+	annunciatorTalk("T O C fail");
 	vpMode.takeOff = prevMode;
       }
     }
@@ -898,6 +919,7 @@ void configurationTask()
     
     if(!vpMode.wingLeveler && !vpInput.ailePilotInput) {
       consoleNoteLn_P(CS_STRING("Wing leveler ENABLED"));
+      annunciatorTalk("Wing leveler");
       vpMode.wingLeveler = true;
     } 
   }
@@ -945,8 +967,26 @@ void configurationTask()
   // Flap selector input
   //
 
+  static int prevFlap;
+  
   vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
 
+  if(vpControl.flapSel != prevFlap) {
+    switch(vpControl.flapSel) {
+    case 0:
+      annunciatorTalk("flaps up");
+      break;
+    case 1:
+      annunciatorTalk("flaps one");
+      break;
+    case 2:
+      annunciatorTalk("flaps two");
+      break;
+    }
+
+    prevFlap = vpControl.flapSel;
+  }
+  
   //
   // Test mode control
   //
@@ -957,10 +997,12 @@ void configurationTask()
   else if(!vpMode.test && vpInput.tuningKnob > 0.5f) {
     vpMode.test = true;
     consoleNoteLn_P(CS_STRING("Test mode ENABLED"));
+    annunciatorTalk("Test start");
 
   } else if(vpMode.test && vpInput.tuningKnob < 0) {
     vpMode.test = false;
     consoleNoteLn_P(CS_STRING("Test mode DISABLED"));
+    annunciatorTalk("End of test");
   }
 
   // Wing leveler disable when stick input detected

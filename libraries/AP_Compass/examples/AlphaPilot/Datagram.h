@@ -22,6 +22,7 @@ bool datagramRxInputChar(const uint8_t c);
 #define DG_DISCONNECT    10
 #define DG_AIRDATA       11
 #define DG_CONFIG        12
+#define DG_ANNUNCIATOR   13
 
 extern void datagramInterpreter(uint8_t t, uint8_t *data, int size);
 extern void datagramSerialOut(uint8_t);
