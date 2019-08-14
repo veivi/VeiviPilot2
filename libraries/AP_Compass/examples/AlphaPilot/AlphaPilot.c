@@ -29,6 +29,21 @@ void annunciatorTalk(const char *text)
   datagramTxEnd();
 }
 
+void annunciatorTalkNumber(const char *text, int num)
+{
+  datagramTxStart(DG_ANNUNCIATOR);
+  datagramTxOut((const uint8_t*) text, strlen(text));
+
+  if(num < 0) {
+    datagramTxOut((const uint8_t*) " minus ", 7);
+    num = -num;
+  }
+
+  char buffer[2] = { num < 10 ? ' ' : ('0' + num/10), '0' + num%10 };
+  datagramTxOut((const uint8_t*) buffer, sizeof(buffer));
+  datagramTxEnd();
+}
+
 //
 // Periodic tasks
 //
@@ -143,8 +158,8 @@ void displayTask()
     obdPrintAttr("TAKEOFF", (count>>2) & 1);
   } else {
     char buffer[] =
-      { (char) (nvState.testNum < 10 ? ' ' : ('0' + nvState.testNum / 10)),
-	(char) ('0' + nvState.testNum % 10),
+      { (char) (nvState.testNum[vpMode.testCount] < 10 ? ' ' : ('0' + nvState.testNum[vpMode.testCount] / 10)),
+	(char) ('0' + nvState.testNum[vpMode.testCount] % 10),
 	' ',
 	vpFlight.alpha > 0 ? '/' : '\\',
 	' ', '\0' };
@@ -672,7 +687,8 @@ void statusTask()
 
   static uint32_t lastFlare;
   
-  if(!(vpMode.test && nvState.testNum > 0) && vpMode.slowFlight
+  if(!(vpMode.test && nvState.testNum[vpMode.testCount] > 0)
+     && vpMode.slowFlight
      && vpControl.gearSel == 0
      && vpInput.throttle < 0.3f
      && (vpParam.haveGear || vpInput.throttle < 0.05f)
@@ -885,10 +901,25 @@ void configurationTask()
 
   if(buttonSinglePulse(&LEVELBUTTON)) {
     //
-    // PULSE : Takeoff mode enable
+    // PULSE : Takeoff mode enable / increment test
     //
-  
-    if(!vpStatus.positiveIAS || vpStatus.simulatorLink) {
+
+    if(vpStatus.aloft) {
+      //
+      // Airborne already, increment the test count
+      //
+
+      if(vpMode.testCount < MAX_TESTS-1
+	 && nvState.testNum[vpMode.testCount+1] >= 0)
+	vpMode.testCount++;
+      else
+	vpMode.testCount = 0;
+
+      consoleNote_P(CS_STRING("Test number "));
+      consolePrintLnI(nvState.testNum[vpMode.testCount]);
+      annunciatorTalkNumber("test", nvState.testNum[vpMode.testCount]);
+      
+    } else if(!vpStatus.positiveIAS || vpStatus.simulatorLink) {
 	    
       vpMode.silent = false;
 
@@ -901,12 +932,12 @@ void configurationTask()
 
       if(tocTestStatus(tocReportConsole)) {
 	consoleNoteLn_P(CS_STRING("T/o configuration is GOOD"));
-	annunciatorTalk("Takeoff configuration OK");
+	annunciatorTalk("Takeoff mode enabled");
 	vpStatus.aloft = false;
       } else {
 	consolePrintLn("");
 	consoleNoteLn_P(CS_STRING("T/o configuration test FAILED"));
-	annunciatorTalk("T O C fail");
+	annunciatorTalk("Takeoff test fail");
 	vpMode.takeOff = prevMode;
       }
     }
@@ -972,18 +1003,7 @@ void configurationTask()
   vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
 
   if(vpControl.flapSel != prevFlap) {
-    switch(vpControl.flapSel) {
-    case 0:
-      annunciatorTalk("flaps up");
-      break;
-    case 1:
-      annunciatorTalk("flaps one");
-      break;
-    case 2:
-      annunciatorTalk("flaps two");
-      break;
-    }
-
+    annunciatorTalkNumber("flaps ", vpControl.flapSel);
     prevFlap = vpControl.flapSel;
   }
   
@@ -1078,7 +1098,7 @@ void configurationTask()
   
   float scale = 1;
   
-  if(vpMode.test && nvState.testNum == 0)
+  if(vpMode.test && nvState.testNum[vpMode.testCount] == 0)
     scale = testGainLinear(RATIO(1/3), 1);
   
   // Default controller settings
@@ -1119,7 +1139,7 @@ void configurationTask()
   //
   
   if(vpMode.test && !vpMode.takeOff) {
-    switch(nvState.testNum) {
+    switch(nvState.testNum[vpMode.testCount]) {
     case 1:
       // Wing stabilizer gain
       vpFeature.stabilizeBank = vpMode.bankLimiter = vpFeature.keepLevel = true;

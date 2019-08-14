@@ -74,12 +74,14 @@ struct DerivedParams {
   float apexElev, apexAlpha;
 };
 
+#define MAX_TESTS  4
+
 struct NVStateRecord {
   uint16_t crc;
   uint16_t paramPartition, dataPartition, logPartition;
   uint16_t logStamp;
   uint16_t model;
-  uint16_t testNum;
+  int16_t testNum[MAX_TESTS];
   uint16_t rxCenter[MAX_CH], rxMin[MAX_CH], rxMax[MAX_CH];
 };
 

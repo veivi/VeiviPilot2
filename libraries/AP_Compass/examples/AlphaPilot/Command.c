@@ -356,12 +356,25 @@ void executeCommand(char *buf)
     
     case c_test:
       if(numParams > 0) {
-	nvState.testNum = param[0];
+	for(i = 0; i < MAX_TESTS; i++) {
+	  if(i < numParams)
+	    nvState.testNum[i] = param[i];
+	  else
+	    nvState.testNum[i] = -1;
+	}
+	  
 	storeNVState();
       }
 
-      consoleNote_P(CS_STRING("Current test channel = "));
-      consolePrintLnI(nvState.testNum);
+      consoleNote_P(CS_STRING("Current test program = [ "));
+      for(i = 0; i < MAX_TESTS; i++) {
+	if(nvState.testNum[i] >= 0) {
+	  if(i > 0)
+	    consolePrint(", ");
+	  consolePrintI(nvState.testNum[i]);
+	}
+      }
+      consolePrintLn(" ]");
       break;
 
     case c_gear:

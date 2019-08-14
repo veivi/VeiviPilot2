@@ -34,6 +34,7 @@ struct StatusRecord {
 
 struct ModeRecord {
   bool test;
+  uint8_t testCount;
   bool silent;
   bool alphaFailSafe;
   bool sensorFailSafe;
