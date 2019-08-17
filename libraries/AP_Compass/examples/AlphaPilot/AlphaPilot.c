@@ -1018,7 +1018,12 @@ void configurationTask()
     vpMode.test = true;
     consoleNoteLn_P(CS_STRING("Test mode ENABLED"));
     annunciatorTalk("Test start");
-
+    /*
+    annunciatorTalkNumber("test", -25);
+    annunciatorTalkNumber("test", -1);
+    annunciatorTalkNumber("test", 10);
+    annunciatorTalkNumber("test", 39);
+    */    
   } else if(vpMode.test && vpInput.tuningKnob < 0) {
     vpMode.test = false;
     consoleNoteLn_P(CS_STRING("Test mode DISABLED"));
@@ -2102,14 +2107,25 @@ void downlinkTask()
       ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
       | (logReady(false) ? (1<<5) : 0)
       | (vpMode.radioFailSafe ? (1<<4) : 0)
-      | (vpStatus.alphaUnreliable ? (1<<3) : 0);
-    
-    if(!vpStatus.alphaUnreliable)
+      | (vpStatus.alphaUnreliable ? (1<<3) : 0)
+      | (vpStatus.aloft ? (1<<0) : 0);
+
+    if(vpParam.wowCalibrated && !vpStatus.weightOnWheels)
       status |=
-	(vpFlight.alpha > vpDerived.maxAlpha ? (1<<2) : 0)
-	| (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0)
-	| (vpFlight.alpha > vpDerived.thresholdAlpha ? (1<<0) : 0);
-  
+	(vpFlight.IAS < vpDerived.minimumIAS * (1+vpParam.thresholdMargin-0.075) ? (1<<8):0)
+	| (vpFlight.IAS < vpDerived.minimumIAS * (1+vpParam.thresholdMargin+0.075) ? (1<<7):0);
+    
+    if(!vpStatus.alphaUnreliable) {
+      if(!vpParam.wowCalibrated)
+	status |=
+	  (vpFlight.alpha > vpDerived.thresholdAlpha + 1.5f/RADIAN ? (1<<8):0)
+	  | (vpFlight.alpha > vpDerived.thresholdAlpha - 1.5f/RADIAN ? (1<<7):0);
+
+      status |=
+	(vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0)
+	| (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
+    }
+    
     datagramTxStart(DG_STATUS);
     datagramTxOut((uint8_t*) &status, sizeof(status));
     datagramTxEnd();
