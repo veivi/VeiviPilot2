@@ -2110,17 +2110,7 @@ void downlinkTask()
       | (vpStatus.alphaUnreliable ? (1<<3) : 0)
       | (vpStatus.aloft ? (1<<0) : 0);
 
-    if(vpParam.wowCalibrated && !vpStatus.weightOnWheels)
-      status |=
-	(vpFlight.IAS < vpDerived.minimumIAS * (1+vpParam.thresholdMargin-0.075) ? (1<<8):0)
-	| (vpFlight.IAS < vpDerived.minimumIAS * (1+vpParam.thresholdMargin+0.075) ? (1<<7):0);
-    
     if(!vpStatus.alphaUnreliable) {
-      if(!vpParam.wowCalibrated)
-	status |=
-	  (vpFlight.alpha > vpDerived.thresholdAlpha + 1.5f/RADIAN ? (1<<8):0)
-	  | (vpFlight.alpha > vpDerived.thresholdAlpha - 1.5f/RADIAN ? (1<<7):0);
-
       status |=
 	(vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0)
 	| (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
@@ -2159,7 +2149,8 @@ void downlinkTask()
       .shakerAlpha = vpDerived.shakerAlpha,
       .threshAlpha = vpDerived.thresholdAlpha,
       .minAlpha = alphaPredict(-0.2f),
-      .stallIAS = vpDerived.minimumIAS
+      .stallIAS = vpDerived.minimumIAS,
+      .margin = vpParam.thresholdMargin
     };
 
     datagramTxStart(DG_CONFIG);

@@ -50,7 +50,7 @@ struct TelemetryConfig {
   float load;
   float trim;
   float maxAlpha, shakerAlpha, threshAlpha, minAlpha;
-  float stallIAS;
+  float stallIAS, margin;
 };
 
 struct SimLinkControl {
