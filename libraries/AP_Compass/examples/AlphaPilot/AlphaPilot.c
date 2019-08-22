@@ -1527,6 +1527,28 @@ void gaugeTask()
 	consolePrint("*");
 	consoleTab(20);
 	break;
+
+      case 18:
+	if(buttonState(&TRIMBUTTON))
+	  consolePrint_P(CS_STRING("[TRIM]"));
+
+	consoleTab(10);
+	
+	if(buttonState(&LEVELBUTTON))
+	  consolePrint_P(CS_STRING("[LEVEL]"));
+	
+	consoleTab(20);
+	
+	if(buttonState(&GEARBUTTON))
+	  consolePrint_P(CS_STRING("[GEAR]"));
+  
+	consoleTab(30);
+	
+	if(buttonState(&RATEBUTTON))
+	  consolePrint_P(CS_STRING("[RATE]"));
+
+	consoleTab(40);
+	break;
 	
       case 20:
 	consolePrint_P(CS_STRING(" log bw = "));
@@ -2096,46 +2118,46 @@ void blinkTask()
 
 void downlinkTask()
 {
+  uint16_t status =
+    ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
+    | (logReady(false) ? (1<<5) : 0)
+    | (vpMode.radioFailSafe ? (1<<4) : 0)
+    | (vpStatus.alphaUnreliable ? (1<<3) : 0)
+    | (vpStatus.aloft ? (1<<0) : 0);
+
+  if(!vpStatus.alphaUnreliable) {
+    status |=
+      (vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0)
+      | (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
+  }
+    
   static uint32_t lastStatus, lastData, lastConfig;
 
-  //
-  // Telemetry(Status)
-  //
-
-  if(stap_currentMicros - lastStatus > MAX_LATENCY_STATUS) {
-    uint16_t status =
-      ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
-      | (logReady(false) ? (1<<5) : 0)
-      | (vpMode.radioFailSafe ? (1<<4) : 0)
-      | (vpStatus.alphaUnreliable ? (1<<3) : 0)
-      | (vpStatus.aloft ? (1<<0) : 0);
-
-    if(!vpStatus.alphaUnreliable) {
-      status |=
-	(vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0)
-	| (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
-    }
-    
-    datagramTxStart(DG_STATUS);
-    datagramTxOut((uint8_t*) &status, sizeof(status));
-    datagramTxEnd();
-
-    lastStatus = stap_currentMicros;
-    vpStatus.trimLimited = false;
-
-  } else if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
+  if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
     //
     // Telemetry(Data)
     //
   
-    struct TelemetryData data = { .alpha = vpFlight.alpha,
+    struct TelemetryData data = { .status = status,
+				  .alpha = vpFlight.alpha,
 				  .IAS = vpFlight.IAS };
 
     datagramTxStart(DG_AIRDATA);
     datagramTxOut((const uint8_t*) &data, sizeof(data));
     datagramTxEnd();
 
-    lastData = stap_currentMicros;
+    lastData = lastStatus = stap_currentMicros;
+  } else if(stap_currentMicros - lastStatus > MAX_LATENCY_STATUS) {
+    //
+    // Telemetry(Status)
+    //
+
+    datagramTxStart(DG_STATUS);
+    datagramTxOut((uint8_t*) &status, sizeof(status));
+    datagramTxEnd();
+
+    lastStatus = stap_currentMicros;
+    vpStatus.trimLimited = false;
 
   } else if(stap_currentMicros - lastConfig > MAX_LATENCY_CONFIG) {
     //
@@ -2148,7 +2170,7 @@ void downlinkTask()
       .maxAlpha = vpDerived.maxAlpha,
       .shakerAlpha = vpDerived.shakerAlpha,
       .threshAlpha = vpDerived.thresholdAlpha,
-      .minAlpha = alphaPredict(-0.2f),
+      .minAlpha = alphaPredict(-0.1f),
       .trimIAS = dynamicPressureInverse(vpStatus.mass*G/coeffOfLift(alphaPredict(vpControl.elevTrim))),
       .stallIAS = vpDerived.minimumIAS,
       .margin = vpParam.thresholdMargin
@@ -2160,7 +2182,7 @@ void downlinkTask()
 
     lastConfig = stap_currentMicros;
   }
-  
+
   //
   // Sim link if connected
   //

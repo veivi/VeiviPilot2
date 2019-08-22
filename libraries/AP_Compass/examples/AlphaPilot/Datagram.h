@@ -42,6 +42,7 @@ struct SimLinkSensor {
 };
 
 struct TelemetryData {
+  uint16_t status;
   float alpha;
   float IAS;
 };

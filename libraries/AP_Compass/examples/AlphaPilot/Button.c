@@ -29,7 +29,7 @@ void buttonReset(Button_t *button)
     
 void buttonInput(Button_t *button, float inputValue)
 {
-  if(fabsf(inputValue - button->activeValue) > 0.05) {
+  if(fabsf(inputValue - button->activeValue)/fabsf(button->activeValue) > 0.2) {
     button->inertiaCount = 0;
     button->inputState = false;
   } else if(button->inertiaCount < INERTIA)
