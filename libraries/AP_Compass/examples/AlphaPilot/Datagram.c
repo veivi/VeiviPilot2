@@ -3,9 +3,10 @@
 #include "Datagram.h"
 #include "CRC16.h"
 
-static uint16_t crcState;
+static uint16_t crcState, crcStateRx;
 static int datagramSize = 0;
-static int datagrams, datagramsGood;
+static uint8_t rxSeq, rxSeqLast;
+uint16_t datagramsGood, datagramsLost, datagramBytes;
 
 #define FLAG       0xAB
 #define NOTFLAG    ((~FLAG) & 0xFF)
@@ -36,15 +37,19 @@ void datagramTxOut(const uint8_t *data, int l)
 }
 
 static uint32_t lastTx;
+static uint8_t datagramTxSeq;
 
 void datagramTxStart(uint8_t dg)
 {
   if(stap_currentMicros - lastTx > 0.1e6)
     outputBreak();
   
-  datagramSerialOut(NOTFLAG);
+  datagramSerialOut(NOTFLAG + datagramTxSeq);
   
-  crcState = 0xFFFF;
+  crcState = crc16_update(0xFFFF, NOTFLAG + datagramTxSeq);
+
+  datagramTxSeq = (datagramTxSeq + 1) & 0x3f;
+  
   datagramTxOutByte((const uint8_t) dg);
 }
 
@@ -74,14 +79,20 @@ static bool datagramRxEnd(void)
     bool success = false;
     
     if(datagramSize > 2) {
-        datagrams++;
         uint16_t crcReceived = *((uint16_t*) &datagramRxStore[datagramSize-2]);
-        uint16_t crc = crc16(0xFFFF, datagramRxStore, datagramSize - 2);
+        uint16_t crc = crc16(crcStateRx, datagramRxStore, datagramSize - 2);
         success = (crc == crcReceived);
         
         if(success) {
             datagramsGood++;
+	    datagramBytes += datagramSize - 2;
 	    datagramInterpreter(datagramRxStore[0], &datagramRxStore[1], datagramSize-3);
+	    uint8_t seqInc = (rxSeq - rxSeqLast + 0x40) & 0x3F;
+	    if(seqInc > 1) {
+	      datagramsLost += seqInc - 1;
+	      datagramRxError("LOST", seqInc - 1);
+	    }
+	    rxSeqLast = rxSeq;
         } else
 	  datagramRxError("CRC FAIL", crcReceived);
     } else
@@ -103,8 +114,10 @@ bool datagramRxInputChar(const uint8_t c)
 	storeByte(FLAG);
       else
 	storeByte(c);
-    } else if(c == NOTFLAG) {
+    } else if(c >= NOTFLAG && c <= NOTFLAG + 0x3F) {
       busy = true;
+      crcStateRx = crc16_update(0xFFFF, c);
+      rxSeq = c - NOTFLAG;
       datagramSize = 0;
     } else
       datagramRxError("BAD START", c);
