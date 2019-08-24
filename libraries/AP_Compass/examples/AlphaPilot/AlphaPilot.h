@@ -23,17 +23,17 @@
 #define LED_HZ 2
 #define LED_TICK 30
 #define LOG_HZ (CONTROL_HZ/3)
-#define LOG_HZ_COMMIT 3
-#define LOG_HZ_FLUSH 5
+#define LOG_HZ_COMMIT 2
+#define LOG_HZ_FLUSH 2
 #define HEARTBEAT_HZ 1
   
 //
 // Downlink (telemetry) max latencies
 //
 
-#define MAX_LATENCY_STATUS    0.05e6
-#define MAX_LATENCY_DATA      0.05e6
-#define MAX_LATENCY_CONFIG    0.9e6
+#define MAX_LATENCY_STATUS    0.04e6
+#define MAX_LATENCY_DATA      0.04e6
+#define MAX_LATENCY_CONFIG    0.7e6
 
 struct Task {
   void (*code)(void);

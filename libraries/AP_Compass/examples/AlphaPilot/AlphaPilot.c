@@ -2170,7 +2170,6 @@ void downlinkTask()
       .maxAlpha = vpDerived.maxAlpha,
       .shakerAlpha = vpDerived.shakerAlpha,
       .threshAlpha = vpDerived.thresholdAlpha,
-      .minAlpha = alphaPredict(-0.1f),
       .trimIAS = dynamicPressureInverse(vpStatus.mass*G/coeffOfLift(alphaPredict(vpControl.elevTrim))),
       .stallIAS = vpDerived.minimumIAS,
       .margin = vpParam.thresholdMargin
