@@ -3,7 +3,7 @@
 #include "Datagram.h"
 #include "CRC16.h"
 
-static uint16_t crcState, crcStateRx;
+static uint16_t crcStateTx, crcStateRx;
 static int datagramSize = 0;
 static uint8_t rxSeq, rxSeqLast;
 uint16_t datagramsGood, datagramsLost, datagramBytes;
@@ -24,7 +24,7 @@ void datagramTxOutByte(const uint8_t c)
   if(c == FLAG)
     datagramSerialOut(NOTFLAG);
 
-  crcState = crc16_update(crcState, c);
+  crcStateTx = crc16_update(crcStateTx, c);
 }
 
 void datagramTxOut(const uint8_t *data, int l)
@@ -45,11 +45,8 @@ void datagramTxStart(uint8_t dg)
     outputBreak();
   
   datagramSerialOut(NOTFLAG + datagramTxSeq);
-  
-  crcState = crc16_update(0xFFFF, NOTFLAG + datagramTxSeq);
-
+  crcStateTx = crc16_update(0xFFFF, NOTFLAG + datagramTxSeq);
   datagramTxSeq = (datagramTxSeq + 1) & 0x3f;
-  
   datagramTxOutByte((const uint8_t) dg);
 }
 
@@ -61,7 +58,7 @@ void datagramTxStartLocal(uint8_t dg)
 
 void datagramTxEnd(void)
 {
-  uint16_t buf = crcState;
+  uint16_t buf = crcStateTx;
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
   lastTx = stap_currentMicros;
@@ -90,7 +87,7 @@ static bool datagramRxEnd(void)
 	    uint8_t seqInc = (rxSeq - rxSeqLast + 0x40) & 0x3F;
 	    if(seqInc > 1) {
 	      datagramsLost += seqInc - 1;
-	      datagramRxError("LOST", seqInc - 1);
+	      datagramRxError("LOST PKT", seqInc - 1);
 	    }
 	    rxSeqLast = rxSeq;
         } else
