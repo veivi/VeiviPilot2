@@ -67,43 +67,43 @@ void datagramTxEnd(void)
 
 static void storeByte(const uint8_t c)
 {
-    if(datagramSize < maxDatagramSize)
-        datagramRxStore[datagramSize++] = c;
+  crcStateRx = crc16_update(crcStateRx, c);
+  
+  if(datagramSize < maxDatagramSize)
+    datagramRxStore[datagramSize++] = c;
 }
   
-static bool datagramRxEnd(void)
+static void breakDetected(void)
 {
-    bool success = false;
-    
-    if(datagramSize > 2) {
-        uint16_t crcReceived = *((uint16_t*) &datagramRxStore[datagramSize-2]);
-        uint16_t crc = crc16(crcStateRx, datagramRxStore, datagramSize - 2);
-        success = (crc == crcReceived);
+  if(datagramSize > 2) {
+    uint16_t crc = *((uint16_t*) &datagramRxStore[datagramSize-2]);
         
-        if(success) {
-            datagramsGood++;
-	    datagramBytes += datagramSize - 2;
-	    datagramInterpreter(datagramRxStore[0], &datagramRxStore[1], datagramSize-3);
-	    uint8_t seqInc = (rxSeq - rxSeqLast + 0x40) & 0x3F;
-	    if(seqInc > 1) {
-	      datagramsLost += seqInc - 1;
-	      datagramRxError("LOST PKT", seqInc - 1);
-	    }
-	    rxSeqLast = rxSeq;
-        } else
-	  datagramRxError("CRC FAIL", crcReceived);
+    if(crcStateRx == crc) {
+      datagramsGood++;
+      datagramBytes += datagramSize - 2;
+
+      uint8_t delta = (rxSeq - rxSeqLast + 0x40) & 0x3F;
+
+      if(delta > 1) {
+	datagramsLost += delta - 1;
+	datagramRxError("LOST_PKT", delta - 1);
+      }
+	    
+      rxSeqLast = rxSeq;
+
+      datagramInterpreter(datagramRxStore[0], &datagramRxStore[1], datagramSize-3);
     } else
-      datagramRxError("TOO SHORT", datagramSize);
+      datagramRxError("CRC_FAIL", crc);
+  } else
+    datagramRxError("SHORT_DG", datagramSize);
     
-    datagramSize = 0;
-    return success;
+  datagramSize = 0;
 }
 
-bool datagramRxInputChar(const uint8_t c)
+void datagramRxInputChar(const uint8_t c)
 {
   static bool busy = false;
   static int flagCnt;
-  bool success = false;
 
   if(c != FLAG) {
     if(busy) {
@@ -117,17 +117,13 @@ bool datagramRxInputChar(const uint8_t c)
       rxSeq = c - NOTFLAG;
       datagramSize = 0;
     } else
-      datagramRxError("BAD START", c);
+      datagramRxError("BAD_START", c);
     
     flagCnt = 0;
-  } else if(++flagCnt > 1) {
-    if(busy)
-      success = datagramRxEnd();
-        
+  } else if(++flagCnt > 1 && busy) {
+    breakDetected();
     busy = false;
   }
-  
-  return success;
 }
 
 

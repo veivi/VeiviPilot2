@@ -11,7 +11,7 @@ void datagramTxStartLocal(uint8_t );
 void datagramTxOutByte(const uint8_t c);
 void datagramTxOut(const uint8_t *data, int l);
 void datagramTxEnd(void);
-bool datagramRxInputChar(const uint8_t c);
+void datagramRxInputChar(const uint8_t c);
 
 #define DG_STATUS        0
 #define DG_HEARTBEAT     1
