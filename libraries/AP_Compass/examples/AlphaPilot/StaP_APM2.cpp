@@ -157,7 +157,8 @@ extern "C" int stap_telemetryTransmit(const uint8_t *buffer, int size)
   static bool initd = false;
 
   if(!initd) {
-    hal.uartB->begin(57600);
+    //    hal.uartB->begin(57600);
+    hal.uartB->begin(115200);
     initd = true;
   }
   
