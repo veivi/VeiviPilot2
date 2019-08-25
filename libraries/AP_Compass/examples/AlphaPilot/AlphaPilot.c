@@ -1722,7 +1722,7 @@ void gpsTask()
 //
 
 const float pusherBoost_c = 0.3f;
-const float pusherBias_c = -3.5f/RADIAN;
+const float pusherBias_c = -2.75f/RADIAN;
 
 void elevatorModule()
 {
