@@ -83,13 +83,12 @@ static void breakDetected(void)
       datagramsGood++;
       datagramBytes += payload;
 
-      uint8_t delta = (rxSeq - rxSeqLast + (SEQMASK+1)) & SEQMASK;
+      uint8_t delta = (rxSeq - rxSeqLast + SEQMASK) & SEQMASK;
 
-      if(delta > 1) {
-	datagramsLost += delta - 1;
-	datagramRxError("LOST_PKT", delta - 1);
-      }
+      if(delta != 0)
+	datagramRxError("LOST_PKT", delta);
 	    
+      datagramsLost += delta;
       rxSeqLast = rxSeq;
 
       datagramInterpreter(datagramRxStore, payload);
