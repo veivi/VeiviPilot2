@@ -29,9 +29,9 @@ void datagramRxError(const char *error, uint16_t code)
   consolePrintLn(")");
 }
   
-void datagramInterpreter(uint8_t t, uint8_t *data, int size)
+void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
 {
-  switch(t) {
+  switch(kind) {
   case DG_HEARTBEAT:
     if(!vpStatus.consoleLink) {
       consoleNoteLn_P(CS_STRING("Console CONNECTED"));
@@ -62,9 +62,19 @@ void datagramInterpreter(uint8_t t, uint8_t *data, int size)
     break;
     
   default:
-    consoleNote_P(CS_STRING("FUNNY DATAGRAM TYPE "));
-    consolePrintLnI(t);
+    consoleNote_P(CS_STRING("FUNNY DATAGRAM KIND "));
+    consolePrintLnI(kind);
   }
+}
+
+void datagramInterpreter(const uint8_t *data, int size)
+{
+  if(size < 1) {
+    datagramRxError("EMPTY", 0);
+    return;
+  }
+
+  datagramInterpreterKind(data[0], &data[1], size - 1);
 }
 
 void datagramSerialOut(uint8_t c)

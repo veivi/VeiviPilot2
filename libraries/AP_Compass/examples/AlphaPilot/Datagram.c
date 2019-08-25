@@ -8,8 +8,9 @@ static int datagramSize = 0;
 static uint8_t rxSeq, rxSeqLast;
 uint16_t datagramsGood, datagramsLost, datagramBytes;
 
-#define FLAG       0xAB
-#define NOTFLAG    ((~FLAG) & 0xFF)
+#define FLAG       0xAA
+#define NOTFLAG    (FLAG+1)
+#define SEQMASK    0x7F
 
 static void outputBreak()
 {
@@ -46,7 +47,7 @@ void datagramTxStart(uint8_t dg)
   
   datagramSerialOut(NOTFLAG + datagramTxSeq);
   crcStateTx = crc16_update(0xFFFF, NOTFLAG + datagramTxSeq);
-  datagramTxSeq = (datagramTxSeq + 1) & 0x3f;
+  datagramTxSeq = (datagramTxSeq + 1) & SEQMASK;
   datagramTxOutByte((const uint8_t) dg);
 }
 
@@ -67,22 +68,22 @@ void datagramTxEnd(void)
 
 static void storeByte(const uint8_t c)
 {
-  crcStateRx = crc16_update(crcStateRx, c);
-  
   if(datagramSize < maxDatagramSize)
     datagramRxStore[datagramSize++] = c;
 }
   
 static void breakDetected(void)
 {
-  if(datagramSize > 2) {
-    uint16_t crc = *((uint16_t*) &datagramRxStore[datagramSize-2]);
-        
-    if(crcStateRx == crc) {
+  if(datagramSize >= sizeof(uint16_t)) {
+    uint16_t crc =
+      *((uint16_t*) &datagramRxStore[datagramSize-sizeof(uint16_t)]);
+    int payload = datagramSize - sizeof(uint16_t);
+    
+    if(crc == crc16(crcStateRx, datagramRxStore, payload)) {
       datagramsGood++;
-      datagramBytes += datagramSize - 2;
+      datagramBytes += payload;
 
-      uint8_t delta = (rxSeq - rxSeqLast + 0x40) & 0x3F;
+      uint8_t delta = (rxSeq - rxSeqLast + (SEQMASK+1)) & SEQMASK;
 
       if(delta > 1) {
 	datagramsLost += delta - 1;
@@ -91,11 +92,11 @@ static void breakDetected(void)
 	    
       rxSeqLast = rxSeq;
 
-      datagramInterpreter(datagramRxStore[0], &datagramRxStore[1], datagramSize-3);
+      datagramInterpreter(datagramRxStore, payload);
     } else
       datagramRxError("CRC_FAIL", crc);
   } else
-    datagramRxError("SHORT_DG", datagramSize);
+    datagramRxError("SHORT", datagramSize);
     
   datagramSize = 0;
 }
@@ -111,13 +112,16 @@ void datagramRxInputChar(const uint8_t c)
 	storeByte(FLAG);
       else
 	storeByte(c);
-    } else if(c >= NOTFLAG && c <= NOTFLAG + 0x3F) {
-      busy = true;
-      crcStateRx = crc16_update(0xFFFF, c);
-      rxSeq = c - NOTFLAG;
-      datagramSize = 0;
-    } else
-      datagramRxError("BAD_START", c);
+    } else {
+      uint8_t seq = c - NOTFLAG;
+      if(seq <= SEQMASK) {
+	busy = true;
+	crcStateRx = crc16_update(0xFFFF, c);
+	rxSeq = seq;
+	datagramSize = 0;
+      } else
+	datagramRxError("BAD_START", c);
+    }
     
     flagCnt = 0;
   } else if(++flagCnt > 1 && busy) {
