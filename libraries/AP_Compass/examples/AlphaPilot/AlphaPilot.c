@@ -370,7 +370,7 @@ void sensorTaskSync()
   }
 
   //
-  // Primary IAS data filtering
+  // Primary IAS data filtering & interpretation
   //
   
   primaryIASData = swAvgInput(&primaryIASDataFilter, primaryIASData);
