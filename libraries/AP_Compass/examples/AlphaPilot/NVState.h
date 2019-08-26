@@ -96,7 +96,7 @@ void storeParams(void);
 bool readNVState(void);
 void storeNVState(void);
 void printParams(void);
-void deriveParams();
+void derivedValidate();
 void derivedInvalidate();
 int maxModels(void);
 void readData(uint8_t *data, int size);

@@ -384,7 +384,7 @@ void sensorTaskSync()
   // Derived values
   //
     
-  deriveParams();
+  derivedValidate();
   
   vpFlight.ball = atan2f(-vpFlight.accY, fabs(vpFlight.accZ));
 
@@ -2196,7 +2196,7 @@ void downlinkTask()
 
 void controlTaskGroup()
 {
-  deriveParams();
+  derivedValidate();
   sensorTaskSync();
   receiverTask();
   controlTask();
@@ -2211,7 +2211,7 @@ void configTaskGroup()
     // Flap setting or mass has changed
     derivedInvalidate();
   
-  deriveParams();
+  derivedValidate();
   
   statusTask();
   configurationTask();

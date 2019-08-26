@@ -165,7 +165,7 @@ void printParams()
 {
   int j = 0;
   
-  deriveParams();
+  derivedValidate();
     
   consoleNote_P(CS_STRING("  NAME \""));
   consolePrint(vpParam.name);
@@ -379,7 +379,7 @@ void derivedInvalidate()
   vpDerived.valid = false;
 }
 
-void deriveParams()
+void derivedValidate()
 {
   int i = 0;
   
