@@ -411,10 +411,6 @@ void sensorTaskSlow()
     fieldStrength = (float) raw / (1L<<(CHAR_BIT*sizeof(raw)));
 }
 
-void telemetryTask()
-{
-}
-
 void monitorTask()
 {
   static uint32_t prevMonitor;
