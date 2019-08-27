@@ -20,9 +20,6 @@ NewI2C I2c = NewI2C();
 
 volatile uint8_t nestCount = 0;
 
-
-static uint16_t sensorHash = 0xFFFF;
-
 extern "C" void stap_reboot(bool bootloader)
 {/*
   if(bootloader)
@@ -172,12 +169,6 @@ extern "C" int stap_telemetryTransmitChar(uint8_t c)
 
 extern "C" void stap_telemetrySync()
 {
-}
-
-void stap_entropyDigest(const uint8_t *value, int size)
-{
-  sensorHash = crc16(sensorHash, value, size);
-  srand(sensorHash);
 }
 
 STAP_MICROS_T stap_currentMicros;

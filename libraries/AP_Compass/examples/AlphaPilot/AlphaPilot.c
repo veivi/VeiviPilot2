@@ -59,7 +59,6 @@ void alphaTask()
 
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     samplerInput(&alphaSampler, raw);
-    stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
 }
 
@@ -200,7 +199,6 @@ void airspeedTask()
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     // We got a good value
     samplerInput(&iasSampler, raw);
-    stap_entropyDigest((uint8_t*) &raw, sizeof(raw));
   }
 }
 

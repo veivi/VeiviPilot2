@@ -134,12 +134,6 @@ void stap_servoOutputInit(void);
 void stap_servoOutput(int i, float fvalue);
 
 //
-// RNG interface
-//
-
-void stap_entropyDigest(const uint8_t *value, int size);
-
-//
 // Host (serial) interface
 //
 
