@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "Objects.h"
+#include "Time.h"
 
 typedef struct {
     const uint8_t *data;
@@ -23,7 +24,7 @@ typedef struct BaseI2CTarget {
   const char *name;
   bool warn, failed;
   int failCount;
-  uint32_t failedAt, backoff;
+  TIME_MILLIS_T failedAt, backoff;
   uint32_t entropyAcc;
   uint16_t entropyCount;
   float entropy;

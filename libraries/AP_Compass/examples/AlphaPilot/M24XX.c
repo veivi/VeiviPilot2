@@ -15,7 +15,7 @@ uint32_t m24xxBytesWritten;
 
 static BaseI2CTarget_t target = { "M24xx" };
 
-static uint32_t lastWriteTime;
+static STAP_MILLIS_T lastWriteTime;
 static uint8_t cacheData[CACHE_PAGE];
 static bool cacheFlag[CACHE_PAGE];
 static bool cacheValid, cacheModified;
@@ -232,7 +232,7 @@ bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size)
 void m24xxTest(void)
 {
   static bool success = true, initialized = false;
-  static uint32_t startTime;
+  static STAP_MILLIS_T startTime;
   static uint16_t state = 0xFFFF;
   uint32_t addr;
   static uint8_t size = TEST_SIZE;

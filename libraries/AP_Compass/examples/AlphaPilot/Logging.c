@@ -212,7 +212,7 @@ void logDumpBinary(void)
   
   struct LogInfo info = {
     nvState.logStamp,
-    nvState.testNum,
+    nvState.testNum[0],
     logLen,
     LOG_HZ,
     vpParam.weightDry,
@@ -228,10 +228,12 @@ void logDumpBinary(void)
   printParams();
   
   consolePrintLn("");
+  /*
   consoleNote_P(CS_STRING("TEST CH = "));
   consolePrintLnUI(nvState.testNum);
   consolePrintLn("");
-
+  */
+  
   int32_t total = 0, block = 0;
 
   datagramTxStartLocal(DG_LOGDATA);
@@ -263,9 +265,9 @@ void logDumpBinary(void)
   datagramTxEnd();
 }
 
-bool logInit(uint32_t maxDuration)
+bool logInit(STAP_MILLIS_T maxDuration)
 {
-  uint32_t current = stap_timeMillis();
+  STAP_MILLIS_T current = stap_timeMillis();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;
   static bool endFound = false;
   uint32_t eepromSize = 0;
@@ -432,12 +434,11 @@ void logSave()
   }
 }
 
-uint32_t previousForced;
-
 void logObjects()
 {
   bool force = false;
   int i = 0;
+  static STAP_MILLIS_T previousForced;
   
   if(stap_timeMillis() > previousForced+10e3) {
     previousForced = stap_timeMillis();
@@ -503,7 +504,7 @@ void logTask()
   modeEncoded = encode(mode, sizeof(mode)/sizeof(bool));
   statusEncoded = encode(status, sizeof(status)/sizeof(bool));
   flapEncoded = slopeOutput(&flapActuator);
-  testEncoded = vpMode.test ? nvState.testNum : 0;
+  testEncoded = vpMode.test ? nvState.testNum[vpMode.testCount] : 0;
 
   logObjects();
 }
