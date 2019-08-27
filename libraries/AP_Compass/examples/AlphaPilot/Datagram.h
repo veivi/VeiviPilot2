@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "NVState.h"
 
 #define DG_TRANSMIT_MAX (1<<7)
 
@@ -33,6 +34,7 @@ extern void datagramRxError(const char *, uint16_t code);
 extern uint16_t maxDatagramSize;
 extern uint8_t datagramRxStore[];
 extern bool datagramLocalOnly;
+extern uint32_t datagramLastTxMillis;
 extern uint16_t datagramsGood, datagramsLost, datagramBytes;
 
 struct SimLinkSensor {
@@ -53,6 +55,7 @@ struct TelemetryConfig {
   float trim;
   float maxAlpha, shakerAlpha, threshAlpha;
   float trimIAS, stallIAS, margin;
+  char name[NAME_LEN+1];
 };
 
 struct SimLinkControl {

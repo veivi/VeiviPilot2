@@ -33,7 +33,7 @@ bool stap_trace_char(char c);
 // System interface
 //
 
-extern uint32_t stap_currentMicros; // Updated on every call to currentMicros()
+extern uint32_t stap_currentMicros, stap_currentMillis; // Updated on every call to currentMicros()
 
 void stap_initialize(void);
 void stap_delayMicros(uint32_t x);

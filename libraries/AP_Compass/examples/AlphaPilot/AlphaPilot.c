@@ -2171,6 +2171,8 @@ void downlinkTask()
       .margin = vpParam.thresholdMargin
     };
 
+    strncpy(config.name, vpParam.name, NAME_LEN);
+    
     datagramTxStart(DG_CONFIG);
     datagramTxOut((const uint8_t*) &config, sizeof(config));
     datagramTxEnd();

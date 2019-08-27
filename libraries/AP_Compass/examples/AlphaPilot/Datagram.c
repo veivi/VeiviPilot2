@@ -7,6 +7,7 @@ static uint16_t crcStateTx, crcStateRx;
 static int datagramSize = 0;
 static uint8_t rxSeq, rxSeqLast;
 uint16_t datagramsGood, datagramsLost, datagramBytes;
+uint32_t datagramLastTxMillis;
 
 #define FLAG       0xAA
 #define NOTFLAG    (FLAG+1)
@@ -37,12 +38,11 @@ void datagramTxOut(const uint8_t *data, int l)
     datagramTxOutByte(*data++);
 }
 
-static uint32_t lastTx;
 static uint8_t datagramTxSeq;
 
 void datagramTxStart(uint8_t dg)
 {
-  if(stap_currentMicros - lastTx > 0.1e6)
+  if(stap_currentMillis - datagramLastTxMillis > 0.1e3)
     outputBreak();
   
   datagramSerialOut(NOTFLAG + datagramTxSeq);
@@ -62,7 +62,7 @@ void datagramTxEnd(void)
   uint16_t buf = crcStateTx;
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
-  lastTx = stap_currentMicros;
+  datagramLastTxMillis = stap_currentMillis;
   datagramLocalOnly = false;
 }
 

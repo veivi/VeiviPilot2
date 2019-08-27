@@ -3,7 +3,6 @@
 #include "Datagram.h"
 #include "Console.h"
 #include "Objects.h"
-#include "NVState.h"
 
 void consolevNotef(const char *s, va_list argp);
 void consoleNotef(const char *s, ...);
@@ -20,13 +19,9 @@ static int column;
 
 static void consoleHeartbeat()
 {
-  static uint32_t last;
-  
-  if(stap_timeMillis() - last > 0.8e3) {
+  if(stap_timeMillis() - datagramLastTxMillis > 0.9e3) {
     datagramTxStart(DG_HEARTBEAT);
-    datagramTxOut(vpParam.name, NAME_LEN);
     datagramTxEnd();
-    last = stap_timeMillis();
   }
 }
 
