@@ -49,6 +49,7 @@ float constrainServoOutput(float value)
 float alphaPredictInverse(float x)
 {
   derivedValidate();
+  
   if(vpDerived.coeff_FF[2] != 0.0f && x > vpDerived.apexAlpha)
     return vpDerived.apexElev;
   else
@@ -58,7 +59,10 @@ float alphaPredictInverse(float x)
 float alphaPredict(float y)
 {
   derivedValidate();
-  const float a = vpDerived.coeff_FF[2], b = vpDerived.coeff_FF[1], c = vpDerived.coeff_FF[0];
+  
+  const float
+    a = vpDerived.coeff_FF[2], b = vpDerived.coeff_FF[1],
+    c = vpDerived.coeff_FF[0];
   
   if(a == 0.0f)
     return (y - c)/b;
@@ -107,7 +111,9 @@ float dynamicPressureInverse(float pressure)
 float coeffOfLiftGeneric(float aoa, const float coeff[])
 {
   derivedValidate();
+  
   aoa = clamp(aoa, -vpDerived.maxAlpha, vpDerived.maxAlpha);
+  
   return polynomial(CoL_degree, aoa, coeff);
 }
 
