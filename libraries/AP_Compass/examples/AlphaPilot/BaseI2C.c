@@ -59,8 +59,8 @@ void basei2cEntropySample(BaseI2CTarget_t *target, uint16_t v)
   target->entropyAcc += ABS(diff);
   target->entropyCount++;
 
-  if(stap_currentMicros - target->lastEntropy > 0.3e6) {
-    target->lastEntropy = stap_currentMicros;
+  if(stap_currentMillis - target->lastEntropy > 0.3e3) {
+    target->lastEntropy = stap_currentMillis;
     target->entropy = (float) target->entropyAcc / target->entropyCount;
     target->entropyAcc = target->entropyCount = 0;
   }

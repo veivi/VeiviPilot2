@@ -231,7 +231,8 @@ void receiverTask()
 
 #ifdef CH_RUD 
   if(inputValid(CH_RUD))
-    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_BIG, &vpInput.rudderPilotInput);
+    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_BIG,
+				   &vpInput.rudderPilotInput);
 #else
   vpInput.rudder = 0;
 #endif
