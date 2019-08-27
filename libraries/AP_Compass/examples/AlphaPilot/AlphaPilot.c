@@ -2114,6 +2114,8 @@ void blinkTask()
 
 void downlinkTask()
 {
+  static uint32_t lastStatus, lastData, lastConfig;
+
   uint16_t status =
     ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
     | (logReady(false) ? (1<<5) : 0)
@@ -2127,8 +2129,6 @@ void downlinkTask()
       | (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
   }
     
-  static uint32_t lastStatus, lastData, lastConfig;
-
   if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
     //
     // Telemetry(Data)

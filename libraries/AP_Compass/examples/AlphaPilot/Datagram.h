@@ -34,7 +34,7 @@ extern void datagramRxError(const char *, uint16_t code);
 extern uint16_t maxDatagramSize;
 extern uint8_t datagramRxStore[];
 extern bool datagramLocalOnly;
-extern uint32_t datagramLastTxMillis;
+extern uint32_t datagramLastTxMillis, datagramLastRxMillis;
 extern uint16_t datagramsGood, datagramsLost, datagramBytes;
 
 struct SimLinkSensor {

@@ -7,7 +7,7 @@ static uint16_t crcStateTx, crcStateRx;
 static int datagramSize = 0;
 static uint8_t rxSeq, rxSeqLast;
 uint16_t datagramsGood, datagramsLost, datagramBytes;
-uint32_t datagramLastTxMillis;
+uint32_t datagramLastTxMillis, datagramLastRxMillis;
 
 #define FLAG       0xAA
 #define NOTFLAG    (FLAG+1)
@@ -62,8 +62,8 @@ void datagramTxEnd(void)
   uint16_t buf = crcStateTx;
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
-  datagramLastTxMillis = stap_currentMillis;
   datagramLocalOnly = false;
+  datagramLastTxMillis = stap_currentMillis;  
 }
 
 static void storeByte(const uint8_t c)
@@ -91,6 +91,7 @@ static void breakDetected(void)
       datagramsLost += delta;
       rxSeqLast = rxSeq;
 
+      datagramLastRxMillis = stap_currentMillis;  
       datagramInterpreter(datagramRxStore, payload);
     } else
       datagramRxError("CRC_FAIL", crc);
