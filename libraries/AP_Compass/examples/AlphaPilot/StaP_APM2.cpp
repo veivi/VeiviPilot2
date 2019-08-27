@@ -180,19 +180,21 @@ void stap_entropyDigest(const uint8_t *value, int size)
   srand(sensorHash);
 }
 
-uint32_t stap_currentMicros, stap_currentMillis;
+STAP_MICROS_T stap_currentMicros;
+STAP_MILLIS_T stap_currentMillis;
 
-extern "C" uint32_t stap_timeMicros(void)
+extern "C" STAP_MICROS_T stap_timeMicros(void)
 {
   stap_currentMicros = hal.scheduler->micros();
-  stap_currentMillis = hal.scheduler->millis();
+  stap_currentMillis = (STAP_MILLIS_T) (stap_currentMicros>>10);
+  
   return stap_currentMicros;
 }
     
-extern "C" uint32_t stap_timeMillis(void)
+extern "C" STAP_MILLIS_T stap_timeMillis(void)
 {
-  stap_currentMillis = hal.scheduler->millis();
-  return hal.scheduler->millis();
+  stap_timeMicros();
+  return stap_currentMillis;
 }
     
 extern "C" void stap_delayMicros(uint32_t x)

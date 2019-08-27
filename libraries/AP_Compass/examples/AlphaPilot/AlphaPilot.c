@@ -231,7 +231,8 @@ void receiverTask()
 
 #ifdef CH_RUD 
   if(inputValid(CH_RUD))
-    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_BIG, &vpInput.rudderPilotInput);
+    vpInput.rudder = applyNullZone(inputValue(CH_RUD), NZ_BIG,
+				   &vpInput.rudderPilotInput);
 #else
   vpInput.rudder = 0;
 #endif
@@ -416,13 +417,13 @@ void sensorTaskSlow()
 
 void monitorTask()
 {
-  static uint32_t prevMonitor;
+  static STAP_MILLIS_T prevMonitor;
  
   // Load measurement
 
   vpStatus.load =
     mixValue(RATIO(1/5), vpStatus.load,
-	     1.0f - (float) idleMicros/(stap_currentMicros - prevMonitor));
+	     1.0f - (float) idleMicros/1000/(stap_currentMillis - prevMonitor));
   
   idleMicros = 0;
 
@@ -432,18 +433,18 @@ void monitorTask()
   
   // Sim link monitoring
 
-  simInputFreq = 1.0e6f * simFrames / (stap_currentMicros - prevMonitor);
+  simInputFreq = 1.0e3f * simFrames / (stap_currentMillis - prevMonitor);
   simFrames = 0;
 
   // Log bandwidth
 
-  logBandWidth = 1.0e6f * m24xxBytesWritten / (stap_currentMicros - prevMonitor);
+  logBandWidth = 1.0e3f * m24xxBytesWritten / (stap_currentMillis - prevMonitor);
   m24xxBytesWritten = 0;
   
   // PPM monitoring
 
   if(!inputSourceGood())
-    lastPPMWarn = stap_currentMicros;
+    lastPPMWarn = stap_currentMillis;
   
   // I2C errors
 
@@ -457,7 +458,7 @@ void monitorTask()
     consolePrintLn(")");
   }
 
-  prevMonitor = stap_currentMicros;
+  prevMonitor = stap_currentMillis;
 }
 
 //
@@ -502,31 +503,31 @@ void statusTask()
 {
   // Cycle time
   
-  static uint32_t statusCycleEnded;
+  static STAP_MILLIS_T statusCycleEnded;
   float statusCycle = 0.0f;
   
   if(statusCycleEnded > 0)
-    statusCycle = (stap_currentMicros - statusCycleEnded)/1.0e6;
+    statusCycle = (stap_currentMillis - statusCycleEnded)/1.0e3;
   
-  statusCycleEnded = stap_currentMicros;
+  statusCycleEnded = stap_currentMillis;
 
   //
   // Canopy open/closed
   //
 
-  static uint32_t lastCanopy;
+  static STAP_MILLIS_T lastCanopy;
   
   if(STAP_CANOPY_CLOSED) {
     if(vpStatus.canopyClosed)
-      lastCanopy = stap_currentMicros;
-    else if(stap_currentMicros - lastCanopy > 0.5e6) {
+      lastCanopy = stap_currentMillis;
+    else if(stap_currentMillis - lastCanopy > 0.5e3) {
       consoleNoteLn_P(CS_STRING("Canopy is CLOSED"));
       vpStatus.canopyClosed = true;
     }
   } else {
     if(!vpStatus.canopyClosed)
-      lastCanopy = stap_currentMicros;
-    else if(stap_currentMicros - lastCanopy > 0.5e6) {
+      lastCanopy = stap_currentMillis;
+    else if(stap_currentMillis - lastCanopy > 0.5e3) {
       consoleNoteLn_P(CS_STRING("Canopy is OPEN"));
       vpStatus.canopyClosed = false;
     }
@@ -571,7 +572,7 @@ void statusTask()
   // Pitot block detection
   //
   
-  static uint32_t iasLastAlive; 
+  static STAP_MILLIS_T iasLastAlive; 
 
   damperInput(&avgDynP, vpFlight.dynP);
 
@@ -582,8 +583,8 @@ void statusTask()
       vpStatus.pitotBlocked = false;
     }
     
-    iasLastAlive = stap_currentMicros;
-  } else if(stap_currentMicros - iasLastAlive > 10e6
+    iasLastAlive = stap_currentMillis;
+  } else if(stap_currentMillis - iasLastAlive > 10e3
 	    && !vpStatus.pitotBlocked) {
     consoleNoteLn_P(CS_STRING("Pitot appears BLOCKED"));
     vpStatus.pitotBlocked = true;
@@ -593,7 +594,7 @@ void statusTask()
   // Do we have positive airspeed?
   //
 
-  static uint32_t lastIAS, lastStall, lastAlphaLocked;
+  static STAP_MILLIS_T lastIAS, lastStall, lastAlphaLocked;
 
   if(vpStatus.pitotFailed) {
     if(!vpStatus.positiveIAS) {
@@ -602,15 +603,15 @@ void statusTask()
     }
   } else if(vpFlight.relativeIAS < RATIO(4/5)) {
     if(!vpStatus.positiveIAS)
-      lastIAS = stap_currentMicros;
-    else if(stap_currentMicros - lastIAS > 0.3e6f) {
+      lastIAS = stap_currentMillis;
+    else if(stap_currentMillis - lastIAS > 0.3e3f) {
       consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
   } else {
     if(vpStatus.positiveIAS)
-      lastIAS = stap_currentMicros;
-    else if(stap_currentMicros - lastIAS > 0.3e6f) {
+      lastIAS = stap_currentMillis;
+    else if(stap_currentMillis - lastIAS > 0.3e3f) {
       consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
       vpStatus.positiveIAS = true;
     }
@@ -630,7 +631,7 @@ void statusTask()
     || turnRate > 10.0f/RADIAN
     || fabsf(vpFlight.acc - damperOutput(&accAvg)) > 0.5f;
   
-  static uint32_t lastMotion;
+  static STAP_MILLIS_T lastMotion;
 
   if(motionDetected) {
     if(vpStatus.fullStop) {
@@ -638,9 +639,9 @@ void statusTask()
       vpStatus.fullStop = false;
     }
     
-    lastMotion = stap_currentMicros;
+    lastMotion = stap_currentMillis;
 
-  } else if(stap_currentMicros - lastMotion > 5.0e6 && !vpStatus.fullStop) {
+  } else if(stap_currentMillis - lastMotion > 5.0e3 && !vpStatus.fullStop) {
     consoleNoteLn_P(CS_STRING("We have FULLY STOPPED"));
     vpStatus.fullStop = true;
     vpStatus.aloft = false;
@@ -657,7 +658,7 @@ void statusTask()
       // Failed alpha is also unreliable
     
       vpStatus.alphaUnreliable = true;
-      lastAlphaLocked = stap_currentMicros;
+      lastAlphaLocked = stap_currentMillis;
   } else {
     const float diff = fabsf(vpFlight.accDir - vpFlight.relWind),
       disagreement = MIN(diff, 2*PI_F - diff);
@@ -665,15 +666,15 @@ void statusTask()
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
        || (fabsf(vpFlight.alpha) < 60.0f/RADIAN && disagreement > 15.0f/RADIAN)) {
       if(!vpStatus.alphaUnreliable)
-	lastAlphaLocked = stap_currentMicros;
-      else if(stap_currentMicros - lastAlphaLocked > 0.1e6) {
+	lastAlphaLocked = stap_currentMillis;
+      else if(stap_currentMillis - lastAlphaLocked > 0.1e3) {
 	consoleNoteLn_P(CS_STRING("Alpha sensor appears RELIABLE"));
 	vpStatus.alphaUnreliable = false;
       }
     } else {
       if(vpStatus.alphaUnreliable)
-	lastAlphaLocked = stap_currentMicros;
-      else if(stap_currentMicros - lastAlphaLocked > 0.5e6) {
+	lastAlphaLocked = stap_currentMillis;
+      else if(stap_currentMillis - lastAlphaLocked > 0.5e3) {
 	consoleNoteLn_P(CS_STRING("Alpha sensor UNRELIABLE"));
 	vpStatus.alphaUnreliable = true;
       }
@@ -684,7 +685,7 @@ void statusTask()
   // Flare detection
   //
 
-  static uint32_t lastFlare;
+  static STAP_MILLIS_T lastFlare;
   
   if(!(vpMode.test && nvState.testNum[vpMode.testCount] > 0)
      && vpMode.slowFlight
@@ -703,9 +704,9 @@ void statusTask()
     }
     
     vpStatus.flare = true;
-    lastFlare = stap_currentMicros;
+    lastFlare = stap_currentMillis;
     
-  } else if(vpStatus.flare && stap_currentMicros - lastFlare > 0.7e6) {
+  } else if(vpStatus.flare && stap_currentMillis - lastFlare > 0.7e3) {
     consoleNoteLn_P(CS_STRING("Flare ended"));
     vpStatus.flare = false;
   }
@@ -718,15 +719,15 @@ void statusTask()
      || vpMode.takeOff || vpStatus.flare
      || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
     if(!vpStatus.stall)
-      lastStall = stap_currentMicros;
-    else if(stap_currentMicros - lastStall > 0.05e6) {
+      lastStall = stap_currentMillis;
+    else if(stap_currentMillis - lastStall > 0.05e3) {
       consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
       vpStatus.stall = false;
     }
   } else {
     if(vpStatus.stall)
-      lastStall = stap_currentMicros;
-    else if(stap_currentMicros - lastStall > 0.05e6) {
+      lastStall = stap_currentMillis;
+    else if(stap_currentMillis - lastStall > 0.05e3) {
       consoleNoteLn_P(CS_STRING("We're STALLING"));
       vpStatus.stall = true;
     }
@@ -750,15 +751,15 @@ void statusTask()
   // Attitude is upright?
   //
   
-  static uint32_t lastUpright;
+  static STAP_MILLIS_T lastUpright;
   
   if(fabsf(vpFlight.bank) < 15.0f/RADIAN && fabsf(vpFlight.pitch) < 15.0f/RADIAN) {
     vpStatus.upright = true;
-    lastUpright = stap_currentMicros;
+    lastUpright = stap_currentMillis;
   } else {
     if(!vpStatus.upright)
-      lastUpright = stap_currentMicros;
-    else if(stap_currentMicros - lastUpright > 0.5e6)
+      lastUpright = stap_currentMillis;
+    else if(stap_currentMillis - lastUpright > 0.5e3)
       vpStatus.upright = false;
   }
 
@@ -773,7 +774,7 @@ void statusTask()
     liftExpected = coeffOfLift(vpFlight.alpha) * vpFlight.dynP,
     liftMax = vpDerived.maxCoeffOfLift * vpFlight.dynP;
       
-  static uint32_t lastWoW;
+  static STAP_MILLIS_T lastWoW;
   
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
@@ -784,20 +785,20 @@ void statusTask()
       vpStatus.weightOnWheels = false;
     }
       
-    lastWoW = stap_currentMicros;
+    lastWoW = stap_currentMillis;
   } else if(vpStatus.positiveIAS
 	    && (liftAvg < weight/2 || liftAvg > 1.5f*weight
 		|| lift < liftExpected + liftMax/3)) {
     if(!vpStatus.weightOnWheels)
-      lastWoW = stap_currentMicros;
-    else if(stap_currentMicros - lastWoW > 0.3e6) {
+      lastWoW = stap_currentMillis;
+    else if(stap_currentMillis - lastWoW > 0.3e3) {
       consoleNoteLn_P(CS_STRING("Weight is probably OFF THE WHEELS"));
       vpStatus.weightOnWheels = false;
     }
   } else {
     if(vpStatus.weightOnWheels)
-      lastWoW = stap_currentMicros;
-    else if(stap_currentMicros - lastWoW > 0.2e6) {
+      lastWoW = stap_currentMillis;
+    else if(stap_currentMillis - lastWoW > 0.2e3) {
       consoleNoteLn_P(CS_STRING("We seem to have WEIGHT ON WHEELS"));
       vpStatus.weightOnWheels = true;
     }
@@ -2044,7 +2045,7 @@ void controlTask()
   // Cycle time bookkeeping 
   //
   
-  static uint32_t controlCycleEnded;
+  static STAP_MICROS_T controlCycleEnded;
  
   if(controlCycleEnded > 0)
     controlCycle = (stap_currentMicros - controlCycleEnded)/1.0e6;
@@ -2093,7 +2094,7 @@ void heartBeatTask()
   if(!heartBeatCount && linkDownCount++ > 2)
     vpStatus.consoleLink = vpStatus.simulatorLink = false;
 
-  if(vpStatus.simulatorLink && stap_currentMicros - simTimeStamp > 1.0e6) {
+  if(vpStatus.simulatorLink && stap_currentMillis - simTimeStamp > 1.0e3) {
     consoleNoteLn_P(CS_STRING("Simulator link LOST"));
     vpStatus.simulatorLink = false;
   }    
@@ -2117,7 +2118,7 @@ void blinkTask()
 
 void downlinkTask()
 {
-  static uint32_t lastStatus, lastData, lastConfig;
+  static STAP_MILLIS_T lastStatus, lastData, lastConfig;
 
   uint16_t status =
     ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
@@ -2132,7 +2133,7 @@ void downlinkTask()
       | (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
   }
     
-  if(stap_currentMicros - lastData > MAX_LATENCY_DATA) {
+  if(stap_currentMillis - lastData > MAX_LATENCY_DATA) {
     //
     // Telemetry(Data)
     //
@@ -2145,8 +2146,8 @@ void downlinkTask()
     datagramTxOut((const uint8_t*) &data, sizeof(data));
     datagramTxEnd();
 
-    lastData = lastStatus = stap_currentMicros;
-  } else if(stap_currentMicros - lastStatus > MAX_LATENCY_STATUS) {
+    lastData = lastStatus = stap_currentMillis;
+  } else if(stap_currentMillis - lastStatus > MAX_LATENCY_STATUS) {
     //
     // Telemetry(Status)
     //
@@ -2155,10 +2156,10 @@ void downlinkTask()
     datagramTxOut((uint8_t*) &status, sizeof(status));
     datagramTxEnd();
 
-    lastStatus = stap_currentMicros;
+    lastStatus = stap_currentMillis;
     vpStatus.trimLimited = false;
 
-  } else if(stap_currentMicros - lastConfig > MAX_LATENCY_CONFIG) {
+  } else if(stap_currentMillis - lastConfig > MAX_LATENCY_CONFIG) {
     //
     // Telemetry(Configuration)
     //
@@ -2180,7 +2181,7 @@ void downlinkTask()
     datagramTxOut((const uint8_t*) &config, sizeof(config));
     datagramTxEnd();
 
-    lastConfig = stap_currentMicros;
+    lastConfig = stap_currentMillis;
   }
 
   //

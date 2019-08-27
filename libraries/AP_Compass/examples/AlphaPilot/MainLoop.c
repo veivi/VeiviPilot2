@@ -53,7 +53,7 @@ void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
       }
 
       memcpy(&sensorData, data, sizeof(sensorData));
-      simTimeStamp = stap_currentMicros;
+      simTimeStamp = stap_currentMillis;
       simFrames++;    
     }
     break;
@@ -186,7 +186,7 @@ void mainLoopSetup()
 void mainLoop() 
 {
   bool idling = false;
-  uint32_t idleStarted = 0, idleEnded = 0;
+  STAP_MICROS_T idleStarted = 0, idleEnded = 0;
   
   while(true) {
     idleEnded = stap_timeMicros();
@@ -203,7 +203,7 @@ void mainLoop()
       idling = true;
       
       if(!logReady(false))
-	logInit(10);
+	logInit(20);
 
       idleStarted = stap_timeMicros();
     }
