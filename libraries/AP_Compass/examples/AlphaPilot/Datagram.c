@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "StaP.h"
+#include "Time.h"
 #include "Datagram.h"
 #include "CRC16.h"
 
@@ -15,7 +15,7 @@ VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis;
 
 void datagramHeartbeat(bool force)
 {
-  if(force || vpTimeMillis() - datagramLastTxMillis > 0.9e3) {
+  if(force || vpTimeMillisApprox - datagramLastTxMillis > 0.9e3) {
     datagramTxStart(DG_HEARTBEAT);
     datagramTxEnd();
   }
@@ -50,7 +50,7 @@ static uint8_t datagramTxSeq;
 
 void datagramTxStart(uint8_t dg)
 {
-  if(vpTimeMillisApprox - datagramLastTxMillis > 0.1e3)
+  if(vpTimeMillisApprox - datagramLastTxMillis > 0.5e3)
     outputBreak();
   
   datagramSerialOut(NOTFLAG + datagramTxSeq);
