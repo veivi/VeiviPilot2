@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "Time.h"
 
 #define INERTIA 2
 
@@ -11,7 +12,7 @@ typedef struct Button {
   uint8_t inertiaCount;
   bool inputState;
   bool statePrev, stateLazy, pulseArmed;
-  uint32_t transition;
+  VP_TIME_MICROS_T transition;
   uint8_t count;
   bool pulseDouble, pulseSingle, buttonPress;
 } Button_t;

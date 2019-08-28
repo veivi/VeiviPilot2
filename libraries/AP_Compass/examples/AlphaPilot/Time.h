@@ -1,14 +1,19 @@
-#ifndef TIME_H
-#define TIME_H
+#ifndef VP_TIME_H
+#define VP_TIME_H
 
 #include <stdint.h>
 
-typedef uint64_t TIME_MICROS_T;
-typedef uint32_t TIME_MILLIS_T;
-/*
-extern STAP_MICROS_T stap_currentMicros;
-extern STAP_MILLIS_T stap_currentMillis; // Updated on every call to currentMicros()
-*/
+typedef uint64_t VP_TIME_MICROS_T;
+typedef uint32_t VP_TIME_MILLIS_T;
+
+extern VP_TIME_MICROS_T vpTimeMicrosApprox;
+extern VP_TIME_MILLIS_T vpTimeMillisApprox;
+
+void vpTimeAcquire(void);
+VP_TIME_MICROS_T vpTimeMicrosLive(void);
+VP_TIME_MILLIS_T vpTimeMillisLive(void);
+void vpDelayMillis(VP_TIME_MILLIS_T);
+
 #endif
 
 

@@ -3,6 +3,7 @@
 #include "Datagram.h"
 #include "Console.h"
 #include "Objects.h"
+#include "Time.h"
 
 void consolevNotef(const char *s, va_list argp);
 void consoleNotef(const char *s, ...);
@@ -17,14 +18,6 @@ static uint8_t outputBuf[BUF_SIZE];
 static uint8_t bufPtr;
 static int column;
 
-static void consoleHeartbeat()
-{
-  if(stap_timeMillis() - datagramLastTxMillis > 0.9e3) {
-    datagramTxStart(DG_HEARTBEAT);
-    datagramTxEnd();
-  }
-}
-
 void consoleFlush()
 {
   if(bufPtr > 0) {
@@ -35,7 +28,7 @@ void consoleFlush()
   
   bufPtr = 0;
 
-  consoleHeartbeat();
+  datagramHeartbeat(false);
 }
 
 void consoleOut(const uint8_t c)

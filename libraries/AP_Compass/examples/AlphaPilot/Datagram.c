@@ -7,11 +7,19 @@ static uint16_t crcStateTx, crcStateRx;
 static int datagramSize = 0;
 static uint8_t rxSeq, rxSeqLast;
 uint16_t datagramsGood, datagramsLost, datagramBytes;
-uint32_t datagramLastTxMillis, datagramLastRxMillis;
+VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis;
 
 #define FLAG       0xAA
 #define NOTFLAG    (FLAG+1)
 #define SEQMASK    0x7F
+
+void datagramHeartbeat(bool force)
+{
+  if(force || vpTimeMillisLive() - datagramLastTxMillis > 0.9e3) {
+    datagramTxStart(DG_HEARTBEAT);
+    datagramTxEnd();
+  }
+}
 
 static void outputBreak()
 {
@@ -42,7 +50,7 @@ static uint8_t datagramTxSeq;
 
 void datagramTxStart(uint8_t dg)
 {
-  if(stap_currentMillis - datagramLastTxMillis > 0.1e3)
+  if(vpTimeMillisApprox - datagramLastTxMillis > 0.1e3)
     outputBreak();
   
   datagramSerialOut(NOTFLAG + datagramTxSeq);
@@ -63,7 +71,7 @@ void datagramTxEnd(void)
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
   outputBreak();
   datagramLocalOnly = false;
-  datagramLastTxMillis = stap_currentMillis;  
+  datagramLastTxMillis = vpTimeMillisApprox;  
 }
 
 static void storeByte(const uint8_t c)
@@ -91,7 +99,7 @@ static void breakDetected(void)
       datagramsLost += delta;
       rxSeqLast = rxSeq;
 
-      datagramLastRxMillis = stap_currentMillis;  
+      datagramLastRxMillis = vpTimeMillisApprox;  
       datagramInterpreter(datagramRxStore, payload);
     } else
       datagramRxError("CRC_FAIL", crc);

@@ -171,35 +171,11 @@ extern "C" void stap_telemetrySync()
 {
 }
 
-STAP_MICROS_T stap_currentMicros;
-STAP_MILLIS_T stap_currentMillis;
+extern "C" uint64_t stap_timeMicros(void)
+{
+  return hal.scheduler->micros();
+}
 
-extern "C" STAP_MICROS_T stap_timeMicros(void)
-{
-  stap_currentMicros = hal.scheduler->micros();
-  stap_currentMillis = (STAP_MILLIS_T) (stap_currentMicros>>10);
-  
-  return stap_currentMicros;
-}
-    
-extern "C" STAP_MILLIS_T stap_timeMillis(void)
-{
-  stap_timeMicros();
-  return stap_currentMillis;
-}
-    
-extern "C" void stap_delayMicros(uint32_t x)
-{
-  uint32_t current = stap_timeMicros();
-  while(stap_timeMicros() < current+x);
-}
-  
-extern "C" void stap_delayMillis(uint32_t x)
-{
-  uint32_t current = stap_timeMillis();
-  while(stap_timeMillis() < current+x);
-}
-  
 extern "C" uint32_t stap_memoryFree(void)
 {
   return hal.util->available_memory();

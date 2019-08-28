@@ -11,6 +11,7 @@
 #include "Button.h"
 #include "AS5048B.h"
 #include "MS4525.h"
+#include "Time.h"
 
 const float toc_margin_c = RATIO(3/100);
 
@@ -22,7 +23,7 @@ bool toc_test_mode(bool reset)
 
 bool toc_test_link(bool reset)
 {
-  return stap_currentMicros - lastPPMWarn > 10e6 &&
+  return vpTimeMillisApprox - lastPPMWarn > 10e6 &&
     (vpParam.virtualOnly || ppmFreq > 30) &&
     (!vpParam.virtualOnly || vpStatus.simulatorLink);
 }
@@ -51,23 +52,23 @@ bool toc_test_alpha_sensor(bool reset)
 bool toc_test_alpha_range(bool reset)
 {
   static bool bigAlpha, zeroAlpha;
-  static uint32_t lastNonZeroAlpha, lastSmallAlpha;
+  static VP_TIME_MILLIS_T lastNonZeroAlpha, lastSmallAlpha;
 
   if(reset) {
     zeroAlpha = bigAlpha = false;
-    lastNonZeroAlpha = lastSmallAlpha = stap_currentMicros;
+    lastNonZeroAlpha = lastSmallAlpha = vpTimeMillisApprox;
     
   } else if(!zeroAlpha) {
     if(fabs(vpFlight.alpha) > 1.5/RADIAN) {
-      lastNonZeroAlpha = stap_currentMicros;
-    } else if(stap_currentMicros > lastNonZeroAlpha + 1.0e6) {
+      lastNonZeroAlpha = vpTimeMillisApprox;
+    } else if(vpTimeMillisApprox > lastNonZeroAlpha + 1.0e3) {
       consoleNoteLn_P(CS_STRING("Stable ZERO ALPHA"));
       zeroAlpha = true;
     }
   } else if(!bigAlpha) {
     if(fabsf(vpFlight.alpha - 90/RADIAN) > 30/RADIAN) {
-      lastSmallAlpha = stap_currentMicros;
-    } else if(stap_currentMicros > lastSmallAlpha + 1.0e6) {
+      lastSmallAlpha = vpTimeMillisApprox;
+    } else if(vpTimeMillisApprox > lastSmallAlpha + 1.0e3) {
       consoleNoteLn_P(CS_STRING("Stable BIG ALPHA"));
       bigAlpha = true;
     }

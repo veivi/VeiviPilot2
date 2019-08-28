@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include "AlphaPilot.h"
-#include "StaP.h"
+#include "Time.h"
 #include "Logging.h"
 #include "M24XX.h"
 #include "Console.h"
@@ -265,9 +265,9 @@ void logDumpBinary(void)
   datagramTxEnd();
 }
 
-bool logInit(STAP_MILLIS_T maxDuration)
+bool logInit(VP_TIME_MILLIS_T maxDuration)
 {
-  STAP_MILLIS_T current = stap_timeMillis();
+  VP_TIME_MILLIS_T current = vpTimeMillisLive();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;
   static bool endFound = false;
   uint32_t eepromSize = 0;
@@ -331,7 +331,7 @@ bool logInit(STAP_MILLIS_T maxDuration)
       
       searchPtr++;
       
-      if(stap_timeMillis() - current > maxDuration)
+      if(vpTimeMillisLive() - current > maxDuration)
         // Stop for now
         return false;
     }
@@ -374,7 +374,7 @@ bool logInit(STAP_MILLIS_T maxDuration)
       
       searchPtr++;
       
-      if(stap_timeMillis() - current > maxDuration)
+      if(vpTimeMillisLive() - current > maxDuration)
         // Stop for now
         return false;
     }
@@ -438,10 +438,10 @@ void logObjects()
 {
   bool force = false;
   int i = 0;
-  static STAP_MILLIS_T previousForced;
+  static VP_TIME_MILLIS_T previousForced;
   
-  if(stap_timeMillis() > previousForced+10e3) {
-    previousForced = stap_timeMillis();
+  if(vpTimeMillisLive() > previousForced+10e3) {
+    previousForced = vpTimeMillisLive();
     force = true;
   }
   

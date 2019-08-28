@@ -53,7 +53,7 @@ void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
       }
 
       memcpy(&sensorData, data, sizeof(sensorData));
-      simTimeStamp = stap_currentMillis;
+      simTimeStamp = vpTimeMillisApprox;
       simFrames++;    
     }
     break;
@@ -100,15 +100,15 @@ static bool scheduler()
   //  consoleNote("S ");
       
   while(task->code) {
-    stap_timeMicros();
+    vpTimeAcquire();
     
-    if(stap_currentMicros > task->nextInvocation ) {
-      if(task->realTime && stap_currentMicros < task->nextInvocation + task->period/3)
+    if(vpTimeMicrosApprox > task->nextInvocation ) {
+      if(task->realTime && vpTimeMicrosApprox < task->nextInvocation + task->period/3)
 	// A realtime task that has not slipped that much, try to catch up
 	task->nextInvocation += task->period;
       else
  	// Either not a realtime task or we're slipping too much
-	task->nextInvocation = stap_currentMicros + task->period;
+	task->nextInvocation = vpTimeMicrosApprox + task->period;
 
       //      consoleNote("Invoking task ");
       // consolePrintLnUL(task->code);
@@ -147,7 +147,7 @@ void mainLoopSetup()
 {  
   vpStatus.consoleLink = true; // Assume we have link until otherwise etc...
 
-  stap_delayMillis(1000);
+  vpDelayMillis(1000);
   
   consoleNoteLn_P(CS_STRING("Project | Alpha"));   
 
@@ -186,10 +186,10 @@ void mainLoopSetup()
 void mainLoop() 
 {
   bool idling = false;
-  STAP_MICROS_T idleStarted = 0, idleEnded = 0;
+  VP_TIME_MICROS_T idleStarted = 0, idleEnded = 0;
   
   while(true) {
-    idleEnded = stap_timeMicros();
+    idleEnded = vpTimeMicrosLive();
     
     if(scheduler()) {
       // Had something to do
@@ -205,7 +205,7 @@ void mainLoop()
       if(!logReady(false))
 	logInit(20);
 
-      idleStarted = stap_timeMicros();
+      idleStarted = vpTimeMicrosLive();
     }
   }
 }

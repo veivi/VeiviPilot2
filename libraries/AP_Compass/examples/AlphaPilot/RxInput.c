@@ -5,6 +5,7 @@
 #include "NVState.h"
 #include "DSP.h"
 #include "Math.h"
+#include "Time.h"
 #include "StaP.h"
 
 //
@@ -50,8 +51,8 @@ bool inputSourceGood(void)
 
 void inputSource(const uint16_t *pulse, int numCh)
 {
-  static uint32_t prev;
-  uint32_t current = stap_timeMicros(), cycle = current - prev;
+  static VP_TIME_MICROS_T prev;
+  VP_TIME_MICROS_T current = vpTimeMicrosLive(), cycle = current - prev;
 
   ppmFrames++;
 
@@ -169,16 +170,16 @@ float applyExpoTrim(float value, float trim)
 
 float inputSourceRate()
 {
-  static uint32_t prevMeasurement;
+  static VP_TIME_MICROS_T prevMeasurement;
   
   STAP_FORBID;
   uint16_t count = ppmFrames;
   ppmFrames = 0;
   STAP_PERMIT;
   
-  float result = 1.0e6 * count / (stap_timeMicros() - prevMeasurement);
+  float result = 1.0e6 * count / (vpTimeMicrosLive() - prevMeasurement);
   
-  prevMeasurement = stap_timeMicros();
+  prevMeasurement = vpTimeMicrosLive();
 
   if(result < 30)
     ppmWarnSlow = true;

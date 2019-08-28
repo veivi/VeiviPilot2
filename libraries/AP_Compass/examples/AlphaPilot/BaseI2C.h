@@ -24,7 +24,7 @@ typedef struct BaseI2CTarget {
   const char *name;
   bool warn, failed;
   int failCount;
-  TIME_MILLIS_T failedAt, backoff;
+  VP_TIME_MILLIS_T failedAt, backoff;
   uint32_t entropyAcc;
   uint16_t entropyCount;
   float entropy;

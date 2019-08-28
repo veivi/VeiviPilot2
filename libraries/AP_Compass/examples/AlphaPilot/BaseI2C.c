@@ -2,14 +2,13 @@
 #include <stdbool.h>
 #include "BaseI2C.h"
 #include "Console.h"
-#include "StaP.h"
 
 #define BACKOFF (0.1e3)
 #define BACKOFF_FRACTION  3
 
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
-  return !target->failed || stap_timeMillis() > target->failedAt+target->backoff;
+  return !target->failed || vpTimeMillisLive() > target->failedAt+target->backoff;
 }
 
 bool basei2cWarning(BaseI2CTarget_t *target)
@@ -36,7 +35,7 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
       target->backoff = BACKOFF;
     }
     
-    target->failedAt = stap_timeMillis();
+    target->failedAt = vpTimeMillisLive();
   } else {    
     if(target->failCount > 0) {
       consoleNote_P(CS_STRING("I2C("));
@@ -59,8 +58,8 @@ void basei2cEntropySample(BaseI2CTarget_t *target, uint16_t v)
   target->entropyAcc += ABS(diff);
   target->entropyCount++;
 
-  if(stap_currentMillis - target->lastEntropy > 0.3e3) {
-    target->lastEntropy = stap_currentMillis;
+  if(vpTimeMillisApprox - target->lastEntropy > 0.3e3) {
+    target->lastEntropy = vpTimeMillisApprox;
     target->entropy = (float) target->entropyAcc / target->entropyCount;
     target->entropyAcc = target->entropyCount = 0;
   }

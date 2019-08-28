@@ -34,16 +34,9 @@ bool stap_trace_char(char c);
 //
 
 typedef uint64_t STAP_MICROS_T;
-typedef uint32_t STAP_MILLIS_T;
-
-extern STAP_MICROS_T stap_currentMicros;
-extern STAP_MILLIS_T stap_currentMillis; // Updated on every call to currentMicros()
 
 void stap_initialize(void);
-void stap_delayMicros(uint32_t x);
-void stap_delayMillis(uint32_t x);
 STAP_MICROS_T stap_timeMicros(void);
-STAP_MILLIS_T stap_timeMillis(void);
 uint32_t stap_memoryFree(void);
 void stap_reboot(bool bootloader);
 

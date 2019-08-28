@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include "M24XX.h"
 #include "Console.h"
-#include "StaP.h"
 #include "BaseI2C.h"
 #include "Math.h"
+#include "StaP.h"
 
 #define CACHE_PAGE (1L<<7)
 #define PAGE_MASK ~(CACHE_PAGE-1)
@@ -15,7 +15,7 @@ uint32_t m24xxBytesWritten;
 
 static BaseI2CTarget_t target = { "M24xx" };
 
-static STAP_MILLIS_T lastWriteTime;
+static VP_TIME_MILLIS_T lastWriteTime;
 static uint8_t cacheData[CACHE_PAGE];
 static bool cacheFlag[CACHE_PAGE];
 static bool cacheValid, cacheModified;
@@ -28,14 +28,14 @@ bool m24xxIsOnline(void)
 
 bool m24xxWait(uint32_t addr)
 {
-  if(!lastWriteTime || stap_timeMillis() - lastWriteTime > M24XX_LATENCY)
+  if(!lastWriteTime || vpTimeMillisLive() - lastWriteTime > M24XX_LATENCY)
     // We're cool
     return true;
     
   // Write latency not met, wait for acknowledge
 
 #ifdef I2C_MEM_HARD_WAIT
-  while(stap_timeMillis() - lastWriteTime < M24XX_LATENCY);
+  while(vpTimeMillisLive() - lastWriteTime < M24XX_LATENCY);
   return true;
 #else
   return basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
@@ -54,7 +54,7 @@ bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes)
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
 
-  lastWriteTime = stap_timeMillis();
+  lastWriteTime = vpTimeMillisLive();
 
   return status;
 }
@@ -231,19 +231,20 @@ bool m24xxRead(uint32_t addr, uint8_t *value, int32_t size)
 
 void m24xxTest(void)
 {
+  /*
   static bool success = true, initialized = false;
-  static STAP_MILLIS_T startTime;
+  static VP_TIME_MILLIS_T startTime;
   static uint16_t state = 0xFFFF;
   uint32_t addr;
   static uint8_t size = TEST_SIZE;
   uint8_t buf_w[TEST_SIZE+1], buf_r[TEST_SIZE+1];
 
   if(!initialized) {
-    startTime = stap_timeMillis();
+    startTime = vpTimeMillisLive();
     initialized = true;
   }
   
-  if(stap_timeMillis() - startTime < 2000 || !success)
+  if(vpTimeMillisLive() - startTime < 2000 || !success)
     return;
   
   pseudoRandom((uint8_t*) &addr, sizeof(addr), &state);
@@ -301,4 +302,5 @@ void m24xxTest(void)
     size--;
   else
     size = TEST_SIZE;
+  */
 }

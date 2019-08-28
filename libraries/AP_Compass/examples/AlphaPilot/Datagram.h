@@ -7,6 +7,7 @@
 
 #define DG_TRANSMIT_MAX (1<<7)
 
+void datagramHeartbeat(bool force);
 void datagramTxStart(uint8_t );
 void datagramTxStartLocal(uint8_t );
 void datagramTxOutByte(const uint8_t c);

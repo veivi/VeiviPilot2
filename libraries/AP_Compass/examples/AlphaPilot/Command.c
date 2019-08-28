@@ -304,17 +304,16 @@ void executeCommand(char *buf)
     case c_reset:
       consoleNote("Reboot...");
       consoleFlush();
-      stap_delayMillis(500);
       stap_reboot(false);
       break;
 
     case c_boot:
       consoleNote("Reboot into bootloader...");
       consoleFlush();
-      stap_delayMillis(500);
+      vpDelayMillis(500);
       datagramTxStart(DG_DISCONNECT);
       datagramTxEnd();
-      stap_delayMillis(500);
+      vpDelayMillis(500);
       stap_reboot(true);
       break;
       
