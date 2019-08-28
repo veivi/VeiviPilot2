@@ -2114,10 +2114,11 @@ void blinkTask()
     STAP_LED_ON;
 }
 
+VPPeriodicTimer_t downlinkTimerData = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_DATA),
+  downlinkTimerConfig = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
+
 void downlinkTask()
 {
-  static VP_TIME_MILLIS_T lastStatus, lastData, lastConfig;
-
   uint16_t status =
     ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
     | (logReady(false) ? (1<<5) : 0)
@@ -2131,7 +2132,7 @@ void downlinkTask()
       | (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
   }
     
-  if(vpTimeMillisApprox - lastData > MAX_LATENCY_DATA) {
+  if(vpPeriodicEvent(&downlinkTimerData)) {
     //
     // Telemetry(Data)
     //
@@ -2144,20 +2145,7 @@ void downlinkTask()
     datagramTxOut((const uint8_t*) &data, sizeof(data));
     datagramTxEnd();
 
-    lastData = lastStatus = vpTimeMillisApprox;
-  } else if(vpTimeMillisApprox - lastStatus > MAX_LATENCY_STATUS) {
-    //
-    // Telemetry(Status)
-    //
-
-    datagramTxStart(DG_STATUS);
-    datagramTxOut((uint8_t*) &status, sizeof(status));
-    datagramTxEnd();
-
-    lastStatus = vpTimeMillisApprox;
-    vpStatus.trimLimited = false;
-
-  } else if(vpTimeMillisApprox - lastConfig > MAX_LATENCY_CONFIG) {
+  } else if(vpPeriodicEvent(&downlinkTimerConfig)) {
     //
     // Telemetry(Configuration)
     //
@@ -2178,8 +2166,6 @@ void downlinkTask()
     datagramTxStart(DG_CONFIG);
     datagramTxOut((const uint8_t*) &config, sizeof(config));
     datagramTxEnd();
-
-    lastConfig = vpTimeMillisApprox;
   }
 
   //

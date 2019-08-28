@@ -93,7 +93,7 @@ void consolePanic_P(const char *s)
   consolePrintLn_P(s);
   consoleNoteLn("// HALT/REBOOT");
   consoleFlush();
-  stap_delayMillis(5000);
+  vpDelayMillis(5000);
   stap_reboot(false);
 }
 

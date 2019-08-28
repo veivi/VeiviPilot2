@@ -23,7 +23,7 @@ bool toc_test_mode(bool reset)
 
 bool toc_test_link(bool reset)
 {
-  return vpTimeMillisApprox - lastPPMWarn > 10e6 &&
+  return vpTimeMillisApprox - lastPPMWarn > 10e3 &&
     (vpParam.virtualOnly || ppmFreq > 30) &&
     (!vpParam.virtualOnly || vpStatus.simulatorLink);
 }

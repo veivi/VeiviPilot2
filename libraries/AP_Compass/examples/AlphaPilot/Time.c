@@ -27,4 +27,14 @@ void vpDelayMillis(VP_TIME_MILLIS_T x)
   VP_TIME_MILLIS_T current = vpTimeMillisLive();
   while(vpTimeMillisLive() < current+x);
 }
-  
+
+bool vpPeriodicEvent(VPPeriodicTimer_t *timer)
+{
+  if(vpTimeMillisApprox - timer->previousEvent >= timer->period) {
+    timer->previousEvent = vpTimeMillisApprox;
+    return true;
+  } else
+    return false;
+}
+
+
