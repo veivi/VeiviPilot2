@@ -52,7 +52,7 @@ bool inputSourceGood(void)
 void inputSource(const uint16_t *pulse, int numCh)
 {
   static VP_TIME_MICROS_T prev;
-  VP_TIME_MICROS_T current = vpTimeMicrosLive(), cycle = current - prev;
+  VP_TIME_MICROS_T current = vpTimeMicros(), cycle = current - prev;
 
   ppmFrames++;
 
@@ -177,9 +177,9 @@ float inputSourceRate()
   ppmFrames = 0;
   STAP_PERMIT;
   
-  float result = 1.0e6 * count / (vpTimeMicrosLive() - prevMeasurement);
+  float result = 1.0e6 * count / (vpTimeMicros() - prevMeasurement);
   
-  prevMeasurement = vpTimeMicrosLive();
+  prevMeasurement = vpTimeMicros();
 
   if(result < 30)
     ppmWarnSlow = true;

@@ -28,14 +28,14 @@ bool m24xxIsOnline(void)
 
 bool m24xxWait(uint32_t addr)
 {
-  if(!lastWriteTime || vpTimeMillisLive() - lastWriteTime > M24XX_LATENCY)
+  if(!lastWriteTime || vpTimeMillis() - lastWriteTime > M24XX_LATENCY)
     // We're cool
     return true;
     
   // Write latency not met, wait for acknowledge
 
 #ifdef I2C_MEM_HARD_WAIT
-  while(vpTimeMillisLive() - lastWriteTime < M24XX_LATENCY);
+  while(vpTimeMillis() - lastWriteTime < M24XX_LATENCY);
   return true;
 #else
   return basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
@@ -54,7 +54,7 @@ bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes)
 				     (uint16_t) (addr & 0xFFFFL), 
 				     data, bytes));
 
-  lastWriteTime = vpTimeMillisLive();
+  lastWriteTime = vpTimeMillis();
 
   return status;
 }
@@ -240,11 +240,11 @@ void m24xxTest(void)
   uint8_t buf_w[TEST_SIZE+1], buf_r[TEST_SIZE+1];
 
   if(!initialized) {
-    startTime = vpTimeMillisLive();
+    startTime = vpTimeMillis();
     initialized = true;
   }
   
-  if(vpTimeMillisLive() - startTime < 2000 || !success)
+  if(vpTimeMillis() - startTime < 2000 || !success)
     return;
   
   pseudoRandom((uint8_t*) &addr, sizeof(addr), &state);

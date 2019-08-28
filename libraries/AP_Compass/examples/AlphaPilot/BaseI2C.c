@@ -8,7 +8,7 @@
 
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
-  return !target->failed || vpTimeMillisLive() > target->failedAt+target->backoff;
+  return !target->failed || vpTimeMillis() > target->failedAt+target->backoff;
 }
 
 bool basei2cWarning(BaseI2CTarget_t *target)
@@ -35,7 +35,7 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
       target->backoff = BACKOFF;
     }
     
-    target->failedAt = vpTimeMillisLive();
+    target->failedAt = vpTimeMillis();
   } else {    
     if(target->failCount > 0) {
       consoleNote_P(CS_STRING("I2C("));

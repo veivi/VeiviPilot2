@@ -189,7 +189,7 @@ void mainLoop()
   VP_TIME_MICROS_T idleStarted = 0, idleEnded = 0;
   
   while(true) {
-    idleEnded = vpTimeMicrosLive();
+    idleEnded = vpTimeMicros();
     
     if(scheduler()) {
       // Had something to do
@@ -205,7 +205,7 @@ void mainLoop()
       if(!logReady(false))
 	logInit(20);
 
-      idleStarted = vpTimeMicrosLive();
+      idleStarted = vpTimeMicros();
     }
   }
 }

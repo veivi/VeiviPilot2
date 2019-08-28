@@ -29,8 +29,8 @@ extern VP_TIME_MICROS_T vpTimeMicrosApprox;
 extern VP_TIME_MILLIS_T vpTimeMillisApprox;
 
 void vpTimeAcquire(void);
-VP_TIME_MICROS_T vpTimeMicrosLive(void);
-VP_TIME_MILLIS_T vpTimeMillisLive(void);
+VP_TIME_MICROS_T vpTimeMicros(void);
+VP_TIME_MILLIS_T vpTimeMillis(void);
 void vpDelayMillis(VP_TIME_MILLIS_T);
 
 #endif

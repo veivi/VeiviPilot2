@@ -15,7 +15,7 @@ VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis;
 
 void datagramHeartbeat(bool force)
 {
-  if(force || vpTimeMillisLive() - datagramLastTxMillis > 0.9e3) {
+  if(force || vpTimeMillis() - datagramLastTxMillis > 0.9e3) {
     datagramTxStart(DG_HEARTBEAT);
     datagramTxEnd();
   }

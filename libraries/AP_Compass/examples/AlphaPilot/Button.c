@@ -1,5 +1,5 @@
 #include <math.h>
-#include "StaP.h"
+#include "Time.h"
 #include "Button.h"
 #include "Console.h"
 
@@ -38,7 +38,7 @@ void buttonInput(Button_t *button, float inputValue)
     button->inputState = true;
 
   if(button->inputState != button->statePrev) {
-    button->transition = vpTimeMicrosLive();
+    button->transition = vpTimeMicros();
 
     if(button->inputState)
       button->pulseArmed = true;
@@ -59,7 +59,7 @@ void buttonInput(Button_t *button, float inputValue)
     }
     
     button->statePrev = button->inputState;
-  } else if(vpTimeMicrosLive() - button->transition > 0.5e6) {
+  } else if(vpTimeMicros() - button->transition > 0.5e6) {
 
     if(button->stateLazy != button->inputState)
       button->buttonPress = button->inputState;

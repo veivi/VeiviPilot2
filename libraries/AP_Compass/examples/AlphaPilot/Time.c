@@ -10,13 +10,13 @@ void vpTimeAcquire(void)
   vpTimeMillisApprox = (VP_TIME_MILLIS_T) (vpTimeMicrosApprox>>10);
 }
 
-VP_TIME_MICROS_T vpTimeMicrosLive(void)
+VP_TIME_MICROS_T vpTimeMicros(void)
 {
   vpTimeAcquire();
   return vpTimeMicrosApprox;
 }
 
-VP_TIME_MILLIS_T vpTimeMillisLive(void)
+VP_TIME_MILLIS_T vpTimeMillis(void)
 {
   vpTimeAcquire();
   return vpTimeMillisApprox;  
@@ -24,8 +24,8 @@ VP_TIME_MILLIS_T vpTimeMillisLive(void)
 
 void vpDelayMillis(VP_TIME_MILLIS_T x)
 {
-  VP_TIME_MILLIS_T current = vpTimeMillisLive();
-  while(vpTimeMillisLive() < current+x);
+  VP_TIME_MILLIS_T start = vpTimeMillis();
+  while(vpTimeMillis() - start < x);
 }
 
 bool vpPeriodicEvent(VPPeriodicTimer_t *timer)
