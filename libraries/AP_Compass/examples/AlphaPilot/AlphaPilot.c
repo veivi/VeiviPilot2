@@ -497,8 +497,10 @@ static void failsafeDisable()
   }
 }
 
-VPInertiaTimer_t iasAliveInertia = VP_INERTIA_TIMER_CONS(0.3),
-   canopyInertia = VP_INERTIA_TIMER_CONS(0.5);
+VPInertiaTimer_t iasAliveInertia = VP_INERTIA_TIMER_CONS(0.3e3),
+  stallInertia = VP_INERTIA_TIMER_CONS(0.01e3),
+  alphaFailInertia = VP_INERTIA_TIMER_CONS(0.3e3),
+  canopyInertia = VP_INERTIA_TIMER_CONS(0.5e3);
   
 void statusTask()
 {
@@ -516,8 +518,6 @@ void statusTask()
   // Canopy open/closed
   //
 
-  static VP_TIME_MILLIS_T lastCanopy;
-  
   if(STAP_CANOPY_CLOSED) {
     if(vpInertiaOn(&canopyInertia)) {
       consoleNoteLn_P(CS_STRING("Canopy is CLOSED"));
@@ -589,8 +589,6 @@ void statusTask()
   // Do we have positive airspeed?
   //
 
-  static VP_TIME_MILLIS_T lastIAS, lastStall, lastAlphaLocked;
-
   if(vpStatus.pitotFailed) {
     if(!vpStatus.positiveIAS) {
       consoleNoteLn_P(CS_STRING("Pitot failed, positive IAS ASSUMED"));
@@ -601,29 +599,10 @@ void statusTask()
       consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
-    
-    /*
-    if(!vpStatus.positiveIAS)
-      lastIAS = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastIAS > 0.3e3f) {
-      consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
-      vpStatus.positiveIAS = false;
-    }
-    */
   } else if(vpInertiaOn(&iasAliveInertia)) {
     consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
     vpStatus.positiveIAS = true;
   }
-    
-    /*
-    if(vpStatus.positiveIAS)
-      lastIAS = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastIAS > 0.3e3f) {
-      consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
-      vpStatus.positiveIAS = true;
-    }
-  }
-    */
 
   //
   // Movement detection
@@ -666,26 +645,21 @@ void statusTask()
       // Failed alpha is also unreliable
     
       vpStatus.alphaUnreliable = true;
-      lastAlphaLocked = vpTimeMillisApprox;
+      // lastAlphaLocked = vpTimeMillisApprox;
   } else {
     const float diff = fabsf(vpFlight.accDir - vpFlight.relWind),
       disagreement = MIN(diff, 2*PI_F - diff);
 
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-       || fabsf(vpFlight.alpha) < vpDerived.maxAlpha || disagreement > 15.0f/RADIAN) {
-      if(!vpStatus.alphaUnreliable)
-	lastAlphaLocked = vpTimeMillisApprox;
-      else if(vpTimeMillisApprox - lastAlphaLocked > 0.1e3) {
+       || fabsf(vpFlight.alpha) < vpDerived.maxAlpha
+       || disagreement > 15.0f/RADIAN) {
+      if(vpInertiaOff(&alphaFailInertia)) {
 	consoleNoteLn_P(CS_STRING("Alpha sensor appears RELIABLE"));
 	vpStatus.alphaUnreliable = false;
       }
-    } else {
-      if(vpStatus.alphaUnreliable)
-	lastAlphaLocked = vpTimeMillisApprox;
-      else if(vpTimeMillisApprox - lastAlphaLocked > 0.5e3) {
-	consoleNoteLn_P(CS_STRING("Alpha sensor UNRELIABLE"));
-	vpStatus.alphaUnreliable = true;
-      }
+    } else if(vpInertiaOn(&alphaFailInertia)) {
+      consoleNoteLn_P(CS_STRING("Alpha sensor UNRELIABLE"));
+      vpStatus.alphaUnreliable = true;
     }
   }
 
@@ -726,19 +700,13 @@ void statusTask()
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
      || vpMode.takeOff || vpStatus.flare
      || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
-    if(!vpStatus.stall)
-      lastStall = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastStall > 0.05e3) {
+    if(vpInertiaOff(&stallInertia)) {
       consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
       vpStatus.stall = false;
     }
-  } else {
-    if(vpStatus.stall)
-      lastStall = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastStall > 0.05e3) {
-      consoleNoteLn_P(CS_STRING("We're STALLING"));
-      vpStatus.stall = true;
-    }
+  } else if(vpInertiaOn(&stallInertia)) {
+    consoleNoteLn_P(CS_STRING("We're STALLING"));
+    vpStatus.stall = true;
   }
 
   //
