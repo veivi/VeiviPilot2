@@ -80,7 +80,7 @@ static void storeByte(const uint8_t c)
     datagramRxStore[datagramSize++] = c;
 }
   
-static void breakDetected(void)
+static void handleBreak(void)
 {
   if(datagramSize >= sizeof(uint16_t)) {
     uint16_t crc =
@@ -133,7 +133,7 @@ void datagramRxInputChar(const uint8_t c)
     
     flagCnt = 0;
   } else if(++flagCnt > 1 && busy) {
-    breakDetected();
+    handleBreak();
     busy = false;
   }
 }

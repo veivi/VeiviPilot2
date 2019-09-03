@@ -497,6 +497,9 @@ static void failsafeDisable()
   }
 }
 
+VPInertiaTimer_t iasAliveInertia = VP_INERTIA_TIMER_CONS(0.3),
+   canopyInertia = VP_INERTIA_TIMER_CONS(0.5);
+  
 void statusTask()
 {
   // Cycle time
@@ -516,19 +519,13 @@ void statusTask()
   static VP_TIME_MILLIS_T lastCanopy;
   
   if(STAP_CANOPY_CLOSED) {
-    if(vpStatus.canopyClosed)
-      lastCanopy = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastCanopy > 0.5e3) {
+    if(vpInertiaOn(&canopyInertia)) {
       consoleNoteLn_P(CS_STRING("Canopy is CLOSED"));
       vpStatus.canopyClosed = true;
     }
-  } else {
-    if(!vpStatus.canopyClosed)
-      lastCanopy = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastCanopy > 0.5e3) {
-      consoleNoteLn_P(CS_STRING("Canopy is OPEN"));
-      vpStatus.canopyClosed = false;
-    }
+  } else if(vpInertiaOff(&canopyInertia)) {
+    consoleNoteLn_P(CS_STRING("Canopy is OPEN"));
+    vpStatus.canopyClosed = false;
   }
   
   //
@@ -600,13 +597,25 @@ void statusTask()
       vpStatus.positiveIAS = true;
     }
   } else if(vpFlight.relativeIAS < RATIO(4/5)) {
+    if(vpInertiaOff(&iasAliveInertia)) {
+      consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
+      vpStatus.positiveIAS = false;
+    }
+    
+    /*
     if(!vpStatus.positiveIAS)
       lastIAS = vpTimeMillisApprox;
     else if(vpTimeMillisApprox - lastIAS > 0.3e3f) {
       consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
       vpStatus.positiveIAS = false;
     }
-  } else {
+    */
+  } else if(vpInertiaOn(&iasAliveInertia)) {
+    consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
+    vpStatus.positiveIAS = true;
+  }
+    
+    /*
     if(vpStatus.positiveIAS)
       lastIAS = vpTimeMillisApprox;
     else if(vpTimeMillisApprox - lastIAS > 0.3e3f) {
@@ -614,6 +623,7 @@ void statusTask()
       vpStatus.positiveIAS = true;
     }
   }
+    */
 
   //
   // Movement detection
@@ -662,7 +672,7 @@ void statusTask()
       disagreement = MIN(diff, 2*PI_F - diff);
 
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
-       || (fabsf(vpFlight.alpha) < 60.0f/RADIAN && disagreement > 15.0f/RADIAN)) {
+       || fabsf(vpFlight.alpha) < vpDerived.maxAlpha || disagreement > 15.0f/RADIAN) {
       if(!vpStatus.alphaUnreliable)
 	lastAlphaLocked = vpTimeMillisApprox;
       else if(vpTimeMillisApprox - lastAlphaLocked > 0.1e3) {

@@ -13,6 +13,8 @@ typedef struct VPInertiaTimer {
   bool state;
 } VPInertiaTimer_t;
 
+#define VP_INERTIA_TIMER_CONS(i) { i, 0, false }
+
 bool vpInertiaOn(VPInertiaTimer_t*);  // Is it okay to turn on?
 bool vpInertiaOff(VPInertiaTimer_t*); // Okay to turn off?
 

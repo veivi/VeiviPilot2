@@ -37,4 +37,26 @@ bool vpPeriodicEvent(VPPeriodicTimer_t *timer)
     return false;
 }
 
+static bool vpInertiaOnOff(VPInertiaTimer_t *timer, bool state)
+{
+  if(timer->state == state) {
+    timer->startTime = vpTimeMillisApprox;
+    return false;
+  } else if(vpTimeMillisApprox - timer->startTime > timer->inertia) {
+    timer->state = state;
+    return true;
+  } else
+    return false;
+}
+
+bool vpInertiaOn(VPInertiaTimer_t *timer)
+{
+  return vpInertiaOnOff(timer, true);
+}
+
+bool vpInertiaOff(VPInertiaTimer_t *timer)
+{
+  return vpInertiaOnOff(timer, false);
+}
+
 
