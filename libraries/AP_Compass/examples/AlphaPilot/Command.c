@@ -61,7 +61,6 @@ const struct Command commands[] CS_QUALIFIER = {
   { "yawdamper", c_yawdamper, e_float, &vpParam.yd_C },
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
   { "wheels", c_wheels, e_bool, &vpParam.haveGear },
-  { "floor", c_floor, e_int16, &vpParam.floor },
   { "map", c_map, e_map, &vpParam.functionMap },
   { "nmap", c_nmap, e_nmap, &vpParam.neutral },
   { "flare", c_flare, e_float, &vpParam.flare },

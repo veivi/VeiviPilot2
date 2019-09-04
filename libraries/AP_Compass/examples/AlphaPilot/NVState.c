@@ -243,9 +243,7 @@ void printParams()
   consolePrintFP(polynomial(FuelFlow_degree, 1, vpParam.coeff_Flow), 1);
   consolePrintLn_P(CS_STRING(" g/min)"));
   consoleNote_P(CS_STRING("  Climb pitch(max) = "));
-  consolePrintFP(vpParam.maxPitch*RADIAN, 2);
-  consolePrint_P(CS_STRING("  alt(floor) = "));
-  consolePrintLnF(vpParam.floor);
+  consolePrintLnFP(vpParam.maxPitch*RADIAN, 2);
   consoleNote_P(CS_STRING("  Max alpha (clean, full flaps) = "));
   consolePrintF(vpDerived.maxAlpha*RADIAN);
   

@@ -29,7 +29,18 @@ float signf(float x)
 float nominalPitchRateLevel(float bank, float target)
 {
   const float CoL = coeffOfLift(target), m = vpStatus.mass;
-  
+
+  /*
+    static VPPeriodicTimer_t debug = VP_PERIODIC_TIMER_CONS(1e3);
+
+  if(vpPeriodicEvent(&debug)) {
+    consolePrintF(vpFlight.effIAS);
+    consolePrint(" ");
+    consolePrintF(CoL);
+    consolePrint(" ");
+    consolePrintLnF(m);
+  }
+  */
   return 1/vpFlight.effIAS * vpFlight.effDynP * CoL * sqrf(sinf(bank)) / m;
 }
 

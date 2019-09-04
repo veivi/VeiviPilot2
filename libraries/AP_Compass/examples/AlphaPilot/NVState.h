@@ -56,7 +56,6 @@ struct ParamRecord {
   bool haveGear;
   bool wowCalibrated;
   bool sensorOrient;
-  int16_t floor;
   float coeff_Flow[FuelFlow_degree+1];
   float idle, lag;
 };

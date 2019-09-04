@@ -28,7 +28,6 @@ typedef enum {
   c_margin,
   c_yawdamper,
   c_offset,
-  c_floor,
   c_sensor,
   c_idle,
   c_lag,

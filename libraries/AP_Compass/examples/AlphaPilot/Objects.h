@@ -25,7 +25,6 @@ struct StatusRecord {
   bool alphaUnreliable;
   bool trimLimited;
   bool upright;
-  bool belowFloor;
   bool flare;
   float load;
   float fuel;

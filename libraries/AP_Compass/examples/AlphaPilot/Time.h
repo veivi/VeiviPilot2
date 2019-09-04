@@ -8,15 +8,17 @@ typedef uint64_t VP_TIME_MICROS_T;
 typedef uint32_t VP_TIME_MILLIS_T;
 
 typedef struct VPInertiaTimer {
+  bool *state;
   VP_TIME_MILLIS_T inertia;
   VP_TIME_MILLIS_T startTime;
-  bool state;
 } VPInertiaTimer_t;
 
-#define VP_INERTIA_TIMER_CONS(i) { i, 0, false }
+#define VP_INERTIA_TIMER_CONS(s, i) { s, i, 0 }
 
 bool vpInertiaOn(VPInertiaTimer_t*);  // Is it okay to turn on?
 bool vpInertiaOff(VPInertiaTimer_t*); // Okay to turn off?
+bool vpInertiaOnForce(VPInertiaTimer_t*);
+bool vpInertiaOffForce(VPInertiaTimer_t*);
 
 typedef struct VPPeriodicTimer {
   VP_TIME_MILLIS_T period;

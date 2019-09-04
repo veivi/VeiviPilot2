@@ -431,12 +431,12 @@ void monitorTask()
   
   // Sim link monitoring
 
-  simInputFreq = 1.0e3f * simFrames / (vpTimeMillisApprox - prevMonitor);
+  simInputFreq = 1.0e3f * simFrames/(vpTimeMillisApprox - prevMonitor);
   simFrames = 0;
 
   // Log bandwidth
 
-  logBandWidth = 1.0e3f * m24xxBytesWritten / (vpTimeMillisApprox - prevMonitor);
+  logBandWidth = 1.0e3f * m24xxBytesWritten/(vpTimeMillisApprox - prevMonitor);
   m24xxBytesWritten = 0;
   
   // PPM monitoring
@@ -497,10 +497,15 @@ static void failsafeDisable()
   }
 }
 
-VPInertiaTimer_t iasAliveInertia = VP_INERTIA_TIMER_CONS(0.3e3),
-  stallInertia = VP_INERTIA_TIMER_CONS(0.01e3),
-  alphaFailInertia = VP_INERTIA_TIMER_CONS(0.3e3),
-  canopyInertia = VP_INERTIA_TIMER_CONS(0.5e3);
+VPInertiaTimer_t iasAliveInertia = VP_INERTIA_TIMER_CONS(&vpStatus.positiveIAS, 0.3e3),
+  stallInertia = VP_INERTIA_TIMER_CONS(&vpStatus.stall, 0.01e3),
+  pitotBlockInertia = VP_INERTIA_TIMER_CONS(&vpStatus.pitotBlocked, 10e3),
+  fullStopInertia = VP_INERTIA_TIMER_CONS(&vpStatus.fullStop, 5e3),
+  alphaFailInertia = VP_INERTIA_TIMER_CONS(&vpStatus.alphaUnreliable, 0.3e3),
+  flareInertia = VP_INERTIA_TIMER_CONS(&vpStatus.flare, 0.7e3),
+  canopyInertia = VP_INERTIA_TIMER_CONS(&vpStatus.canopyClosed, 0.5e3),
+  uprightInertia = VP_INERTIA_TIMER_CONS(&vpStatus.upright, 0.5e3),
+  wowInertia = VP_INERTIA_TIMER_CONS(&vpStatus.weightOnWheels, 0.25e3);
   
 void statusTask()
 {
@@ -519,14 +524,11 @@ void statusTask()
   //
 
   if(STAP_CANOPY_CLOSED) {
-    if(vpInertiaOn(&canopyInertia)) {
+    if(vpInertiaOn(&canopyInertia))
       consoleNoteLn_P(CS_STRING("Canopy is CLOSED"));
-      vpStatus.canopyClosed = true;
-    }
-  } else if(vpInertiaOff(&canopyInertia)) {
+
+  } else if(vpInertiaOff(&canopyInertia))
     consoleNoteLn_P(CS_STRING("Canopy is OPEN"));
-    vpStatus.canopyClosed = false;
-  }
   
   //
   // Fuel quantity & total mass
@@ -567,23 +569,15 @@ void statusTask()
   // Pitot block detection
   //
   
-  static VP_TIME_MILLIS_T iasLastAlive; 
-
   damperInput(&avgDynP, vpFlight.dynP);
 
   if(vpFlight.relativeIAS < RATIO(1/3)
-     || fabsf(vpFlight.dynP - damperOutput(&avgDynP)) > dynamicPressure(1.0f)) {
-    if(vpStatus.pitotBlocked) {
+     || fabsf(vpFlight.dynP - damperOutput(&avgDynP)) > dynamicPressure(2.0f)) {
+    if(vpInertiaOffForce(&pitotBlockInertia))
       consoleNoteLn_P(CS_STRING("Pitot block CLEARED"));
-      vpStatus.pitotBlocked = false;
-    }
-    
-    iasLastAlive = vpTimeMillisApprox;
-  } else if(vpTimeMillisApprox - iasLastAlive > 10e3
-	    && !vpStatus.pitotBlocked) {
+
+  } else if(vpInertiaOn(&pitotBlockInertia))
     consoleNoteLn_P(CS_STRING("Pitot appears BLOCKED"));
-    vpStatus.pitotBlocked = true;
-  }
   
   //
   // Do we have positive airspeed?
@@ -595,15 +589,11 @@ void statusTask()
       vpStatus.positiveIAS = true;
     }
   } else if(vpFlight.relativeIAS < RATIO(4/5)) {
-    if(vpInertiaOff(&iasAliveInertia)) {
+    if(vpInertiaOff(&iasAliveInertia))
       consoleNoteLn_P(CS_STRING("Positive airspeed LOST"));
-      vpStatus.positiveIAS = false;
-    }
-  } else if(vpInertiaOn(&iasAliveInertia)) {
+  } else if(vpInertiaOn(&iasAliveInertia))
     consoleNoteLn_P(CS_STRING("We have POSITIVE AIRSPEED"));
-    vpStatus.positiveIAS = true;
-  }
-
+  
   //
   // Movement detection
   //
@@ -618,19 +608,12 @@ void statusTask()
     || turnRate > 10.0f/RADIAN
     || fabsf(vpFlight.acc - damperOutput(&accAvg)) > 0.5f;
   
-  static VP_TIME_MILLIS_T lastMotion;
-
   if(motionDetected) {
-    if(vpStatus.fullStop) {
+    if(vpInertiaOffForce(&fullStopInertia))
       consoleNoteLn_P(CS_STRING("We appear to be MOVING"));
-      vpStatus.fullStop = false;
-    }
     
-    lastMotion = vpTimeMillisApprox;
-
-  } else if(vpTimeMillisApprox - lastMotion > 5.0e3 && !vpStatus.fullStop) {
+  } else if(vpInertiaOn(&fullStopInertia)) {
     consoleNoteLn_P(CS_STRING("We have FULLY STOPPED"));
-    vpStatus.fullStop = true;
     vpStatus.aloft = false;
   }
 
@@ -645,7 +628,6 @@ void statusTask()
       // Failed alpha is also unreliable
     
       vpStatus.alphaUnreliable = true;
-      // lastAlphaLocked = vpTimeMillisApprox;
   } else {
     const float diff = fabsf(vpFlight.accDir - vpFlight.relWind),
       disagreement = MIN(diff, 2*PI_F - diff);
@@ -653,22 +635,17 @@ void statusTask()
     if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.takeOff
        || fabsf(vpFlight.alpha) < vpDerived.maxAlpha
        || disagreement > 15.0f/RADIAN) {
-      if(vpInertiaOff(&alphaFailInertia)) {
+      if(vpInertiaOff(&alphaFailInertia))
 	consoleNoteLn_P(CS_STRING("Alpha sensor appears RELIABLE"));
-	vpStatus.alphaUnreliable = false;
-      }
-    } else if(vpInertiaOn(&alphaFailInertia)) {
+
+    } else if(vpInertiaOn(&alphaFailInertia))
       consoleNoteLn_P(CS_STRING("Alpha sensor UNRELIABLE"));
-      vpStatus.alphaUnreliable = true;
-    }
   }
 
   //
   // Flare detection
   //
 
-  static VP_TIME_MILLIS_T lastFlare;
-  
   if(!(vpMode.test && nvState.testNum[vpMode.testCount] > 0)
      && vpMode.slowFlight
      && vpControl.gearSel == 0
@@ -680,18 +657,13 @@ void statusTask()
      && vpInput.stickForce > RATIO(1/3)) {
     // We may be in a flare
 
-    if(!vpStatus.flare) {
+    if(vpInertiaOnForce(&flareInertia)) {
       consoleNoteLn_P(CS_STRING("We seem to be FLARING"));
       annunciatorTalk("Flare");
     }
     
-    vpStatus.flare = true;
-    lastFlare = vpTimeMillisApprox;
-    
-  } else if(vpStatus.flare && vpTimeMillisApprox - lastFlare > 0.7e3) {
+  } else if(vpInertiaOff(&flareInertia))
     consoleNoteLn_P(CS_STRING("Flare ended"));
-    vpStatus.flare = false;
-  }
   
   //
   // Stall detection
@@ -700,44 +672,21 @@ void statusTask()
   if(vpStatus.alphaUnreliable || vpMode.alphaFailSafe || vpMode.sensorFailSafe
      || vpMode.takeOff || vpStatus.flare
      || vpFlight.alpha < fmaxf(vpDerived.stallAlpha, vpControl.targetAlpha)) {
-    if(vpInertiaOff(&stallInertia)) {
-      consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
-      vpStatus.stall = false;
-    }
-  } else if(vpInertiaOn(&stallInertia)) {
-    consoleNoteLn_P(CS_STRING("We're STALLING"));
-    vpStatus.stall = true;
-  }
 
-  //
-  // Below floor?
-  //
-  
-  if(vpFlight.alt > vpParam.floor + 5 || vpParam.floor < 1) {
-    if(vpStatus.belowFloor)
-      consoleNoteLn_P(CS_STRING("We're ABOVE floor"));
-    
-    vpStatus.belowFloor = false;
-  } else if(vpFlight.alt < vpParam.floor && !vpStatus.belowFloor) {
-    vpStatus.belowFloor = true;
-    consoleNoteLn_P(CS_STRING("We're BELOW floor altitude"));
-  }
+    if(vpInertiaOff(&stallInertia))
+      consoleNoteLn_P(CS_STRING("Stall RECOVERED"));
+
+  } else if(vpInertiaOn(&stallInertia))
+    consoleNoteLn_P(CS_STRING("We're STALLING"));
 
   //
   // Attitude is upright?
   //
   
-  static VP_TIME_MILLIS_T lastUpright;
-  
-  if(fabsf(vpFlight.bank) < 15.0f/RADIAN && fabsf(vpFlight.pitch) < 15.0f/RADIAN) {
-    vpStatus.upright = true;
-    lastUpright = vpTimeMillisApprox;
-  } else {
-    if(!vpStatus.upright)
-      lastUpright = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastUpright > 0.5e3)
-      vpStatus.upright = false;
-  }
+  if(fabsf(vpFlight.bank) < 15.0f/RADIAN && fabsf(vpFlight.pitch) < 15.0f/RADIAN)
+    vpInertiaOnForce(&uprightInertia);
+  else
+    vpInertiaOff(&uprightInertia);
 
   //  
   // Weight on wheels?
@@ -750,37 +699,23 @@ void statusTask()
     liftExpected = coeffOfLift(vpFlight.alpha) * vpFlight.dynP,
     liftMax = vpDerived.maxCoeffOfLift * vpFlight.dynP;
       
-  static VP_TIME_MILLIS_T lastWoW;
-  
   if(vpMode.alphaFailSafe || vpMode.sensorFailSafe || vpMode.radioFailSafe
      || vpStatus.alphaUnreliable || vpStatus.pitotFailed
      || !vpParam.haveGear || vpControl.gearSel == 1 || !vpStatus.upright
      || vpFlight.IAS > vpDerived.minimumIAS*RATIO(3/2)) {
-    if(vpStatus.weightOnWheels) {
+    if(vpInertiaOffForce(&wowInertia))
       consoleNoteLn_P(CS_STRING("Weight assumed to be OFF THE WHEELS"));
-      vpStatus.weightOnWheels = false;
-    }
-      
-    lastWoW = vpTimeMillisApprox;
+
   } else if(vpStatus.positiveIAS
 	    && (liftAvg < weight/2 || liftAvg > 1.5f*weight
 		|| lift < liftExpected + liftMax/3)) {
-    if(!vpStatus.weightOnWheels)
-      lastWoW = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastWoW > 0.3e3) {
+    if(vpInertiaOff(&wowInertia))
       consoleNoteLn_P(CS_STRING("Weight is probably OFF THE WHEELS"));
-      vpStatus.weightOnWheels = false;
-    }
-  } else {
-    if(vpStatus.weightOnWheels)
-      lastWoW = vpTimeMillisApprox;
-    else if(vpTimeMillisApprox - lastWoW > 0.2e3) {
-      consoleNoteLn_P(CS_STRING("We seem to have WEIGHT ON WHEELS"));
-      vpStatus.weightOnWheels = true;
-    }
-  }
+
+  } else if(vpInertiaOn(&wowInertia))
+    consoleNoteLn_P(CS_STRING("We seem to have WEIGHT ON WHEELS"));
 }
-  
+
 void configurationTask()
 {
   //
@@ -948,7 +883,7 @@ void configurationTask()
   // Direct mode selector input
   //
 
-  if(vpInput.modeSel == -1 || vpStatus.belowFloor) {
+  if(vpInput.modeSel == -1) {
     if(!vpMode.slowFlight)
       consoleNoteLn_P(CS_STRING("Slow flight mode ENABLED"));
     vpMode.slowFlight = vpMode.bankLimiter = true;
@@ -1750,6 +1685,15 @@ void elevatorModule()
 	      -30.0f/RADIAN - vpFlight.pitch, maxPitch - vpFlight.pitch)
       * vpControl.o_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
+    /*
+    consolePrintF(vpFlight.bank*RADIAN);
+    consolePrint(" ");
+    consolePrintF(vpControl.targetAlpha*RADIAN);
+    consolePrint(" ");
+    consolePrintF(nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)*RADIAN);
+    consolePrint(" ");
+    consolePrintLnF(vpControl.targetPitchR*RADIAN);
+    */
   } else
     vpControl.targetPitchR = vpInput.elevExpo*PI_F/2;
 
