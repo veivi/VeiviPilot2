@@ -598,11 +598,13 @@ void statusTask()
   // Movement detection
   //
   
-  vpFlight.acc = sqrtf(sqrf(vpFlight.accX) + sqrf(vpFlight.accY) + sqrf(vpFlight.accZ));
+  vpFlight.acc =
+    sqrtf(sqrf(vpFlight.accX) + sqrf(vpFlight.accY) + sqrf(vpFlight.accZ));
   
   damperInput(&accAvg, vpFlight.acc);
 
-  float turnRate = sqrtf(sqrf(vpFlight.rollR) + sqrf(vpFlight.pitchR) + sqrf(vpFlight.yawR));
+  float turnRate =
+    sqrtf(sqrf(vpFlight.rollR) + sqrf(vpFlight.pitchR) + sqrf(vpFlight.yawR));
   
   bool motionDetected = (!vpStatus.pitotBlocked && vpStatus.positiveIAS)
     || turnRate > 10.0f/RADIAN
