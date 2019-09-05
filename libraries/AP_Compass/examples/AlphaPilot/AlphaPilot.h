@@ -40,8 +40,8 @@ struct Task {
   VP_TIME_MILLIS_T period;
   bool realTime;
   VP_TIME_MILLIS_T nextInvocation;
-  VP_TIME_MILLIS_T cumTime;
-  int16_t cumCount, slipCount;
+  VP_TIME_MILLIS_T runTime;
+  int16_t timesRun, lagged;
 };
 
 #define HZ_TO_PERIOD(f) ((VP_TIME_MILLIS_T) (1.0e3f/(f)))

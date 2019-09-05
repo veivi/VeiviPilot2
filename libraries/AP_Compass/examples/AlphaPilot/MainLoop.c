@@ -110,7 +110,7 @@ static bool scheduler()
       else {
  	// Either not a realtime task or we're slipping too much
 	task->nextInvocation = vpTimeMillisApprox + task->period;
-	task->slipCount++;
+	task->lagged++;
       }
       //      consoleNote("Invoking task ");
       // consolePrintLnUL(task->code);
@@ -122,9 +122,9 @@ static bool scheduler()
       task->code();
 
       if(vpStatus.consoleLink) 
-	task->cumTime += vpTimeMicros() - startTime;
+	task->runTime += vpTimeMicros() - startTime;
       
-      task->cumCount++;
+      task->timesRun++;
       status = true; // We had something to do
     }
     
@@ -146,22 +146,25 @@ void schedulerReport(void)
   VP_TIME_MICROS_T period = vpTimeMicros() - lastReport;
 
   int i = 0;
+  
   for(i = 0; alphaPilotTasks[i].code != NULL; i++) {
     consoleNote("  ");
     consolePrintI(i);
     consoleTab(10);
-    consolePrintF(alphaPilotTasks[i].cumCount / (period / 1.0e6));
+    consolePrintF(alphaPilotTasks[i].timesRun / (period / 1.0e6));
     consolePrint(" Hz ");
     consoleTab(20);
-    consolePrintF(100.0 * alphaPilotTasks[i].cumTime / period);
+    consolePrintF(100.0 * alphaPilotTasks[i].runTime / period);
     consolePrint(" %");
     consoleTab(30);
-    if(alphaPilotTasks[i].realTime)
-      consolePrintF((float) alphaPilotTasks[i].slipCount / (period / 1.0e6));
+    if(alphaPilotTasks[i].realTime) {
+      consolePrintF((float) alphaPilotTasks[i].lagged / (period / 1.0e6));
+      consolePrint(" Hz ");
+    }
     consoleNL();
-    alphaPilotTasks[i].cumCount = 0;
-    alphaPilotTasks[i].slipCount = 0;
-    alphaPilotTasks[i].cumTime = 0;
+    alphaPilotTasks[i].timesRun = 0;
+    alphaPilotTasks[i].lagged = 0;
+    alphaPilotTasks[i].runTime = 0;
   }
 
   lastReport = vpTimeMicros();
