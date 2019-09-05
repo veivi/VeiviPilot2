@@ -2035,6 +2035,7 @@ void heartBeatTask()
   
   heartBeatCount = 0;
   consoleFlush();
+  datagramHeartbeat(false);
 }
 
 void blinkTask()

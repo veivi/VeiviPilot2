@@ -140,14 +140,12 @@ static bool scheduler()
 void schedulerReport(void)
 {
   static VP_TIME_MICROS_T lastReport;
+  VP_TIME_MICROS_T period = vpTimeMicros() - lastReport;
+  float load = 0.0f, cum = 0.0f;
+  int i = 0;  
       
   consoleNoteLn_P(CS_STRING("Task statistics"));
 
-  VP_TIME_MICROS_T period = vpTimeMicros() - lastReport;
-
-  int i = 0;
-  float load = 0.0f, cum = 0.0f;
-  
   for(i = 0; alphaPilotTasks[i].code != NULL; i++) {
     consoleNote("  ");
     consolePrintI(i);

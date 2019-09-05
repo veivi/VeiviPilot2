@@ -27,8 +27,6 @@ void consoleFlush()
   }
   
   bufPtr = 0;
-
-  datagramHeartbeat(false);
 }
 
 void consoleOut(const uint8_t c)
@@ -59,7 +57,9 @@ void consoleCR(void)
 
 void consoleTab(int i)
 {
-  while(!vpMode.silent && column < i)
+  int n = i - column;
+  
+  while(n-- > 0)
     consoleOut(' ');
 }
 
@@ -160,8 +160,7 @@ void consolevPrintf(const char *s, va_list argp)
 
 void consolePrint(const char *s)
 {
-  while(*s)
-    consoleOut(*s++);
+  consolePrintN(s, 1<<7);
 }
 
 void consolePrintN(const char *s, int l)
@@ -173,8 +172,9 @@ void consolePrintN(const char *s, int l)
 void consolePrint_P(const char *s)
 {
   char c = 0;
+  int n = 1<<7;
 
-  while((c = CS_READCHAR(s++)))
+  while((c = CS_READCHAR(s++)) && n-- > 0)
     consoleOut(c);
 }
 
@@ -203,10 +203,9 @@ void consolePrintFP(float v, int p)
   
     consolePrintC('.');
 
-    while(p > 0) {
+    while(p-- > 0) {
       f *= 10.0f;
       printDigit(((uint32_t) f) % 10);
-      p--;
     }
   }
   }
