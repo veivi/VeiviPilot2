@@ -550,7 +550,8 @@ void executeCommand(char *buf)
       consoleNote_P(CS_STRING("Log write bandwidth = "));
       consolePrintF(logBandWidth);
       consolePrintLn_P(CS_STRING(" bytes/sec"));
-      
+
+      schedulerReport();
       break;
       
     case c_function:

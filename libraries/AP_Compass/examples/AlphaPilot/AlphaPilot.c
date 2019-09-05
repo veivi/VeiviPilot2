@@ -53,7 +53,7 @@ void cacheTask()
   m24xxFlush();
 }
 
-void alphaTask()
+void alphaSampleTask()
 {
   AS5048_alpha_t raw = 0;
 
@@ -192,7 +192,7 @@ void displayTask()
   }  
 }
 
-void airspeedTask()
+void airspeedSampleTask()
 {
   int16_t raw = 0;
 
@@ -300,23 +300,6 @@ void receiverTask()
 
 void sensorTaskSync()
 {
-  // Alpha input
-
-  vpFlight.alpha =
-    2 * PI_F * samplerMean(&alphaSampler) / (1L<<(CHAR_BIT*sizeof(int16_t)));
-  
-  // Dynamic pressure, corrected for alpha
-
-  const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1f;
-  const float factor_c
-    = pascalsPerPSI_c * range_c / (1L<<(CHAR_BIT*sizeof(uint16_t)));
-
-  bool primaryIASDataIsPressure = true;
-  
-  float primaryIASData
-    = samplerMean(&iasSampler) * factor_c
-    / cosf(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
-  
   // Attitude
 
 #ifndef STAP_PERIOD_GYRO
@@ -352,6 +335,36 @@ void sensorTaskSync()
   // Altitude data acquisition
 
   stap_baroUpdate();
+  
+  // Air data acquisition
+
+#ifndef ASYNC_AIR_SENSORS
+  int i = 0;
+
+  for(i = 0; i < AIR_SENSOR_OVERSAMPLE; i++) {
+    alphaSampleTask();
+    airspeedSampleTask();
+  }
+  
+#endif
+  
+  vpFlight.alpha =
+    2 * samplerMean(&alphaSampler) * PI_F / (1L<<(CHAR_BIT*sizeof(int16_t)));
+  
+  vpFlight.relWind = vpStatus.fault == 3
+    ? vpFlight.accDir : vpFlight.alpha - vpParam.alphaOffset;
+  
+  // Dynamic pressure, corrected for alpha
+
+  const float pascalsPerPSI_c = 6894.7573, range_c = 2*1.1f;
+  const float factor_c
+    = pascalsPerPSI_c * range_c / (1L<<(CHAR_BIT*sizeof(uint16_t)));
+
+  bool primaryIASDataIsPressure = true;
+  
+  float primaryIASData
+    = samplerMean(&iasSampler) * factor_c
+    / cosf(clamp(vpFlight.relWind, -vpDerived.maxAlpha, vpDerived.maxAlpha));
   
   // Simulator link overrides
   
@@ -420,7 +433,7 @@ void monitorTask()
   // Load measurement
 
   vpStatus.load =
-    mixValue(RATIO(1/5), vpStatus.load,
+    mixValue(RATIO(1/4), vpStatus.load,
 	     1.0f - (float) idleMicros/1000/(vpTimeMillisApprox - prevMonitor));
   
   idleMicros = 0;
@@ -624,7 +637,6 @@ void statusTask()
   //
 
   vpFlight.accDir = atan2(vpFlight.accZ, -vpFlight.accX);
-  vpFlight.relWind = vpStatus.fault == 3 ? vpFlight.accDir : vpFlight.alpha - vpParam.alphaOffset;
   
   if(vpStatus.alphaFailed) {
       // Failed alpha is also unreliable
@@ -2038,8 +2050,7 @@ void blinkTask()
     STAP_LED_ON;
 }
 
-VPPeriodicTimer_t downlinkTimerData = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_DATA),
-  downlinkTimerConfig = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
+VPPeriodicTimer_t downlinkTimer = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
 
 void downlinkTask()
 {
@@ -2056,20 +2067,19 @@ void downlinkTask()
       | (vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0);
   }
     
-  if(vpPeriodicEvent(&downlinkTimerData)) {
-    //
-    // Telemetry(Data)
-    //
+  //
+  // Telemetry(Data)
+  //
   
-    struct TelemetryData data = { .status = status,
-				  .alpha = vpFlight.alpha,
-				  .IAS = vpFlight.IAS };
+  struct TelemetryData data = { .status = status,
+				.alpha = vpFlight.alpha,
+				.IAS = vpFlight.IAS };
 
-    datagramTxStart(DG_AIRDATA);
-    datagramTxOut((const uint8_t*) &data, sizeof(data));
-    datagramTxEnd();
+  datagramTxStart(DG_AIRDATA);
+  datagramTxOut((const uint8_t*) &data, sizeof(data));
+  datagramTxEnd();
 
-  } else if(vpPeriodicEvent(&downlinkTimerConfig)) {
+  if(vpPeriodicEvent(&downlinkTimer)) {
     //
     // Telemetry(Configuration)
     //
@@ -2110,7 +2120,7 @@ void downlinkTask()
 
 void controlTaskGroup()
 {
-  derivedValidate();
+  //  derivedValidate();
   sensorTaskSync();
   receiverTask();
   controlTask();
@@ -2142,22 +2152,24 @@ struct Task alphaPilotTasks[] = {
 #ifdef STAP_PERIOD_ACC
   { accTask, STAP_PERIOD_ACC, true, 0 },
 #endif
-  { alphaTask, HZ_TO_PERIOD(ALPHA_HZ), true, 0 },
-  { airspeedTask, HZ_TO_PERIOD(AIRSPEED_HZ), true, 0 },
-  { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true, 0 },
-  { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, 0 },
-  { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true, 0 },
-  { communicationTask, HZ_TO_PERIOD(100), true, 0 },
+  { communicationTask, HZ_TO_PERIOD(60), true },
+#ifdef ASYNC_AIR_SENSORS
+  { alphaSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },
+  { airspeedSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },
+#endif
+  { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true },
+  { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true },
+  { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true },
   // { gpsTask, HZ_TO_PERIOD(100) },
-  { blinkTask, HZ_TO_PERIOD(LED_TICK), false, 0 },
-  { obdRefresh, HZ_TO_PERIOD(40), false, 0 },
-  { displayTask, HZ_TO_PERIOD(8), false, 0 },
-  { logTask, HZ_TO_PERIOD(LOG_HZ), true, 0 },
-  { logSave, HZ_TO_PERIOD(LOG_HZ_COMMIT), false, 0 },
-  { cacheTask, HZ_TO_PERIOD(LOG_HZ_FLUSH), false, 0 },
-  { monitorTask, HZ_TO_PERIOD(1), false, 0 },
-  { heartBeatTask, HZ_TO_PERIOD(HEARTBEAT_HZ), false, 0 },
-  { gaugeTask, HZ_TO_PERIOD(10), false, 0 },
-  { NULL, 0, false, 0 } };
+  { blinkTask, HZ_TO_PERIOD(LED_TICK), false },
+  { obdRefresh, HZ_TO_PERIOD(30), false },
+  { displayTask, HZ_TO_PERIOD(8), false },
+  { logTask, HZ_TO_PERIOD(LOG_HZ), true },
+  { logSave, HZ_TO_PERIOD(LOG_HZ_COMMIT), false },
+  { cacheTask, HZ_TO_PERIOD(LOG_HZ_FLUSH), false },
+  { monitorTask, HZ_TO_PERIOD(1), false },
+  { heartBeatTask, HZ_TO_PERIOD(HEARTBEAT_HZ), false },
+  { gaugeTask, HZ_TO_PERIOD(10), false },
+  { NULL, 0, false } };
 
 

@@ -102,19 +102,29 @@ static bool scheduler()
   while(task->code) {
     vpTimeAcquire();
     
-    if(vpTimeMicrosApprox > task->nextInvocation ) {
-      if(task->realTime && vpTimeMicrosApprox < task->nextInvocation + task->period/3)
+    if(vpTimeMillisApprox > task->nextInvocation ) {
+      if(task->realTime
+	 && vpTimeMillisApprox < task->nextInvocation + task->period/2 + 1)
 	// A realtime task that has not slipped that much, try to catch up
 	task->nextInvocation += task->period;
-      else
+      else {
  	// Either not a realtime task or we're slipping too much
-	task->nextInvocation = vpTimeMicrosApprox + task->period;
-
+	task->nextInvocation = vpTimeMillisApprox + task->period;
+	task->slipCount++;
+      }
       //      consoleNote("Invoking task ");
       // consolePrintLnUL(task->code);
 
       currentTask = task;
+      
+      VP_TIME_MICROS_T startTime = vpTimeMicrosApprox;
+
       task->code();
+
+      if(vpStatus.consoleLink) 
+	task->cumTime += vpTimeMicros() - startTime;
+      
+      task->cumCount++;
       status = true; // We had something to do
     }
     
@@ -125,6 +135,36 @@ static bool scheduler()
   
   currentTask = NULL;
   return status;
+}
+
+void schedulerReport(void)
+{
+  static VP_TIME_MICROS_T lastReport;
+      
+  consoleNoteLn_P(CS_STRING("Task statistics"));
+
+  VP_TIME_MICROS_T period = vpTimeMicros() - lastReport;
+
+  int i = 0;
+  for(i = 0; alphaPilotTasks[i].code != NULL; i++) {
+    consoleNote("  ");
+    consolePrintI(i);
+    consoleTab(10);
+    consolePrintF(alphaPilotTasks[i].cumCount / (period / 1.0e6));
+    consolePrint(" Hz ");
+    consoleTab(20);
+    consolePrintF(100.0 * alphaPilotTasks[i].cumTime / period);
+    consolePrint(" %");
+    consoleTab(30);
+    if(alphaPilotTasks[i].realTime)
+      consolePrintF((float) alphaPilotTasks[i].slipCount / (period / 1.0e6));
+    consoleNL();
+    alphaPilotTasks[i].cumCount = 0;
+    alphaPilotTasks[i].slipCount = 0;
+    alphaPilotTasks[i].cumTime = 0;
+  }
+
+  lastReport = vpTimeMicros();
 }
 
 //

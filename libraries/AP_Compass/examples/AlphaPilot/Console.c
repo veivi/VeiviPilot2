@@ -59,7 +59,7 @@ void consoleCR(void)
 
 void consoleTab(int i)
 {
-  while(column < i)
+  while(!vpMode.silent && column < i)
     consoleOut(' ');
 }
 

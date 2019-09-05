@@ -75,7 +75,7 @@ void slopeReset(SlopeLimiter_t *, float v);
 
 typedef struct Sampler {
   int32_t acc;
-  float value;
+  int16_t value;
   int count;
   bool warn;
 } Sampler_t;
@@ -83,7 +83,7 @@ typedef struct Sampler {
 #define SAMPLER_CONS { 0UL, 0.0f, 0 }
 
 void samplerInput(Sampler_t*, int16_t v);
-float samplerMean(Sampler_t*);
+int16_t samplerMean(Sampler_t*);
 
 typedef struct Turbine_s {
   float tau, state;

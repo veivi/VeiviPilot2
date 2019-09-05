@@ -4,6 +4,7 @@
 void mainLoopSetup();
 void mainLoop();
 void hostLoopback(void);
+void schedulerReport(void);
 
 #endif
 
