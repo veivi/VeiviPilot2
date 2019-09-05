@@ -146,6 +146,7 @@ void schedulerReport(void)
   VP_TIME_MICROS_T period = vpTimeMicros() - lastReport;
 
   int i = 0;
+  float load = 0.0f, cum = 0.0f;
   
   for(i = 0; alphaPilotTasks[i].code != NULL; i++) {
     consoleNote("  ");
@@ -153,8 +154,10 @@ void schedulerReport(void)
     consoleTab(10);
     consolePrintF(alphaPilotTasks[i].timesRun / (period / 1.0e6));
     consolePrint(" Hz ");
+    load = 100.0f * alphaPilotTasks[i].runTime / period;
+    cum += load;
     consoleTab(20);
-    consolePrintF(100.0 * alphaPilotTasks[i].runTime / period);
+    consolePrintF(load);
     consolePrint(" %");
     consoleTab(30);
     if(alphaPilotTasks[i].realTime) {
@@ -166,6 +169,10 @@ void schedulerReport(void)
     alphaPilotTasks[i].lagged = 0;
     alphaPilotTasks[i].runTime = 0;
   }
+
+  consoleTab(20);
+  consolePrintF(cum);
+  consolePrintLn(" %");
 
   lastReport = vpTimeMicros();
 }
