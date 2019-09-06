@@ -349,7 +349,7 @@ void sensorTaskSync()
 #endif
   
   vpFlight.alpha =
-    2 * samplerMean(&alphaSampler) * PI_F / (1L<<(CHAR_BIT*sizeof(int16_t)));
+    2*PI_F * samplerMean(&alphaSampler) / (1L<<(CHAR_BIT*sizeof(int16_t)));
   
   vpFlight.relWind = vpStatus.fault == 3
     ? vpFlight.accDir : vpFlight.alpha - vpParam.alphaOffset;
@@ -668,7 +668,7 @@ void statusTask()
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
-     && vpInput.stickForce > RATIO(1/3)) {
+     && vpInput.stickForce > RATIO(1/2)) {
     // We may be in a flare
 
     if(vpInertiaOnForce(&flareInertia)) {
@@ -1651,7 +1651,7 @@ const float pusherBias_c = -2.75f/RADIAN;
 
 void elevatorModule()
 {
-  const float shakerLimit = RATIO(1/3);
+  const float shakerLimit = RATIO(1/2);
 
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
     // Limit elevator nose-up wind up when weight is on wheels

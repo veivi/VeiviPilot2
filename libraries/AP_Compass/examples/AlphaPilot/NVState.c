@@ -449,10 +449,11 @@ void derivedValidate()
   
   vpDerived.thresholdAlpha =
     coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin));
-  vpDerived.shakerAlpha =
-    coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin/2));
   vpDerived.pusherAlpha = vpDerived.maxAlpha - fmaxf(vpParam.pushMargin, 0);
   
+  vpDerived.shakerAlpha =
+    fminf(coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin/4)), vpDerived.pusherAlpha);
+
   vpDerived.stallAlpha = vpDerived.maxAlpha - fminf(vpParam.pushMargin, 0);
   
   //

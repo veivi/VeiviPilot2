@@ -217,20 +217,7 @@ void samplerInput(Sampler_t *f, int16_t v)
 int16_t samplerMean(Sampler_t *f)
 {
   if(f->count > 0) {
-    switch(f->count) {
-    case 1:
-      f->value = (int16_t) f->acc;
-      break;
-    case 2:
-      f->value = (int16_t) (f->acc>>1);
-      break;
-    case 4:
-      f->value = (int16_t) (f->acc>>2);
-      break;
-    default:
-      f->value = (int16_t) (f->acc / f->count);
-    }
-      
+    f->value = (int16_t) (f->acc / f->count);
     f->acc = 0;
     f->count = 0;
   } else if(!f->warn) {

@@ -106,7 +106,7 @@ static bool scheduler()
     
     if(vpTimeMillisApprox - task->lastInvoked >= task->period) {
       if(task->realTime
-	 && vpTimeMillisApprox - task->lastInvoked < 3*task->period/2)
+	 && vpTimeMillisApprox - task->lastInvoked < 4*task->period/3)
 	// A realtime task that has not slipped that much, try to catch up
 	task->lastInvoked += task->period;
       else {
