@@ -2025,9 +2025,13 @@ void actuatorTask()
 
 void heartBeatTask()
 {
-  if(!heartBeatCount && linkDownCount++ > 2)
+  if(!heartBeatCount && linkDownCount++ > 2) {
+    if(vpStatus.consoleLink)
+      consoleNoteLn_P(CS_STRING("Console DISCONNECTED"));
+    
     vpStatus.consoleLink = vpStatus.simulatorLink = false;
-
+  }
+  
   if(vpStatus.simulatorLink && vpTimeMillisApprox - simTimeStamp > 1.0e3) {
     consoleNoteLn_P(CS_STRING("Simulator link LOST"));
     vpStatus.simulatorLink = false;

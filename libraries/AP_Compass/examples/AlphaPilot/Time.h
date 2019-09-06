@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef uint64_t VP_TIME_MICROS_T;
-typedef uint32_t VP_TIME_MILLIS_T;
+typedef uint32_t VP_TIME_MICROS_T;
+typedef uint16_t VP_TIME_MILLIS_T;
 
 typedef struct VPInertiaTimer {
   bool *state;

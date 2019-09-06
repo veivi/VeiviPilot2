@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "NVState.h"
+#include "Time.h"
 
 #define DG_TRANSMIT_MAX (1<<7)
 
@@ -35,7 +36,7 @@ extern void datagramRxError(const char *, uint16_t code);
 extern uint16_t maxDatagramSize;
 extern uint8_t datagramRxStore[];
 extern bool datagramLocalOnly;
-extern uint32_t datagramLastTxMillis, datagramLastRxMillis, datagramLastHeartbeat;
+extern VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis, datagramLastHeartbeat;
 extern uint16_t datagramsGood, datagramsLost, datagramBytes;
 extern bool datagramForceHeartbeat;
 

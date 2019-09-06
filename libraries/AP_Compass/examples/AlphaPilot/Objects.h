@@ -123,7 +123,8 @@ extern struct OutputState vpOutput;
 
 extern float controlCycle;
 extern float logBandWidth, ppmFreq, simInputFreq;
-extern uint32_t simTimeStamp, idleMicros;
+extern VP_TIME_MILLIS_T simTimeStamp;
+extern VP_TIME_MICROS_T idleMicros;
 extern const int maxParams;
 extern uint8_t gaugeCount, gaugeVariable[];
 extern uint32_t lastPPMWarn;

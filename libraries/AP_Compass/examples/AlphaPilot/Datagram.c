@@ -15,7 +15,7 @@ VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis;
 
 void datagramHeartbeat(bool force)
 {
-  if(force || vpTimeMillisApprox - datagramLastTxMillis > 0.9e3) {
+  if(force || vpTimeMillisApprox - datagramLastTxMillis > 900U) {
     datagramTxStart(DG_HEARTBEAT);
     datagramTxEnd();
   }
@@ -47,16 +47,18 @@ void datagramTxOut(const uint8_t *data, int l)
 }
 
 static uint8_t datagramTxSeq;
+static bool datagramTxBusy;
 
 void datagramTxStart(uint8_t dg)
 {
-  if(vpTimeMillisApprox - datagramLastTxMillis > 0.5e3)
+  if(datagramTxBusy || vpTimeMillisApprox - datagramLastTxMillis > 500U)
     outputBreak();
   
   datagramSerialOut(NOTFLAG + datagramTxSeq);
   crcStateTx = crc16_update(0xFFFF, NOTFLAG + datagramTxSeq);
   datagramTxSeq = (datagramTxSeq + 1) & SEQMASK;
   datagramTxOutByte((const uint8_t) dg);
+  datagramTxBusy = true;
 }
 
 void datagramTxStartLocal(uint8_t dg)
@@ -72,6 +74,7 @@ void datagramTxEnd(void)
   outputBreak();
   datagramLocalOnly = false;
   datagramLastTxMillis = vpTimeMillisApprox;  
+  datagramTxBusy = false;
 }
 
 static void storeByte(const uint8_t c)

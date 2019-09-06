@@ -39,8 +39,8 @@ struct Task {
   void (*code)(void);
   VP_TIME_MILLIS_T period;
   bool realTime;
-  VP_TIME_MILLIS_T nextInvocation;
-  VP_TIME_MILLIS_T runTime;
+  VP_TIME_MILLIS_T lastInvoked;
+  VP_TIME_MICROS_T runTime;
   int16_t timesRun, lagged;
 };
 

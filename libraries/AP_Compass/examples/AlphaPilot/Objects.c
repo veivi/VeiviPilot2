@@ -12,7 +12,8 @@ struct OutputState vpOutput;
 
 float controlCycle;
 float logBandWidth, ppmFreq;
-uint32_t idleMicros;
+VP_TIME_MILLIS_T simTimeStamp;
+VP_TIME_MICROS_T idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
 uint32_t lastPPMWarn;
 float fieldStrength;
@@ -21,7 +22,6 @@ struct SimLinkSensor sensorData;
 uint16_t simFrames;
 float simInputFreq;
 int linkDownCount, heartBeatCount;
-uint32_t simTimeStamp;
 
 PIDCtrl_t elevCtrl = PIDCTRL_CONS(1);
 PIDCtrl_t pushCtrl = PIDCTRL_CONS(1);

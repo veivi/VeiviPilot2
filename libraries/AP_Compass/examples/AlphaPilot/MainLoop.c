@@ -33,6 +33,8 @@ void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
 {
   switch(kind) {
   case DG_HEARTBEAT:
+    //    consoleNoteLn_P(CS_STRING("HEARTBEAT"));
+      
     if(!vpStatus.consoleLink) {
       consoleNoteLn_P(CS_STRING("Console CONNECTED"));
       vpStatus.consoleLink = true;
@@ -102,14 +104,14 @@ static bool scheduler()
   while(task->code) {
     vpTimeAcquire();
     
-    if(vpTimeMillisApprox > task->nextInvocation ) {
+    if(vpTimeMillisApprox - task->lastInvoked >= task->period) {
       if(task->realTime
-	 && vpTimeMillisApprox < task->nextInvocation + task->period/2 + 1)
+	 && vpTimeMillisApprox - task->lastInvoked < 3*task->period/2)
 	// A realtime task that has not slipped that much, try to catch up
-	task->nextInvocation += task->period;
+	task->lastInvoked += task->period;
       else {
  	// Either not a realtime task or we're slipping too much
-	task->nextInvocation = vpTimeMillisApprox + task->period;
+	task->lastInvoked = vpTimeMillisApprox;
 	task->lagged++;
       }
       //      consoleNote("Invoking task ");
@@ -231,13 +233,23 @@ void mainLoopSetup()
   consolePrintLn_P(CS_STRING(" bytes free."));
 }
 
+VPPeriodicTimer_t timer = VP_PERIODIC_TIMER_CONS(60.0e3);
+
 void mainLoop() 
 {
   bool idling = false;
   VP_TIME_MICROS_T idleStarted = 0, idleEnded = 0;
-  
+  uint16_t uptimeMinutes = 0;
+
   while(true) {
     idleEnded = vpTimeMicros();
+
+    if(vpPeriodicEvent(&timer)) {
+      consoleNote_P(CS_STRING("Uptime = "));
+      consolePrintUL(++uptimeMinutes);
+      consolePrintLn_P(CS_STRING(" minutes"));
+      consoleFlush();
+    }
     
     if(scheduler()) {
       // Had something to do
