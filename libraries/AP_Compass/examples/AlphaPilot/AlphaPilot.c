@@ -1350,6 +1350,8 @@ void gaugeTask()
 	consolePrintF(pidCtrlOutput(&aileCtrl));
 	consolePrint_P(CS_STRING(") elevOut = "));
 	consolePrintF(vpOutput.elev);
+	consolePrint_P(CS_STRING(" thrOut = "));
+	consolePrintF(turbineOutput(&engine));
 	consolePrint_P(CS_STRING(" rudderOut = "));
 	consolePrintF(vpOutput.rudder);
 	break;

@@ -57,6 +57,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "virtual", c_virtual, e_bool, &vpParam.virtualOnly },
   { "sensor", c_sensor, e_bool, &vpParam.sensorOrient },
   { "margin", c_margin, e_percent, &vpParam.thresholdMargin },
+  { "smargin", c_smargin, e_percent, &vpParam.shakerMargin },
   { "pmargin", c_pmargin, e_angle, &vpParam.pushMargin },
   { "yawdamper", c_yawdamper, e_float, &vpParam.yd_C },
   { "wow", c_wow, e_bool, &vpParam.wowCalibrated },
@@ -99,6 +100,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "memtest", c_memtest },
   { "scale", c_scale },
   { "launch", c_launch },
+  { "ready", c_ready },
   { "", c_invalid }
 };
 
@@ -591,6 +593,12 @@ void executeCommand(char *buf)
       }
       break;
 
+    case c_ready:
+      // Simulate ready for departure
+      vpMode.takeOff = true;
+      vpStatus.aloft = false;
+      break;
+      
     case c_launch:
       // Simulate takeoff
       vpMode.takeOff = false;

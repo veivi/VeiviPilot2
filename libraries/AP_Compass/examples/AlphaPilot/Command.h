@@ -38,6 +38,7 @@ typedef enum {
   c_virtual,
   c_trim,
   c_pmargin,
+  c_smargin,
   c_col,
   c_alt_col,
   c_store,
@@ -91,7 +92,8 @@ typedef enum {
   c_memtest,
   c_scale,
   c_dimension,
-  c_launch
+  c_launch,
+  c_ready
 } token_t;
 
 typedef enum

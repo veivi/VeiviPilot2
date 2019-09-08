@@ -23,7 +23,8 @@ const struct ParamRecord paramDefaults = {
   .crc = 0,
   .version = PARAM_VERSION,
   .name = "Invalid",
-  .dimension = 1.0f };
+  .dimension = 1.0f,
+  .shakerMargin = 0.5 };
 
 const struct NVStateRecord stateDefaults = {
   .crc = 0,
@@ -263,6 +264,8 @@ void printParams()
   consolePrintLnF(vpDerived.minimumIAS);
   consoleNote_P(CS_STRING("  Threshold margin(%) = "));
   consolePrintF(vpParam.thresholdMargin*100);
+  consolePrint_P(CS_STRING(" Shaker (%thres) = "));
+  consolePrintF(vpParam.shakerMargin*100);
   consolePrint_P(CS_STRING(" Pusher(deg) = "));
   consolePrintLnF(vpParam.pushMargin*RADIAN);
   consoleNote_P(CS_STRING("    Derived alpha(threshold, shake, push, stall) = "));
@@ -452,7 +455,7 @@ void derivedValidate()
   vpDerived.pusherAlpha = vpDerived.maxAlpha - fmaxf(vpParam.pushMargin, 0);
   
   vpDerived.shakerAlpha =
-    fminf(coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin/4)), vpDerived.pusherAlpha);
+    fminf(coeffOfLiftInverse(vpDerived.maxCoeffOfLift/sqrf(1 + vpParam.thresholdMargin*vpParam.shakerMargin)), vpDerived.pusherAlpha);
 
   vpDerived.stallAlpha = vpDerived.maxAlpha - fminf(vpParam.pushMargin, 0);
   

@@ -27,7 +27,7 @@ struct ParamRecord {
   float alphaOffset;
   float alphaMax[2];
   float maxPitch;
-  float thresholdMargin, pushMargin;
+  float thresholdMargin, pushMargin, shakerMargin;
   float flare;
   int8_t functionMap[MAX_SERVO]; 
   float neutral[MAX_SERVO]; 
