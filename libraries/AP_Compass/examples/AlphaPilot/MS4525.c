@@ -22,26 +22,20 @@ bool MS4525DO_read(uint16_t *result)
   uint8_t status = MS4525DO_readGeneric(buf, sizeof(buf));
   
   if(status && result)
-    *result = (((uint16_t) (buf[0] & 0x3F)) << 8) + buf[1];
+    *result = ((((uint16_t) (buf[0] & 0x3F)) << 8) + buf[1])<<2;
 
   return status && !(buf[0] & (1<<6));
 }
 
-static uint32_t acc = 0;
-static uint16_t ms4525_ref;
-static int accCount = 0;
-static bool calibrating = true;
+#define LOG2_CALIB_WINDOW 9
+#define LOG2_CALIB_DECAY 3
 
-void MS4525DO_calibrate(void)
-{
-  calibrating = true;
-  acc = 0;
-  accCount = 0;
-}
+static uint32_t calibAcc = 0;
+static int calibCount = 0;
+static uint32_t ms4525_ref = 0;
 
 bool MS4525DO_pressure(int16_t *result) 
 {
-  const int log2CalibWindow = 9;
   uint16_t raw = 0;
 
   if(!MS4525DO_read(&raw))
@@ -49,18 +43,32 @@ bool MS4525DO_pressure(int16_t *result)
 
   basei2cEntropySample(&target, raw);
   
-  if(calibrating) {
-    if(accCount < 1<<log2CalibWindow) {
-      acc += raw;
-      accCount++;
-    } else {
-      ms4525_ref = acc>>(log2CalibWindow - 2);
-      calibrating = false;
-      consoleNote_P(CS_STRING("Airspeed calibration DONE, ref = "));
-      consolePrintLnUI(ms4525_ref);
-    }
-  } else if(result)
-    *result = (raw<<2) - ms4525_ref;
+  if(vpMode.takeOff || vpStatus.positiveIAS || vpStatus.aloft) {
+    if(calibCount > 0)
+      consoleNoteLn_P(CS_STRING("Airspeed calibration STOPPED"));
+     
+    calibAcc = 0;
+    calibCount = 0;
+  } else if(calibCount < 1<<LOG2_CALIB_WINDOW) {
+    calibAcc += raw;
+    calibCount++;
+  } else {
+    if(ms4525_ref == 0)
+      ms4525_ref = calibAcc>>(LOG2_CALIB_WINDOW - LOG2_CALIB_DECAY);
+    else
+      ms4525_ref =
+	(((1<<LOG2_CALIB_DECAY)-1)*ms4525_ref>>LOG2_CALIB_DECAY)
+	+ (calibAcc>>LOG2_CALIB_WINDOW);
+      
+    calibAcc = 0;
+    calibCount = 0;
+    
+    consoleNote_P(CS_STRING("Current airspeed ref = "));
+    consolePrintLnUL(ms4525_ref);
+  }
+
+  if(ms4525_ref != 0)
+    *result = raw - (ms4525_ref>>LOG2_CALIB_DECAY);
   
   return true;
 }

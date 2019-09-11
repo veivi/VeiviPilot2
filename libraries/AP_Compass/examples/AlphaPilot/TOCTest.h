@@ -21,6 +21,7 @@ typedef enum {
   toc_fdr,
   toc_ram,
   toc_load,
+  toc_gear
 } testCode_t;
 
 #define TOC_TEST_NAME_MAX 16

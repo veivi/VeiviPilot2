@@ -222,10 +222,6 @@ void mainLoopSetup()
   vpControl.gearSel = 0;
   vpMode.gearSelected = false;
 
-  // Initiate IAS calibration
-
-  MS4525DO_calibrate();
-
   // Done
   
   consoleNote_P(CS_STRING("Initialized, "));

@@ -21,6 +21,11 @@ bool toc_test_mode(bool reset)
     && vpMode.wingLeveler && vpMode.bankLimiter && vpMode.takeOff;
 }
 
+bool toc_test_gear(bool reset)
+{
+  return vpMode.gearSelected || !vpDerived.haveRetracts;
+}
+
 bool toc_test_link(bool reset)
 {
   return vpTimeMillisApprox - lastPPMWarn > 10e3 &&
@@ -225,7 +230,8 @@ const struct TakeoffTest tocTest[] CS_QUALIFIER =
     [toc_mode] = { "MODE", toc_test_mode },
     [toc_fdr] = { "DATA", toc_test_fdr },
     [toc_ram] = { "RAM", toc_test_ram },
-    [toc_load] = { "LOAD", toc_test_load }
+    [toc_load] = { "LOAD", toc_test_load },
+    [toc_gear] = { "GEAR", toc_test_gear }
   };
 
 const int tocNumOfTests = sizeof(tocTest)/sizeof(struct TakeoffTest);

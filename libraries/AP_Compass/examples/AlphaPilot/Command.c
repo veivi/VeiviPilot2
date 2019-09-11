@@ -13,6 +13,7 @@
 #include "NVState.h"
 #include "MS4525.h"
 #include "AS5048B.h"
+#include "MainLoop.h"
 
 const struct Command commands[] CS_QUALIFIER = {
   { "name", c_name, e_string, &vpParam.name },
