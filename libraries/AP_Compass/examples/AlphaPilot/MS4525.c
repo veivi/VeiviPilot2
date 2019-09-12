@@ -4,6 +4,9 @@
 #include "Console.h"
 #include "BaseI2C.h"
 
+#define LOG2_CALIB_WINDOW 9
+#define LOG2_CALIB_DECAY 4
+
 static BaseI2CTarget_t target = { "pitot" } ;
 
 bool MS4525DO_isOnline(void)
@@ -27,12 +30,10 @@ bool MS4525DO_read(uint16_t *result)
   return status && !(buf[0] & (1<<6));
 }
 
-#define LOG2_CALIB_WINDOW 9
-#define LOG2_CALIB_DECAY 3
-
 static uint32_t calibAcc = 0;
 static int calibCount = 0;
-static uint32_t ms4525_ref = 0;
+static uint32_t ms4525_refAcc = 0;
+static uint16_t ms4525_ref = 0;
 
 bool MS4525DO_pressure(int16_t *result) 
 {
@@ -53,22 +54,30 @@ bool MS4525DO_pressure(int16_t *result)
     calibAcc += raw;
     calibCount++;
   } else {
-    if(ms4525_ref == 0)
-      ms4525_ref = calibAcc>>(LOG2_CALIB_WINDOW - LOG2_CALIB_DECAY);
+    // Use the previous value as the new reference to be safe (the next
+    // value might already be contaminated by a takeoff that didn't yet
+    // trigger status.positiveIAS)
+    
+    ms4525_ref = ms4525_refAcc>>LOG2_CALIB_DECAY;
+
+    // Update the reference accumulator
+    
+    if(ms4525_refAcc == 0)
+      ms4525_refAcc = calibAcc>>(LOG2_CALIB_WINDOW - LOG2_CALIB_DECAY);
     else
-      ms4525_ref =
-	(((1<<LOG2_CALIB_DECAY)-1)*ms4525_ref>>LOG2_CALIB_DECAY)
+      ms4525_refAcc =
+	(((1<<LOG2_CALIB_DECAY)-1)*ms4525_refAcc>>LOG2_CALIB_DECAY)
 	+ (calibAcc>>LOG2_CALIB_WINDOW);
       
     calibAcc = 0;
     calibCount = 0;
     
-    consoleNote_P(CS_STRING("Current airspeed ref = "));
-    consolePrintLnUL(ms4525_ref);
+    consoleNote_P(CS_STRING("Airspeed accumulator = "));
+    consolePrintLnUL(ms4525_refAcc);
   }
 
   if(ms4525_ref != 0)
-    *result = raw - (ms4525_ref>>LOG2_CALIB_DECAY);
+    *result = raw - ms4525_ref;
   
   return true;
 }
