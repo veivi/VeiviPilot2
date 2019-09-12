@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "Time.h"
 
-#define INERTIA 2
+#define INERTIA 3
 
 typedef struct Button {
   float activeValue;
