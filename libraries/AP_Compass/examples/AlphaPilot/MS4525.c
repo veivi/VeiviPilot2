@@ -72,8 +72,8 @@ bool MS4525DO_pressure(int16_t *result)
     calibAcc = 0;
     calibCount = 0;
     
-    consoleNote_P(CS_STRING("Airspeed accumulator = "));
-    consolePrintLnUL(ms4525_refAcc);
+    //    consoleNote_P(CS_STRING("Airspeed accumulator = "));
+    //    consolePrintLnUL(ms4525_refAcc);
   }
 
   if(ms4525_ref != 0)

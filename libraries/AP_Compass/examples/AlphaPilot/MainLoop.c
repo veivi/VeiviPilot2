@@ -229,7 +229,7 @@ void mainLoopSetup()
   consolePrintLn_P(CS_STRING(" bytes free."));
 }
 
-VPPeriodicTimer_t timer = VP_PERIODIC_TIMER_CONS(60.0e3);
+VPPeriodicTimer_t timer = VP_PERIODIC_TIMER_CONS(5*60.0e3);
 
 void mainLoop() 
 {
@@ -241,8 +241,8 @@ void mainLoop()
     idleEnded = vpTimeMicros();
 
     if(vpPeriodicEvent(&timer)) {
-      consoleNote_P(CS_STRING("Uptime = "));
-      consolePrintUL(++uptimeMinutes);
+      consoleNote_P(CS_STRING("Uptime "));
+      consolePrintUL(++uptimeMinutes*5);
       consolePrintLn_P(CS_STRING(" minutes"));
       consoleFlush();
     }
