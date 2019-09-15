@@ -215,7 +215,7 @@ void logDumpBinary(void)
     nvState.testNum[0],
     logLen,
     LOG_HZ,
-    vpParam.weightDry,
+    vpParam.weightDry + vpParam.battery,
     "\0" };
   
   strncpy(info.name, vpParam.name, NAME_LEN);
