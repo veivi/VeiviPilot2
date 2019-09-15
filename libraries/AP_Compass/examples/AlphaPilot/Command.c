@@ -555,10 +555,6 @@ void executeCommand(char *buf)
       consolePrintLn_P(CS_STRING(" bytes/sec"));
 
       schedulerReport();
-
-      consoleNote_P(CS_STRING("Uptime = "));
-      consolePrintF(vpTimeMillisApprox/1e3/60);
-      consolePrintLn_P(CS_STRING(" minutes"));
       break;
       
     case c_function:

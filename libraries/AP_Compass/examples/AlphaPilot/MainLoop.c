@@ -175,6 +175,10 @@ void schedulerReport(void)
   consolePrintLn(" %");
 
   lastReport = vpTimeMicros();
+
+  consoleNote_P(CS_STRING("Uptime "));
+  consolePrintUL(uptimeMinutes);
+  consolePrintLn_P(CS_STRING(" minutes"));
 }
 
 //
@@ -229,22 +233,25 @@ void mainLoopSetup()
   consolePrintLn_P(CS_STRING(" bytes free."));
 }
 
-VPPeriodicTimer_t timer = VP_PERIODIC_TIMER_CONS(5*60.0e3);
+VPPeriodicTimer_t minuteTimer = VP_PERIODIC_TIMER_CONS(60.0e3);
 
 void mainLoop() 
 {
   bool idling = false;
   VP_TIME_MICROS_T idleStarted = 0, idleEnded = 0;
-  uint16_t uptimeMinutes = 0;
 
   while(true) {
     idleEnded = vpTimeMicros();
 
-    if(vpPeriodicEvent(&timer)) {
-      consoleNote_P(CS_STRING("Uptime "));
-      consolePrintUL(++uptimeMinutes*5);
-      consolePrintLn_P(CS_STRING(" minutes"));
-      consoleFlush();
+    if(vpPeriodicEvent(&minuteTimer)) {
+      uptimeMinutes++;
+
+      if(uptimeMinutes % 5 == 0) {
+	consoleNote_P(CS_STRING("Uptime "));
+	consolePrintUL(uptimeMinutes);
+	consolePrintLn_P(CS_STRING(" minutes"));
+	consoleFlush();
+      }
     }
     
     if(scheduler()) {

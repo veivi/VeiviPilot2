@@ -22,6 +22,7 @@ struct SimLinkSensor sensorData;
 uint16_t simFrames;
 float simInputFreq;
 int linkDownCount, heartBeatCount;
+uint16_t uptimeMinutes = 0;
 
 PIDCtrl_t elevCtrl = PIDCTRL_CONS(1);
 PIDCtrl_t pushCtrl = PIDCTRL_CONS(1);

@@ -112,6 +112,7 @@ extern Damper_t avgDynP, accAvg;
 extern struct SimLinkSensor sensorData;
 extern uint16_t simFrames;
 extern int linkDownCount, heartBeatCount;
+extern uint16_t uptimeMinutes;
 
 extern struct ModeRecord vpMode;
 extern struct FeatureRecord vpFeature;
