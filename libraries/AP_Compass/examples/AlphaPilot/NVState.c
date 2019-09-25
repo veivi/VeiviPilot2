@@ -310,7 +310,10 @@ void printParams()
   consolePrint_P(CS_STRING("servo rate = "));
   consolePrintLnF(vpParam.servoRate);
   consoleNote_P(CS_STRING("    Canard      "));
-  consolePrintLnF(vpParam.canardDefl*90);
+  consolePrintF(vpParam.canardDefl*90);
+  consolePrint_P(CS_STRING(" (gain "));
+  consolePrintF(vpParam.canardGain);
+  consolePrintLn_P(CS_STRING(")")); 
   consoleNote_P(CS_STRING("    Vector(v,h) "));
   consolePrintF(vpParam.vertDefl*90);
   consolePrint(", ");

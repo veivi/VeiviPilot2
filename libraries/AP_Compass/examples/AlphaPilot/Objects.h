@@ -75,6 +75,7 @@ struct InputState {
 struct ControlState {
   float testGain;
   float o_P, r_Mix, yd_P, t_Mix;
+  float canardGain;
   float s_Ku_ref, i_Ku_ref, yd_P_ref, r_Ku_ref;
   float elevTrim, targetAlpha, targetPitchR;
   float elevPredict, ailePredict, aileNeutral, pusher;

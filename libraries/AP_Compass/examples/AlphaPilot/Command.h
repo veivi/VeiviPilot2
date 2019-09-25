@@ -19,6 +19,7 @@ typedef enum {
   c_bdefl,
   c_fdefl,
   c_cdefl,
+  c_cgain,
   c_vdefl,
   c_hdefl,
   c_weight,

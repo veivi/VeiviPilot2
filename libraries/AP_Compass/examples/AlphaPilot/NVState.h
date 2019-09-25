@@ -37,7 +37,7 @@ struct ParamRecord {
   float rudderDefl;
   float steerDefl, steerPark, steerTrim;
   float brakeDefl;
-  float canardDefl;
+  float canardDefl, canardGain;
   float vertDefl;
   float horizDefl;
   float i_Ku_C, i_Tu, o_P;

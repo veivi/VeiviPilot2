@@ -1061,6 +1061,7 @@ void configurationTask()
   vpControl.o_P = vpParam.o_P;
   vpControl.r_Mix = vpParam.r_Mix;
   vpControl.t_Mix = vpParam.t_Mix;
+  vpControl.canardGain = vpParam.canardGain;
   
   slopeSet(&aileActuator, vpParam.servoRate/(90.0f/2)/vpParam.aileDefl);
   
@@ -1126,8 +1127,7 @@ void configurationTask()
             
     case 10:
       // Aileron to rudder mix
-      vpControl.r_Mix = vpControl.testGain
-	= testGainLinear(0, 1);
+      vpControl.r_Mix = vpControl.testGain = testGainLinear(0, 1);
       break;
 
     case 11:
@@ -1135,6 +1135,11 @@ void configurationTask()
       turbineSetTau(&engine,
 		    CONTROL_HZ*(vpControl.testGain
 				= testGainLinear(vpParam.lag*1.5f, 0)));
+      break;
+
+    case 12:
+      // Canard gain
+      vpControl.canardGain = vpControl.testGain = testGainLinear(1.2, 0);
       break;
       
     case 13:

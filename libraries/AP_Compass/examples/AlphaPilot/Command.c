@@ -43,6 +43,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "fdefl", c_fdefl, e_angle90, &vpParam.flapDefl },
   { "bdefl", c_bdefl, e_angle90, &vpParam.brakeDefl },
   { "cdefl", c_cdefl, e_angle90, &vpParam.canardDefl },
+  { "cgain", c_cgain, e_float, &vpParam.canardGain },
   { "vdefl", c_vdefl, e_angle90, &vpParam.vertDefl },
   { "hdefl", c_hdefl, e_angle90, &vpParam.horizDefl },
   { "roll_k", c_roll_k, e_float, &vpParam.roll_C, &vpParam.roll_Expo },
