@@ -1657,10 +1657,10 @@ void elevatorModule()
 
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
     // Limit elevator nose-up wind up when weight is on wheels
-    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/8));
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/2));
   else
     // Weight not on wheels, allow more authority
-    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/2));
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(2/3));
   
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);

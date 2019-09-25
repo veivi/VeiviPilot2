@@ -39,8 +39,6 @@ void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
       consoleNoteLn_P(CS_STRING("Console CONNECTED"));
       vpStatus.consoleLink = true;
     }
-    heartBeatCount++;
-    linkDownCount = 0;
     break;
     
   case DG_CONSOLE:
@@ -76,6 +74,9 @@ void datagramInterpreter(const uint8_t *data, int size)
     return;
   }
 
+  heartBeatCount++;
+  linkDownCount = 0;
+    
   datagramInterpreterKind(data[0], &data[1], size - 1);
 }
 
