@@ -311,7 +311,7 @@ void printParams()
   consolePrintLnF(vpParam.servoRate);
   consoleNote_P(CS_STRING("    Canard      "));
   consolePrintF(vpParam.canardDefl*90);
-  consolePrint_P(CS_STRING(" (gain "));
+  consolePrint_P(CS_STRING(" (alpha gain "));
   consolePrintF(vpParam.canardGain);
   consolePrintLn_P(CS_STRING(")")); 
   consoleNote_P(CS_STRING("    Vector(v,h) "));
