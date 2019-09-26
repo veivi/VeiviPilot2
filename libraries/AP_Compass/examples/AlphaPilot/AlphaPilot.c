@@ -1139,7 +1139,7 @@ void configurationTask()
 
     case 12:
       // Canard gain
-      vpControl.canardGain = vpControl.testGain = testGainLinear(1.2, 0);
+      vpControl.canardGain = vpControl.testGain = testGainLinear(2.5, 0.5);
       break;
       
     case 13:
@@ -1662,10 +1662,10 @@ void elevatorModule()
 
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
     // Limit elevator nose-up wind up when weight is on wheels
-    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(1/2));
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(2/3));
   else
     // Weight not on wheels, allow more authority
-    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(2/3));
+    pidCtrlSetRangeAB(&elevCtrl, -RATIO(2/3), RATIO(4/5));
   
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);

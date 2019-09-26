@@ -65,7 +65,7 @@ float canard1Fn()
   
   if(!vpStatus.alphaUnreliable)
     // Negative feedback from alpha
-    value -= vpControl.canardGain*vpFlight.alpha*RADIAN/90;
+    value -= vpControl.canardGain*clamp(vpFlight.alpha, -vpDerived.maxAlpha, 1.2*vpDerived.maxAlpha)*RADIAN/90;
   
   return value;
 }
