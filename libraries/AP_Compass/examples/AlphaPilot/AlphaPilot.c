@@ -969,6 +969,7 @@ void configurationTask()
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
     consoleNoteLn_P(CS_STRING("We're assumed to have TAKEN OFF"));
+    annunciatorTalk("Take-off");
     vpMode.takeOff = false;
     vpStatus.aloft = true;
     
