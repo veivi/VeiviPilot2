@@ -1140,7 +1140,7 @@ void configurationTask()
 
     case 12:
       // Canard gain
-      vpControl.canardGain = vpControl.testGain = testGainLinear(2.5, 0.5);
+      vpControl.canardGain = vpControl.testGain = testGainLinear(0, 2*vpParam.canardGain);
       break;
       
     case 13:

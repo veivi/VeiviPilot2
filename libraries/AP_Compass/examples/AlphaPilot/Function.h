@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define THROTTLE_SIGN        1
-
 typedef enum {
   fn_null,
   fn_aileron,
