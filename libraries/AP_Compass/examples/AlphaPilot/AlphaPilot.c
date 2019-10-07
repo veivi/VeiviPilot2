@@ -1128,7 +1128,7 @@ void configurationTask()
             
     case 10:
       // Aileron to rudder mix
-      vpControl.r_Mix = vpControl.testGain = testGainLinear(0, 1);
+      vpControl.r_Mix = vpControl.testGain = testGainLinear(1, 0);
       break;
 
     case 11:
@@ -1976,7 +1976,7 @@ void mixingTask()
 
   vpOutput.rudder =
     constrainServoOutput(vpOutput.rudder
-			 + vpOutput.aile * vpControl.r_Mix * liftRatio);  
+			 + cosf(vpFlight.alpha) * vpOutput.aile * vpControl.r_Mix * liftRatio);  
 }
 
 void controlTask()
