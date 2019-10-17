@@ -149,22 +149,44 @@ extern "C" int stap_telemetryTransmitState(void)
   return hal.uartB->txspace();
 }
 
-extern "C" int stap_telemetryTransmit(const uint8_t *buffer, int size)
+static void telemetryInit(void)
 {
   static bool initd = false;
 
   if(!initd) {
-    //    hal.uartB->begin(57600);
-    hal.uartB->begin(115200);
+    hal.uartB->begin(115200, 32, 32);
     initd = true;
   }
-  
+}
+
+extern "C" int stap_telemetryTransmit(const uint8_t *buffer, int size)
+{
+  telemetryInit();
   return hal.uartB->write(buffer, size);
 }
 
 extern "C" int stap_telemetryTransmitChar(uint8_t c)
 {
   return stap_telemetryTransmit(&c, 1);
+}
+
+extern "C" int stap_telemetryReceiveState(void)
+{
+  telemetryInit();
+  return hal.uartB->available();
+}
+
+extern "C" int stap_telemetryReceive(uint8_t *buffer, int size)
+{
+  while(size-- > 0)
+    *buffer++ = stap_telemetryReceiveChar();
+
+  return 0;
+}
+
+extern "C" uint8_t stap_telemetryReceiveChar(void)
+{
+  return hal.uartB->read();
 }
 
 extern "C" void stap_telemetrySync()

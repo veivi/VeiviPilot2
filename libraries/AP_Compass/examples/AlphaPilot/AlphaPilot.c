@@ -1153,6 +1153,11 @@ void configurationTask()
 	vpControl.aileNeutral = vpOutput.aile;
       }
       break;
+
+    case 14:
+      // Simulate blind telemetry link
+      vpStatus.telemetryLink = false;
+      break;
     }
   } else { 
     // Track s_Ku until a test is activated
@@ -1506,10 +1511,15 @@ void gaugeTask()
 void communicationTask()
 {
   int len = 0;
-       
-  while((len = stap_hostReceiveState()) > 0) {
+  
+  if((len = stap_hostReceiveState()) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(stap_hostReceiveChar());
+      datagramRxInputChar(0, stap_hostReceiveChar());
+  }
+
+  if((len = stap_telemetryReceiveState()) > 0) {
+    while(len-- > 0)
+      datagramRxInputChar(1, stap_telemetryReceiveChar());
   }
 }
 
@@ -1670,9 +1680,12 @@ void elevatorModule()
   
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
-  const float effMaxAlpha
-    = mixValue(vpInput.stickForce,
-	       vpDerived.shakerAlpha, vpDerived.pusherAlpha);
+
+  float effMaxAlpha = vpDerived.pusherAlpha;
+
+  if(!vpStatus.telemetryLink || vpMode.radioFailSafe)
+    effMaxAlpha = mixValue(vpInput.stickForce,
+			   vpDerived.shakerAlpha, vpDerived.pusherAlpha);
   
   vpOutput.elev =
     applyExpoTrim(vpInput.elev,
@@ -2033,11 +2046,18 @@ void actuatorTask()
 
 void heartBeatTask()
 {
-  if(!heartBeatCount && linkDownCount++ > 2) {
+  if(!heartBeatCount[0] && linkDownCount[0]++ > 2) {
     if(vpStatus.consoleLink)
       consoleNoteLn_P(CS_STRING("Console DISCONNECTED"));
     
     vpStatus.consoleLink = vpStatus.simulatorLink = false;
+  }
+  
+  if(!heartBeatCount[1] && linkDownCount[1]++ > 2) {
+    if(vpStatus.telemetryLink)
+      consoleNoteLn_P(CS_STRING("Telemetry DISCONNECTED"));
+    
+    vpStatus.telemetryLink = false;
   }
   
   if(vpStatus.simulatorLink && vpTimeMillisApprox - simTimeStamp > 1.0e3) {
@@ -2045,7 +2065,7 @@ void heartBeatTask()
     vpStatus.simulatorLink = false;
   }    
   
-  heartBeatCount = 0;
+  heartBeatCount[0] = heartBeatCount[1] = 0;
   consoleFlush();
   datagramHeartbeat(false);
 }
@@ -2068,7 +2088,8 @@ VPPeriodicTimer_t downlinkTimer = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
 void downlinkTask()
 {
   uint16_t status =
-    ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
+    (!vpStatus.telemetryLink ? (1<<7) : 0)
+    | ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
     | (logReady(false) ? (1<<5) : 0)
     | (vpMode.radioFailSafe ? (1<<4) : 0)
     | (vpStatus.alphaUnreliable ? (1<<3) : 0)

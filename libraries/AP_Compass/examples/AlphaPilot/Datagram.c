@@ -3,9 +3,9 @@
 #include "Datagram.h"
 #include "CRC16.h"
 
-static uint16_t crcStateTx, crcStateRx;
-static int datagramSize = 0;
-static uint8_t rxSeq, rxSeqLast;
+static uint16_t crcStateTx, crcStateRx[2];
+static int datagramSize[2];
+static uint8_t rxSeq[2], rxSeqLast[2];
 uint16_t datagramsGood, datagramsLost, datagramBytes;
 VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis;
 
@@ -77,67 +77,67 @@ void datagramTxEnd(void)
   datagramTxBusy = false;
 }
 
-static void storeByte(const uint8_t c)
+static void storeByte(uint8_t port, const uint8_t c)
 {
-  if(datagramSize < maxDatagramSize)
-    datagramRxStore[datagramSize++] = c;
+  if(datagramSize[port] < maxDatagramSize)
+    datagramRxStore[port*maxDatagramSize + datagramSize[port]++] = c;
 }
   
-static void handleBreak(void)
+static void handleBreak(uint8_t port)
 {
-  if(datagramSize >= sizeof(uint16_t)) {
+  if(datagramSize[port] >= sizeof(uint16_t)) {
     uint16_t crc =
-      *((uint16_t*) &datagramRxStore[datagramSize-sizeof(uint16_t)]);
-    int payload = datagramSize - sizeof(uint16_t);
+      *((uint16_t*) &datagramRxStore[port*maxDatagramSize + datagramSize[port]-sizeof(uint16_t)]);
+    int payload = datagramSize[port] - sizeof(uint16_t);
     
-    if(crc == crc16(crcStateRx, datagramRxStore, payload)) {
+    if(crc == crc16(crcStateRx[port], &datagramRxStore[port*maxDatagramSize], payload)) {
       datagramsGood++;
       datagramBytes += payload;
 
-      uint8_t delta = (rxSeq - rxSeqLast + SEQMASK) & SEQMASK;
+      uint8_t delta = (rxSeq[port] - rxSeqLast[port] + SEQMASK) & SEQMASK;
 
       if(delta != 0)
 	datagramRxError("LOST_PKT", delta);
 	    
       datagramsLost += delta;
-      rxSeqLast = rxSeq;
+      rxSeqLast[port] = rxSeq[port];
 
       datagramLastRxMillis = vpTimeMillisApprox;  
-      datagramInterpreter(datagramRxStore, payload);
+      datagramInterpreter(port, &datagramRxStore[port*maxDatagramSize], payload);
     } else
       datagramRxError("CRC_FAIL", crc);
   } else
-    datagramRxError("SHORT", datagramSize);
+    datagramRxError("SHORT", datagramSize[port]);
     
-  datagramSize = 0;
+  datagramSize[port] = 0;
 }
 
-void datagramRxInputChar(const uint8_t c)
+void datagramRxInputChar(uint8_t port, const uint8_t c)
 {
-  static bool busy = false;
-  static int flagCnt;
+  static bool busy[2];
+  static int flagCnt[2];
 
   if(c != FLAG) {
-    if(busy) {
-      if(flagCnt)
-	storeByte(FLAG);
+    if(busy[port]) {
+      if(flagCnt[port])
+	storeByte(port, FLAG);
       else
-	storeByte(c);
+	storeByte(port, c);
     } else {
       uint8_t seq = c - NOTFLAG;
       if(seq <= SEQMASK) {
-	busy = true;
-	crcStateRx = crc16_update(0xFFFF, c);
-	rxSeq = seq;
-	datagramSize = 0;
+	busy[port] = true;
+	crcStateRx[port] = crc16_update(0xFFFF, c);
+	rxSeq[port] = seq;
+	datagramSize[port] = 0;
       } else
 	datagramRxError("BAD_START", c);
     }
     
-    flagCnt = 0;
-  } else if(++flagCnt > 1 && busy) {
-    handleBreak();
-    busy = false;
+    flagCnt[port] = 0;
+  } else if(++flagCnt[port] > 1 && busy[port]) {
+    handleBreak(port);
+    busy[port] = false;
   }
 }
 

@@ -145,6 +145,9 @@ int stap_hostTransmitChar(uint8_t c);
 int stap_telemetryTransmitState(void);
 int stap_telemetryTransmit(const uint8_t *buffer, int size);
 int stap_telemetryTransmitChar(uint8_t c);
+int stap_telemetryReceiveState(void);   // How many chars in the buffer
+int stap_telemetryReceive(uint8_t *buffer, int size);
+uint8_t stap_telemetryReceiveChar(void);
 
 //
 // Gyro interface

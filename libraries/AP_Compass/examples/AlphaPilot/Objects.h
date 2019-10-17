@@ -11,6 +11,7 @@
 struct StatusRecord {
   bool armed;
   bool consoleLink;
+  bool telemetryLink;
   bool simulatorLink;
   bool positiveIAS;
   bool fullStop;
@@ -112,7 +113,7 @@ extern Damper_t avgDynP, accAvg;
 
 extern struct SimLinkSensor sensorData;
 extern uint16_t simFrames;
-extern int linkDownCount, heartBeatCount;
+extern uint8_t linkDownCount[], heartBeatCount[];
 extern uint16_t uptimeMinutes;
 
 extern struct ModeRecord vpMode;

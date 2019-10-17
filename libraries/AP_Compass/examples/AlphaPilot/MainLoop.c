@@ -17,7 +17,7 @@
 #define MAX_DG_SIZE (1<<7)
 
 uint16_t maxDatagramSize = MAX_DG_SIZE;
-uint8_t datagramRxStore[MAX_DG_SIZE];
+uint8_t datagramRxStore[MAX_DG_SIZE*2];
 bool datagramLocalOnly;
 
 void datagramRxError(const char *error, uint16_t code)
@@ -29,15 +29,26 @@ void datagramRxError(const char *error, uint16_t code)
   consolePrintLn(")");
 }
   
-void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
+void datagramInterpreterKind(uint8_t port, uint8_t kind, const uint8_t *data, int size)
 {
   switch(kind) {
   case DG_HEARTBEAT:
     //    consoleNoteLn_P(CS_STRING("HEARTBEAT"));
-      
-    if(!vpStatus.consoleLink) {
-      consoleNoteLn_P(CS_STRING("Console CONNECTED"));
-      vpStatus.consoleLink = true;
+
+    switch(port) {
+    case 0:
+      if(!vpStatus.consoleLink) {
+	consoleNoteLn_P(CS_STRING("Console CONNECTED"));
+	vpStatus.consoleLink = true;
+      }
+      break;
+
+    case 1:
+      if(!vpStatus.telemetryLink) {
+	consoleNoteLn_P(CS_STRING("Telemetry CONNECTED"));
+	vpStatus.telemetryLink = true;
+      }
+      break;
     }
     break;
     
@@ -67,17 +78,17 @@ void datagramInterpreterKind(uint8_t kind, const uint8_t *data, int size)
   }
 }
 
-void datagramInterpreter(const uint8_t *data, int size)
+void datagramInterpreter(uint8_t port, const uint8_t *data, int size)
 {
   if(size < 1) {
     datagramRxError("EMPTY", 0);
     return;
   }
 
-  heartBeatCount++;
-  linkDownCount = 0;
+  heartBeatCount[port]++;
+  linkDownCount[port] = 0;
     
-  datagramInterpreterKind(data[0], &data[1], size - 1);
+  datagramInterpreterKind(port, data[0], &data[1], size - 1);
 }
 
 void datagramSerialOut(uint8_t c)
