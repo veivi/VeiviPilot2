@@ -35,29 +35,23 @@ void datagramInterpreterKind(uint8_t port, uint8_t kind, const uint8_t *data, in
   case DG_HEARTBEAT:
     //    consoleNoteLn_P(CS_STRING("HEARTBEAT"));
 
-    switch(port) {
-    case 0:
-      if(!vpStatus.consoleLink) {
-	consoleNoteLn_P(CS_STRING("Console CONNECTED"));
-	vpStatus.consoleLink = true;
-      }
-      break;
-
-    case 1:
-      if(!vpStatus.telemetryLink) {
-	consoleNoteLn_P(CS_STRING("Telemetry CONNECTED"));
-	vpStatus.telemetryLink = true;
-      }
-      break;
+    if(port == 0 && !vpStatus.consoleLink) {
+      consoleNoteLn_P(CS_STRING("Console CONNECTED"));
+      vpStatus.consoleLink = true;
+      
+    } else if(port == 1 && !vpStatus.telemetryLink) {
+      consoleNoteLn_P(CS_STRING("Telemetry CONNECTED"));
+      vpStatus.telemetryLink = true;
     }
     break;
     
   case DG_CONSOLE:
-    executeCommand((char*) data);
+    if(port == 0)
+      executeCommand((char*) data);
     break;
 
   case DG_SIMLINK:
-    if(vpStatus.consoleLink && size == sizeof(sensorData)) {
+    if(port == 0 && vpStatus.consoleLink && size == sizeof(sensorData)) {
       if(!vpStatus.simulatorLink) {
 	consoleNoteLn_P(CS_STRING("Simulator CONNECTED"));
 	vpStatus.simulatorLink = vpMode.dontLog = true;
@@ -74,7 +68,9 @@ void datagramInterpreterKind(uint8_t port, uint8_t kind, const uint8_t *data, in
     
   default:
     consoleNote_P(CS_STRING("FUNNY DATAGRAM KIND "));
-    consolePrintLnI(kind);
+    consolePrintI(kind);
+    consolePrint_P(CS_STRING(" FROM PORT "));
+    consolePrintLnI(port);
   }
 }
 
@@ -82,6 +78,11 @@ void datagramInterpreter(uint8_t port, const uint8_t *data, int size)
 {
   if(size < 1) {
     datagramRxError("EMPTY", 0);
+    return;
+  }
+
+  if(port > 1) {
+    datagramRxError("WEIRD PORT", 0);
     return;
   }
 

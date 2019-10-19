@@ -1155,8 +1155,13 @@ void configurationTask()
       break;
 
     case 14:
-      // Simulate blind telemetry link
-      vpStatus.telemetryLink = false;
+      // Force telemetry link status
+      
+      if(vpInput.tuningKnob > 0.5) {
+	vpStatus.telemetryLink = true;
+	linkDownCount[1] = 0;
+      } else
+	vpStatus.telemetryLink = false;
       break;
     }
   } else { 
