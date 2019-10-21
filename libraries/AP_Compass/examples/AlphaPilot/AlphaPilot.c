@@ -668,7 +668,7 @@ void statusTask()
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
-     && vpInput.stickForce > 0.1) {
+     && vpInput.stickForce > 0.0f) {
     // We may be in a flare
 
     if(vpInertiaOnForce(&flareInertia)) {
@@ -2103,7 +2103,7 @@ void downlinkTask()
   if(!vpStatus.alphaUnreliable) {
     status |= vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0;
 
-    if(vpStatus.telemetryLink || vpInput.stickForce > 0.0)
+    if(vpStatus.telemetryLink || vpInput.stickForce > 0.0f)
        status |= vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0;
   }
     
