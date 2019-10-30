@@ -1674,7 +1674,7 @@ const float pusherBias_c = -2.25f/RADIAN;
 
 void elevatorModule()
 {
-  const float shakerLimit = RATIO(1/2);
+  const float shakerLimit = RATIO(1/3);
 
   if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
     // Limit elevator nose-up wind up when weight is on wheels
@@ -1686,11 +1686,16 @@ void elevatorModule()
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
 
+#ifdef HARD_SHAKER
   float effMaxAlpha = vpDerived.pusherAlpha;
 
   if(!vpStatus.telemetryLink || vpMode.radioFailSafe)
     effMaxAlpha = mixValue(vpInput.stickForce,
 			   vpDerived.shakerAlpha, vpDerived.pusherAlpha);
+#else
+    const float effMaxAlpha = mixValue(vpInput.stickForce,
+			   vpDerived.shakerAlpha, vpDerived.pusherAlpha);
+#endif
   
   vpOutput.elev =
     applyExpoTrim(vpInput.elev,
