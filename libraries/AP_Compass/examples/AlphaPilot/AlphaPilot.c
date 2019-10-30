@@ -1766,7 +1766,7 @@ void elevatorModule()
       
     // Pusher
 
-#ifdef HARD_PUSHER
+#if HARD_PUSHER
     pidCtrlSetRangeAB(&pushCtrl, 0, vpOutput.elev);
 #else
     pidCtrlSetRangeAB(&pushCtrl, -vpOutput.elev, 0);
@@ -1786,7 +1786,7 @@ void elevatorModule()
       
       pidCtrlInput(&pushCtrl, target - vpFlight.pitchR, controlCycle);
 
-#ifdef HARD_PUSHER
+#if HARD_PUSHER
       vpControl.pusher = fminf(pidCtrlOutput(&pushCtrl) - vpOutput.elev, 0);
 #else
       vpControl.pusher = pidCtrlOutput(&pushCtrl);
@@ -1794,7 +1794,7 @@ void elevatorModule()
 
       vpOutput.elev += vpControl.pusher;
     } else
-#ifdef HARD_PUSHER
+#if HARD_PUSHER
       pidCtrlReset(&pushCtrl, vpOutput.elev, 0.0);
 #else
     pidCtrlReset(&pushCtrl, 0, 0.0);
