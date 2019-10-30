@@ -11,6 +11,9 @@
 
 // #define HARD_PUSHER 1     // Uncomment to select "hard" pusher
 #define FLAP_STEPS           2
+#define SHAKER_LIMIT         RATIO(1/3)
+#define HARD_SHAKER          0
+
 
 //
 // Periodic task timing
