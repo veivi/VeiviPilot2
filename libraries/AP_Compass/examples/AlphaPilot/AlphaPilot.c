@@ -1686,15 +1686,12 @@ void elevatorModule()
   vpInput.stickForce =
     vpMode.radioFailSafe ? 0 : fmaxf(vpInput.elev-shakerLimit, 0)/(1-shakerLimit);
 
+  float effMaxAlpha = mixValue(vpInput.stickForce,
+			       vpDerived.shakerAlpha, vpDerived.pusherAlpha);
+  
 #if HARD_SHAKER
-  float effMaxAlpha = vpDerived.pusherAlpha;
-
-  if(!vpStatus.telemetryLink || vpMode.radioFailSafe)
-    effMaxAlpha = mixValue(vpInput.stickForce,
-			   vpDerived.shakerAlpha, vpDerived.pusherAlpha);
-#else
-    const float effMaxAlpha = mixValue(vpInput.stickForce,
-			   vpDerived.shakerAlpha, vpDerived.pusherAlpha);
+  if(vpStatus.telemetryLink && !vpMode.radioFailSafe)
+    float effMaxAlpha = vpDerived.pusherAlpha;
 #endif
   
   vpOutput.elev =
