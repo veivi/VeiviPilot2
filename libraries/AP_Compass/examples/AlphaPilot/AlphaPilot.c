@@ -1058,12 +1058,16 @@ void configurationTask()
   //   Turbine lag
 
   turbineSetTau(&engine, vpParam.lag*CONTROL_HZ);
+
+  //   Canard neutral controller
+  
+  pidCtrlSetPID(&canardCtrl, vpParam.canardGain, 0, vpParam.canardGainD);
+
+  //   Misc control params
   
   vpControl.o_P = vpParam.o_P;
   vpControl.r_Mix = vpParam.r_Mix;
   vpControl.t_Mix = vpParam.t_Mix;
-  vpControl.canardGain = vpParam.canardGain;
-  
   slopeSet(&aileActuator, vpParam.servoRate/(90.0f/2)/vpParam.aileDefl);
   
   //
@@ -1140,7 +1144,7 @@ void configurationTask()
 
     case 12:
       // Canard gain
-      vpControl.canardGain = vpControl.testGain = testGainLinear(0, 2*vpParam.canardGain);
+      pidCtrlSetPID(&canardCtrl, 1.3*vpParam.canardGain, 0, vpControl.testGain = testGainLinear(1, 0));
       break;
       
     case 13:
@@ -1869,6 +1873,20 @@ void aileronModule()
 }
 
 //
+// Canard neutral control (elevator is not included here)
+//
+
+void canardModule()
+{
+  if(!vpStatus.alphaUnreliable)
+    pidCtrlInput(&canardCtrl, clamp(vpFlight.alpha, -vpDerived.maxAlpha, 1.2*vpDerived.maxAlpha), controlCycle);
+  else
+    pidCtrlReset(&canardCtrl, 0, 0);
+  
+  vpOutput.canard = -pidCtrlOutput(&canardCtrl);
+}
+
+//
 //   Rudder & nose wheel
 //
 
@@ -1970,6 +1988,7 @@ void ancillaryModule()
 
 void (*controlModules[])(void) = {
   elevatorModule,
+  canardModule,
   aileronModule,
   rudderModule,
   throttleModule,

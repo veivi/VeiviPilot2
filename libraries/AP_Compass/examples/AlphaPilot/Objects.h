@@ -76,7 +76,6 @@ struct InputState {
 struct ControlState {
   float testGain;
   float o_P, r_Mix, yd_P, t_Mix;
-  float canardGain;
   float s_Ku_ref, i_Ku_ref, yd_P_ref, r_Ku_ref;
   float elevTrim, targetAlpha, targetPitchR;
   float elevPredict, ailePredict, aileNeutral, pusher;
@@ -85,7 +84,7 @@ struct ControlState {
 };
 
 struct OutputState {
-  float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz, flap;
+  float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz, flap, canard;
 };
 
 struct GPSFix {
@@ -100,7 +99,7 @@ struct GPSFix {
 // Control and signal processing
 //
 
-extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl;
+extern PIDCtrl_t aileCtrl, elevCtrl, rudderCtrl, pushCtrl, canardCtrl;
 extern Sampler_t alphaSampler, iasSampler;
 extern SWAvg_t liftFilter;
 extern SWAvg_t primaryIASDataFilter;

@@ -61,13 +61,7 @@ float tail2Fn()
 
 float canard1Fn()
 {
-  float value = vpParam.canardDefl*vpOutput.elev;
-  
-  if(!vpStatus.alphaUnreliable)
-    // Negative feedback from alpha
-    value -= vpControl.canardGain*clamp(vpFlight.alpha, -vpDerived.maxAlpha, 1.2*vpDerived.maxAlpha)*RADIAN/90;
-  
-  return value;
+  return vpOutput.canard/(PI_F/2) + vpParam.canardDefl*vpOutput.elev;
 }
 
 float canard2Fn()
