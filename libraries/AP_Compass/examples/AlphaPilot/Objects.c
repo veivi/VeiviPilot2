@@ -25,7 +25,7 @@ uint8_t linkDownCount[2], heartBeatCount[2];
 uint16_t uptimeMinutes = 0;
 
 PIDCtrl_t elevCtrl = PIDCTRL_CONS(1);
-PIDCtrl_t canardCtrl = PIDCTRL_CONS(1);
+PIDCtrl_t canardCtrl = PIDCTRL_CONS(PI_F/2);
 PIDCtrl_t pushCtrl = PIDCTRL_CONS(1);
 PIDCtrl_t rudderCtrl = PIDCTRL_U_CONS(RATIO(1/3));
 PIDCtrl_t aileCtrl = PIDCTRL_U_CONS(RATIO(2/3));

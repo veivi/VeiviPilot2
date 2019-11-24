@@ -1144,7 +1144,7 @@ void configurationTask()
 
     case 12:
       // Canard gain
-      pidCtrlSetPID(&canardCtrl, 1.3*vpParam.canardGain, 0, vpControl.testGain = testGainLinear(1, 0));
+      pidCtrlSetPID(&canardCtrl, vpParam.canardGain, 0, -(vpControl.testGain = testGainLinear(0.3, 0)));
       break;
       
     case 13:
