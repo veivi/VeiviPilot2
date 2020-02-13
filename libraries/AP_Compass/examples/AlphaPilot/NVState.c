@@ -96,6 +96,7 @@ bool setModel(int model, bool verbose)
     consolePrintLn_P(CS_STRING(" OK"));
 
   vpDerived.valid = false;
+  vpStatus.fuel = vpParam.fuel;  // Assume we start will full tank
   
   if(isGood && verbose)
     printParams();
@@ -174,15 +175,25 @@ void printParams()
   
   consoleNote_P(CS_STRING("    Dimension = "));
   consolePrintLnFP(vpParam.dimension, 3);
-  consoleNote_P(CS_STRING("  Weight (dry, fuel, batt) = "));
+  consoleNote_P(CS_STRING("  Weight (empty, batt) = "));
   consolePrintFP(vpDerived.takeoffMass, 3);
   consolePrint_P(CS_STRING(" ("));
   consolePrintFP(vpParam.weightDry, 3);
   consolePrint_P(CS_STRING(", "));
-  consolePrintFP(vpParam.fuel, 3);
-  consolePrint_P(CS_STRING(", "));
   consolePrintFP(vpParam.battery, 3);
   consolePrintLn_P(CS_STRING(") kg"));
+  consoleNote_P(CS_STRING("    Fuel (density) = "));
+  consolePrintFP(vpParam.fuel, 3);
+  consolePrint_P(CS_STRING(" units ("));
+  consolePrintFP(vpParam.fuelDensity, 3);
+  consolePrintLn_P(CS_STRING(" kg/unit)"));
+  consoleNote_P(CS_STRING("    Fuel flow = "));
+  consolePrintPoly(FuelFlow_degree, vpParam.coeff_Flow, 1);
+  consolePrint_P(CS_STRING(" ("));
+  consolePrintFP(polynomial(FuelFlow_degree, 0, vpParam.coeff_Flow), 1);
+  consolePrint_P(CS_STRING(" ... "));
+  consolePrintFP(polynomial(FuelFlow_degree, 1, vpParam.coeff_Flow), 1);
+  consolePrintLn_P(CS_STRING(" 1/min)"));
   consoleNote_P(CS_STRING("    Thrust = "));
   consolePrintFP(vpParam.thrust, 3);
   consolePrint_P(CS_STRING(" kg ("));
@@ -236,13 +247,6 @@ void printParams()
   consolePrintFP(vpParam.idle, 2);
   consolePrint_P(CS_STRING(" lag = "));
   consolePrintLnFP(vpParam.lag, 2);
-  consoleNote_P(CS_STRING("    Fuel flow = "));
-  consolePrintPoly(FuelFlow_degree, vpParam.coeff_Flow, 1);
-  consolePrint_P(CS_STRING(" ("));
-  consolePrintFP(polynomial(FuelFlow_degree, 0, vpParam.coeff_Flow), 1);
-  consolePrint_P(CS_STRING(" ... "));
-  consolePrintFP(polynomial(FuelFlow_degree, 1, vpParam.coeff_Flow), 1);
-  consolePrintLn_P(CS_STRING(" g/min)"));
   consoleNote_P(CS_STRING("  Climb pitch(max) = "));
   consolePrintLnFP(vpParam.maxPitch*RADIAN, 2);
   consoleNote_P(CS_STRING("  Max alpha (clean, full flaps) = "));
@@ -396,7 +400,8 @@ void derivedValidate()
 
   // Takeoff mass
 
-  vpDerived.takeoffMass = vpParam.weightDry + vpParam.fuel + vpParam.battery;
+  vpDerived.takeoffMass =
+    vpParam.weightDry + vpParam.fuel*vpParam.fuelDensity + vpParam.battery;
   
   // Do we have rectracts and/or flaps?
 

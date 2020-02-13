@@ -553,7 +553,7 @@ void statusTask()
     vpStatus.fuel -=
       polynomial(FuelFlow_degree, clamp(vpInput.throttle, 0, 1),
 		 vpParam.coeff_Flow)
-      * statusCycle / 1000 / 60; // Convert g/min to kg/s
+      * statusCycle / 60; // Convert 1/min to 1/s
     
     if(vpStatus.fuel < 0)
       vpStatus.fuel = 0;
@@ -564,10 +564,11 @@ void statusTask()
     vpStatus.fuel = vpParam.fuel;
     consoleNote_P(CS_STRING("Fuel assumed TOPPED UP ("));
     consolePrintFP(vpStatus.fuel, 3);
-    consolePrintLn_P(CS_STRING(" kg)"));
+    consolePrintLn_P(CS_STRING(" units)"));
   }
   
-  vpStatus.mass = vpParam.weightDry + vpParam.battery + vpStatus.fuel;
+  vpStatus.mass =
+    vpParam.weightDry + vpParam.battery + vpStatus.fuel*vpParam.fuelDensity;
   
   //
   // Alpha/IAS sensor status
@@ -1503,10 +1504,11 @@ void gaugeTask()
 	break;
 
       case 21:
-	consolePrint_P(CS_STRING(" fuel qty = "));
+	consolePrint_P(CS_STRING(" fuel qty (current mass) = "));
 	consolePrintFP(vpStatus.fuel, 3);
-	consoleTab(20);
+	consolePrint_P(CS_STRING(" ("));
 	consolePrintFP(vpStatus.mass, 3);
+	consolePrint_P(CS_STRING(")"));
 	break;
 	
       }
@@ -2153,7 +2155,8 @@ void downlinkTask()
       .threshAlpha = vpDerived.thresholdAlpha,
       .trimIAS = dynamicPressureInverse(vpStatus.mass*G/coeffOfLift(alphaPredict(vpControl.elevTrim))),
       .stallIAS = vpDerived.minimumIAS,
-      .margin = vpParam.thresholdMargin
+      .margin = vpParam.thresholdMargin,
+      .fuel = vpStatus.fuel / vpParam.fuel
     };
 
     strncpy(config.name, vpParam.name, NAME_LEN);

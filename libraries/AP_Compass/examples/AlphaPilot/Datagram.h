@@ -57,7 +57,7 @@ struct TelemetryConfig {
   float load;
   float trim;
   float maxAlpha, shakerAlpha, threshAlpha;
-  float trimIAS, stallIAS, margin;
+  float trimIAS, stallIAS, margin, fuel;
   char name[NAME_LEN+1];
 };
 

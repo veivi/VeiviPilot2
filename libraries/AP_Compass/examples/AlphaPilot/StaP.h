@@ -96,7 +96,7 @@ extern const struct PinDescriptor led;
 
 extern const struct PinDescriptor latch;
 
-#define STAP_CANOPY_CLOSED  (getPinState(&latch) == 0)
+#define STAP_CANOPY_CLOSED  (getPinState(&latch) == 1)
 
 #else
 

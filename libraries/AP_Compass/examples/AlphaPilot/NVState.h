@@ -52,6 +52,7 @@ struct ParamRecord {
   float servoRate;
   float takeoffTrim;
   float weightDry, fuel, battery, thrust;
+  float fuelDensity;
   bool virtualOnly;
   bool haveGear;
   bool wowCalibrated;

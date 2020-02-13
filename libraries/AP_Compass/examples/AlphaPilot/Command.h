@@ -25,6 +25,7 @@ typedef enum {
   c_weight,
   c_fuel,
   c_battery,
+  c_density,
   c_thrust,
   c_margin,
   c_yawdamper,
