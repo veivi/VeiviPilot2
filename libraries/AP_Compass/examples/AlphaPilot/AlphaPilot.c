@@ -1050,12 +1050,16 @@ void configurationTask()
 
   //   Rudder
   
+#if AUTO_RUDDER
   pidCtrlSetZNPI(&rudderCtrl, r_Ku*scale, vpParam.r_Tu);
-
-  //   Yaw damper
+#endif
   
-  vpControl.yd_P = scaleByIAS_E(vpParam.yd_C, yawDamperExp_c) * scale;
+  //   Yaw damper
 
+#if YAW_DAMPER
+  vpControl.yd_P = scaleByIAS_E(vpParam.yd_C, yawDamperExp_c) * scale;
+#endif
+  
   //   Turbine lag
 
   turbineSetTau(&engine, vpParam.lag*CONTROL_HZ);
@@ -1128,8 +1132,10 @@ void configurationTask()
       
     case 9:
       // Auto rudder gain
+#if AUTO_RUDDER
       pidCtrlSetPID(&rudderCtrl, vpControl.testGain
 		    = testGainExpo(vpControl.r_Ku_ref), 0, 0);
+#endif
       break;
             
     case 10:
@@ -1900,7 +1906,8 @@ void rudderModule()
   // Apply stick input
   
   vpOutput.rudder = vpOutput.steer = vpInput.rudder;
-    
+
+#if AUTO_RUDDER
   if(vpInput.rudderPilotInput || vpMode.takeOff || vpStatus.weightOnWheels
      || vpMode.sensorFailSafe)
     // Pilot input is present/takeoff mode/WoW, keep auto-rudder reset
@@ -1912,13 +1919,16 @@ void rudderModule()
   // Apply auto-rudder
   
   vpOutput.rudder += pidCtrlOutput(&rudderCtrl);
-
-  // Apply yaw damper (unless there's pilot input on rudder)
+#endif
   
+  // Apply yaw damper (unless there's pilot input on rudder)
+
+#if YAW_DAMPER
   if(vpInput.rudderPilotInput)
     washoutReset(&yawDamper, 0);
   else
     vpOutput.rudder -= vpControl.yd_P * washoutInput(&yawDamper, vpFlight.yawR);
+#endif
 }
 
 //

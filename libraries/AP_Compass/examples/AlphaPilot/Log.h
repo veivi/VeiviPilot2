@@ -12,6 +12,7 @@ struct LogInfo {
   int32_t length;
   float sampleRate;
   float mass;
+  float fuelDensity;
   char name[NAME_LEN];
 };
 
