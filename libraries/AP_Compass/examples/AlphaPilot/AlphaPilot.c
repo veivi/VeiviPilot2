@@ -1031,7 +1031,7 @@ void configurationTask()
   float scale = 1;
   
   if(vpMode.test && nvState.testNum[vpMode.testCount] == 0)
-    scale = testGainLinear(RATIO(1/3), 1);
+    scale = testGainLinear(RATIO(1/5), 1);
   
   // Default controller settings
 
@@ -1062,7 +1062,8 @@ void configurationTask()
 
   //   Canard neutral controller
   
-  pidCtrlSetPID(&canardCtrl, vpParam.canardGain, 0, vpParam.canardGainD);
+  pidCtrlSetPID(&canardCtrl,
+		vpParam.canardGain * scale, 0, vpParam.canardGainD * scale);
 
   //   Misc control params
   
@@ -1504,9 +1505,11 @@ void gaugeTask()
 	break;
 
       case 21:
-	consolePrint_P(CS_STRING(" fuel qty (current mass) = "));
+	consolePrint_P(CS_STRING(" fuel qty (%, current mass) = "));
 	consolePrintFP(vpStatus.fuel, 3);
 	consolePrint_P(CS_STRING(" ("));
+	consolePrintI((int) (vpStatus.fuel/vpParam.fuel*100));
+	consolePrint_P(CS_STRING("%, "));
 	consolePrintFP(vpStatus.mass, 3);
 	consolePrint_P(CS_STRING(")"));
 	break;
