@@ -28,6 +28,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define ELEV_P   &vpControl.elevPredict
 #define RUDDER   &vpOutput.rudder
 #define FLAP     &flapEncoded
+#define CANARD   &vpOutput.canard
 #define MODE     &modeEncoded
 #define STATUS   &statusEncoded
 #define TRIM     &vpControl.elevTrim
@@ -54,6 +55,7 @@ uint16_t modeEncoded, statusEncoded, testEncoded;
 #define RUDSTK NULL
 #define AILE NULL
 #define ELEV NULL
+#define CANARD NULL
 #define ELEV_P NULL
 #define RUDDER NULL
 #define FLAP NULL
@@ -85,6 +87,7 @@ struct LogChannel logChannels[] = {
   [lc_elev_p] =  { "ELEP",   lt_real,     -1.5, 1.5,    ELEV_P },
   [lc_rudder] =  { "RUDR",   lt_real,     -1.5, 1.5,    RUDDER },
   [lc_flap] =    { "FLAP",   lt_percent,   0, 100,      FLAP },
+  [lc_canard] =  { "CNRD",   lt_real,     -1.5, 1.5,    CANARD },
   [lc_ailestk] = { "ASTK",   lt_real,     -1, 1,        AILESTK },
   [lc_elevstk] = { "ESTK",   lt_real,     -1, 1,        ELEVSTK },
   [lc_thrstk] =  { "THRO",   lt_real,      0, 1,        THROSTK },
