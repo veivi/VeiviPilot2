@@ -31,7 +31,7 @@
 #define LED_TICK 30
 #define LOG_HZ (CONTROL_HZ/4)
 #define LOG_HZ_COMMIT 2.5f
-#define CONSOLE_HZ 3.3f
+#define CONSOLE_HZ 4.1111f
 #define HEARTBEAT_HZ 1
   
 //

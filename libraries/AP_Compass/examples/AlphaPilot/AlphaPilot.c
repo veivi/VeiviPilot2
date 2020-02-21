@@ -968,9 +968,7 @@ void configurationTask()
     annunciatorTalk("Take-off");
     vpMode.takeOff = false;
     vpStatus.aloft = true;
-    
-    if(!vpStatus.consoleLink)
-      vpMode.silent = true;
+    vpMode.silent = true;
   }
 
   //
