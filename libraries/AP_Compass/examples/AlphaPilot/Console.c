@@ -4,6 +4,7 @@
 #include "Console.h"
 #include "Objects.h"
 #include "Time.h"
+#include "Buffer.h"
 
 void consolevNotef(const char *s, va_list argp);
 void consoleNotef(const char *s, ...);
@@ -12,46 +13,65 @@ void consolevPrintf(const char *s, va_list argp);
 void consolePrintf(const char *s, ...);
 void consolePrintfLn(const char *s, ...);
 
-#define BUF_SIZE (1<<6)
-
-static uint8_t outputBuf[BUF_SIZE];
-static uint8_t bufPtr;
+static VPBuffer_t consoleBuffer;
 static int column;
 
 void consoleFlush()
 {
-  if(bufPtr > 0) {
+  char buffer[VPBUFFER_SIZE];
+  int8_t s = vpMode.silent ? 16 : VPBUFFER_SIZE;
+
+  s = vpbuffer_extract(&consoleBuffer, buffer, s);
+
+  if(s > 0) {
     datagramTxStart(DG_CONSOLE);
-    datagramTxOut(outputBuf, bufPtr);
+    datagramTxOut((const uint8_t*) buffer, s);
     datagramTxEnd();
   }
-  
-  bufPtr = 0;
 }
 
-void consoleOut(const uint8_t c)
+void consoleOut(const char *b, int8_t s)
 {
-  if(vpMode.silent)
-    return;
+  int8_t space = vpbuffer_space(&consoleBuffer);
   
-  if(bufPtr > BUF_SIZE-1)
-    consoleFlush();
+  if(space >= s || vpMode.silent) {
+    // There's room in the buffer or we must overwrite anyway
 
-  outputBuf[bufPtr++] = c;
-  column++;
+    vpbuffer_insert(&consoleBuffer, b, s, true);
+    column += s;
+
+  } else {
+    // No room, block and transmit everything in pieces
+
+    do {
+      consoleFlush();
+
+      int8_t w = vpbuffer_insert(&consoleBuffer, b, s, false);
+      b += w;
+      s -= w;
+      column += w;
+    } while(s > 0);
+  }
+}
+
+void consoleOutChar(const char c)
+{
+  consoleOut(&c, 1);
 }
 
 void consoleNL(void)
 {
-  consoleOut('\n');
-  consoleFlush();
+  consoleOutChar('\n');
+  if(!vpMode.silent)
+    consoleFlush();
   column = 0;
 }
 
 void consoleCR(void)
 {
-  consoleOut('\r');
-  consoleFlush();
+  consoleOutChar('\r');
+  if(!vpMode.silent)
+    consoleFlush();
   column = 0;
 }
 
@@ -60,7 +80,7 @@ void consoleTab(int i)
   int n = i - column;
   
   while(n-- > 0)
-    consoleOut(' ');
+    consoleOutChar(' ');
 }
 
 void consoleNote(const char *s)
@@ -97,6 +117,7 @@ void consolePanic_P(const char *s)
   stap_reboot(false);
 }
 
+/*
 void consoleAssert(bool value, const char *msg)
 {
   if(vpMode.silent || value)
@@ -106,6 +127,7 @@ void consoleAssert(bool value, const char *msg)
   consolePrintLn_P(msg);
   consolePanic_P(CS_STRING(""));
 }
+*/
 
 void consolevNotef(const char *s, va_list argp)
 {
@@ -160,25 +182,24 @@ void consolevPrintf(const char *s, va_list argp)
 
 void consolePrint(const char *s)
 {
-  consolePrintN(s, 1<<7);
+  consolePrintN(s, VPBUFFER_SIZE);
 }
 
-void consolePrintN(const char *s, int l)
+void consolePrintN(const char *s, int8_t l)
 {
-  while(*s && l-- > 0)
-    consoleOut(*s++);
+  char buffer[VPBUFFER_SIZE];
+  strncpy(buffer, s, VPBUFFER_SIZE-1);
+  consoleOut(buffer, strlen(buffer));
 }
 
 void consolePrint_P(const char *s)
 {
-  char c = 0;
-  int n = 1<<7;
-
-  while((c = CS_READCHAR(s++)) && n-- > 0)
-    consoleOut(c);
+  char buffer[VPBUFFER_SIZE];
+  CS_STRNCPY(buffer, s, VPBUFFER_SIZE-1);
+  consoleOut(buffer, strlen(buffer));  
 }
 
-#define printDigit(d) consoleOut('0'+d)
+#define printDigit(d) consoleOutChar('0'+d)
 
 void consolePrintFP(float v, int p)
 {
@@ -188,7 +209,7 @@ void consolePrintFP(float v, int p)
     consolePrint("nan");
   else {
   if(v < 0.0) {
-    consoleOut('-');
+    consoleOutChar('-');
     v = -v;
   }
 
@@ -213,7 +234,7 @@ void consolePrintFP(float v, int p)
 
 void consolePrintC(const char c)
 {
-  consoleOut(c);
+  consoleOutChar(c);
 }  
 
 void consolePrintF(float v)
@@ -245,7 +266,7 @@ void consolePrintL(long v)
 {
   if(v < 0) {
     v = -v;
-    consoleOut('-');
+    consoleOutChar('-');
   }
 
   consolePrintUL((unsigned long) v);

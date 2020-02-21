@@ -48,11 +48,6 @@ void annunciatorTalkNumber(const char *text, int num)
 // Periodic tasks
 //
 
-void cacheTask()
-{
-  m24xxFlush();
-}
-
 void alphaSampleTask()
 {
   AS5048_alpha_t raw = 0;
@@ -2107,8 +2102,9 @@ void heartBeatTask()
   }    
   
   heartBeatCount[0] = heartBeatCount[1] = 0;
-  consoleFlush();
+
   datagramHeartbeat(false);
+  m24xxFlush();
 }
 
 void blinkTask()
@@ -2243,7 +2239,7 @@ struct Task alphaPilotTasks[] = {
   { displayTask, HZ_TO_PERIOD(8), false },
   { logTask, HZ_TO_PERIOD(LOG_HZ), true },
   { logSave, HZ_TO_PERIOD(LOG_HZ_COMMIT), false },
-  { cacheTask, HZ_TO_PERIOD(LOG_HZ_FLUSH), false },
+  { consoleFlush, HZ_TO_PERIOD(CONSOLE_HZ), false },
   { monitorTask, HZ_TO_PERIOD(1), false },
   { heartBeatTask, HZ_TO_PERIOD(HEARTBEAT_HZ), false },
   { gaugeTask, HZ_TO_PERIOD(10), false },

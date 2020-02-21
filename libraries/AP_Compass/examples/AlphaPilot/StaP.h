@@ -50,11 +50,13 @@ void stap_reboot(bool bootloader);
 #define CS_QUALIFIER  PROGMEM
 #define CS_MEMCPY memcpy_P
 #define CS_READCHAR(s) pgm_read_byte(s)
+#define CS_STRNCPY(dst, src, s) strncpy_P(dst, src, s)
 #define CS_STRING(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0]; }))
 #else
 #define CS_QUALIFIER  
 #define CS_MEMCPY memcpy
 #define CS_READCHAR(s) (*((const char *)s))
+#define CS_STRNCPY(dst, src, s) strncpy(dst, src, s)
 #define CS_STRING(s) s
 #endif
 
