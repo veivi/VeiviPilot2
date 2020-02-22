@@ -194,6 +194,12 @@ void printParams()
   consolePrint_P(CS_STRING(" ... "));
   consolePrintFP(polynomial(FuelFlow_degree, 1, vpParam.coeff_Flow), 1);
   consolePrintLn_P(CS_STRING(" 1/min)"));
+  consoleNote_P(CS_STRING("    Endurance @ 70% (100%) = "));
+  consolePrintFP(vpParam.fuel/polynomial(FuelFlow_degree, 0.7, vpParam.coeff_Flow), 1);
+  consolePrint_P(CS_STRING(" min ("));
+  consolePrintFP(vpParam.fuel/polynomial(FuelFlow_degree, 1.0, vpParam.coeff_Flow), 1);
+  consolePrintLn_P(CS_STRING(" min)"));
+  
   consoleNote_P(CS_STRING("    Thrust = "));
   consolePrintFP(vpParam.thrust, 3);
   consolePrint_P(CS_STRING(" kg ("));
