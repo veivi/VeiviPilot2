@@ -240,14 +240,18 @@ void printParams()
   consolePrintFP(vpParam.s_Ku_C, 4);
   consolePrint_P(CS_STRING(" Tu = "));
   consolePrintLnFP(vpParam.s_Tu, 4);
+#if AUTO_RUDDER
   consoleNoteLn_P(CS_STRING("  Auto-rudder"));
   consoleNote_P(CS_STRING("    Ku*IAS^1.5 = "));
   consolePrintFP(vpParam.r_Ku_C, 4);
   consolePrint_P(CS_STRING(" Tu = "));
   consolePrintLnFP(vpParam.r_Tu, 4);
+#endif
+#if YAW_DAMPER
   consoleNoteLn_P(CS_STRING("  Yaw damper"));
   consoleNote_P(CS_STRING("    P*IAS^2 = "));
   consolePrintLnFP(vpParam.yd_C, 4);
+#endif
   consoleNoteLn_P(CS_STRING("  Turbine"));
   consoleNote_P(CS_STRING("    idle = "));
   consolePrintFP(vpParam.idle, 2);
@@ -265,6 +269,7 @@ void printParams()
     consolePrintF(vpParam.alphaMax[1]*RADIAN);
     consolePrint(")");
   }
+  
   consoleNL();
   consoleNote_P(CS_STRING("  Alpha range = "));
   consolePrintF(vpDerived.zeroLiftAlpha*RADIAN);
