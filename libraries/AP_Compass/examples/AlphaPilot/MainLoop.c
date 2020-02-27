@@ -22,11 +22,13 @@ bool datagramLocalOnly;
 
 void datagramRxError(const char *error, uint16_t code)
 {
+  /*
   consoleNote_P(CS_STRING("DG "));
   consolePrint(error);
   consolePrint(" (");
   consolePrintUI(code);
   consolePrintLn(")");
+  */
 }
   
 void datagramInterpreterKind(uint8_t port, uint8_t kind, const uint8_t *data, int size)
