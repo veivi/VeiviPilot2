@@ -148,14 +148,14 @@ float applyNullZoneBlind(float value, float nz)
   return applyNullZone(value, nz, NULL);
 }
 
-#define EXPO 0.35f
-#define HALF_RATE 0.4f
+#define EXPO 0.2f
+#define HALF_RATE 0.65f
 
 float applyExpo(float value)
 {
-  const float index = 1.0 - powf(1/vpFlight.relativeEffIAS, 1.5),
+  const float index = 1.0 - vpDerived.minimumDynP/vpFlight.effDynP,
     rate_c = vpMode.halfRate ? mixValue(index, 1, HALF_RATE) : 1,
-    expo_c = 1.1 + EXPO * ( vpMode.halfRate ? 0 : index );
+    expo_c = 1.1 + EXPO * index;
 
   return rate_c*sign(value)*powf(fabsf(value), expo_c);
 }
