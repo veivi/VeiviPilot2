@@ -3,12 +3,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "NVState.h"
 
 //
 // Receiver channel mapping
 //
-
-#define RX_CHANNELS          8
 
 #if RX_CHANNELS < 8
 #define CH_AILE       0
@@ -39,7 +38,7 @@ struct SwitchRecord {
   float prevValue;
 };
 
-extern struct RxInputRecord rxInput[RX_CHANNELS];
+struct RxInputRecord rxInput[MAX_CH];
 extern struct SwitchRecord flightModeSelector, flapSelector;
 
 void inputSource(const uint16_t *pulse, int numCh);

@@ -1,4 +1,5 @@
 #include <string.h>
+#include "AlphaPilot.h"
 #include "RxInput.h"
 #include "Objects.h"
 #include "Console.h"
@@ -12,7 +13,7 @@
 // RC input
 //
 
-struct RxInputRecord rxInput[RX_CHANNELS];
+struct RxInputRecord rxInput[MAX_CH];
 
 //
 // Mode selector inputs

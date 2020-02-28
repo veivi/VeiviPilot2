@@ -127,6 +127,7 @@ void stap_rxInputPoll(void);
 uint16_t stap_rxFrameCount(void);
 void stap_servoOutputInit(void);
 void stap_servoOutput(int i, float fvalue);
+void stap_servoOutputSync(void);
 
 //
 // Host (serial) interface

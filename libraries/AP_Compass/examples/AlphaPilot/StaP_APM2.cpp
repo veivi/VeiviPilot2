@@ -2,6 +2,7 @@ extern "C" {
 #include "StaP.h"
 #include "CRC16.h"
 #include "Console.h"
+#include "AlphaPilot.h"
 }
 
 #include <AP_HAL/AP_HAL.h>
@@ -279,6 +280,9 @@ struct HWTimer {
   volatile uint8_t *TCCRA, *TCCRB;
   volatile uint16_t *ICR;
   volatile uint16_t *OCR[3]; // 0... 2 = A ... C
+  volatile uint16_t *TCNT;
+  bool sync;
+  int8_t log2scale;
 };
 
 struct PWMOutput {
@@ -288,8 +292,7 @@ struct PWMOutput {
   bool active;
 };
 
-#define PWM_HZ 50
-#define TIMER_HZ (16e6/8)
+#define MICROS_TO_CNT(t, x) (t->log2scale < 0 ? (x)>>(-t->log2scale) : (x)<<t->log2scale)
 
 static const uint8_t outputModeMask[] = { 1<<COM1A1, 1<<COM1B1, 1<<COM1C1 };
 
@@ -298,16 +301,17 @@ static const uint8_t outputModeMask[] = { 1<<COM1A1, 1<<COM1B1, 1<<COM1C1 };
 //
 
 const struct HWTimer hwTimer1 =
-       { &TCCR1A, &TCCR1B, &ICR1, { &OCR1A, &OCR1B, &OCR1C } };
+  { &TCCR1A, &TCCR1B, &ICR1, { &OCR1A, &OCR1B, &OCR1C }, &TCNT1, SYNC_PWM_OUTPUT, -2 };
 const struct HWTimer hwTimer3 =
-       { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C } };
+  { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C }, &TCNT3, SYNC_PWM_OUTPUT, -2 };
 const struct HWTimer hwTimer4 =
-       { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C } };
-const struct HWTimer hwTimer5 =
-       { &TCCR5A, &TCCR5B, &OCR5A, { &OCR5A, &OCR5B, &OCR5C } };
+  { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C }, &TCNT4, SYNC_PWM_OUTPUT, -2 };
 
-const struct HWTimer *hwTimers[] = 
+const struct HWTimer *hwTimersOwn[] = 
   { &hwTimer1, &hwTimer3, &hwTimer4 };
+
+const struct HWTimer hwTimer5 =
+  { &TCCR5A, &TCCR5B, &OCR5A, { &OCR5A, &OCR5B, &OCR5C }, &TCNT5, false, 1 };
 
 struct PWMOutput pwmOutput[MAX_SERVO] = {
   { { PortB, 6 }, &hwTimer1, COMnB },
@@ -331,17 +335,31 @@ static void pwmTimerInit(const struct HWTimer *timer[], int num)
     // WGM, prescaling
 
     *(timer[i]->TCCRA) = 1<<WGM11;
-    *(timer[i]->TCCRB) = (1<<WGM13) | (1<<WGM12) | (1<<CS11);
+    *(timer[i]->TCCRB) = (1<<WGM13) | (1<<WGM12) | (1<<CS11) | (1<<CS10);
     
    // PWM frequency
 
-    *(timer[i]->ICR) = TIMER_HZ/PWM_HZ - 1;
-
+    if(timer[i]->sync)
+      *(timer[i]->ICR) = 0xFFFF;
+    else
+      *(timer[i]->ICR) = MICROS_TO_CNT(timer[i], 1000000UL/PWM_HZ) - 1;
+    
    // Output set to 1.5 ms by default
 
     for(j = 0; j < 3; j++)
-      *(timer[i]->OCR[j]) = 1500UL<<1; // ~0U;
+      *(timer[i]->OCR[j]) = MICROS_TO_CNT(timer[i], 1500U);
   }
+}
+
+static void pwmTimerSync(const struct HWTimer *timer[], int num)
+{
+  int i = 0;
+
+  for(i = 0; i < num; i++)
+    while(*(timer[i]->TCNT) < MICROS_TO_CNT(timer[i], 5000U));
+  
+  for(i = 0; i < num; i++)
+    *(timer[i]->TCNT) = 0xFFFF;
 }
 
 static void pwmEnable(const struct PWMOutput *output)
@@ -377,8 +395,8 @@ void stap_servoOutput(int i, float fvalue)
 
   uint16_t value = NEUTRAL + RANGE*fvalue;
 
-  *(output->timer->OCR[output->pwmCh]) = constrain_period(value) << 1;
-
+  *(output->timer->OCR[output->pwmCh]) = MICROS_TO_CNT(output->timer, constrain_period(value));
+  
   if(!output->active) {
     configureOutput(&output->pin);
     pwmEnable(output);
@@ -386,6 +404,13 @@ void stap_servoOutput(int i, float fvalue)
   }
 }
 
+void stap_servoOutputSync()
+{
+#if SYNC_PWM_OUTPUT
+  pwmTimerSync(hwTimersOwn, sizeof(hwTimersOwn)/sizeof(struct HWTimer*));
+#endif
+}
+			  
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
   
 #define AVR_RC_INPUT_MAX_CHANNELS 10
@@ -441,8 +466,6 @@ void stap_rxInputPoll(void)
 }
 extern "C" void stap_initialize(void)
 {
-
-  
   consoleNote_P(CS_STRING("Initializing I2C... "));
   consoleFlush();
 
@@ -497,7 +520,7 @@ extern "C" void stap_initialize(void)
     pwmOutput[i].active = false;
   }
 
-  pwmTimerInit(hwTimers, sizeof(hwTimers)/sizeof(struct HWTimer*));
+  pwmTimerInit(hwTimersOwn, sizeof(hwTimersOwn)/sizeof(struct HWTimer*));
 
   configureInput(&latch, true);
   

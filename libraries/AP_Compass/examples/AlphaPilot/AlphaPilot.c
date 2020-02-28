@@ -2076,6 +2076,8 @@ void actuatorTask()
     if(functionInvoke(vpParam.functionMap[i], &value))
       stap_servoOutput(i, value + vpParam.neutral[i]);
   }
+
+  stap_servoOutputSync();
 }
 
 void heartBeatTask()
