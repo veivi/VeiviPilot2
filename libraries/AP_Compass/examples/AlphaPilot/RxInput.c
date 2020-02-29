@@ -93,23 +93,18 @@ float inputValue(uint8_t ch)
   
   STAP_PERMIT;
 
-  if(value < nvState.rxMin[ch])
-    value = nvState.rxMin[ch];
-  else if(value > nvState.rxMax[ch])
-    value = nvState.rxMax[ch];
-  
-  if(nvState.rxCenter[ch] == nvState.rxMin[ch]) {
-    return (float) (value - nvState.rxMin[ch])
-      / (nvState.rxMax[ch] - nvState.rxMin[ch]);
+  int16_t delta = (int16_t) value - (int16_t) nvState.rxCenter[ch];
     
-  } else if(nvState.rxCenter[ch] == nvState.rxMax[ch]) {
-    return - (float) (nvState.rxMax[ch] - value)
-      / (nvState.rxMax[ch] - nvState.rxMin[ch]);
+  if(nvState.rxCenter[ch] == nvState.rxMin[ch]
+     || nvState.rxCenter[ch] == nvState.rxMax[ch]) {
+    
+    return (float) delta / (nvState.rxMax[ch] - nvState.rxMin[ch]);
   } else {
+    
     if(value < nvState.rxCenter[ch])
-      return - (float) (nvState.rxCenter[ch] - value)/(nvState.rxCenter[ch]-nvState.rxMin[ch]);
+      return (float) delta/(nvState.rxCenter[ch]-nvState.rxMin[ch]);
     else
-      return (float) (value - nvState.rxCenter[ch])/(nvState.rxMax[ch]-nvState.rxCenter[ch]);
+      return (float) delta/(nvState.rxMax[ch]-nvState.rxCenter[ch]);
   }
 }
 
