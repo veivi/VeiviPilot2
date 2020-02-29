@@ -93,6 +93,11 @@ float inputValue(uint8_t ch)
   
   STAP_PERMIT;
 
+  if(value < nvState.rxMin[ch])
+    value = nvState.rxMin[ch];
+  else if(value > nvState.rxMax[ch])
+    value = nvState.rxMax[ch];
+  
   if(nvState.rxCenter[ch] == nvState.rxMin[ch]) {
     return (float) (value - nvState.rxMin[ch])
       / (nvState.rxMax[ch] - nvState.rxMin[ch]);

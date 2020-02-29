@@ -155,10 +155,17 @@ bool readNVState(void)
   uint8_t i = 0;
   
   for(i = 0; i < MAX_CH; i++) {
-    if(ABS(nvState.rxCenter[i] - nvState.rxMin[i]) < 100)
+    if(nvState.rxCenter[i] - nvState.rxMin[i] < 100)
       nvState.rxCenter[i] = nvState.rxMin[i];
-    else if(ABS(nvState.rxCenter[i] - nvState.rxMax[i]) < 100)
+    else if(nvState.rxMax[i] - nvState.rxCenter[i] < 100)
       nvState.rxCenter[i] = nvState.rxMax[i];
+    /*
+    consolePrintUI(nvState.rxMin[i]);
+    consoleTab(10);
+    consolePrintUI(nvState.rxCenter[i]);
+    consoleTab(20);
+    consolePrintLnUI(nvState.rxMax[i]);
+    */
   }
   
   return true;
