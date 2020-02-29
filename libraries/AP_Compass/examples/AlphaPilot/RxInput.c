@@ -89,21 +89,23 @@ float inputValue(uint8_t ch)
 {
   STAP_FORBID;
   
-  int32_t value = rxInput[ch].pulseWidth;
+  uint16_t value = rxInput[ch].pulseWidth;
   
   STAP_PERMIT;
-  
-  if(value < nvState.rxCenter[ch]) {
-    if(nvState.rxCenter[ch]-nvState.rxMin[ch] < 100)
-      return 0;
-    else
-      return (float) (value - nvState.rxCenter[ch])/(nvState.rxCenter[ch]-nvState.rxMin[ch]);
+
+  if(nvState.rxCenter[ch] == nvState.rxMin[ch]) {
+    return (float) (value - nvState.rxMin[ch])
+      / (nvState.rxMax[ch] - nvState.rxMin[ch]);
+    
+  } else if(nvState.rxCenter[ch] == nvState.rxMax[ch]) {
+    return - (float) (nvState.rxMax[ch] - value)
+      / (nvState.rxMax[ch] - nvState.rxMin[ch]);
   } else {
-    if(nvState.rxMax[ch]-nvState.rxCenter[ch] < 100)
-      return 0;
+    if(value < nvState.rxCenter[ch])
+      return - (float) (nvState.rxCenter[ch] - value)/(nvState.rxCenter[ch]-nvState.rxMin[ch]);
     else
       return (float) (value - nvState.rxCenter[ch])/(nvState.rxMax[ch]-nvState.rxCenter[ch]);
-    }
+  }
 }
 
 int8_t readSwitch(struct SwitchRecord *record)

@@ -150,6 +150,17 @@ bool readNVState(void)
   } else
     consolePrintLn_P(CS_STRING(" OK"));
 
+  // Sanitize rx input settings
+
+  uint8_t i = 0;
+  
+  for(i = 0; i < MAX_CH; i++) {
+    if(ABS(nvState.rxCenter[i] - nvState.rxMin[i]) < 100)
+      nvState.rxCenter[i] = nvState.rxMin[i];
+    else if(ABS(nvState.rxCenter[i] - nvState.rxMax[i]) < 100)
+      nvState.rxCenter[i] = nvState.rxMax[i];
+  }
+  
   return true;
 }
 

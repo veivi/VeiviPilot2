@@ -187,12 +187,14 @@ bool toc_test_lstick(bool reset)
 bool toc_test_tuning_range(bool reset)
 {
   static struct TOCRangeTestState state;
-  return toc_test_range_generic(&state, reset, CH_TUNE, 0, 1);
+  bool result = toc_test_range_generic(&state, reset, CH_TUNE, 0, 1);
+  return result;
 }
 
 bool toc_test_tuning_zero(bool reset)
 {
-  return fabsf(inputValue(CH_TUNE)) < toc_margin_c;
+  bool result = fabsf(inputValue(CH_TUNE)) < toc_margin_c;
+  return result;
 }
 
 bool toc_test_tuning(bool reset)
