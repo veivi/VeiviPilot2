@@ -2217,13 +2217,13 @@ void configTaskGroup()
 
 struct Task alphaPilotTasks[] = {
 #ifdef STAP_PERIOD_GYRO
-  { gyroTask, STAP_PERIOD_GYRO_STATIC, true, 0 },
+  { gyroTask, STAP_PERIOD_GYRO_STATIC, true },
 #endif
 #ifdef STAP_PERIOD_ATTI
-  { attiTask, STAP_PERIOD_ATTI, true, 0 },
+  { attiTask, STAP_PERIOD_ATTI, true },
 #endif
 #ifdef STAP_PERIOD_ACC
-  { accTask, STAP_PERIOD_ACC, true, 0 },
+  { accTask, STAP_PERIOD_ACC, true },
 #endif
   { communicationTask, HZ_TO_PERIOD(60), true },
 #ifdef ASYNC_AIR_SENSORS
@@ -2231,7 +2231,7 @@ struct Task alphaPilotTasks[] = {
   { airspeedSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },
 #endif
   { sensorTaskSlow, HZ_TO_PERIOD(CONTROL_HZ/5), true },
-  { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true },
+  { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, &ppmFrameReceived },
   { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true },
   // { gpsTask, HZ_TO_PERIOD(100) },
   { blinkTask, HZ_TO_PERIOD(LED_TICK), false },

@@ -55,6 +55,7 @@ void inputSource(const uint16_t *pulse, int numCh)
   static VP_TIME_MICROS_T prev;
   VP_TIME_MICROS_T current = vpTimeMicros(), cycle = current - prev;
 
+  ppmFrameReceived = true;
   ppmFrames++;
 
   if(prev > 0 && cycle > 30000)

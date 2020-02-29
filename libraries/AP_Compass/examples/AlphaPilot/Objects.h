@@ -125,6 +125,7 @@ extern struct OutputState vpOutput;
 
 extern float controlCycle;
 extern float logBandWidth, ppmFreq, simInputFreq;
+extern bool ppmFrameReceived;
 extern VP_TIME_MILLIS_T simTimeStamp;
 extern VP_TIME_MICROS_T idleMicros;
 extern const int maxParams;

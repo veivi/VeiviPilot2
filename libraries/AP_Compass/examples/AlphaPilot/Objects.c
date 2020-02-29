@@ -12,6 +12,7 @@ struct OutputState vpOutput;
 
 float controlCycle;
 float logBandWidth, ppmFreq;
+bool ppmFrameReceived;
 VP_TIME_MILLIS_T simTimeStamp;
 VP_TIME_MICROS_T idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];

@@ -119,7 +119,8 @@ static bool scheduler()
   while(task->code) {
     vpTimeAcquire();
     
-    if(vpTimeMillisApprox - task->lastInvoked >= task->period) {
+    if(vpTimeMillisApprox - task->lastInvoked >= task->period
+       || (task->signal && *task->signal)) {      
       if(task->realTime
 	 && vpTimeMillisApprox - task->lastInvoked < 4*task->period/3)
 	// A realtime task that has not slipped that much, try to catch up
@@ -138,6 +139,11 @@ static bool scheduler()
 
       task->code();
 
+      if(task->signal && *task->signal) {
+	task->triggered++;
+	*task->signal = false;
+      }
+      
       if(vpStatus.consoleLink) 
 	task->runTime += vpTimeMicros() - startTime;
       
@@ -175,6 +181,11 @@ void schedulerReport(void)
     consolePrintF(load);
     consolePrint(" %");
     consoleTab(30);
+    if(alphaPilotTasks[i].signal) {
+      consolePrintF((float) alphaPilotTasks[i].triggered / (period / 1.0e6));
+      consolePrint(" Hz ");
+    }
+    consoleTab(40);
     if(alphaPilotTasks[i].realTime) {
       consolePrintF((float) alphaPilotTasks[i].lagged / (period / 1.0e6));
       consolePrint(" Hz ");
@@ -182,6 +193,7 @@ void schedulerReport(void)
     consoleNL();
     alphaPilotTasks[i].timesRun = 0;
     alphaPilotTasks[i].lagged = 0;
+    alphaPilotTasks[i].triggered = 0;
     alphaPilotTasks[i].runTime = 0;
   }
 
