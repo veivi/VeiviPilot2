@@ -78,6 +78,8 @@ void inputSource(const uint16_t *pulse, int numCh)
       }
     }
   }
+
+  ppmInputTimeStamp = current;
 }
 
 bool inputValid(uint8_t ch)

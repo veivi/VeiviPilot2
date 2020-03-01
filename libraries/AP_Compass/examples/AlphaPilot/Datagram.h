@@ -54,7 +54,7 @@ struct TelemetryData {
 };
 
 struct TelemetryConfig {
-  float load;
+  float load, latency;
   float trim;
   float maxAlpha, shakerAlpha, threshAlpha;
   float trimIAS, stallIAS, margin, fuel;

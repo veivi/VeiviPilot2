@@ -17,6 +17,10 @@ VP_TIME_MILLIS_T simTimeStamp;
 VP_TIME_MICROS_T idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
 uint16_t ppmGoodSeconds;
+VP_TIME_MICROS_T ppmInputTimeStamp, controlInputTimeStamp;
+VP_TIME_MICROS_T controlLatencyTotal;
+float controlLatencyAvg;
+uint16_t controlLatencyCount;
 float fieldStrength;
 
 struct SimLinkSensor sensorData;

@@ -355,11 +355,10 @@ static void pwmTimerSync(const struct HWTimer *timer[], int num)
 {
   int i = 0;
 
-  for(i = 0; i < num; i++)
-    while(*(timer[i]->TCNT) < MICROS_TO_CNT(timer[i], 5000U));
-  
-  for(i = 0; i < num; i++)
-    *(timer[i]->TCNT) = 0xFFFF;
+  for(i = 0; i < num; i++) {
+    if(*(timer[i]->TCNT) > MICROS_TO_CNT(timer[i], 5000U))
+      *(timer[i]->TCNT) = 0xFFFF;
+  }
 }
 
 static void pwmEnable(const struct PWMOutput *output)

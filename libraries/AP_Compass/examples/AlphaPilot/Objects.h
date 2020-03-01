@@ -131,6 +131,10 @@ extern VP_TIME_MICROS_T idleMicros;
 extern const int maxParams;
 extern uint8_t gaugeCount, gaugeVariable[];
 extern uint16_t ppmGoodSeconds;
+extern VP_TIME_MICROS_T ppmInputTimeStamp, controlInputTimeStamp;
+extern VP_TIME_MICROS_T controlLatencyTotal;
+extern float controlLatencyAvg;
+extern uint16_t controlLatencyCount;
 extern float fieldStrength;
 
 #endif

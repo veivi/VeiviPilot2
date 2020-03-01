@@ -555,6 +555,9 @@ void executeCommand(char *buf)
       consoleNote_P(CS_STRING("Log write bandwidth = "));
       consolePrintF(logBandWidth);
       consolePrintLn_P(CS_STRING(" bytes/sec"));
+      consoleNote_P(CS_STRING("Control latency = "));
+      consolePrintFP(controlLatencyAvg / 1e3, 1);
+      consolePrintLn_P(CS_STRING(" ms"));
 
       schedulerReport();
       break;

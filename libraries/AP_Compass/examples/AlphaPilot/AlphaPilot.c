@@ -205,7 +205,9 @@ void configTaskGroup();
 void receiverTask()
 {
   stap_rxInputPoll();
- 
+
+  controlInputTimeStamp = ppmInputTimeStamp;
+  
   if(inputValid(CH_AILE))
     vpInput.aile = applyNullZone(inputValue(CH_AILE), NZ_BIG,
 				 &vpInput.ailePilotInput);
@@ -465,6 +467,16 @@ void monitorTask()
     consolePrintUI(stap_i2cErrorCode());
     consolePrintLn(")");
   }
+
+  // Control latency average
+
+  if(controlLatencyCount > 0)
+    controlLatencyAvg = (float) controlLatencyTotal / controlLatencyCount;
+  else
+    controlLatencyAvg = 0.0f;
+
+  controlLatencyTotal = 0;
+  controlLatencyCount = 0;
 
   prevMonitor = vpTimeMillisApprox;
 }
@@ -2089,6 +2101,9 @@ void actuatorTask()
       stap_servoOutput(i, value + vpParam.neutral[i]);
   }
 
+  controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
+  controlLatencyCount++;
+  
   stap_servoOutputSync();
 }
 
@@ -2170,6 +2185,7 @@ void downlinkTask()
   
     struct TelemetryConfig config = {
       .load = vpStatus.load,
+      .latency = controlLatencyAvg,
       .trim = alphaPredict(vpControl.elevTrim),
       .maxAlpha = vpDerived.maxAlpha,
       .shakerAlpha = vpDerived.shakerAlpha,
