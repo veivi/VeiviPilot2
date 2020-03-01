@@ -96,16 +96,15 @@ float inputValue(uint8_t ch)
   int16_t delta = (int16_t) value - (int16_t) nvState.rxCenter[ch];
     
   if(nvState.rxCenter[ch] == nvState.rxMin[ch]
-     || nvState.rxCenter[ch] == nvState.rxMax[ch]) {
+     || nvState.rxMax[ch] == nvState.rxCenter[ch]) {
     
     return (float) delta / (nvState.rxMax[ch] - nvState.rxMin[ch]);
-  } else {
     
-    if(value < nvState.rxCenter[ch])
-      return (float) delta/(nvState.rxCenter[ch]-nvState.rxMin[ch]);
-    else
-      return (float) delta/(nvState.rxMax[ch]-nvState.rxCenter[ch]);
-  }
+  } else if(value < nvState.rxCenter[ch])
+    return (float) delta / (nvState.rxCenter[ch] - nvState.rxMin[ch]);
+
+  else
+    return (float) delta / (nvState.rxMax[ch] - nvState.rxCenter[ch]);
 }
 
 int8_t readSwitch(struct SwitchRecord *record)
@@ -181,12 +180,11 @@ float inputSourceRate()
   ppmFrames = 0;
   STAP_PERMIT;
   
-  float result = 1.0e6 * count / (vpTimeMicros() - prevMeasurement);
+  VP_TIME_MICROS_T current = vpTimeMicros();
   
-  prevMeasurement = vpTimeMicros();
-
-  if(result < 30)
-    ppmWarnSlow = true;
+  float result = 1.0e6 * count / (current - prevMeasurement);
+  
+  prevMeasurement = current;
     
   return result;
 }

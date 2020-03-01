@@ -450,7 +450,9 @@ void monitorTask()
   // PPM monitoring
 
   if(!inputSourceGood())
-    lastPPMWarn = vpTimeMillisApprox;
+    ppmGoodSeconds = 0;
+  else if(ppmGoodSeconds < 100)
+    ppmGoodSeconds++;
   
   // I2C errors
 
@@ -820,7 +822,17 @@ void configurationTask()
   // WING LEVELER BUTTON
   //
 
-  if(buttonSinglePulse(&LEVELBUTTON)) {
+  if(buttonDoublePulse(&LEVELBUTTON)) {
+    //
+    // DOUBLE PULSE : reset TOC test
+    //
+    
+    if(!vpStatus.aloft && !vpMode.takeOff) {
+      consoleNoteLn_P(CS_STRING("T/O/C test being RESET"));
+      tocTestReset();
+    }
+    
+  } else if(buttonSinglePulse(&LEVELBUTTON)) {
     //
     // PULSE : Takeoff mode enable / increment test
     //

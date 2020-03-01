@@ -130,7 +130,7 @@ extern VP_TIME_MILLIS_T simTimeStamp;
 extern VP_TIME_MICROS_T idleMicros;
 extern const int maxParams;
 extern uint8_t gaugeCount, gaugeVariable[];
-extern uint32_t lastPPMWarn;
+extern uint16_t ppmGoodSeconds;
 extern float fieldStrength;
 
 #endif

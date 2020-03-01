@@ -16,7 +16,7 @@ bool ppmFrameReceived;
 VP_TIME_MILLIS_T simTimeStamp;
 VP_TIME_MICROS_T idleMicros;
 uint8_t gaugeCount, gaugeVariable[MAX_PARAMS];
-uint32_t lastPPMWarn;
+uint16_t ppmGoodSeconds;
 float fieldStrength;
 
 struct SimLinkSensor sensorData;
