@@ -451,7 +451,7 @@ void monitorTask()
 
   if(!inputSourceGood())
     ppmGoodSeconds = 0;
-  else if(ppmGoodSeconds < 100)
+  else if(ppmGoodSeconds < 0xFFFF)
     ppmGoodSeconds++;
   
   // I2C errors
