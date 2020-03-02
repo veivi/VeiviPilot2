@@ -673,7 +673,7 @@ void statusTask()
   if(!(vpMode.test && nvState.testNum[vpMode.testCount] > 0)
      && vpMode.slowFlight
      && vpControl.gearSel == 0
-     && vpInput.throttle < 0.3f
+     && vpInput.throttle < 0.10f
      && (vpParam.haveGear || vpInput.throttle < 0.05f)
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
@@ -682,12 +682,12 @@ void statusTask()
     // We may be in a flare
 
     if(vpInertiaOnForce(&flareInertia)) {
-      consoleNoteLn_P(CS_STRING("We seem to be FLARING"));
-      annunciatorTalk("Flare");
+      // consoleNoteLn_P(CS_STRING("We seem to be FLARING"));
+      annunciatorTalk("Flaring");
     }
     
-  } else if(vpInertiaOff(&flareInertia))
-    consoleNoteLn_P(CS_STRING("Flare ended"));
+  } // else if(vpInertiaOff(&flareInertia))
+    // consoleNoteLn_P(CS_STRING("Flare ended"));
   
   //
   // Stall detection
