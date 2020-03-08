@@ -47,6 +47,6 @@ SlopeLimiter_t flapActuator = SLOPE_CONS(0.5);
 Washout_t yawDamper = WASHOUT_CONS(0.5*CONTROL_HZ, 0);
 #endif
 Turbine_t engine;
-SWAvg_t liftFilter = SWAVG_CONS(CONFIG_HZ/4);
+SWAvg_t liftFilter = SWAVG_CONS(CONFIG_HZ/6);
 SWAvg_t primaryIASDataFilter = SWAVG_CONS(CONTROL_HZ/8);
 
