@@ -1966,8 +1966,9 @@ void throttleModule()
     // landings and get back up quickly for touch and gos
     turbineReset(&engine, vpInput.throttle);
   else
-    // We're flying, apply idle and lag settings
-    turbineInput(&engine, vpParam.idle + vpInput.throttle*(1 - vpParam.idle));
+    // We're flying, apply lag
+    turbineInput(&engine, vpInput.throttle);
+  // turbineInput(&engine, vpParam.idle + vpInput.throttle*(1 - vpParam.idle));
 }
 
 //
@@ -2153,7 +2154,9 @@ VPPeriodicTimer_t downlinkTimer = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
 void downlinkTask()
 {
   uint16_t status =
-    (!vpStatus.telemetryLink ? (1<<7) : 0)
+    ((vpInput.throttle < vpParam.idle
+      || turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0)
+    | (!vpStatus.telemetryLink ? (1<<7) : 0)
     | ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
     | (logReady(false) ? (1<<5) : 0)
     | (vpMode.radioFailSafe ? (1<<4) : 0)
