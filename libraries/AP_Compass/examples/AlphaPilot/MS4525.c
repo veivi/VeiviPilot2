@@ -44,7 +44,7 @@ bool MS4525DO_pressure(int16_t *result)
 
   basei2cEntropySample(&target, raw);
   
-  if(vpMode.takeOff || vpStatus.positiveIAS || vpStatus.aloft) {
+  if(vpMode.takeOff || vpStatus.positiveIAS || vpStatus.airborne) {
     if(calibCount > 0)
       consoleNoteLn_P(CS_STRING("Airspeed calibration STOPPED"));
      

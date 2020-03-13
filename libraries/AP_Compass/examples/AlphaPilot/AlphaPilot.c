@@ -557,7 +557,7 @@ void statusTask()
   // Fuel quantity & total mass
   //
 
-  if(vpStatus.canopyClosed || vpStatus.aloft) {
+  if(vpStatus.canopyClosed || vpStatus.airborne) {
     // Assume we are disconnected from the overflow tank
     
     vpStatus.fuel -=
@@ -640,7 +640,7 @@ void statusTask()
     
   } else if(vpInertiaOn(&fullStopInertia)) {
     consoleNoteLn_P(CS_STRING("We have FULLY STOPPED"));
-    vpStatus.aloft = false;
+    vpStatus.airborne = false;
   }
 
   //
@@ -840,7 +840,7 @@ void configurationTask()
     // DOUBLE PULSE : reset TOC test
     //
     
-    if(!vpStatus.aloft && !vpMode.takeOff) {
+    if(!vpStatus.airborne && !vpMode.takeOff) {
       consoleNoteLn_P(CS_STRING("T/O/C test being RESET"));
       tocTestReset();
     }
@@ -850,7 +850,7 @@ void configurationTask()
     // PULSE : Takeoff mode enable / increment test
     //
 
-    if(vpStatus.aloft) {
+    if(vpStatus.airborne) {
       //
       // Airborne already, increment the test count
       //
@@ -879,7 +879,7 @@ void configurationTask()
       if(tocTestStatus(tocReportConsole)) {
 	consoleNoteLn_P(CS_STRING("T/o configuration is GOOD"));
 	annunciatorTalk("Takeoff mode enabled");
-	vpStatus.aloft = false;
+	vpStatus.airborne = false;
       } else {
 	consolePrintLn("");
 	consoleNoteLn_P(CS_STRING("T/o configuration test FAILED"));
@@ -909,7 +909,7 @@ void configurationTask()
     logDisable();
   else if(vpMode.takeOff && vpInput.throttle > 0.90f) {
     logEnable();
-  } else if(vpStatus.aloft && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
+  } else if(vpStatus.airborne && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
     logEnable();
   else if(vpStatus.fullStop)
     logDisable();
@@ -989,10 +989,10 @@ void configurationTask()
   if(vpInput.throttle > 0.8 && vpMode.takeOff && vpStatus.positiveIAS
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
-    consoleNoteLn_P(CS_STRING("We're assumed to have TAKEN OFF"));
-    annunciatorTalk("Take-off");
+    consoleNoteLn_P(CS_STRING("We're assumed to have be AIRBORNE"));
+    annunciatorTalk("Airborne");
     vpMode.takeOff = false;
-    vpStatus.aloft = true;
+    vpStatus.airborne = true;
     vpMode.silent = true;
   }
 
@@ -1958,7 +1958,7 @@ void throttleModule()
   if(vpMode.takeOff)
     // Taking off, don't want lag
     turbineReset(&engine, vpInput.throttle);
-  else if(!vpStatus.aloft || vpMode.radioFailSafe)
+  else if(!vpStatus.airborne || vpMode.radioFailSafe)
     // Not taking off or aloft, keep closed
     turbineReset(&engine, 0);
   else if(vpParam.wowCalibrated && vpStatus.weightOnWheels)
@@ -2161,7 +2161,7 @@ void downlinkTask()
     | (logReady(false) ? (1<<5) : 0)
     | (vpMode.radioFailSafe ? (1<<4) : 0)
     | (vpStatus.alphaUnreliable ? (1<<3) : 0)
-    | (vpStatus.aloft ? (1<<0) : 0);
+    | (vpStatus.airborne ? (1<<0) : 0);
 
   if(!vpStatus.alphaUnreliable) {
     status |= vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0;

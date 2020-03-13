@@ -598,13 +598,13 @@ void executeCommand(char *buf)
     case c_ready:
       // Simulate ready for departure
       vpMode.takeOff = true;
-      vpStatus.aloft = false;
+      vpStatus.airborne = false;
       break;
       
     case c_launch:
       // Simulate takeoff
       vpMode.takeOff = false;
-      vpStatus.aloft = true;
+      vpStatus.airborne = true;
       break;
       
     default:
