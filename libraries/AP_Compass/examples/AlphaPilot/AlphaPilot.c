@@ -33,9 +33,10 @@ void annunciatorTalkNumber(const char *text, int num)
 {
   datagramTxStart(DG_ANNUNCIATOR);
   datagramTxOut((const uint8_t*) text, strlen(text));
-
+  datagramTxOut((const uint8_t*) " ", 1);
+  
   if(num < 0) {
-    datagramTxOut((const uint8_t*) " minus ", 7);
+    datagramTxOut((const uint8_t*) "minus ", 6);
     num = -num;
   }
 
@@ -946,10 +947,13 @@ void configurationTask()
 
   static int prevFlap;
   
-  vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
-
+  if(vpDerived.haveFlaps)
+    vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
+  else
+    vpControl.flapSel = 0;
+  
   if(vpControl.flapSel != prevFlap) {
-    annunciatorTalkNumber("flaps ", vpControl.flapSel);
+    annunciatorTalkNumber("flaps", vpControl.flapSel);
     prevFlap = vpControl.flapSel;
   }
   
