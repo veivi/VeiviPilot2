@@ -33,15 +33,25 @@ void annunciatorTalkNumber(const char *text, int num)
 {
   datagramTxStart(DG_ANNUNCIATOR);
   datagramTxOut((const uint8_t*) text, strlen(text));
-  datagramTxOut((const uint8_t*) " ", 1);
+  datagramTxOutByte(' ');
   
   if(num < 0) {
-    datagramTxOut((const uint8_t*) "minus ", 6);
+    datagramTxOutByte('-');
     num = -num;
   }
 
-  char buffer[2] = { num < 10 ? ' ' : ('0' + num/10), '0' + num%10 };
-  datagramTxOut((const uint8_t*) buffer, sizeof(buffer));
+  int weight = 1;
+
+  while(weight*10 <= num && weight < 10000)
+    weight *= 10;
+
+  do {
+    uint8_t digit = num/weight;
+    datagramTxOutByte('0' + digit);
+    num -= digit*weight;
+    weight /= 10;
+  } while(weight > 0);
+  
   datagramTxEnd();
 }
 
@@ -968,12 +978,18 @@ void configurationTask()
     vpMode.test = true;
     consoleNoteLn_P(CS_STRING("Test mode ENABLED"));
     annunciatorTalk("Test start");
+
     /*
     annunciatorTalkNumber("test", -25);
     annunciatorTalkNumber("test", -1);
+    annunciatorTalkNumber("test", 0);
+    annunciatorTalkNumber("test", 9);
     annunciatorTalkNumber("test", 10);
     annunciatorTalkNumber("test", 39);
-    */    
+    annunciatorTalkNumber("test", 100);
+    annunciatorTalkNumber("test", 1500);
+    annunciatorTalkNumber("test", 10001);
+    */
   } else if(vpMode.test && vpInput.tuningKnob < 0) {
     vpMode.test = false;
     consoleNoteLn_P(CS_STRING("Test mode DISABLED"));
