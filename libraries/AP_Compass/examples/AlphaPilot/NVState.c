@@ -436,21 +436,19 @@ void derivedValidate()
 
   vpDerived.haveRetracts = vpDerived.haveFlaps = false;
 
-  if(vpParam.haveGear) {
-    for(i = 0; i < MAX_SERVO; i++)
-      if(ABS(vpParam.functionMap[i]) == fn_gear) {
-	vpDerived.haveRetracts = true;
-	break;
-      }
-  }
+  for(i = 0; i < MAX_SERVO; i++) {
+    switch(ABS(vpParam.functionMap[i])) {
+    case fn_gear:
+      vpDerived.haveRetracts = true;
+      break;
 
-  for(i = 0; i < MAX_SERVO; i++)
-    if(vpParam.functionMap[i] == fn_flap
-       || vpParam.functionMap[i] == fn_flaperon1
-       || vpParam.functionMap[i] == fn_flaperon2) {
+    case fn_flap:
+    case fn_flaperon1:
+    case fn_flaperon2:
       vpDerived.haveFlaps = true;
       break;
     }
+  }
 
   // Store the assumed values for flaps and mass
   
