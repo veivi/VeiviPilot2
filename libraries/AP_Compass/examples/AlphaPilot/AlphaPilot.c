@@ -1543,6 +1543,26 @@ void gaugeTask()
 	consoleTab(40);
 	break;
 	
+      case 19:
+	p = 16*clamp(alphaPredictInverse(vpControl.targetAlpha), -1, 1);
+	consolePrint("|");
+	if(p < 0) {
+	  consoleTab(16+p);
+	  consolePrint("o");
+	}
+	consoleTab(16);
+	if(p == 0)
+	  consolePrint("0");
+	else
+	  consolePrint("|");
+	if(p > 0) {
+	  consoleTab(16+p);
+	  consolePrint("o");
+	}
+	consoleTab(32);
+	consolePrint("|");
+	break;
+	
       case 20:
 	consolePrint_P(CS_STRING(" log bw = "));
 	consolePrintI((int) logBandWidth);
@@ -1754,11 +1774,11 @@ void elevatorModule()
   vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
   
   if(vpStatus.flare) {
-    const float flareAlpha = 
-      mixValue(vpParam.flare * vpInput.stickForce,
-	       vpControl.targetAlpha, alphaPredict(vpInput.elev));
+    const float flare = 
+      mixValue(vpParam.flare,
+	       alphaPredictInverse(vpControl.targetAlpha), vpInput.elev);
 
-    vpControl.targetAlpha = fmaxf(vpControl.targetAlpha, flareAlpha);
+    vpControl.targetAlpha = fmaxf(vpControl.targetAlpha, alphaPredict(flare));
   }
   
   if(vpMode.radioFailSafe)
