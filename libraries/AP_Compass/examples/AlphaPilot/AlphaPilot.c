@@ -685,7 +685,7 @@ void statusTask()
   if(!(vpMode.test && nvState.testNum[vpMode.testCount] > 0)
      && vpMode.slowFlight
      && vpControl.gearSel == 0
-     && vpInput.throttle < vpParam.idle/2
+     && vpInput.throttle < vpParam.idle
      && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
