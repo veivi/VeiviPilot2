@@ -2,7 +2,7 @@
 #include "Controller.h"
 #include "DSP.h"
 
-const float gainTweak_c = 0.90;
+const float gainTweak_c = 0.80;
 
 bool pidCtrlInit(PIDCtrl_t *ctrl)
 {

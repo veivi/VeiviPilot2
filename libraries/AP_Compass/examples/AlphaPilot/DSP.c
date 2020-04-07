@@ -246,7 +246,8 @@ float turbineInput(Turbine_t *i, float v)
       *sqrf((i->state + idle_c)/(1 + idle_c));
     i->state = clamp(i->state, 0, v);
   } else {
-    i->state -= MIN(boost_c * (i->state - v) * i->tau, 0.8*i->tau);
+    // i->state -= MIN(boost_c * (i->state - v) * i->tau, 0.8*i->tau);
+    i->state -= boost_c * (i->state - v) * i->tau;
     i->state = clamp(i->state, v, 1);
   }
   
