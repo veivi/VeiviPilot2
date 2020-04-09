@@ -303,7 +303,9 @@ static const uint8_t outputModeMask[] = { 1<<COM1A1, 1<<COM1B1, 1<<COM1C1 };
 const struct HWTimer hwTimer1 =
   { &TCCR1A, &TCCR1B, &ICR1, { &OCR1A, &OCR1B, &OCR1C }, &TCNT1, SYNC_PWM_OUTPUT, -2 };
 const struct HWTimer hwTimer3 =
-  { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C }, &TCNT3, SYNC_PWM_OUTPUT, -2 };
+  { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C }, &TCNT3, false, 1 };
+  // const struct HWTimer hwTimer3 =
+  //  { &TCCR3A, &TCCR3B, &ICR3, { &OCR3A, &OCR3B, &OCR3C }, &TCNT3, SYNC_PWM_OUTPUT, -2 };
 const struct HWTimer hwTimer4 =
   { &TCCR4A, &TCCR4B, &ICR4, { &OCR4A, &OCR4B, &OCR4C }, &TCNT4, SYNC_PWM_OUTPUT, -2 };
 
