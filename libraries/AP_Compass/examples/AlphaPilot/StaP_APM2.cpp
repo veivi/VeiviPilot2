@@ -337,7 +337,7 @@ static void pwmTimerInit(const struct HWTimer *timer[], int num)
     // WGM, prescaling
 
     *(timer[i]->TCCRA) = 1<<WGM11;
-    *(timer[i]->TCCRB) = (1<<WGM13) | (1<<WGM12) | (1<<CS11) | (1<<CS10);
+    *(timer[i]->TCCRB) = (1<<WGM13) | (1<<WGM12) | (1<<CS11) | (timer[i]->sync ? (1<<CS10) : 0);
     
    // PWM frequency
 
