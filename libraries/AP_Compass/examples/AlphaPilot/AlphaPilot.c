@@ -536,7 +536,7 @@ VPInertiaTimer_t
   pitotBlockInertia = VP_INERTIA_TIMER_CONS(&vpStatus.pitotBlocked, 10e3),
   fullStopInertia = VP_INERTIA_TIMER_CONS(&vpStatus.fullStop, 5e3),
   alphaFailInertia = VP_INERTIA_TIMER_CONS(&vpStatus.alphaUnreliable, 0.3e3),
-  flareInertia = VP_INERTIA_TIMER_CONS(&vpStatus.flare, 0.7e3),
+  flareInertia = VP_INERTIA_TIMER_CONS(&vpStatus.flare, 0.2e3),
   canopyInertia = VP_INERTIA_TIMER_CONS(&vpStatus.canopyClosed, 0.5e3),
   uprightInertia = VP_INERTIA_TIMER_CONS(&vpStatus.upright, 0.5e3),
   wowInertia = VP_INERTIA_TIMER_CONS(&vpStatus.weightOnWheels, 0.15e3);
