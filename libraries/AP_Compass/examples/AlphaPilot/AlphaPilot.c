@@ -536,7 +536,7 @@ VPInertiaTimer_t
   pitotBlockInertia = VP_INERTIA_TIMER_CONS(&vpStatus.pitotBlocked, 10e3),
   fullStopInertia = VP_INERTIA_TIMER_CONS(&vpStatus.fullStop, 5e3),
   alphaFailInertia = VP_INERTIA_TIMER_CONS(&vpStatus.alphaUnreliable, 0.3e3),
-  flareInertia = VP_INERTIA_TIMER_CONS(&vpStatus.flare, 0.2e3),
+  flareInertia = VP_INERTIA_TIMER_CONS(&vpStatus.flare, 0.5e3),
   canopyInertia = VP_INERTIA_TIMER_CONS(&vpStatus.canopyClosed, 0.5e3),
   uprightInertia = VP_INERTIA_TIMER_CONS(&vpStatus.upright, 0.5e3),
   wowInertia = VP_INERTIA_TIMER_CONS(&vpStatus.weightOnWheels, 0.15e3);
@@ -686,9 +686,10 @@ void statusTask()
      && vpMode.slowFlight
      && vpControl.gearSel == 0
      && vpInput.throttle < vpParam.idle
-     && vpFlight.IAS < (1.2f + vpParam.thresholdMargin)*vpDerived.minimumIAS
+     && vpFlight.IAS < (1 + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
+     && vpParam.flare > 0.0f
      && vpInput.stickForce > 0.0f) {
     // We may be in a flare
 
@@ -791,11 +792,13 @@ void configurationTask()
     //
     
     if(!vpMode.alphaFailSafe) {
+      annunciatorTalk("Alpha failsafe");
       consoleNoteLn_P(CS_STRING("Alpha FAILSAFE"));
       vpMode.alphaFailSafe = true;
       logMark();
       
     } else if(!vpMode.sensorFailSafe) {
+      annunciatorTalk("Total failsafe");
       consoleNoteLn_P(CS_STRING("Total sensor FAILSAFE"));
       vpMode.sensorFailSafe = true;
       logMark();
@@ -2205,7 +2208,8 @@ void downlinkTask()
   if(!vpStatus.alphaUnreliable) {
     status |= vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0;
 
-    if((HARD_SHAKER && vpStatus.telemetryLink) || vpInput.stickForce > 0.0f)
+    if((HARD_SHAKER && vpStatus.telemetryLink)
+       || vpMode.alphaFailSafe || vpInput.stickForce > 0.0f)
        status |= vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0;
   }
     
