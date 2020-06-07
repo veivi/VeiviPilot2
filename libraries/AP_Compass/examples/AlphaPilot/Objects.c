@@ -11,6 +11,7 @@ struct ControlState vpControl;
 struct OutputState vpOutput;
 
 float controlCycle;
+int16_t controlFreq;
 float logBandWidth, ppmFreq;
 bool ppmFrameReceived;
 VP_TIME_MILLIS_T simTimeStamp;

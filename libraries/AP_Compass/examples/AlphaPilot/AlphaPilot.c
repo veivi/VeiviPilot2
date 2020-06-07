@@ -2054,7 +2054,7 @@ void ancillaryModule()
       vpControl.parking = !vpStatus.positiveIAS && buttonState(&TRIMBUTTON);
     }
       
-    vpOutput.brake = (depressed || vpControl.parking) ? 1 : pedal;
+    vpOutput.brake = vpControl.parking ? 1.1f : pedal;
   }
 }
 
@@ -2104,8 +2104,10 @@ void controlTask()
   
   static VP_TIME_MICROS_T controlCycleEnded;
  
-  if(controlCycleEnded > 0)
+  if(controlCycleEnded > 0) {
     controlCycle = (vpTimeMicrosApprox - controlCycleEnded)/1.0e6;
+    controlFreq = (int16_t) (1.0f / controlCycle);
+  }
   
   controlCycleEnded = vpTimeMicrosApprox;
 

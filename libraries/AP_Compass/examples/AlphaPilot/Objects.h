@@ -124,6 +124,7 @@ extern struct ControlState vpControl;
 extern struct OutputState vpOutput;
 
 extern float controlCycle;
+extern int16_t controlFreq;
 extern float logBandWidth, ppmFreq, simInputFreq;
 extern bool ppmFrameReceived;
 extern VP_TIME_MILLIS_T simTimeStamp;

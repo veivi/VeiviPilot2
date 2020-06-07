@@ -92,9 +92,27 @@ float gearFn()
   return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
+#define BRAKE_PWM_HZ    5
+#define BRAKE_THRESHOLD 0.2
+#define BRAKE_BOOST     3
+
 float brakeFn()
 {
-  return vpParam.brakeDefl*vpOutput.brake;
+  static int16_t count;
+
+  // Brake PWM
+
+  if(++count > controlFreq/BRAKE_PWM_HZ)
+    count = 0;
+
+  if(vpOutput.brake > 1.0f)
+    return 1.0f;
+  else if(vpOutput.brake < BRAKE_THRESHOLD
+     || count > vpOutput.brake*controlFreq/BRAKE_PWM_HZ-1)
+    return 0.0f;
+
+  return
+    vpParam.brakeDefl * (1.0f - 1.0f/BRAKE_BOOST + vpOutput.brake/BRAKE_BOOST);
 }
 
 float throttleFn()
