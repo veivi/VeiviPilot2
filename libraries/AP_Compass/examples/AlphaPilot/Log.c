@@ -97,6 +97,6 @@ struct LogChannel logChannels[] = {
   [lc_trim] =    { "TRIM",   lt_percent,   -100, 100,   TRIM },
   [lc_test] =    { "TEST",   lt_integer,   0, 1,        TEST },
   [lc_gain] =    { "GAIN",   lt_real,      0, 50,       GAIN },
-  [lc_fuel] =    { "FUEL",   lt_real,      0, 30,       FUEL }
+  [lc_fuel] =    { "FUEL",   lt_real,      0, 30000,    FUEL }
 };
 

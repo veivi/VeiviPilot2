@@ -92,9 +92,9 @@ float gearFn()
   return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
-#define BRAKE_PWM_HZ    5
+#define BRAKE_PWM_HZ    4
 #define BRAKE_THRESHOLD 0.2
-#define BRAKE_BOOST     3
+#define BRAKE_BOOST     4
 
 float brakeFn()
 {
@@ -102,7 +102,9 @@ float brakeFn()
 
   // Brake PWM
 
-  if(++count > controlFreq/BRAKE_PWM_HZ)
+  if(count < controlFreq/BRAKE_PWM_HZ - 1)
+    count++;
+  else
     count = 0;
 
   if(vpOutput.brake > 1.0f)

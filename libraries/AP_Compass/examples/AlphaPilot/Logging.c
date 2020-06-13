@@ -500,7 +500,8 @@ void logTask()
 		    vpStatus.alphaFailed,
 		    vpStatus.alphaUnreliable,
 		    vpStatus.pitotFailed,
-		    vpStatus.pitotBlocked };
+		    vpStatus.pitotBlocked,
+		    !vpStatus.telemetryLink};
   
   modeEncoded = encode(mode, sizeof(mode)/sizeof(bool));
   statusEncoded = encode(status, sizeof(status)/sizeof(bool));

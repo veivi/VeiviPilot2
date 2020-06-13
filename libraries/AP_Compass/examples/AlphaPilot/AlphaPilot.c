@@ -744,7 +744,7 @@ void statusTask()
 
   } else if(vpStatus.positiveIAS
 	    && (liftAvg < weight/2 || liftAvg > 1.5f*weight
-		|| lift < liftExpected + liftMax/3)) {
+		|| lift < liftExpected + liftMax/4)) {
     if(vpInertiaOff(&wowInertia))
       consoleNoteLn_P(CS_STRING("Weight is probably OFF THE WHEELS"));
 
