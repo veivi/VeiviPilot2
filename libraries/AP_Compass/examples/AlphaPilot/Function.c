@@ -92,7 +92,7 @@ float gearFn()
   return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
-#define BRAKE_PWM_HZ    4
+#define BRAKE_PWM_HZ    7
 #define BRAKE_THRESHOLD 0.2
 #define BRAKE_BOOST     4
 
