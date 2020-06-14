@@ -1774,13 +1774,16 @@ void elevatorModule()
 		  vpMode.takeOff ? vpParam.takeoffTrim : vpControl.elevTrim);
 
   vpControl.targetAlpha = fminf(alphaPredict(vpOutput.elev), effMaxAlpha);
+  vpControl.flaring = false;
   
   if(vpStatus.flare) {
-    const float flare = 
-      mixValue(vpParam.flare,
-	       alphaPredictInverse(vpControl.targetAlpha), vpInput.elev);
+    const float moderatedElev = alphaPredictInverse(vpControl.targetAlpha),
+      flareElev = mixValue(vpParam.flare, moderatedElev, vpInput.elev);
 
-    vpControl.targetAlpha = fmaxf(vpControl.targetAlpha, alphaPredict(flare));
+    if(flareElev > moderatedElev) {
+      vpControl.targetAlpha = alphaPredict(flareElev);
+      vpControl.flaring = true;
+    }
   }
   
   if(vpMode.radioFailSafe)
@@ -1822,8 +1825,10 @@ void elevatorModule()
       // Only apply target if it's less than the current rate + bias
       vpControl.targetPitchR =
 	fminf(vpControl.targetPitchR, vpFlight.pitchR +  pusherBias_c);
-    
-    pidCtrlInput(&elevCtrl, vpControl.targetPitchR - vpFlight.pitchR, controlCycle);
+
+    if(!vpControl.flaring)
+      pidCtrlInput(&elevCtrl, vpControl.targetPitchR - vpFlight.pitchR,
+		   controlCycle);
     
     vpOutput.elev = pidCtrlOutput(&elevCtrl);
 
