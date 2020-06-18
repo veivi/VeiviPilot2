@@ -273,6 +273,7 @@ bool logInit(VP_TIME_MILLIS_T maxDuration)
   static bool endFound = false;
   uint32_t eepromSize = 0;
   uint8_t dummy;
+  static bool dontTruncateLog = false;
   
   switch(logState) {
   case invalid_c:
@@ -384,7 +385,7 @@ bool logInit(VP_TIME_MILLIS_T maxDuration)
     break;
 
   case ready_c:
-    if(startPtr < 0)
+    if(dontTruncateLog || startPtr < 0)
       logLen = logSize;
     else
       logLen = (logSize + endPtr - startPtr - 1) % logSize;

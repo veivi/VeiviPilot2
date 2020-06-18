@@ -758,7 +758,7 @@ void configurationTask()
   // Being armed?
   //
   
-  if(buttonDoublePulse(&TRIMBUTTON) && !vpStatus.armed &&
+  if(!vpStatus.armed && buttonDoublePulse(&TRIMBUTTON) &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     annunciatorTalk("ARMED");
@@ -769,7 +769,7 @@ void configurationTask()
 
     tocTestReset();
   }
-
+  
   // We skip the rest unless we're armed
 
   if(!vpStatus.armed)
@@ -803,8 +803,11 @@ void configurationTask()
       vpMode.sensorFailSafe = true;
       logMark();
       
-    } else if(!vpStatus.positiveIAS)
+    } else if(!vpStatus.positiveIAS && !vpStatus.airborne) {
+      consoleNoteLn_P(CS_STRING("T/O/C test being RESET"));
+      tocTestReset();
       logDisable();
+    }
     
   } else if(buttonSinglePulse(&GEARBUTTON)) {
     //
@@ -848,17 +851,7 @@ void configurationTask()
   // WING LEVELER BUTTON
   //
 
-  if(buttonDoublePulse(&LEVELBUTTON)) {
-    //
-    // DOUBLE PULSE : reset TOC test
-    //
-    
-    if(!vpStatus.airborne && !vpMode.takeOff) {
-      consoleNoteLn_P(CS_STRING("T/O/C test being RESET"));
-      tocTestReset();
-    }
-    
-  } else if(buttonSinglePulse(&LEVELBUTTON)) {
+  if(buttonSinglePulse(&LEVELBUTTON)) {
     //
     // PULSE : Takeoff mode enable / increment test
     //
@@ -1011,7 +1004,7 @@ void configurationTask()
   if(vpInput.throttle > 0.8 && vpMode.takeOff && vpStatus.positiveIAS
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
-    consoleNoteLn_P(CS_STRING("We're assumed to have be AIRBORNE"));
+    consoleNoteLn_P(CS_STRING("We seem to be AIRBORNE"));
     annunciatorTalk("Airborne");
     vpMode.takeOff = false;
     vpStatus.airborne = true;
