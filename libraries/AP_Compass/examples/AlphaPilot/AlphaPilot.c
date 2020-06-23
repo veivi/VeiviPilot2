@@ -1573,6 +1573,25 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(")"));
 	break;
 	
+      case 22:
+	p = 16*clamp(vpOutput.elev, -1, 1);
+	consolePrint("|");
+	if(p < 0) {
+	  consoleTab(16+p);
+	  consolePrint("o");
+	}
+	consoleTab(16);
+	if(p == 0)
+	  consolePrint("0");
+	else
+	  consolePrint("|");
+	if(p > 0) {
+	  consoleTab(16+p);
+	  consolePrint("o");
+	}
+	consoleTab(32);
+	consolePrint("|");
+	break;
       }
     }
 
@@ -1771,7 +1790,8 @@ void elevatorModule()
   
   if(vpStatus.flare) {
     const float moderatedElev = alphaPredictInverse(vpControl.targetAlpha),
-      flareElev = mixValue(vpParam.flare, moderatedElev, vpInput.elev);
+      // flareElev = mixValue(vpParam.flare, moderatedElev, vpInput.elev);
+      flareElev = mixValue(vpInput.stickForce*vpParam.flare, moderatedElev, 1);
 
     if(flareElev > moderatedElev) {
       vpControl.targetAlpha = alphaPredict(flareElev);
