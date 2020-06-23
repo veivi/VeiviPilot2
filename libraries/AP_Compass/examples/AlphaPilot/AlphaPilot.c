@@ -1839,14 +1839,14 @@ void elevatorModule()
       vpControl.targetPitchR =
 	fminf(vpControl.targetPitchR, vpFlight.pitchR +  pusherBias_c);
 
-    pidCtrlInput(&elevCtrl, vpControl.targetPitchR - vpFlight.pitchR,
-		 controlCycle);
-    
     if(vpControl.flaring)
       pidCtrlSetGain(&elevCtrl, 1 - vpInput.stickForce);
     else
       pidCtrlSetGain(&elevCtrl, 1);
       
+    pidCtrlInput(&elevCtrl, vpControl.targetPitchR - vpFlight.pitchR,
+		 controlCycle);
+    
     vpOutput.elev = pidCtrlOutput(&elevCtrl);
 
     if(vpFeature.alphaHold)
