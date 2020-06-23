@@ -9,6 +9,7 @@ bool pidCtrlInit(PIDCtrl_t *ctrl)
   ctrl->autoUnwind = false;
   ctrl->rangeMin = -1;
   ctrl->rangeMax = 1;
+  ctrl->gain = 1;
   return true;
 }
 
@@ -67,6 +68,11 @@ void pidCtrlSetRange(PIDCtrl_t *ctrl, float r)
   pidCtrlSetRangeAB(ctrl, -r, r);
 }
 
+void pidCtrlSetGain(PIDCtrl_t *ctrl, float c)
+{
+  ctrl->gain = c;
+}
+
 void pidCtrlInput(PIDCtrl_t *ctrl, float err, float delta)
 {
   ctrl->delta = delta;
@@ -77,8 +83,8 @@ void pidCtrlInput(PIDCtrl_t *ctrl, float err, float delta)
   ctrl->prevErr = err;  // Store current error for next deriv calculation
   
   ctrl->I = clamp(ctrl->I + ctrl->Ki*err*delta,
-		  ctrl->rangeMin - ctrl->Kp*err,
-		  ctrl->rangeMax - ctrl->Kp*err);
+		  ctrl->gain*ctrl->rangeMin - ctrl->Kp*err,
+		  ctrl->gain*ctrl->rangeMax - ctrl->Kp*err);
 
   if(ctrl->autoUnwind && ctrl->Ki < 1.0E-5)
     ctrl->I = 0.0;
@@ -89,5 +95,5 @@ float pidCtrlOutput(PIDCtrl_t *ctrl) {
     diffTerm = clamp(ctrl->Kd*(ctrl->errD+ctrl->prevErrD)/2/ctrl->delta,
 		     -diffLimit, diffLimit);
   return clamp(ctrl->Kp*ctrl->prevErr + ctrl->I + diffTerm,
-	       ctrl->rangeMin, ctrl->rangeMax);
+	       ctrl->gain*ctrl->rangeMin, ctrl->gain*ctrl->rangeMax);
 }
