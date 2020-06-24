@@ -8,7 +8,6 @@ typedef struct PIDCtrl {
   bool autoUnwind; // Unwind when I is very small
   float rangeMin, rangeMax;
   float I, errD, prevErrD, delta, prevErr, Kp, Ki, Kd;
-  float gain;
 } PIDCtrl_t;
 
 #define PIDCTRL_CONS(r) { false, -(r), r }
@@ -19,7 +18,7 @@ void pidCtrlSetZNPID(PIDCtrl_t *ctrl, float Ku, float Tu);
 void pidCtrlSetZNPI(PIDCtrl_t *ctrl, float Ku, float Tu);
 void pidCtrlReset(PIDCtrl_t *ctrl, float value, float err);
 void pidCtrlInput(PIDCtrl_t *ctrl, float err, float dt);
-void pidCtrlSetGain(PIDCtrl_t *ctrl, float c);
+void pidCtrlClamp(PIDCtrl_t *ctrl, float c);
 void pidCtrlSetRangeAB(PIDCtrl_t *ctrl, float, float);
 void pidCtrlSetRange(PIDCtrl_t *ctrl, float);
 float pidCtrlOutput(PIDCtrl_t *ctrl);
