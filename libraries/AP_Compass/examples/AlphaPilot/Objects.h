@@ -20,6 +20,7 @@ struct StatusRecord {
   bool stall;
   bool weightOnWheels;
   bool airborne;
+  bool goAround;
   bool canopyClosed;
   int fault;
   bool alphaFailed;

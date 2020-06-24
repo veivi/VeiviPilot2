@@ -539,7 +539,8 @@ VPInertiaTimer_t
   flareInertia = VP_INERTIA_TIMER_CONS(&vpStatus.flare, 0.5e3),
   canopyInertia = VP_INERTIA_TIMER_CONS(&vpStatus.canopyClosed, 0.5e3),
   uprightInertia = VP_INERTIA_TIMER_CONS(&vpStatus.upright, 0.5e3),
-  wowInertia = VP_INERTIA_TIMER_CONS(&vpStatus.weightOnWheels, 0.15e3);
+  wowInertia = VP_INERTIA_TIMER_CONS(&vpStatus.weightOnWheels, 0.15e3),
+  goAroundInertia = VP_INERTIA_TIMER_CONS(&vpStatus.goAround, 0.5e3);
   
 void statusTask()
 {
@@ -698,7 +699,7 @@ void statusTask()
       annunciatorTalk("Flaring");
     }
     
-  } if(vpInertiaOff(&flareInertia))
+  } else if(vpInertiaOff(&flareInertia))
       consoleNoteLn_P(CS_STRING("Flare ended"));
   
   //
@@ -750,6 +751,19 @@ void statusTask()
 
   } else if(vpInertiaOn(&wowInertia))
     consoleNoteLn_P(CS_STRING("We seem to have WEIGHT ON WHEELS"));
+  
+  //
+  // Go-around detection
+  //
+
+  if(vpInput.throttle > 0.90f && vpControl.flapSel > FLAP_STEPS/2) {
+
+    // We seem to be going around
+
+    if(vpInertiaOn(&goAroundInertia))
+      consoleNoteLn_P(CS_STRING("We seem to be GOING AROUND"));
+    
+  } else vpInertiaOff(&goAroundInertia);
 }
 
 void configurationTask()
@@ -2052,9 +2066,11 @@ void ancillaryModule()
   //
   // Flaps
   //
+
+  int8_t effFlapSel = vpStatus.goAround ? (FLAP_STEPS/2) : vpControl.flapSel;
   
   vpOutput.flap =
-    slopeInput(&flapActuator, (float) vpControl.flapSel/FLAP_STEPS, controlCycle);
+    slopeInput(&flapActuator, (float) effFlapSel/FLAP_STEPS, controlCycle);
 
   //
   // Brake
@@ -2218,7 +2234,8 @@ VPPeriodicTimer_t downlinkTimer = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
 void downlinkTask()
 {
   uint16_t status =
-    ((vpInput.throttle < vpParam.idle
+    (vpStatus.goAround ? (1<<9) : 0)
+    | ((vpInput.throttle < vpParam.idle
       || turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0)
     | (!vpStatus.telemetryLink ? (1<<7) : 0)
     | ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
