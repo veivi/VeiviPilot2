@@ -2080,9 +2080,17 @@ void ancillaryModule()
     vpControl.parking = false;
     vpOutput.brake = 0;
   } else {
-    float pedal = clamp(-vpInput.elev, 0, 1);
+    float pedal = clamp(-vpInput.elev, 0, 1); // Default: activate by pushing
     static bool depressed;
 
+    if(vpParam.wowCalibrated && vpStatus.weightOnWheels
+       && vpInput.throttle < 0.80f
+       && vpInput.stickForce > STICK_PULL_BRAKE_THR)
+      
+      // Activated by pulling
+      pedal = (vpInput.stickForce - STICK_PULL_BRAKE_THR)
+	/ (1.0f - STICK_PULL_BRAKE_THR);
+      
     if(pedal > 0.8)
       depressed = true;
     else if(depressed && pedal < 0.5) {

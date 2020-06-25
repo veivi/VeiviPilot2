@@ -18,6 +18,7 @@
 #define HARD_SHAKER          0
 #define YAW_DAMPER           0
 #define AUTO_RUDDER          0
+#define STICK_PULL_BRAKE_THR RATIO(1/3)
 
 //
 // Periodic task timing
