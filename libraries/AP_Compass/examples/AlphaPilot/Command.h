@@ -95,7 +95,8 @@ typedef enum {
   c_scale,
   c_dimension,
   c_launch,
-  c_ready
+  c_ready,
+  c_elevator
 } token_t;
 
 typedef enum

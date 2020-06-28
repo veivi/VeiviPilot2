@@ -16,7 +16,7 @@
 #include "MainLoop.h"
 
 const struct Command commands[] CS_QUALIFIER = {
-  { "name", c_name, e_string, &vpParam.name },
+  { "name" , c_name, e_string, &vpParam.name },
   { "as5048b_ref", c_5048b_ref, e_uint16, &vpParam.alphaRef },
   { "offset", c_offset, e_angle, &vpParam.alphaOffset },
   { "inner_pid_zn", c_inner_pid_zn,
@@ -104,6 +104,7 @@ const struct Command commands[] CS_QUALIFIER = {
   { "scale", c_scale },
   { "launch", c_launch },
   { "ready", c_ready },
+  { "elevator", c_elevator },
   { "", c_invalid }
 };
 
@@ -595,6 +596,27 @@ void executeCommand(char *buf)
       }
       break;
 
+    case c_elevator:
+      if(numParams > 0 && param[0] != vpParam.elevDefl) {
+	const float value = param[0] / 90.0f, scale = vpParam.elevDefl/value;
+	
+	consoleNote_P(CS_STRING("Elevator deflection changed to "));
+	consolePrintF(param[0]);
+	consolePrint_P(CS_STRING(" (scale by "));
+	consolePrintF(scale);
+	consolePrintLn(")");
+
+	// Scale FF curves
+
+	for(i = 0; i < 2; i++) {
+	  for(j = 0; j < FF_degree+1; j++)
+	    vpParam.coeff_FF[i][j] *= scale;
+	}
+	
+	vpParam.elevDefl = value;
+      }
+      break;
+      
     case c_ready:
       // Simulate ready for departure
       vpMode.takeOff = true;
