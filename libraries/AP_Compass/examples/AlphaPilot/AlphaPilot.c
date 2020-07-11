@@ -758,12 +758,14 @@ void statusTask()
 
   if(vpInput.throttle > 0.90f && vpControl.flapSel > FLAP_STEPS/2) {
 
-    // We seem to be going around
+    // We seem to be going around, limit flaps
 
     if(vpInertiaOn(&goAroundInertia))
       consoleNoteLn_P(CS_STRING("We seem to be GOING AROUND"));
     
-  } else vpInertiaOff(&goAroundInertia);
+  } else if(vpControl.flapSel <= FLAP_STEPS/2)
+
+    vpInertiaOff(&goAroundInertia);
 }
 
 void configurationTask()
