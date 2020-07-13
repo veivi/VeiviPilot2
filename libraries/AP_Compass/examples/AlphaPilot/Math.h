@@ -26,6 +26,7 @@ float nominalPitchRateLevel(float bank, float target);
 float constrainServoOutput(float value);
 float coeffOfLift(float aoa);
 float coeffOfLiftClean(float aoa);
+float coeffOfLiftLand(float aoa);
 float coeffOfLiftInverse(float col);
 float dynamicPressure(float ias);
 float dynamicPressureInverse(float pressure);

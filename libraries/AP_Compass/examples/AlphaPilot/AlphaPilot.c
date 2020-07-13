@@ -786,6 +786,22 @@ void configurationTask()
     tocTestReset();
   }
   
+  //
+  // Flap selector input
+  //
+
+  static int prevFlap;
+  
+  if(vpDerived.haveFlaps)
+    vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
+  else
+    vpControl.flapSel = 0;
+  
+  if(vpControl.flapSel != prevFlap) {
+    annunciatorTalkNumber("flaps", vpControl.flapSel);
+    prevFlap = vpControl.flapSel;
+  }
+  
   // We skip the rest unless we're armed
 
   if(!vpStatus.armed)
@@ -962,22 +978,6 @@ void configurationTask()
     }
   }
 
-  //
-  // Flap selector input
-  //
-
-  static int prevFlap;
-  
-  if(vpDerived.haveFlaps)
-    vpControl.flapSel = FLAP_STEPS/2 - vpInput.flapSel;
-  else
-    vpControl.flapSel = 0;
-  
-  if(vpControl.flapSel != prevFlap) {
-    annunciatorTalkNumber("flaps", vpControl.flapSel);
-    prevFlap = vpControl.flapSel;
-  }
-  
   //
   // Test mode control
   //

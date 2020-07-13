@@ -138,6 +138,11 @@ float coeffOfLiftClean(float aoa)
   return coeffOfLiftGeneric(aoa, vpParam.coeff_CoL[0]);
 }
 
+float coeffOfLiftLand(float aoa)
+{
+  return coeffOfLiftGeneric(aoa, vpParam.coeff_CoL[1]);
+}
+
 float coeffOfLiftInverse(float target)
 {
   derivedValidate();

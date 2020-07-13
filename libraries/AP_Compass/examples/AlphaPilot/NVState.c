@@ -418,6 +418,8 @@ void derivedInvalidate()
   vpDerived.valid = false;
 }
 
+#define FLAP_EXPO   0.5f
+
 void derivedValidate()
 {
   int i = 0;
@@ -457,7 +459,8 @@ void derivedValidate()
 
   // Max alpha and curve interpolation
 
-  const float effFlap = vpDerived.haveFlaps ? vpDerived.assumedFlap : 0;
+  const float effFlap =
+    vpDerived.haveFlaps ? powf(vpDerived.assumedFlap, FLAP_EXPO) : 0;
   
   vpDerived.maxAlpha = interpolate(effFlap, vpParam.alphaMax);
   
@@ -468,6 +471,7 @@ void derivedValidate()
 
   vpDerived.maxCoeffOfLift = coeffOfLift(vpDerived.maxAlpha);
   vpDerived.maxCoeffOfLiftClean = coeffOfLiftClean(vpParam.alphaMax[0]);
+  vpDerived.maxCoeffOfLiftLand = coeffOfLiftLand(vpParam.alphaMax[1]);
   
   // Zero lift alpha
   

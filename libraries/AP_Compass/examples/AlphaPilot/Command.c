@@ -499,7 +499,7 @@ void executeCommand(char *buf)
   
       for(aR = -0.5; aR < 1.1; aR += 0.1)
 	printCoeffElement(-0.3, 1, vpDerived.maxAlpha*aR*RADIAN,
-			  coeffOfLift(vpDerived.maxAlpha*aR)/vpDerived.maxCoeffOfLift);
+			  coeffOfLift(vpDerived.maxAlpha*aR)/vpDerived.maxCoeffOfLiftLand);
       break;
       
     case c_clear:

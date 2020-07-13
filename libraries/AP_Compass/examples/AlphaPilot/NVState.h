@@ -69,7 +69,7 @@ struct DerivedParams {
   float coeff_FF[FF_degree+1];
   float coeff_CoL[CoL_degree+1];
   float minimumIAS, minimumDynP, zeroLiftAlpha,
-    maxCoeffOfLift, maxCoeffOfLiftClean;
+    maxCoeffOfLift, maxCoeffOfLiftClean, maxCoeffOfLiftLand;
   float thresholdAlpha, shakerAlpha, pusherAlpha, maxAlpha, stallAlpha;
   float apexElev, apexAlpha;
 };
