@@ -2121,6 +2121,8 @@ void (*controlModules[])(void) = {
 // Final mixing
 //
 
+#define AYC_EXPO   1.5f
+
 void mixingTask()
 {
   // Throttle to elev mix
@@ -2132,9 +2134,11 @@ void mixingTask()
 
   // Aile to rudder mix
 
-  const float liftRatio = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
+  float liftRatio = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
     ? 0.3f : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
 
+  liftRatio = sign(liftRatio)*powf(fabsf(liftRatio), AYC_EXPO);  
+  
   vpOutput.rudder =
     constrainServoOutput(vpOutput.rudder
 			 + cosf(vpFlight.alpha) * vpOutput.aile * vpControl.r_Mix * liftRatio);  
@@ -2246,7 +2250,7 @@ void downlinkTask()
   uint16_t status =
     (vpStatus.goAround ? (1<<9) : 0)
     | ((vpInput.throttle < vpParam.idle
-      || turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0)
+	|| turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0)
     | (!vpStatus.telemetryLink ? (1<<7) : 0)
     | ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
     | (logReady(false) ? (1<<5) : 0)
