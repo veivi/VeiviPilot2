@@ -687,11 +687,12 @@ void statusTask()
      && vpMode.slowFlight
      && vpControl.gearSel == 0
      && vpInput.throttle < vpParam.idle
+     && vpStatus.positiveIAS
      && vpFlight.IAS < (1 + vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
      && vpParam.flare > 0.0f
-     && vpInput.stickForce > 0.0f) {
+     && vpInput.stickForce > RATIO(1/3)) {
     // We may be in a flare
 
     if(vpInertiaOnForce(&flareInertia)) {
