@@ -682,7 +682,6 @@ void statusTask()
   //
   // Flare detection
   //
-
   if(!(vpMode.test && nvState.testNum[vpMode.testCount] > 0)
      && vpMode.slowFlight
      && vpControl.gearSel == 0
@@ -692,7 +691,7 @@ void statusTask()
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
      && vpParam.flare > 0.0f
-     && vpInput.stickForce > RATIO(1/3)) {
+     && vpInput.stickForce > RATIO(1/5)) {
     // We may be in a flare
 
     if(vpInertiaOnForce(&flareInertia)) {
