@@ -1189,7 +1189,7 @@ void configurationTask()
             
     case 10:
       // Aileron to rudder mix
-      vpControl.r_Mix = vpControl.testGain = testGainLinear(1, 0);
+      vpControl.r_Mix = vpControl.testGain = testGainLinear(0, 1.2);
       break;
 
     case 11:
