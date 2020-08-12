@@ -1608,6 +1608,11 @@ void gaugeTask()
 	consoleTab(32);
 	consolePrint("|");
 	break;
+
+      case 23:
+	consolePrint_P(CS_STRING(" light = "));
+	consolePrintFP(-1.0f+2*vpInput.tuningKnob, 2);
+	break;
       }
     }
 

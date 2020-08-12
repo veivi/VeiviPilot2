@@ -92,15 +92,36 @@ float gearFn()
   return -RATIO(2/3)*(vpControl.gearSel*2-1);
 }
 
+float lightFn()
+{
+  float value = -0.10f;
+
+  if(vpMode.takeOff || vpStatus.airborne) {
+    if(!vpControl.gearSel)
+      value = 0.50f;
+    else
+      value = 0.12f;
+  }
+
+  return value;
+  // return -1.0f+2*vpInput.tuningKnob;
+}
+
+float doorFn()
+{
+  return -1.0;
+}
+
 #define BRAKE_PWM_HZ    7
 #define BRAKE_THRESHOLD 0.2
 #define BRAKE_BOOST     4
 
 float brakeFn()
 {
-  static int16_t count;
-
   // Brake PWM
+
+  /*
+  static int8_t count;
 
   if(count < controlFreq/BRAKE_PWM_HZ - 1)
     count++;
@@ -115,6 +136,10 @@ float brakeFn()
 
   return
     vpParam.brakeDefl * (1.0f - 1.0f/BRAKE_BOOST + vpOutput.brake/BRAKE_BOOST);
+
+  */
+
+  return vpParam.brakeDefl*vpOutput.brake;
 }
 
 float throttleFn()
@@ -146,7 +171,9 @@ struct FnDescriptor functionTable[] = {
   [fn_tail2] = { "tail2", tail2Fn },
   [fn_flap] = { "flap", flapFn },
   [fn_thrustvert] = { "vert", thrustVertFn },
-  [fn_thrusthoriz] = { "horiz", thrustHorizFn }
+  [fn_thrusthoriz] = { "horiz", thrustHorizFn },
+  [fn_light] = { "light", lightFn },
+  [fn_door] = { "door", doorFn }
 };
 
 void functionSet(uint8_t ch, const char *name)

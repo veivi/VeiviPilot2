@@ -20,6 +20,8 @@ typedef enum {
   fn_tail1, fn_tail2,
   fn_thrustvert,
   fn_thrusthoriz,
+  fn_light,
+  fn_door,
   fn_invalid
 } function_t;
 
