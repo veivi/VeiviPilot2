@@ -2091,7 +2091,7 @@ void ancillaryModule()
     float pedal = 0.0f;
     static bool depressed;
     
-    if((vpStatus.weightOnWheels || !vpParam.wowCalibrated)
+    if((vpStatus.weightOnWheels || !vpStatus.positiveIAS || !vpParam.wowCalibrated)
 	    && vpInput.throttle < 0.80f
 	    && vpInput.stickForce > STICK_PULL_BRAKE_THR)
 
