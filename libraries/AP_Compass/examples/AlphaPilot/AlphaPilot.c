@@ -848,13 +848,12 @@ void configurationTask()
 
     if(vpDerived.haveRetracts) {
       vpControl.gearSel = !vpControl.gearSel;
-      vpMode.gearSelected = true;
 
       if(vpControl.gearSel) {
-	consoleNoteLn_P(CS_STRING("Gear UP"));
+	consoleNoteLn_P(CS_STRING("Gear UP selected"));
 	annunciatorTalk("Gear up");
       } else {
-	consoleNoteLn_P(CS_STRING("Gear DOWN"));
+	consoleNoteLn_P(CS_STRING("Gear DOWN selected"));
 	annunciatorTalk("Gear down");
       }
     }
@@ -1613,6 +1612,36 @@ void gaugeTask()
 	consolePrint_P(CS_STRING(" light = "));
 	consolePrintFP(-1.0f+2*vpInput.tuningKnob, 2);
 	break;
+
+      case 24:
+	consolePrint_P(CS_STRING(" gearState = "));
+	switch(vpControl.gearState) {
+	case gs_down:
+	  consolePrint("DOWN");
+	  break;
+	case gs_goingup_open:
+	  consolePrint("GOINGUP_OPEN");
+	  break;
+	case gs_goingup:
+	  consolePrint("GOINGUP");
+	  break;
+	case gs_goingup_close:
+	  consolePrint("GOINGUP_CLOSE");
+	  break;
+	case gs_up:
+	  consolePrint("UP");
+	  break;
+	case gs_goingdown_open:
+	  consolePrint("GOINGDOWN_OPEN");
+	  break;
+	case gs_goingdown:
+	  consolePrint("GOINGDOWN");
+	  break;
+	case gs_goingdown_close:
+	  consolePrint("GOINGDOWN_CLOSE");
+	  break;
+	}
+	break;
       }
     }
 
@@ -2068,6 +2097,10 @@ void vectorModule()
   }
 }
 
+VPEventTimer_t 
+  gearDoorDelay = VP_EVENT_TIMER_CONS(&vpParam.doorDelay),
+  gearTransitionDelay = VP_EVENT_TIMER_CONS(&vpParam.gearDelay);
+
 void ancillaryModule()
 {
   //
@@ -2079,6 +2112,88 @@ void ancillaryModule()
   vpOutput.flap =
     slopeInput(&flapActuator, (float) effFlapSel/FLAP_STEPS, controlCycle);
 
+  //
+  // Landing gear sequence
+  //
+
+  switch(vpControl.gearState) {
+  case gs_down:
+    if(vpControl.gearSel) {
+      vpEventTimerReset(&gearDoorDelay);
+      vpControl.gearState = gs_goingup_open;
+      break;
+
+    case gs_goingup_open:
+      if(vpEventTimerElapsed(&gearDoorDelay)) {
+	vpEventTimerReset(&gearTransitionDelay);
+	vpControl.gearState = gs_goingup;
+	vpMode.gearSelected = true;
+      } else if(!vpControl.gearSel) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingdown_close;
+      }
+      break;
+
+    case gs_goingup:
+      if(vpEventTimerElapsed(&gearTransitionDelay)) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingup_close;
+      } else if(!vpControl.gearSel) {
+	vpEventTimerReset(&gearTransitionDelay);
+	vpControl.gearState = gs_goingdown;
+      }
+      break;
+      
+    case gs_goingup_close:
+      if(vpEventTimerElapsed(&gearDoorDelay)) {
+	vpControl.gearState = gs_up;
+	consoleNoteLn_P(CS_STRING("Gear is UP"));
+      } else if(!vpControl.gearSel) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingdown_open;
+      }
+      break;
+
+    case gs_up:
+      if(!vpControl.gearSel) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingdown_open;
+      }
+      break;
+	
+    case gs_goingdown_open:
+      if(vpEventTimerElapsed(&gearDoorDelay)) {
+	vpEventTimerReset(&gearTransitionDelay);
+	vpControl.gearState = gs_goingdown;
+	vpMode.gearSelected = true;
+      } else if(vpControl.gearSel) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingup_close;
+      }
+      break;
+
+    case gs_goingdown:
+      if(vpEventTimerElapsed(&gearTransitionDelay)) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingdown_close;
+      } else if(vpControl.gearSel) {
+	vpEventTimerReset(&gearTransitionDelay);
+	vpControl.gearState = gs_goingup;
+      }
+      break;
+      
+    case gs_goingdown_close:
+      if(vpEventTimerElapsed(&gearDoorDelay)) {
+	vpControl.gearState = gs_down;
+	consoleNoteLn_P(CS_STRING("Gear is DOWN"));
+      } else if(vpControl.gearSel) {
+	vpEventTimerReset(&gearDoorDelay);
+	vpControl.gearState = gs_goingup_open;
+      }
+      break;
+    }
+  }
+  
   //
   // Brake
   //
@@ -2206,6 +2321,8 @@ void actuatorTask()
   controlLatencyCount++;
   
   stap_servoOutputSync();
+
+  vpControl.pwmCount = (vpControl.pwmCount + 1) & (PWM_PERIOD - 1);
 }
 
 void heartBeatTask()

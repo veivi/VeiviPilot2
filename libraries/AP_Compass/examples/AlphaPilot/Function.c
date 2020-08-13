@@ -87,29 +87,67 @@ float steeringFn()
     return vpParam.steerTrim + vpParam.steerDefl*vpOutput.steer;
 }
 
-float gearFn()
-{
-  return -RATIO(2/3)*(vpControl.gearSel*2-1);
-}
-
 float lightFn()
 {
   float value = -0.10f;
 
   if(vpMode.takeOff || vpStatus.airborne) {
-    if(!vpControl.gearSel)
+    if(vpControl.gearState == gs_down)
       value = 0.50f;
     else
       value = 0.12f;
   }
 
   return value;
-  // return -1.0f+2*vpInput.tuningKnob;
+}
+
+float gearFn()
+{
+  int8_t value = 0;
+
+  if(!vpMode.gearSelected)
+    return 0.0f;
+  
+  switch(vpControl.gearState) {
+  case gs_goingdown_close:
+  case gs_down:
+  case gs_goingup_open:
+    value = 1;
+    break;
+    
+  case gs_goingup:
+  case gs_goingup_close:
+  case gs_up:
+  case gs_goingdown_open:
+    value = -1;
+    break;
+    
+  case gs_goingdown:
+    value = vpControl.pwmCount < vpParam.gearSpeed ? 1 : 0;
+    break;
+  }
+  
+  return (float) value;
 }
 
 float doorFn()
 {
-  return -1.0;
+  int8_t value = 0;
+
+  switch(vpControl.gearState) {
+  case gs_goingdown_open:
+  case gs_goingdown:
+  case gs_goingup_open:
+  case gs_goingup:
+    value = -1;
+    break;
+
+  default:
+    value = 1;
+    break;
+  }
+
+  return (float) value;
 }
 
 #define BRAKE_PWM_HZ    7

@@ -74,6 +74,8 @@ struct InputState {
   float stickForce;
 };
 
+typedef enum { gs_down, gs_goingup_open, gs_goingup, gs_goingup_close, gs_up, gs_goingdown_open, gs_goingdown, gs_goingdown_close } gearState_t;
+
 struct ControlState {
   float testGain;
   float o_P, r_Mix, yd_P, t_Mix;
@@ -82,6 +84,8 @@ struct ControlState {
   float elevPredict, ailePredict, aileNeutral, pusher;
   uint8_t gearSel, flapSel;
   bool parking, flaring;
+  gearState_t gearState;
+  uint8_t pwmCount;
 };
 
 struct OutputState {

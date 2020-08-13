@@ -29,6 +29,16 @@ typedef struct VPPeriodicTimer {
 
 bool vpPeriodicEvent(VPPeriodicTimer_t*);
 
+typedef struct VPEventTimer {
+  const uint16_t *delay;
+  VP_TIME_MILLIS_T startTime;
+} VPEventTimer_t;
+
+#define VP_EVENT_TIMER_CONS(d) { d, 0 }
+
+void vpEventTimerReset(VPEventTimer_t*);
+bool vpEventTimerElapsed(VPEventTimer_t*);
+
 extern VP_TIME_MICROS_T vpTimeMicrosApprox;
 extern VP_TIME_MILLIS_T vpTimeMillisApprox;
 

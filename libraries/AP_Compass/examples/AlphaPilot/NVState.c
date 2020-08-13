@@ -24,7 +24,10 @@ const struct ParamRecord paramDefaults = {
   .version = PARAM_VERSION,
   .name = "Invalid",
   .dimension = 1.0f,
-  .shakerMargin = 0.5 };
+  .shakerMargin = 0.5,
+  .doorDelay = 1000,
+  .gearDelay = 4000,
+  .gearSpeed = 3 };
 
 const struct NVStateRecord stateDefaults = {
   .crc = 0,

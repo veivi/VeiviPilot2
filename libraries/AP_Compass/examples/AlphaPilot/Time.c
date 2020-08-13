@@ -37,6 +37,16 @@ bool vpPeriodicEvent(VPPeriodicTimer_t *timer)
     return false;
 }
 
+void vpEventTimerReset(VPEventTimer_t *timer)
+{
+  timer->startTime = vpTimeMillisApprox;
+}
+
+bool vpEventTimerElapsed(VPEventTimer_t *timer)
+{
+  return vpTimeMillisApprox - timer->startTime >= *(timer->delay);
+}
+
 static bool vpInertiaOnOff(VPInertiaTimer_t *timer, bool state, bool force)
 {
   bool status = false;

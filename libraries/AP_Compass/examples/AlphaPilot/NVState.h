@@ -59,6 +59,7 @@ struct ParamRecord {
   bool sensorOrient;
   float coeff_Flow[FuelFlow_degree+1];
   float idle, lag;
+  uint16_t doorDelay, gearDelay, gearSpeed;
 };
 
 struct DerivedParams {

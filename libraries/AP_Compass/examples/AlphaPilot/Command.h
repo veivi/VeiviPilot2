@@ -96,7 +96,10 @@ typedef enum {
   c_dimension,
   c_launch,
   c_ready,
-  c_elevator
+  c_elevator,
+  c_doordelay,
+  c_geardelay,
+  c_gearspeed
 } token_t;
 
 typedef enum

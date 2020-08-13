@@ -19,7 +19,7 @@
 #define YAW_DAMPER           0
 #define AUTO_RUDDER          0
 #define STICK_PULL_BRAKE_THR RATIO(1/3)
-
+#define PWM_PERIOD           8
 //
 // Periodic task timing
 //
