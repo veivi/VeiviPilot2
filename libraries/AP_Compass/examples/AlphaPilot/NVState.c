@@ -25,9 +25,9 @@ const struct ParamRecord paramDefaults = {
   .name = "Invalid",
   .dimension = 1.0f,
   .shakerMargin = 0.5,
-  .doorDelay = 1000,
-  .gearDelay = 4000,
-  .gearSpeed = 3 };
+  .doorDelay = 0,
+  .gearDelay = 0,
+  .gearSpeed = 8 };
 
 const struct NVStateRecord stateDefaults = {
   .crc = 0,
