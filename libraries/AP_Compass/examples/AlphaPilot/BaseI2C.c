@@ -6,6 +6,12 @@
 #define BACKOFF (0.1e3)
 #define BACKOFF_FRACTION  3
 
+void basei2cReset(BaseI2CTarget_t *target)
+{
+  target->failed = false;
+  target->failCount = 0;
+}
+
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
   return !target->failed || vpTimeMillis() > target->failedAt+target->backoff;

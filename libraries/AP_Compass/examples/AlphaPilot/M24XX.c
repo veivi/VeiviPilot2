@@ -21,9 +21,19 @@ static bool cacheFlag[CACHE_PAGE];
 static bool cacheValid, cacheModified;
 static uint32_t cacheTag;
 
+void m24xxReset(void)
+{
+  basei2cReset(&target);
+}
+
 bool m24xxIsOnline(void)
 {
   return basei2cIsOnline(&target);
+}
+
+bool m24xxIsGood(void)
+{
+  return basei2cIsOnline(&target) && (target.failCount == 0);
 }
 
 bool m24xxWait(uint32_t addr)

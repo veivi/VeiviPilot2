@@ -76,7 +76,10 @@ struct InputState {
 
 typedef enum { gs_down, gs_goingup_open, gs_goingup, gs_goingup_close, gs_up, gs_goingdown_open, gs_goingdown, gs_goingdown_close } gearState_t;
 
+typedef enum { it_init, it_read_nv, it_done } InitTaskState_t;
+
 struct ControlState {
+  InitTaskState_t initState;
   float testGain;
   float o_P, r_Mix, yd_P, t_Mix;
   float s_Ku_ref, i_Ku_ref, yd_P_ref, r_Ku_ref;

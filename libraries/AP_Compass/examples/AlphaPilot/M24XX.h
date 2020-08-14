@@ -9,7 +9,9 @@
 
 extern uint32_t m24xxBytesWritten;
 
+void m24xxReset(void);
 bool m24xxIsOnline(void);
+bool m24xxIsGood(void);
 bool m24xxWait(uint32_t addr);
 bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes);
 bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size);

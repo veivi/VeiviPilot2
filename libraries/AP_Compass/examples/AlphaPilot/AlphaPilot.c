@@ -63,6 +63,9 @@ void alphaSampleTask()
 {
   AS5048_alpha_t raw = 0;
 
+  if(vpControl.initState != it_done)
+    return;
+  
   if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
     samplerInput(&alphaSampler, raw);
   }
@@ -105,7 +108,7 @@ void displayTask()
   static bool cleared = false;
   static int count = 0;
   int i = 0;
-    
+
   count++;
   
   if(vpMode.silent) {
@@ -202,6 +205,9 @@ void airspeedSampleTask()
 {
   int16_t raw = 0;
 
+  if(vpControl.initState != it_done)
+    return;
+  
   if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
     // We got a good value
     samplerInput(&iasSampler, raw);
@@ -428,6 +434,9 @@ void sensorTaskSlow()
 
   // Alpha sensor field strength
 
+  if(vpControl.initState != it_done)
+    return;
+  
   AS5048_word_t raw = 0;
   
   if(AS5048B_isOnline() && AS5048B_field(&raw))
@@ -2465,6 +2474,40 @@ void configTaskGroup()
   trimTask();
 }
 
+void initTask()
+{
+  switch(vpControl.initState) {
+  case it_init:
+    vpControl.initState = it_read_nv;
+    break;
+
+  case it_read_nv:
+    m24xxReset();
+    
+    // Read the non-volatile state
+
+    if(readNVState() && m24xxIsGood()) {
+      consoleNote_P(CS_STRING("Current model is "));
+      consolePrintLnI(nvState.model);
+
+      // Param record
+  
+      setModel(nvState.model, false);
+      consoleNote_P(CS_STRING("  Model name "));
+      consolePrintLn(vpParam.name);
+
+      if(m24xxIsGood()) {
+	consoleNoteLn_P(CS_STRING("I2C CONNECTED"));
+	vpControl.initState = it_done;
+      }
+    }
+    break;
+
+  case it_done:
+    break;
+  }
+}
+
 struct Task alphaPilotTasks[] = {
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true },
@@ -2493,6 +2536,7 @@ struct Task alphaPilotTasks[] = {
   { monitorTask, HZ_TO_PERIOD(1), false },
   { heartBeatTask, HZ_TO_PERIOD(HEARTBEAT_HZ), false },
   { gaugeTask, HZ_TO_PERIOD(10), false },
+  { initTask, HZ_TO_PERIOD(1), false },
   { NULL, 0, false } };
 
 

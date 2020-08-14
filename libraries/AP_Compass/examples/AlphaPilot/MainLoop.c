@@ -234,25 +234,15 @@ void mainLoopSetup()
 
   stap_initialize();
   
-  // Read the non-volatile state
-
-  if(!readNVState())
-    consoleNote_P(CS_STRING("NV State read failed."));
-    
-  consoleNote_P(CS_STRING("Current model is "));
-  consolePrintLnI(nvState.model);
-  
-  // Param record
-  
-  setModel(nvState.model, false);
-  consoleNote_P(CS_STRING("  Model name "));
-  consolePrintLn(vpParam.name);
-                
   // Initial gear state is DOWN
   
   vpControl.gearSel = 0;
   vpMode.gearSelected = false;
 
+  // Initialization task state
+
+  vpControl.initState = it_init;
+  
   // Done
   
   consoleNote_P(CS_STRING("Initialized, "));
@@ -292,7 +282,7 @@ void mainLoop()
       // Just started idling
       idling = true;
       
-      if(!logReady(false))
+      if(vpControl.initState == it_done && !logReady(false))
 	logInit(20);
 
       idleStarted = vpTimeMicros();

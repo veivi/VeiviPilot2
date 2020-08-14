@@ -32,6 +32,7 @@ typedef struct BaseI2CTarget {
   uint16_t prevValue;
 } BaseI2CTarget_t;
 
+void basei2cReset(BaseI2CTarget_t*);
 bool basei2cInvoke(BaseI2CTarget_t*, uint8_t status);
 bool basei2cIsOnline(BaseI2CTarget_t*);
 bool basei2cWarning(BaseI2CTarget_t*);
