@@ -110,7 +110,15 @@ void displayTask()
   int i = 0;
 
   count++;
-  
+
+  if(vpControl.initState != it_done) {
+    obdMove(count % 11, 0);
+    obdPrint("--=  ");
+    obdMove(13, 0);
+    obdPrint("I2C");
+    return;
+  }
+
   if(vpMode.silent) {
     if(!cleared) {
       obdClear();

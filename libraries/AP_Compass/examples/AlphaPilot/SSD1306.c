@@ -193,7 +193,7 @@ void obdRefresh()
 {
   int i = 0;
 
-  if(vpControl.initState != it_done || !basei2cIsOnline(&target)) {
+  if(!basei2cIsOnline(&target)) {
     initialized = false;
     return;
   }
