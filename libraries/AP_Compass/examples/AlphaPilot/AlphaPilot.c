@@ -773,7 +773,8 @@ void statusTask()
   // Go-around detection
   //
 
-  if(vpInput.throttle > 0.90f && vpControl.flapSel > FLAP_STEPS/2) {
+  if(vpInput.throttle > 0.90f && vpStatus.airborne
+     && vpControl.flapSel > FLAP_STEPS/2) {
 
     // We seem to be going around, limit flaps
 
@@ -1036,8 +1037,8 @@ void configurationTask()
   if(vpInput.throttle > 0.8 && vpMode.takeOff && vpStatus.positiveIAS
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
+    annunciatorTalk("Rotate");
     consoleNoteLn_P(CS_STRING("We seem to be AIRBORNE"));
-    annunciatorTalk("Airborne");
     vpMode.takeOff = false;
     vpStatus.airborne = true;
     vpMode.silent = true;
@@ -2387,7 +2388,9 @@ VPPeriodicTimer_t downlinkTimer = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
 void downlinkTask()
 {
   uint16_t status =
-    (vpStatus.goAround ? (1<<9) : 0)
+    ((vpInput.throttle > 0.5 && !vpMode.takeOff && !vpStatus.airborne)
+     ? (1<<10) : 0)
+    | (vpStatus.goAround ? (1<<9) : 0)
     | ((vpInput.throttle < vpParam.idle
 	|| turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0)
     | (!vpStatus.telemetryLink ? (1<<7) : 0)
