@@ -62,7 +62,7 @@ void inputSource(const uint16_t *pulse, uint8_t numCh)
   ppmFrameReceived = true;
   ppmFrames++;
 
-  if(prev > 0 && cycle > 30000)
+  if(prev > 0 && cycle > 50000)
     ppmWarnSlow = true;
 
   prev = current;
