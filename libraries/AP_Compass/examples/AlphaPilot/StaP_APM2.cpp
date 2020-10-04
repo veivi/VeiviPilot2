@@ -145,9 +145,12 @@ extern "C" int stap_hostTransmitChar(uint8_t c)
   return stap_hostTransmit(&c, 1);
 }
 
+#define UART_TELEMETRY   hal.uartB
+#define UART_SRXL        hal.uartC
+
 extern "C" int stap_telemetryTransmitState(void)
 {
-  return hal.uartB->txspace();
+  return UART_TELEMETRY->txspace();
 }
 
 static void telemetryInit(void)
@@ -155,7 +158,7 @@ static void telemetryInit(void)
   static bool initd = false;
 
   if(!initd) {
-    hal.uartB->begin(115200, 32, 32);
+    UART_TELEMETRY->begin(115200, 32, 32);
     initd = true;
   }
 }
@@ -163,7 +166,7 @@ static void telemetryInit(void)
 extern "C" int stap_telemetryTransmit(const uint8_t *buffer, int size)
 {
   telemetryInit();
-  return hal.uartB->write(buffer, size);
+  return UART_TELEMETRY->write(buffer, size);
 }
 
 extern "C" int stap_telemetryTransmitChar(uint8_t c)
@@ -174,7 +177,7 @@ extern "C" int stap_telemetryTransmitChar(uint8_t c)
 extern "C" int stap_telemetryReceiveState(void)
 {
   telemetryInit();
-  return hal.uartB->available();
+  return UART_TELEMETRY->available();
 }
 
 extern "C" int stap_telemetryReceive(uint8_t *buffer, int size)
@@ -187,11 +190,40 @@ extern "C" int stap_telemetryReceive(uint8_t *buffer, int size)
 
 extern "C" uint8_t stap_telemetryReceiveChar(void)
 {
-  return hal.uartB->read();
+  return UART_TELEMETRY->read();
 }
 
 extern "C" void stap_telemetrySync()
 {
+}
+
+static void srxlInit(void)
+{
+  static bool initd = false;
+
+  if(!initd) {
+    UART_SRXL->begin(115200, 64, 8);
+    initd = true;
+  }
+}
+
+extern "C" int stap_srxlReceiveState(void)
+{
+  srxlInit();
+  return UART_SRXL->available();
+}
+
+extern "C" int stap_srxlReceive(uint8_t *buffer, int size)
+{
+  while(size-- > 0)
+    *buffer++ = stap_srxlReceiveChar();
+
+  return 0;
+}
+
+extern "C" uint8_t stap_srxlReceiveChar(void)
+{
+  return UART_SRXL->read();
 }
 
 extern "C" uint64_t stap_timeMicros(void)

@@ -17,6 +17,7 @@
 #include "Button.h"
 #include "TOCTest.h"
 #include "Function.h"
+#include "SRXL.h"
 
 //
 //
@@ -263,8 +264,13 @@ void receiverTask()
   vpInput.flapSel = 1;
 #endif
 
+#ifdef CH_GEAR
+  vpInput.gearSel = readSwitch(&gearSelector);
+#endif
+
   // Button input
 
+#ifdef CH_BUTTON
   float buttonValue = inputValue(CH_BUTTON);
   
   static Derivator_t buttonSlope;
@@ -276,10 +282,14 @@ void receiverTask()
     lazyButtonValue = buttonValue;
      
   buttonInput(&LEVELBUTTON, lazyButtonValue);
-  buttonInput(&RATEBUTTON, lazyButtonValue);
   buttonInput(&TRIMBUTTON, lazyButtonValue);
+  buttonInput(&RATEBUTTON, lazyButtonValue);
   buttonInput(&GEARBUTTON, lazyButtonValue);
-
+#else
+  buttonInput(&LEVELBUTTON, inputValue(CH_LEVEL));
+  buttonInput(&TRIMBUTTON, inputValue(CH_TRIM));
+#endif
+  
   //
   // PPM fail detection, simulate RX failsafe if PPM fails
   //
@@ -792,15 +802,18 @@ void configurationTask()
   // Being armed?
   //
   
-  if(!vpStatus.armed && buttonDoublePulse(&TRIMBUTTON) &&
+  if(!vpStatus.armed && buttonDoublePulse(&LEVELBUTTON) &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     annunciatorTalk("ARMED");
     vpStatus.armed = true;
-    buttonReset(&GEARBUTTON);
-    buttonReset(&LEVELBUTTON);
-    buttonReset(&RATEBUTTON);
+    buttonReset(&TRIMBUTTON);
 
+#ifdef GEARBUTTON
+    buttonReset(&GEARBUTTON);
+    buttonReset(&RATEBUTTON);
+#endif
+    
     tocTestReset();
   }
   
@@ -836,7 +849,54 @@ void configurationTask()
   //   GEAR BUTTON
   //
   
-  if(buttonDoublePulse(&GEARBUTTON)) {
+#ifdef GEARBUTTON
+  if(buttonSinglePulse(&GEARBUTTON) && vpDerived.haveRetracts) {
+    //
+    // SINGLE PULSE: GEAR TOGGLE
+    //
+
+    vpInput.gearSel = !vpInput.gearSel;
+  }
+#endif
+
+  if(vpInput.gearSel != vpControl.gearSel) {
+    if(vpInput.gearSel) {
+      consoleNoteLn_P(CS_STRING("Gear UP selected"));
+      annunciatorTalk("Gear up");
+    } else {
+      consoleNoteLn_P(CS_STRING("Gear DOWN selected"));
+      annunciatorTalk("Gear down");
+    }
+
+    vpControl.gearSel = vpInput.gearSel;
+  }
+
+  //
+  // RATE BUTTON
+  //
+  
+#ifdef RATEBUTTON
+  if(buttonDepressed(&RATEBUTTON) && !vpMode.halfRate) {
+    // Continuous: half-rate enable
+    
+    consoleNoteLn_P(CS_STRING("Half-rate ENABLED"));
+    annunciatorTalk("Half rate");
+    vpMode.halfRate = true;
+    
+  } else if(buttonSinglePulse(&RATEBUTTON) && vpMode.halfRate) {
+    // Single pulse: half-rate disable
+    
+    consoleNoteLn_P(CS_STRING("Half-rate DISABLED"));
+    annunciatorTalk("Full rate");
+    vpMode.halfRate = false;
+  }
+#endif
+  
+  //
+  // WING LEVELER BUTTON
+  //
+
+  if(buttonDoublePulse(&LEVELBUTTON)) {
     //
     // DOUBLE PULSE: FAILSAFE MODE SELECT
     //
@@ -858,51 +918,9 @@ void configurationTask()
       tocTestReset();
       logDisable();
     }
-    
-  } else if(buttonSinglePulse(&GEARBUTTON)) {
+  } else if(buttonSinglePulse(&LEVELBUTTON)) {
     //
-    // SINGLE PULSE: GEAR TOGGLE
-    //
-
-    if(vpDerived.haveRetracts) {
-      vpControl.gearSel = !vpControl.gearSel;
-
-      if(vpControl.gearSel) {
-	consoleNoteLn_P(CS_STRING("Gear UP selected"));
-	annunciatorTalk("Gear up");
-      } else {
-	consoleNoteLn_P(CS_STRING("Gear DOWN selected"));
-	annunciatorTalk("Gear down");
-      }
-    }
-  }
-
-  //
-  // RATE BUTTON
-  //
-
-  if(buttonDepressed(&RATEBUTTON) && !vpMode.halfRate) {
-    // Continuous: half-rate enable
-    
-    consoleNoteLn_P(CS_STRING("Half-rate ENABLED"));
-    annunciatorTalk("Half rate");
-    vpMode.halfRate = true;
-    
-  } else if(buttonSinglePulse(&RATEBUTTON) && vpMode.halfRate) {
-    // Single pulse: half-rate disable
-    
-    consoleNoteLn_P(CS_STRING("Half-rate DISABLED"));
-    annunciatorTalk("Full rate");
-    vpMode.halfRate = false;
-  }
-
-  //
-  // WING LEVELER BUTTON
-  //
-
-  if(buttonSinglePulse(&LEVELBUTTON)) {
-    //
-    // PULSE : Takeoff mode enable / increment test
+    // SINGLE PULSE : Takeoff mode enable / increment test
     //
 
     if(vpStatus.airborne) {
@@ -1559,16 +1577,20 @@ void gaugeTask()
 	  consolePrint_P(CS_STRING("[LEVEL]"));
 	
 	consoleTab(20);
-	
+
+#ifdef GEARBUTTON
 	if(buttonState(&GEARBUTTON))
 	  consolePrint_P(CS_STRING("[GEAR]"));
   
 	consoleTab(30);
+#endif
 	
+#ifdef RATEBUTTON
 	if(buttonState(&RATEBUTTON))
 	  consolePrint_P(CS_STRING("[RATE]"));
 
 	consoleTab(40);
+#endif
 	break;
 	
       case 19:
@@ -1670,7 +1692,18 @@ void gaugeTask()
 
 void communicationTask()
 {
-  int len = 0;
+  uint8_t len = 0;
+  
+  if((len = stap_srxlReceiveState()) > 0) {
+    bool completeFrame = false;
+    
+    while(len-- > 0)
+      completeFrame |= srxlInputChar(stap_srxlReceiveChar());
+
+    if(completeFrame)
+      return;
+  } else
+    srxlHeartbeat();
   
   if((len = stap_hostReceiveState()) > 0) {
     while(len-- > 0)
@@ -2529,7 +2562,7 @@ struct Task alphaPilotTasks[] = {
 #ifdef STAP_PERIOD_ACC
   { accTask, STAP_PERIOD_ACC, true },
 #endif
-  { communicationTask, HZ_TO_PERIOD(60), true },
+  { communicationTask, HZ_TO_PERIOD(60), false },
 #ifdef ASYNC_AIR_SENSORS
   { alphaSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },
   { airspeedSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },

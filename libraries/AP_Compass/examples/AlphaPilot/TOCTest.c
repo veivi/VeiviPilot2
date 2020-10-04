@@ -203,13 +203,25 @@ bool toc_test_tuning(bool reset)
 
 bool toc_test_button_range(bool reset)
 {
+#ifdef CH_BUTTON
   static struct TOCRangeTestState state;
   return toc_test_range_generic(&state, reset, CH_BUTTON, -1, 1);
+#else
+  static struct TOCRangeTestState state1, state2;
+  return toc_test_range_generic(&state1, reset, CH_TRIM, 0, 1) &&
+    toc_test_range_generic(&state2, reset, CH_LEVEL, 0, 1);
+#endif
 }
 
 bool toc_test_button_neutral(bool reset)
 {
-  return !buttonState(&TRIMBUTTON) && !buttonState(&GEARBUTTON) && !buttonState(&LEVELBUTTON) && !buttonState(&RATEBUTTON);
+#ifdef GEARBUTTON
+  bool status = !buttonState(&GEARBUTTON) && !buttonState(&RATEBUTTON);
+#else
+  bool status = true;
+#endif
+  
+  return status && !buttonState(&TRIMBUTTON);
 }
 
 bool toc_test_button(bool reset)

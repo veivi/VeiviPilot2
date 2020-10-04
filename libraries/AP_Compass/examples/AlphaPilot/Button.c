@@ -7,7 +7,11 @@
 // Buttons
 //
 
-Button_t rightDownButton = BUTTON(-1.0), rightUpButton = BUTTON(0.34), leftDownButton = BUTTON(-0.3), leftUpButton = BUTTON(1);
+#ifdef CH_BUTTON
+Button_t rateButton = BUTTON(-1.0), levelButton = BUTTON(0.34), gearButton = BUTTON(-0.3), trimButton = BUTTON(1);
+#else
+Button_t levelButton = BUTTON(1.0), trimButton = BUTTON(1.0);
+#endif
 
 bool buttonInit(Button_t *button, float aValue)
 {

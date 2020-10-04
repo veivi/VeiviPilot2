@@ -153,6 +153,14 @@ int stap_telemetryReceive(uint8_t *buffer, int size);
 uint8_t stap_telemetryReceiveChar(void);
 
 //
+// SRXL interface
+//
+
+int stap_srxlReceiveState(void);   // How many chars in the buffer
+int stap_srxlReceive(uint8_t *buffer, int size);
+uint8_t stap_srxlReceiveChar(void);
+
+//
 // Gyro interface
 //
 

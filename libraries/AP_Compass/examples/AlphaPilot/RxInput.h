@@ -10,14 +10,7 @@
 // Receiver channel mapping
 //
 
-#if RX_CHANNELS < 8
-#define CH_AILE       0
-#define CH_ELEV       1
-#define CH_THRO       2
-#define CH_BUTTON     3
-#define CH_TUNE       4
-#define CH_MODE       5
-#else
+#if RX_CHANNELS < 10
 #define CH_AILE       0
 #define CH_ELEV       1
 #define CH_THRO       2
@@ -26,6 +19,17 @@
 #define CH_TUNE       5
 #define CH_MODE       6
 #define CH_FLAP       7
+#else
+#define CH_AILE       0
+#define CH_ELEV       1
+#define CH_THRO       2
+#define CH_RUD        3
+#define CH_LEVEL      4
+#define CH_TRIM       5
+#define CH_TUNE       6
+#define CH_MODE       7
+#define CH_FLAP       8
+#define CH_GEAR       9
 #endif
 
 struct RxInputRecord {
@@ -40,9 +44,9 @@ struct SwitchRecord {
 };
 
 struct RxInputRecord rxInput[MAX_CH];
-extern struct SwitchRecord flightModeSelector, flapSelector;
+extern struct SwitchRecord flightModeSelector, flapSelector, gearSelector;
 
-void inputSource(const uint16_t *pulse, int numCh);
+void inputSource(const uint16_t *pulse, uint8_t numCh);
 bool inputSourceGood(void);
 float inputSourceRate(void);
 void inputCalibStart(void);

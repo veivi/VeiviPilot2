@@ -9,9 +9,9 @@
 // Configuration
 //
 
+#define RX_CHANNELS          12
 #define SYNC_PWM_OUTPUT      1
 #define PWM_HZ               50
-#define RX_CHANNELS          8
 #define HARD_PUSHER          0
 #define FLAP_STEPS           2
 #define SHAKER_LIMIT         RATIO(1/3)
@@ -20,6 +20,7 @@
 #define AUTO_RUDDER          0
 #define STICK_PULL_BRAKE_THR RATIO(1/3)
 #define PWM_PERIOD           8
+
 //
 // Periodic task timing
 //
@@ -27,7 +28,7 @@
 #define AIR_SENSOR_OVERSAMPLE 2
 // #define ASYNC_AIR_SENSORS 1
 
-#define CONTROL_HZ 45.0f
+#define CONTROL_HZ 40.0f
 #define CONFIG_HZ (CONTROL_HZ/3)
 #define TRIM_HZ CONFIG_HZ
 #define LED_HZ 2
