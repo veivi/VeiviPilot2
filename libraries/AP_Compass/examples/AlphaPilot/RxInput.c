@@ -158,7 +158,7 @@ float applyNullZoneBlind(float value, float nz)
 }
 
 #define EXPO_BASE   1.0f
-#define EXPO_DELTA  0.2f
+#define EXPO_DELTA  0.3f
 #define HALF_RATE 0.50f
 
 float applyExpo(float value)

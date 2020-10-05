@@ -294,7 +294,7 @@ void receiverTask()
   // PPM fail detection, simulate RX failsafe if PPM fails
   //
 
-  if(ppmFreq < 15) {
+  if(ppmFreq < 25) {
     vpInput.tuningKnob = 1;
     vpInput.modeSel = -1;
     vpInput.throttle = 0;
@@ -307,9 +307,9 @@ void receiverTask()
   // RX failsafe detection
   //
   
-  if( vpInput.tuningKnob > 0.75f && vpInput.modeSel == -1
-      && vpInput.throttle < 0.25f
-      && vpInput.aile < -0.75f && vpInput.elev > 0.75f ) {
+  if( vpInput.tuningKnob > 0.95f && vpInput.modeSel == -1
+      && vpInput.throttle < 0.05f
+      && vpInput.aile < -0.95f && vpInput.elev > 0.95f ) {
     if(!vpMode.radioFailSafe) {
       consoleNoteLn_P(CS_STRING("Radio failsafe mode ENABLED"));
       vpMode.radioFailSafe = true;
@@ -1695,13 +1695,10 @@ void communicationTask()
   uint8_t len = 0;
   
   if((len = stap_srxlReceiveState()) > 0) {
-    bool completeFrame = false;
-    
-    while(len-- > 0)
-      completeFrame |= srxlInputChar(stap_srxlReceiveChar());
-
-    if(completeFrame)
-      return;
+    while(len-- > 0) {
+      if(srxlInputChar(stap_srxlReceiveChar()))
+	return;
+    }
   } else
     srxlHeartbeat();
   
@@ -2562,7 +2559,7 @@ struct Task alphaPilotTasks[] = {
 #ifdef STAP_PERIOD_ACC
   { accTask, STAP_PERIOD_ACC, true },
 #endif
-  { communicationTask, HZ_TO_PERIOD(60), false },
+  { communicationTask, HZ_TO_PERIOD(100), false },
 #ifdef ASYNC_AIR_SENSORS
   { alphaSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },
   { airspeedSampleTask, HZ_TO_PERIOD(AIR_SENSOR_OVERSAMPLE*CONTROL_HZ), true },

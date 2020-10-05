@@ -20,9 +20,9 @@
 #define CH_MODE       6
 #define CH_FLAP       7
 #else
-#define CH_AILE       0
-#define CH_ELEV       1
-#define CH_THRO       2
+#define CH_THRO       0
+#define CH_AILE       1
+#define CH_ELEV       2
 #define CH_RUD        3
 #define CH_LEVEL      4
 #define CH_TRIM       5
