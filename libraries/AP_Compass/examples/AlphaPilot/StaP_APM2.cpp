@@ -446,7 +446,7 @@ void stap_servoOutputSync()
 			  
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
   
-#define AVR_RC_INPUT_MAX_CHANNELS 10
+#define AVR_RC_INPUT_MAX_CHANNELS 12
 #define AVR_RC_INPUT_MIN_CHANNELS 6
 
 /*

@@ -37,10 +37,10 @@ extern Button_t rateButton, levelButton, gearButton, trimButton;
 
 #define LEVELBUTTON levelButton
 #define TRIMBUTTON trimButton
+#define GEARBUTTON gearButton
 
 #ifdef CH_BUTTON
 #define RATEBUTTON rateButton
-#define GEARBUTTON gearButton
 #endif
 
 #endif

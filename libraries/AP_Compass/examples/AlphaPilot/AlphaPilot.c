@@ -264,10 +264,6 @@ void receiverTask()
   vpInput.flapSel = 1;
 #endif
 
-#ifdef CH_GEAR
-  vpInput.gearSel = readSwitch(&gearSelector);
-#endif
-
   // Button input
 
 #ifdef CH_BUTTON
@@ -288,6 +284,7 @@ void receiverTask()
 #else
   buttonInput(&LEVELBUTTON, inputValue(CH_LEVEL));
   buttonInput(&TRIMBUTTON, inputValue(CH_TRIM));
+  buttonInput(&GEARBUTTON, inputValue(CH_GEAR));
 #endif
   
   //
@@ -802,15 +799,15 @@ void configurationTask()
   // Being armed?
   //
   
-  if(!vpStatus.armed && buttonDoublePulse(&LEVELBUTTON) &&
+  if(!vpStatus.armed && buttonDoublePulse(&GEARBUTTON) &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     annunciatorTalk("ARMED");
     vpStatus.armed = true;
     buttonReset(&TRIMBUTTON);
-
-#ifdef GEARBUTTON
     buttonReset(&GEARBUTTON);
+
+#ifdef RATEBUTTON
     buttonReset(&RATEBUTTON);
 #endif
     
@@ -849,26 +846,49 @@ void configurationTask()
   //   GEAR BUTTON
   //
   
-#ifdef GEARBUTTON
-  if(buttonSinglePulse(&GEARBUTTON) && vpDerived.haveRetracts) {
+  if(buttonDoublePulse(&GEARBUTTON)) {
+    //
+    // DOUBLE PULSE: FAILSAFE MODE SELECT
+    //
+
+    if(!vpMode.alphaFailSafe) {
+      annunciatorTalk("Alpha failsafe");
+      consoleNoteLn_P(CS_STRING("Alpha FAILSAFE"));
+      vpMode.alphaFailSafe = true;
+      logMark();
+      
+    } else if(!vpMode.sensorFailSafe) {
+      annunciatorTalk("Total failsafe");
+      consoleNoteLn_P(CS_STRING("Total sensor FAILSAFE"));
+      vpMode.sensorFailSafe = true;
+      logMark();
+      
+    } else if(!vpStatus.positiveIAS && !vpStatus.airborne) {
+      consoleNoteLn_P(CS_STRING("T/O/C test being RESET"));
+      tocTestReset();
+      logDisable();
+    }
+
+  } else if(buttonSinglePulse(&GEARBUTTON) && vpDerived.haveRetracts) {
     //
     // SINGLE PULSE: GEAR TOGGLE
     //
 
-    vpInput.gearSel = !vpInput.gearSel;
-  }
-#endif
-
-  if(vpInput.gearSel != vpControl.gearSel) {
-    if(vpInput.gearSel) {
+    vpControl.gearSel = !vpControl.gearSel;
+    
+    if(vpControl.gearSel) {
       consoleNoteLn_P(CS_STRING("Gear UP selected"));
       annunciatorTalk("Gear up");
     } else {
       consoleNoteLn_P(CS_STRING("Gear DOWN selected"));
       annunciatorTalk("Gear down");
     }
-
-    vpControl.gearSel = vpInput.gearSel;
+  } else if(buttonDepressed(&GEARBUTTON)) {
+    //
+    // CONTINUOUS : FAILSAFE DISABLE
+    //
+  
+    failsafeDisable();
   }
 
   //
@@ -891,34 +911,12 @@ void configurationTask()
     vpMode.halfRate = false;
   }
 #endif
-  
+
   //
   // WING LEVELER BUTTON
   //
 
-  if(buttonDoublePulse(&LEVELBUTTON)) {
-    //
-    // DOUBLE PULSE: FAILSAFE MODE SELECT
-    //
-    
-    if(!vpMode.alphaFailSafe) {
-      annunciatorTalk("Alpha failsafe");
-      consoleNoteLn_P(CS_STRING("Alpha FAILSAFE"));
-      vpMode.alphaFailSafe = true;
-      logMark();
-      
-    } else if(!vpMode.sensorFailSafe) {
-      annunciatorTalk("Total failsafe");
-      consoleNoteLn_P(CS_STRING("Total sensor FAILSAFE"));
-      vpMode.sensorFailSafe = true;
-      logMark();
-      
-    } else if(!vpStatus.positiveIAS && !vpStatus.airborne) {
-      consoleNoteLn_P(CS_STRING("T/O/C test being RESET"));
-      tocTestReset();
-      logDisable();
-    }
-  } else if(buttonSinglePulse(&LEVELBUTTON)) {
+  if(buttonSinglePulse(&LEVELBUTTON)) {
     //
     // SINGLE PULSE : Takeoff mode enable / increment test
     //
@@ -1430,14 +1428,14 @@ void gaugeTask()
 	break;
 
       case 6:
-        consolePrint_P(CS_STRING(" ppmFreq = "));
 	consolePrintF(ppmFreq);
-	consolePrint_P(CS_STRING(" InputVec = ( "));
+	consolePrint_P(CS_STRING(" Hz ["));
 	for(i = 0; i < MAX_CH; i++) {
 	  consolePrintFP(inputValue(i), 2);
+	  // consolePrintUI(rxInput[i].pulseWidth);
 	  consolePrint(" ");
 	}      
-	consolePrint(")");
+	consolePrint("]");
 	break;
 
       case 7:
@@ -2289,7 +2287,7 @@ void (*controlModules[])(void) = {
 // Final mixing
 //
 
-#define AYC_EXPO   1.5f
+#define AYC_EXPO   1.1f
 
 void mixingTask()
 {

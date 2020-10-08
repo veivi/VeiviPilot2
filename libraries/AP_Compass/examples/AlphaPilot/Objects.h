@@ -70,7 +70,7 @@ struct FlightState {
 struct InputState {
   float aile, elev, aileExpo, elevExpo, throttle, rudder, tuningKnob;
   bool ailePilotInput, elevPilotInput, rudderPilotInput;
-  int8_t modeSel, flapSel, gearSel;
+  int8_t modeSel, flapSel;
   float stickForce;
 };
 

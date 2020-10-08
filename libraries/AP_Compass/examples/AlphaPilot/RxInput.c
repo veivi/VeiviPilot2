@@ -24,10 +24,6 @@ struct SwitchRecord flightModeSelector = { CH_MODE };
 struct SwitchRecord flapSelector = { CH_FLAP };
 #endif
 
-#ifdef CH_GEAR
-struct SwitchRecord gearSelector = { CH_GEAR };
-#endif
-
 static uint16_t ppmFrames;
 static bool calibrating, ppmWarnShort, ppmWarnSlow;
 

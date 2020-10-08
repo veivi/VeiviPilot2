@@ -44,7 +44,7 @@ struct SwitchRecord {
 };
 
 struct RxInputRecord rxInput[MAX_CH];
-extern struct SwitchRecord flightModeSelector, flapSelector, gearSelector;
+extern struct SwitchRecord flightModeSelector, flapSelector;
 
 void inputSource(const uint16_t *pulse, uint8_t numCh);
 bool inputSourceGood(void);

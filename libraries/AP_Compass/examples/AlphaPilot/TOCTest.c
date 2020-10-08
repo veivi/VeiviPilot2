@@ -215,13 +215,13 @@ bool toc_test_button_range(bool reset)
 
 bool toc_test_button_neutral(bool reset)
 {
-#ifdef GEARBUTTON
-  bool status = !buttonState(&GEARBUTTON) && !buttonState(&RATEBUTTON);
+#ifdef RATEBUTTON
+  bool status = !buttonState(&RATEBUTTON);
 #else
   bool status = true;
 #endif
   
-  return status && !buttonState(&TRIMBUTTON);
+  return status && !buttonState(&GEARBUTTON) && !buttonState(&TRIMBUTTON);
 }
 
 bool toc_test_button(bool reset)

@@ -10,7 +10,7 @@
 #ifdef CH_BUTTON
 Button_t rateButton = BUTTON(-1.0), levelButton = BUTTON(0.34), gearButton = BUTTON(-0.3), trimButton = BUTTON(1);
 #else
-Button_t levelButton = BUTTON(1.0), trimButton = BUTTON(1.0);
+Button_t levelButton = BUTTON(1.0), trimButton = BUTTON(1.0), gearButton = BUTTON(1.0);
 #endif
 
 bool buttonInit(Button_t *button, float aValue)

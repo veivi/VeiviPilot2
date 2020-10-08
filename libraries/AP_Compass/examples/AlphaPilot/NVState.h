@@ -6,7 +6,7 @@
 #include "AS5048B.h"
 
 #define NAME_LEN     8
-#define MAX_CH       16
+#define MAX_CH       12
 #define MAX_SERVO    11
 #define MAX_PARAMS MAX_SERVO
 
