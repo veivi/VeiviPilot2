@@ -140,7 +140,8 @@ float coeffOfLiftClean(float aoa)
 
 float coeffOfLiftLand(float aoa)
 {
-  return coeffOfLiftGeneric(aoa, vpParam.coeff_CoL[1]);
+  return coeffOfLiftGeneric(aoa,
+			    vpParam.coeff_CoL[vpDerived.haveFlaps ? 1 : 0]);
 }
 
 float coeffOfLiftInverse(float target)
