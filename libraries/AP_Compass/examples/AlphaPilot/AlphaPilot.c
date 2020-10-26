@@ -154,7 +154,7 @@ void displayTask()
     
   // Status
   
-  if(!vpStatus.armed) {
+  if(!vpMode.armed) {
     obdMove(DISP_COLS-8, 0);
     obdPrintAttr("DISARMED", true);
 
@@ -173,12 +173,15 @@ void displayTask()
   } else if(vpMode.takeOff) {
     obdMove(DISP_COLS-7, 0);
     obdPrintAttr("TAKEOFF", (count>>2) & 1);
+  } else if(vpMode.passive) {
+    obdMove(DISP_COLS-7, 0);
+    obdPrintAttr("PASSIVE", vpFlight.alpha > 0.0f);
   } else {
     char buffer[] =
       { (char) (nvState.testNum[vpMode.testCount] < 10 ? ' ' : ('0' + nvState.testNum[vpMode.testCount] / 10)),
 	(char) ('0' + nvState.testNum[vpMode.testCount] % 10),
 	' ',
-	vpFlight.alpha > 0 ? '/' : '\\',
+	vpFlight.alpha > 0.0f ? '/' : '\\',
 	' ', '\0' };
     obdMove(DISP_COLS-strlen(buffer), 0);
     obdPrint(buffer);
@@ -189,7 +192,7 @@ void displayTask()
     
     bool status = tocTestStatus(tocReportDisplay);
 
-    if(vpMode.radioFailSafe) {
+    if(vpMode.radioFailSafe && !vpMode.passive) {
       obdMove(0, DISP_ROWS-1);
       obdPrint("   ");
       obdPrintAttr("RADIO FAIL", (count>>2) & 1);
@@ -711,7 +714,7 @@ void statusTask()
      && vpControl.gearSel == 0
      && vpInput.throttle < vpParam.idle
      && vpStatus.positiveIAS
-     && vpFlight.IAS < (1 + vpParam.thresholdMargin)*vpDerived.minimumIAS
+     && vpFlight.IAS < (1 + 2*vpParam.thresholdMargin)*vpDerived.minimumIAS
      && fabsf(vpFlight.pitch) < vpDerived.maxAlpha
      && fabsf(vpFlight.bank) < 30.0f/RADIAN
      && vpParam.flare > 0.0f
@@ -798,12 +801,16 @@ void configurationTask()
   //
   // Being armed?
   //
+
+  if(vpMode.passive)
+    // Passive mode implies being armed    
+    vpMode.armed = true;
   
-  if(!vpStatus.armed && buttonDoublePulse(&GEARBUTTON) &&
+  if(!vpMode.armed && buttonDoublePulse(&GEARBUTTON) &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     annunciatorTalk("ARMED");
-    vpStatus.armed = true;
+    vpMode.armed = true;
     buttonReset(&TRIMBUTTON);
     buttonReset(&GEARBUTTON);
 
@@ -832,7 +839,7 @@ void configurationTask()
   
   // We skip the rest unless we're armed
 
-  if(!vpStatus.armed)
+  if(!vpMode.armed)
     return;
   
   //
@@ -978,6 +985,8 @@ void configurationTask()
   
   if(vpMode.dontLog)
     logDisable();
+  else if(vpMode.passive && vpStatus.positiveIAS)
+    logEnable();
   else if(vpMode.takeOff && vpInput.throttle > 0.90f) {
     logEnable();
   } else if(vpStatus.airborne && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
@@ -2347,7 +2356,7 @@ void controlTask()
 
 void actuatorTask()
 {
-  if(!vpStatus.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
+  if(!vpMode.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
     return;
 
   int i = 0;
@@ -2363,8 +2372,10 @@ void actuatorTask()
       stap_servoOutput(i, value + vpParam.neutral[i]);
   }
 
-  controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
-  controlLatencyCount++;
+  if(!vpMode.passive) {
+    controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
+    controlLatencyCount++;
+  }
   
   stap_servoOutputSync();
 
@@ -2400,7 +2411,7 @@ void heartBeatTask()
 
 void blinkTask()
 {
-  float ledRatio = vpMode.test ? 0.0f : (vpMode.sensorFailSafe || !vpStatus.armed) ? 0.5f : vpFlight.alpha > 0.0f ? 0.90f : 0.10f;
+  float ledRatio = vpMode.test ? 0.0f : (vpMode.sensorFailSafe || !vpMode.armed) ? 0.5f : vpFlight.alpha > 0.0f ? 0.90f : 0.10f;
   static int tick = 0;
   
   tick = (tick + 1) % (LED_TICK/LED_HZ);
@@ -2416,23 +2427,26 @@ VPPeriodicTimer_t downlinkTimer = VP_PERIODIC_TIMER_CONS(MAX_LATENCY_CONFIG);
 void downlinkTask()
 {
   uint16_t status =
-    ((vpInput.throttle > 0.5 && !vpMode.takeOff && !vpStatus.airborne)
-     ? (1<<10) : 0)
-    | (vpStatus.goAround ? (1<<9) : 0)
-    | ((vpInput.throttle < vpParam.idle
-	|| turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0)
-    | (!vpStatus.telemetryLink ? (1<<7) : 0)
+    (!vpStatus.telemetryLink ? (1<<7) : 0)
     | ((vpStatus.trimLimited && !vpMode.radioFailSafe) ? (1<<6) : 0)
     | (logReady(false) ? (1<<5) : 0)
     | (vpMode.radioFailSafe ? (1<<4) : 0)
     | (vpStatus.alphaUnreliable ? (1<<3) : 0)
     | (vpStatus.airborne ? (1<<0) : 0);
 
+  if(!vpMode.passive && vpMode.armed) {
+    status |= ((vpInput.throttle > 0.5 && !vpMode.takeOff && !vpStatus.airborne)
+	       ? (1<<10) : 0)
+      | (vpStatus.goAround ? (1<<9) : 0)
+      | ((vpInput.throttle < vpParam.idle
+	  || turbineOutput(&engine) < vpParam.idle) ? (1<<8) : 0);
+  }
+
   if(!vpStatus.alphaUnreliable) {
     status |= vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0;
 
     if((HARD_SHAKER && vpStatus.telemetryLink)
-       || vpMode.alphaFailSafe || vpInput.stickForce > 0.0f)
+       || vpMode.passive || vpMode.alphaFailSafe || vpInput.stickForce > 0.0f)
        status |= vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0;
   }
     
@@ -2477,7 +2491,7 @@ void downlinkTask()
   // Sim link if connected
   //
   
-  if(vpStatus.simulatorLink && vpStatus.armed) {
+  if(vpStatus.simulatorLink && vpMode.armed) {
     struct SimLinkControl control = { .aileron = vpOutput.aile,
 				      .elevator = -vpOutput.elev,
 				      .throttle = turbineOutput(&engine),

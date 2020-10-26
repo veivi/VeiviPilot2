@@ -16,14 +16,14 @@ void datagramTxOut(const uint8_t *data, int l);
 void datagramTxEnd(void);
 void datagramRxInputChar(uint8_t port, const uint8_t c);
 
-#define DG_STATUS        0
+#define DG_PING          0
 #define DG_HEARTBEAT     1
 #define DG_CONSOLE       2
 #define DG_LOGDATA       3
 #define DG_LOGINFO       4
 #define DG_PARAMS        5
 #define DG_SIMLINK       8
-#define DG_PING          9
+#define DG_PONG          9
 #define DG_DISCONNECT    10
 #define DG_AIRDATA       11
 #define DG_CONFIG        12
@@ -37,7 +37,7 @@ extern uint16_t maxDatagramSize;
 extern uint8_t datagramRxStore[];
 extern bool datagramLocalOnly;
 extern VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis, datagramLastHeartbeat;
-extern uint16_t datagramsGood, datagramsLost, datagramBytes;
+extern uint16_t datagramsGood, datagramsLost, datagramBytes, datagramBytesRaw;
 extern bool datagramForceHeartbeat;
 
 struct SimLinkSensor {

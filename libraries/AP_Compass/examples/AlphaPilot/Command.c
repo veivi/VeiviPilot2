@@ -344,11 +344,11 @@ void executeCommand(char *buf)
       break;
       
     case c_arm:
-      vpStatus.armed = true;
+      vpMode.armed = true;
       break;
     
     case c_disarm:
-      vpStatus.armed = false;
+      vpMode.armed = false;
       consoleNoteLn_P(CS_STRING("We're DISARMED"));
       break;
     

@@ -4,13 +4,14 @@
 #include "CRC16.h"
 
 static uint16_t crcStateTx, crcStateRx[2];
+static uint8_t flagRunLength;
 static int datagramSize[2];
 static uint8_t rxSeq[2], rxSeqLast[2];
-uint16_t datagramsGood, datagramsLost, datagramBytes;
+uint16_t datagramsGood, datagramsLost, datagramBytes, datagramBytesRaw;
 VP_TIME_MILLIS_T datagramLastTxMillis, datagramLastRxMillis;
 
-#define FLAG       0xAA
-#define NOTFLAG    (FLAG+1)
+#define FLAG       0x00
+#define START      0x80
 #define SEQMASK    0x7F
 
 void datagramHeartbeat(bool force)
@@ -27,14 +28,25 @@ static void outputBreak()
   datagramSerialOut(FLAG);
 }
 
+static void flagRunEnd(void)
+{
+  if(flagRunLength > 0) {
+    datagramSerialOut(FLAG);
+    datagramSerialOut(FLAG + flagRunLength);
+    flagRunLength = 0;
+  }
+}
+
 void datagramTxOutByte(const uint8_t c)
 {
-  datagramSerialOut(c);
-
-  if(c == FLAG)
-    datagramSerialOut(NOTFLAG);
-
   crcStateTx = crc16_update(crcStateTx, c);
+  
+  if(c == FLAG) {
+    flagRunLength++;
+  } else {
+    flagRunEnd();
+    datagramSerialOut(c);
+  }
 }
 
 void datagramTxOut(const uint8_t *data, int l)
@@ -54,8 +66,8 @@ void datagramTxStart(uint8_t dg)
   if(datagramTxBusy || vpTimeMillisApprox - datagramLastTxMillis > 500U)
     outputBreak();
   
-  datagramSerialOut(NOTFLAG + datagramTxSeq);
-  crcStateTx = crc16_update(0xFFFF, NOTFLAG + datagramTxSeq);
+  datagramSerialOut(START + datagramTxSeq);
+  crcStateTx = crc16_update(0xFFFF, START + datagramTxSeq);
   datagramTxSeq = (datagramTxSeq + 1) & SEQMASK;
   datagramTxOutByte((const uint8_t) dg);
   datagramTxBusy = true;
@@ -71,6 +83,7 @@ void datagramTxEnd(void)
 {
   uint16_t buf = crcStateTx;
   datagramTxOut((const uint8_t*) &buf, sizeof(buf));
+  flagRunEnd();
   outputBreak();
   datagramLocalOnly = false;
   datagramLastTxMillis = vpTimeMillisApprox;  
@@ -92,7 +105,7 @@ static void handleBreak(uint8_t port)
     
     if(crc == crc16(crcStateRx[port], &datagramRxStore[port*maxDatagramSize], payload)) {
       datagramsGood++;
-      datagramBytes += payload;
+      datagramBytes += payload+2;
 
       uint8_t delta = (rxSeq[port] - rxSeqLast[port] + SEQMASK) & SEQMASK;
 
@@ -112,19 +125,22 @@ static void handleBreak(uint8_t port)
   datagramSize[port] = 0;
 }
 
-void datagramRxInputChar(uint8_t port, const uint8_t c)
+void datagramRxInputChar(uint8_t port, uint8_t c)
 {
   static bool busy[2];
   static int flagCnt[2];
 
   if(c != FLAG) {
     if(busy[port]) {
-      if(flagCnt[port])
-	storeByte(port, FLAG);
-      else
+      if(flagCnt[port]) {
+	while(c-- != FLAG)
+	  storeByte(port, FLAG);
+      } else
 	storeByte(port, c);
+
+      datagramBytesRaw++;
     } else {
-      uint8_t seq = c - NOTFLAG;
+      uint8_t seq = c - START;
       if(seq <= SEQMASK) {
 	busy[port] = true;
 	crcStateRx[port] = crc16_update(0xFFFF, c);

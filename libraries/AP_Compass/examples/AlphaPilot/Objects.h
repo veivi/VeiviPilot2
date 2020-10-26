@@ -9,7 +9,6 @@
 #include "Datagram.h"
 
 struct StatusRecord {
-  bool armed;
   bool consoleLink;
   bool telemetryLink;
   bool simulatorLink;
@@ -34,6 +33,7 @@ struct StatusRecord {
 };
 
 struct ModeRecord {
+  bool armed;
   bool test;
   uint8_t testCount;
   bool silent;
@@ -48,6 +48,7 @@ struct ModeRecord {
   bool autoThrottle;
   bool dontLog;
   bool gearSelected;
+  bool passive;
 };
 
 struct FeatureRecord {

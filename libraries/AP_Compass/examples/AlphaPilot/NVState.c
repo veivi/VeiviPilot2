@@ -73,7 +73,8 @@ bool setModel(int model, bool verbose)
     model = 0;
   else if(model > maxModels() - 1)
     model = maxModels() - 1;
-  
+
+  vpMode.armed = false;
   nvState.model = model;
   m24xxRead(paramOffset + sizeof(vpParam)*model,
 	    (uint8_t*) &vpParam, sizeof(vpParam));
@@ -435,12 +436,16 @@ void derivedValidate()
 
   vpDerived.takeoffMass =
     vpParam.weightDry + vpParam.fuel*vpParam.fuelDensity + vpParam.battery;
-  
-  // Do we have rectracts and/or flaps?
 
+  // Check the functions: Passive mode? Do we have rectracts and/or flaps?
+
+  vpMode.passive = true;
   vpDerived.haveRetracts = vpDerived.haveFlaps = false;
 
   for(i = 0; i < MAX_SERVO; i++) {
+    if(vpParam.functionMap[i] != fn_null)
+      vpMode.passive = false;
+    
     switch(ABS(vpParam.functionMap[i])) {
     case fn_gear:
       vpDerived.haveRetracts = true;
