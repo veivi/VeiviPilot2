@@ -43,7 +43,7 @@ struct SwitchRecord {
   float prevValue;
 };
 
-struct RxInputRecord rxInput[MAX_CH];
+extern struct RxInputRecord rxInput[MAX_CH];
 extern struct SwitchRecord flightModeSelector, flapSelector;
 
 void inputSource(const uint16_t *pulse, uint8_t numCh);

@@ -159,7 +159,7 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
     (void)device;
     i2cErrorCount++;
     // reinit peripheral + clock out garbage
-    //i2cInit(device);
+    i2cInit(device);
     return false;
 }
 
@@ -195,6 +195,8 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t *addr, uint8_t len, uint8_t* buf)
 {
+  bool success = true;
+  
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
         return false;
     }
@@ -225,13 +227,15 @@ bool i2cReadGeneric(I2CDevice device, uint8_t target_, uint8_t addrSize, uint8_t
     }
       
     if (status != HAL_OK)
-        return i2cHandleHardwareFailure(device);
+        success = i2cHandleHardwareFailure(device);
 
-    return true;
+    return success;
 }
 
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
+  bool success = true;
+  
   if (device == I2CINVALID || device > I2CDEV_COUNT) {
         return false;
     }
@@ -241,7 +245,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     if (!pHandle->Instance) {
         return false;
     }
-
+  
     HAL_StatusTypeDef status;
 
     if (reg_ == 0xFF)
@@ -250,9 +254,9 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         status = HAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
 
     if (status != HAL_OK)
-        return i2cHandleHardwareFailure(device);
-
-    return true;
+        success = i2cHandleHardwareFailure(device);
+    
+    return success;
 }
 
 void i2cInit(I2CDevice device)

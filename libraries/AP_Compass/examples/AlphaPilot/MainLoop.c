@@ -119,7 +119,7 @@ static bool scheduler()
   while(task->code) {
     vpTimeAcquire();
     
-    if(vpTimeMillisApprox - task->lastInvoked >= task->period
+    if(VP_ELAPSED_MILLIS(task->lastInvoked, vpTimeMillisApprox) >= task->period
        || (task->signal && *task->signal)) {      
       if(task->realTime
 	 && vpTimeMillisApprox - task->lastInvoked < 4*task->period/3)
@@ -270,7 +270,7 @@ void mainLoop()
 	consoleFlush();
       }
     }
-    
+
     if(scheduler()) {
       // Had something to do
       if(idling) {
@@ -287,5 +287,5 @@ void mainLoop()
 
       idleStarted = vpTimeMicros();
     }
-  }
+}
 }

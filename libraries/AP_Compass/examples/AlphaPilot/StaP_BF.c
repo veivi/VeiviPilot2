@@ -19,7 +19,6 @@
 #include "fc/runtime_config.h"
 
 volatile uint8_t nestCount = 0;
-static uint16_t sensorHash = 0xFFFF;
 
 #define TRACE_BUFSIZE 0x300
 
@@ -231,10 +230,11 @@ float stap_baroRead(void)
 
 #include "io/serial.h"
 
-extern serialPort_t *stap_serialPort;
+serialPort_t *stap_serialPort;
 
 int stap_hostReceiveState(void)
 {
+  /*
   if(traceLen > 0) {
     char buffer[TRACE_BUFSIZE];
     bool overflow = traceOverflow > 0;
@@ -253,7 +253,7 @@ int stap_hostReceiveState(void)
     if(overflow > 0)
       consoleNoteLn_P(CS_STRING("TRACE OVERFLOW"));
   }
-  
+  */  
   if(serialRxBytesWaiting(stap_serialPort))
     return 1;
   return 0;
@@ -309,47 +309,36 @@ void stap_hostFlush()
   while(!isSerialTransmitBufferEmpty(stap_serialPort));
 }
 
+uint8_t stap_srxlReceiveChar(void)
+{
+  return 0;
+}
+
+int stap_srxlReceiveState(void)
+{
+  return 0;
+}
+
+int stap_telemetryReceiveState(void)
+{
+  return 0;
+}
+
+uint8_t stap_telemetryReceiveChar(void)
+{
+  return 0;
+}
+
 int stap_telemetryTransmitChar(uint8_t c)
 {
-  return stap_hostTransmitChar(c);
+
 }
 
-void stap_telemetryFlush()
+STAP_MICROS_T stap_timeMicros(void)
 {
-  stap_hostFlush();
-}
-
-void stap_entropyDigest(const uint8_t *value, int size)
-{
-  sensorHash = crc16(sensorHash, value, size);
-  srand(sensorHash);
-}
-
-uint32_t stap_currentMicros;
-
-uint32_t stap_timeMicros(void)
-{
-  stap_currentMicros = (uint32_t) micros();
-  return stap_currentMicros;
+  return (STAP_MICROS_T) micros();
 }
     
-uint32_t stap_timeMillis(void)
-{
-  return millis();
-}
-    
-void stap_delayMicros(uint32_t x)
-{
-  uint32_t current = stap_timeMicros();
-  while(stap_timeMicros() < current+x);
-}
-  
-void stap_delayMillis(uint32_t x)
-{
-  uint32_t current = stap_timeMillis();
-  while(stap_timeMillis() < current+x);
-}
-  
 uint32_t stap_memoryFree(void)
 {
   // return hal.util->available_memory();
@@ -359,6 +348,10 @@ uint32_t stap_memoryFree(void)
 void stap_servoOutput(int i, float fvalue)
 {
   pwmWriteServo(i, 1500 + 500*fvalue);
+}
+
+void stap_servoOutputSync(void)
+{
 }
 
 void stap_rxInputPoll(void)

@@ -20,8 +20,8 @@
 #define STAP_TRACEON       stap_traceEnable(true)
 #define STAP_TRACEOFF      stap_traceEnable(false)
 #define STAP_TRACEDIS(h)   stap_traceDisregard(h)
-#define STAP_TRACE(s)      // stap_trace(s)
-#define STAP_TRACE_T(s, t) // stap_trace_ ## t(s)
+#define STAP_TRACE(s)      stap_trace(s)
+#define STAP_TRACE_T(s, t) stap_trace_ ## t(s)
 
 void *stap_traceEnable(bool);
 void stap_traceDisregard(void*);
@@ -33,7 +33,7 @@ bool stap_trace_char(char c);
 // System interface
 //
 
-typedef uint64_t STAP_MICROS_T;
+typedef uint32_t STAP_MICROS_T;
 
 void stap_initialize(void);
 STAP_MICROS_T stap_timeMicros(void);
@@ -108,8 +108,8 @@ extern const struct PinDescriptor latch;
 
 #define STAP_FORBID      __disable_irq(); nestCount++
 #define STAP_PERMIT      if(!--nestCount) __enable_irq()
-#define STAP_LED_ON      LED1_ON
-#define STAP_LED_OFF     LED1_OFF
+#define STAP_LED_ON      LED0_ON
+#define STAP_LED_OFF     LED0_OFF
 
 extern volatile uint8_t nestCount;
 

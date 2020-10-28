@@ -226,9 +226,9 @@ extern "C" uint8_t stap_srxlReceiveChar(void)
   return UART_SRXL->read();
 }
 
-extern "C" uint64_t stap_timeMicros(void)
+extern "C" STAP_MICROS_T stap_timeMicros(void)
 {
-  return hal.scheduler->micros();
+  return (STAP_MICROS_T) hal.scheduler->micros();
 }
 
 extern "C" uint32_t stap_memoryFree(void)

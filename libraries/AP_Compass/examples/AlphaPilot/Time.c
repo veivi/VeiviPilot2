@@ -25,12 +25,12 @@ VP_TIME_MILLIS_T vpTimeMillis(void)
 void vpDelayMillis(VP_TIME_MILLIS_T x)
 {
   VP_TIME_MILLIS_T start = vpTimeMillis();
-  while(vpTimeMillis() - start < x);
+  while(VP_ELAPSED_MILLIS(start, vpTimeMillis()) < x);
 }
 
 bool vpPeriodicEvent(VPPeriodicTimer_t *timer)
 {
-  if(vpTimeMillisApprox - timer->previousEvent >= timer->period) {
+  if(VP_ELAPSED_MILLIS(timer->previousEvent, vpTimeMillisApprox) >= timer->period) {
     timer->previousEvent = vpTimeMillisApprox;
     return true;
   } else
@@ -44,7 +44,7 @@ void vpEventTimerReset(VPEventTimer_t *timer)
 
 bool vpEventTimerElapsed(VPEventTimer_t *timer)
 {
-  return vpTimeMillisApprox - timer->startTime >= *(timer->delay);
+  return VP_ELAPSED_MILLIS(timer->startTime, vpTimeMillisApprox) >= *(timer->delay);
 }
 
 static bool vpInertiaOnOff(VPInertiaTimer_t *timer, bool state, bool force)
@@ -52,7 +52,7 @@ static bool vpInertiaOnOff(VPInertiaTimer_t *timer, bool state, bool force)
   bool status = false;
   
   if(*timer->state == state
-     || vpTimeMillisApprox - timer->startTime > timer->inertia || force) {
+     || VP_ELAPSED_MILLIS(timer->startTime, vpTimeMillisApprox)  > timer->inertia || force) {
 
     if(*timer->state != state) {
       *timer->state = state;
