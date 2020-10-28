@@ -42,7 +42,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
-#define I2C_POLL
+#define I2C_IMPL_POLLING
 
 // Number of bits in I2C protocol phase
 #define LEN_ADDR 7
@@ -132,7 +132,7 @@ i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 static volatile uint16_t i2cErrorCount = 0, i2cErrorCode = 0;
 
-#ifndef I2C_POLL
+#ifndef I2C_IMPL_POLLING
 
 static void i2c_er_handler(I2CDevice device);
 static void i2c_ev_handler(I2CDevice device);
@@ -319,7 +319,7 @@ static void i2cUnstick(IO_t scl, IO_t sda)
     IOHi(sda); // Set bus sda high
 }
 
-#ifdef I2C_POLL
+#ifdef I2C_IMPL_POLLING
 
 #define I2C_TIMEOUT_TRANSFER    7000   // us
 #define I2C_TIMEOUT_WAIT        100    // us
@@ -637,7 +637,7 @@ static bool i2cReportError(I2CDevice device, uint8_t error)
 {
   if(error != 0) {
     STAP_TRACE("ERR ");
-    STAP_TRACE_T(num, uint);
+    STAP_TRACE_T(error, uint);
 
     i2cErrorCode = error;
     i2cErrorCount++;
@@ -738,7 +738,7 @@ bool i2cWriteInitiate(I2CDevice device, uint8_t target, uint8_t addrSize, const 
     return i2cStart(device);
 }
 
-bool i2cWriteGeneric(I2CDevice device, uint8_t target, uint8_t addrSize, uint8_t *addr, uint8_t len_, uint8_t *data)
+bool i2cWriteGeneric(I2CDevice device, uint8_t target, uint8_t addrSize, const uint8_t *addr, uint8_t len_, const uint8_t *data)
 {
   if(!i2cWriteInitiate(device, target, addrSize, addr, len_, data))
     return false;
@@ -746,7 +746,7 @@ bool i2cWriteGeneric(I2CDevice device, uint8_t target, uint8_t addrSize, uint8_t
   return i2cSync(device);
 }
 
-bool i2cReadInitiate(I2CDevice device, uint8_t target, uint8_t addrSize, uint8_t *addr, uint8_t len, uint8_t* buf)
+bool i2cReadInitiate(I2CDevice device, uint8_t target, uint8_t addrSize, const uint8_t *addr, uint8_t len, uint8_t* buf)
 {
   STAP_TRACE("RD ");
   
@@ -768,7 +768,7 @@ bool i2cReadInitiate(I2CDevice device, uint8_t target, uint8_t addrSize, uint8_t
     return i2cStart(device);
 }
 
-bool i2cReadGeneric(I2CDevice device, uint8_t target, uint8_t addrSize, uint8_t *addr, uint8_t len, uint8_t* buf)
+bool i2cReadGeneric(I2CDevice device, uint8_t target, uint8_t addrSize, const uint8_t *addr, uint8_t len, uint8_t* buf)
 {
   if(!i2cReadInitiate(device, target, addrSize, addr, len, buf))
     return false;
