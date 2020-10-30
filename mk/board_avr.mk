@@ -16,6 +16,10 @@ WARNFLAGS      +=   -Wwrite-strings -Wformat=2 -Wno-unused-parameter -Wno-missin
 WARNFLAGSCXX    =   -Wno-reorder
 DEPFLAGS        =   -MD -MT $@
 
+ifneq ($(ALPHAPILOT),)
+DEFINES        +=   -DSTAP_TARGET=APM2 -I$(ALPHAPILOT)/AlphaPilot/TARGET/APM2
+endif
+
 CXXOPTS         =   -ffunction-sections -fdata-sections -fno-exceptions -fsigned-char -fno-use-cxa-atexit
 COPTS           =   -ffunction-sections -fdata-sections -fsigned-char
 

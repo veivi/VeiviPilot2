@@ -24,38 +24,57 @@ void datagramHeartbeat(bool force)
 
 static void outputBreak()
 {
-  datagramSerialOut(FLAG);
-  datagramSerialOut(FLAG);
+  const uint8_t buffer[] = { FLAG, FLAG };
+  datagramSerialOut(buffer, sizeof(buffer));
 }
 
 static void flagRunEnd(void)
 {
+  
   if(flagRunLength > 0) {
-    datagramSerialOut(FLAG);
-    datagramSerialOut(FLAG + flagRunLength);
+    const uint8_t buffer[] = { FLAG, FLAG + flagRunLength };
+    datagramSerialOut(buffer, sizeof(buffer));
     flagRunLength = 0;
   }
 }
 
 void datagramTxOutByte(const uint8_t c)
 {
-  crcStateTx = crc16_update(crcStateTx, c);
-  
-  if(c == FLAG) {
-    flagRunLength++;
-  } else {
-    flagRunEnd();
-    datagramSerialOut(c);
-  }
+  datagramTxOut(&c, 1);
 }
 
-void datagramTxOut(const uint8_t *data, int l)
+void datagramTxOut(const uint8_t *data, uint8_t l)
 {
+  uint8_t runLength = 0, i = 0;
+  const uint8_t *runStart = data;
+  
   if(l > DG_TRANSMIT_MAX)
     l = DG_TRANSMIT_MAX;
   
-  while(l-- > 0)
-    datagramTxOutByte(*data++);
+  for(i = 0; i < l; i++) {
+    crcStateTx = crc16_update(crcStateTx, data[i]);
+    
+    if(data[i] == FLAG) {
+      if(runLength > 0) {
+	datagramSerialOut(runStart, runLength);
+	runLength = 0;
+      }
+      flagRunLength++;
+    } else {
+      if(flagRunLength > 0)
+	flagRunEnd();
+
+      if(!runLength)
+	runStart = &data[i];
+
+      runLength++;
+    }
+  }
+
+  if(runLength > 0) {
+    datagramSerialOut(runStart, runLength);
+    runLength = 0;
+  } 
 }
 
 static uint8_t datagramTxSeq;
@@ -65,9 +84,10 @@ void datagramTxStart(uint8_t dg)
 {
   if(datagramTxBusy || vpTimeMillisApprox - datagramLastTxMillis > 500U)
     outputBreak();
-  
-  datagramSerialOut(START + datagramTxSeq);
-  crcStateTx = crc16_update(0xFFFF, START + datagramTxSeq);
+
+  uint8_t buffer = START + datagramTxSeq;
+  datagramSerialOut(&buffer, 1);
+  crcStateTx = crc16_update(0xFFFF, buffer);
   datagramTxSeq = (datagramTxSeq + 1) & SEQMASK;
   datagramTxOutByte((const uint8_t) dg);
   datagramTxBusy = true;

@@ -94,13 +94,13 @@ void datagramInterpreter(uint8_t port, const uint8_t *data, int size)
   datagramInterpreterKind(port, data[0], &data[1], size - 1);
 }
 
-void datagramSerialOut(uint8_t c)
+void datagramSerialOut(const uint8_t *b, int l)
 {
   if(vpStatus.consoleLink)
-    stap_hostTransmitChar(c);
+    STAP_txPut(HOST, b, l);
 
   if(!datagramLocalOnly)
-    stap_telemetryTransmitChar(c);    
+    STAP_txPut(TELEM, b, l);
 }
 
 //

@@ -2,7 +2,6 @@
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 
 extern "C" {
-#include "StaP.h"
 #include "MainLoop.h"
 }
 
@@ -11,7 +10,6 @@ extern const AP_HAL::HAL& hal;
 void setup()
 {
   hal.init(0, NULL);
-  configureOutput(&led);
   
   mainLoopSetup();
 }

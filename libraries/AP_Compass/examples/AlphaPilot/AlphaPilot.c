@@ -1701,22 +1701,22 @@ void communicationTask()
 {
   uint8_t len = 0;
   
-  if((len = stap_srxlReceiveState()) > 0) {
+  if((len = STAP_rxStatus(SRXL)) > 0) {
     while(len-- > 0) {
-      if(srxlInputChar(stap_srxlReceiveChar()))
+      if(srxlInputChar(STAP_rxGetChar(SRXL)))
 	return;
     }
   } else
     srxlHeartbeat();
   
-  if((len = stap_hostReceiveState()) > 0) {
+  if((len = STAP_rxStatus(HOST)) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(0, stap_hostReceiveChar());
+      datagramRxInputChar(0, STAP_rxGetChar(HOST));
   }
 
-  if((len = stap_telemetryReceiveState()) > 0) {
+  if((len = STAP_rxStatus(TELEM)) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(1, stap_telemetryReceiveChar());
+      datagramRxInputChar(1, STAP_rxGetChar(TELEM));
   }
 }
 

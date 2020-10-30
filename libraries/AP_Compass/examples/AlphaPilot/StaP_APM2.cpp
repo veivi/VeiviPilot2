@@ -21,6 +21,8 @@ NewI2C I2c = NewI2C();
 
 volatile uint8_t nestCount = 0;
 
+AP_HAL::UARTDriver  *uartPorts[5];
+
 extern "C" void stap_reboot(bool bootloader)
 {/*
   if(bootloader)
@@ -112,118 +114,34 @@ extern "C" float stap_baroRead(void)
   return (float) barometer.get_altitude();
 }
 
-extern "C" int stap_hostReceiveState(void)
-{
-  return hal.console->available();
+extern "C" int stap_rxStatus(int port) {
+if(uartPorts[port])
+    return uartPorts[port]->available();
+  else
+    return 0;
 }
 
-extern "C" int stap_hostReceive(uint8_t *buffer, int size)
-{
-  while(size-- > 0)
-    *buffer++ = stap_hostReceiveChar();
-
-  return 0;
+extern "C" int stap_txStatus(int port) {
+if(uartPorts[port])
+    return uartPorts[port]->txspace();
+  else
+    return 0;
 }
 
-extern "C" uint8_t stap_hostReceiveChar(void)
-{
-  return hal.console->read();
+extern "C" uint8_t stap_rxGetChar(int port) {
+  if(uartPorts[port])
+    return uartPorts[port]->read();
+  else
+    return 0;
+}
+  
+extern "C" void stap_txPut(int port, const uint8_t *buffer, int size) {
+if(uartPorts[port])
+    uartPorts[port]->write(buffer, size);
 }
 
-extern "C" int stap_hostTransmitState(void)
-{
-  return hal.console->txspace();
-}
-
-extern "C" int stap_hostTransmit(const uint8_t *buffer, int size)
-{
-  return hal.console->write(buffer, size);
-}
-
-extern "C" int stap_hostTransmitChar(uint8_t c)
-{
-  return stap_hostTransmit(&c, 1);
-}
-
-#define UART_TELEMETRY   hal.uartB
-#define UART_SRXL        hal.uartC
-
-extern "C" int stap_telemetryTransmitState(void)
-{
-  return UART_TELEMETRY->txspace();
-}
-
-static void telemetryInit(void)
-{
-  static bool initd = false;
-
-  if(!initd) {
-    UART_TELEMETRY->begin(115200, 32, 32);
-    initd = true;
-  }
-}
-
-extern "C" int stap_telemetryTransmit(const uint8_t *buffer, int size)
-{
-  telemetryInit();
-  return UART_TELEMETRY->write(buffer, size);
-}
-
-extern "C" int stap_telemetryTransmitChar(uint8_t c)
-{
-  return stap_telemetryTransmit(&c, 1);
-}
-
-extern "C" int stap_telemetryReceiveState(void)
-{
-  telemetryInit();
-  return UART_TELEMETRY->available();
-}
-
-extern "C" int stap_telemetryReceive(uint8_t *buffer, int size)
-{
-  while(size-- > 0)
-    *buffer++ = stap_telemetryReceiveChar();
-
-  return 0;
-}
-
-extern "C" uint8_t stap_telemetryReceiveChar(void)
-{
-  return UART_TELEMETRY->read();
-}
-
-extern "C" void stap_telemetrySync()
-{
-}
-
-static void srxlInit(void)
-{
-  static bool initd = false;
-
-  if(!initd) {
-    UART_SRXL->begin(115200, 64, 8);
-    initd = true;
-  }
-}
-
-extern "C" int stap_srxlReceiveState(void)
-{
-  srxlInit();
-  return UART_SRXL->available();
-}
-
-extern "C" int stap_srxlReceive(uint8_t *buffer, int size)
-{
-  while(size-- > 0)
-    *buffer++ = stap_srxlReceiveChar();
-
-  return 0;
-}
-
-extern "C" uint8_t stap_srxlReceiveChar(void)
-{
-  return UART_SRXL->read();
+extern "C" void stap_txPutChar(int port, uint8_t c) {
+stap_txPut(port, &c, 1);
 }
 
 extern "C" STAP_MICROS_T stap_timeMicros(void)
@@ -497,9 +415,21 @@ void stap_rxInputPoll(void)
 }
   
 }
-extern "C" void stap_initialize(void)
+
+extern "C" {
+  void stap_initialize(void)
 {
-  consoleNote_P(CS_STRING("Initializing I2C... "));
+  consoleNote_P(CS_STRING("Initializing serial comms... "));
+  consoleFlush();
+
+  uartPorts[STAP_PORT_HOST] = hal.console;
+  uartPorts[STAP_PORT_TELEM] = hal.uartB;
+  uartPorts[STAP_PORT_SRXL] = hal.uartC;
+  
+  uartPorts[STAP_PORT_TELEM]->begin(115200, 32, 32);
+  uartPorts[STAP_PORT_SRXL]->begin(115200, 64, 8);
+
+  consoleNote_P(CS_STRING("I2C... "));
   consoleFlush();
 
   I2c.begin();
@@ -556,9 +486,11 @@ extern "C" void stap_initialize(void)
   pwmTimerInit(hwTimersOwn, sizeof(hwTimersOwn)/sizeof(struct HWTimer*));
 
   configureInput(&latch, true);
+  configureOutput(&led);
   
   consolePrintLn_P(CS_STRING("Done."));
 }
-
+}
+  
 
 

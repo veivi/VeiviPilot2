@@ -3,19 +3,30 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "StaP_TARGET.h"
 #include "BaseI2C.h"
 
-#ifdef ALPHAPILOT
-#ifndef AVR
-#include "platform.h"
-#include "sensors/gyro.h"
+/*
+ * Serial interface
+ */
 
-#define STAP_PERIOD_GYRO         gyro.targetLooptime
-#define STAP_PERIOD_GYRO_STATIC  HZ_TO_PERIOD(100)
-#define STAP_PERIOD_ATTI         HZ_TO_PERIOD(100)
-#define STAP_PERIOD_ACC          HZ_TO_PERIOD(1000)
-#endif
-#endif
+#define STAP_PORT_HOST    0
+#define STAP_PORT_TELEM   1
+#define STAP_PORT_SRXL    2
+#define STAP_PORT_GPS     3
+
+#define STAP_PORTID(port) STAP_PORT_ ## port
+#define STAP_rxStatus(port) stap_rxStatus(STAP_PORTID(port))
+#define STAP_rxGetChar(port) stap_rxGetChar(STAP_PORTID(port))
+#define STAP_txStatus(port) stap_txStatus(STAP_PORTID(port))
+#define STAP_txPutChar(port, c) stap_txPutChar(STAP_PORTID(port), c)
+#define STAP_txPut(port, b, s) stap_txPut(STAP_PORTID(port), b, s)
+
+int stap_rxStatus(int);
+uint8_t stap_rxGetChar(int);
+int stap_txStatus(int);
+void stap_txPutChar(int, uint8_t);
+void stap_txPut(int, const uint8_t *, int);
 
 #define STAP_TRACEON       stap_traceEnable(true)
 #define STAP_TRACEOFF      stap_traceEnable(false)
@@ -41,85 +52,6 @@ uint32_t stap_memoryFree(void);
 void stap_reboot(bool bootloader);
 
 //
-// Constant storage access (alias nasty AVR hack called "progmem")
-//
-
-#ifdef AVR
-#include <avr/pgmspace.h>
-
-#define CS_QUALIFIER  PROGMEM
-#define CS_MEMCPY memcpy_P
-#define CS_READCHAR(s) pgm_read_byte(s)
-#define CS_STRNCPY(dst, src, s) strncpy_P(dst, src, s)
-#define CS_STRING(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0]; }))
-#else
-#define CS_QUALIFIER  
-#define CS_MEMCPY memcpy
-#define CS_READCHAR(s) (*((const char *)s))
-#define CS_STRNCPY(dst, src, s) strncpy(dst, src, s)
-#define CS_STRING(s) s
-#endif
-
-//
-// Interrupt control
-//
-
-#ifdef AVR
-#include <avr/interrupt.h>
-#include <avr/io.h>
-
-typedef enum { PortA, PortB, PortC, PortD, PortE, PortF, PortG, PortH, PortK, PortL } portName_t;
-
-struct PortDescriptor {
-  volatile uint8_t *pin, *port, *ddr, *mask;
-  uint8_t pci;
-};
-
-struct PinDescriptor {
-  portName_t port;
-  uint8_t index;
-};
-
-void pinOutputEnable(const struct PinDescriptor *pin, bool output);
-void setPinState(const struct PinDescriptor *pin, uint8_t state);
-uint8_t getPinState(const struct PinDescriptor *pin);  
-void configureInput(const struct PinDescriptor *pin, bool pullup);
-void configureOutput(const struct PinDescriptor *pin);
-
-#define STAP_FORBID if(!nestCount++) cli()
-#define STAP_PERMIT if(!--nestCount) sei()
-
-extern volatile uint8_t nestCount;
-
-extern const struct PinDescriptor led;
-
-#define STAP_LED_OFF     setPinState(&led, false)
-#define STAP_LED_ON     setPinState(&led, true)
-
-extern const struct PinDescriptor latch;
-
-#define STAP_CANOPY_CLOSED  (getPinState(&latch) == 1)
-
-#else
-
-#ifdef ALPHAPILOT
-#include "drivers/system.h"
-#include "drivers/light_led.h"
-
-#define STAP_FORBID      __disable_irq(); nestCount++
-#define STAP_PERMIT      if(!--nestCount) __enable_irq()
-#define STAP_LED_ON      LED0_ON
-#define STAP_LED_OFF     LED0_OFF
-
-extern volatile uint8_t nestCount;
-
-#define STAP_CANOPY_CLOSED  0
-
-#endif
-
-#endif
-
-//
 // RX and Servo (PWM) interface
 //
 
@@ -128,37 +60,6 @@ uint16_t stap_rxFrameCount(void);
 void stap_servoOutputInit(void);
 void stap_servoOutput(int i, float fvalue);
 void stap_servoOutputSync(void);
-
-//
-// Host (serial) interface
-//
-
-int stap_hostReceiveState(void);   // How many chars in the buffer
-int stap_hostReceive(uint8_t *buffer, int size);
-uint8_t stap_hostReceiveChar(void);
-int stap_hostTransmitState(void);  // How many chars will fit
-int stap_hostTransmitNonblock(const uint8_t *buffer, int size);
-int stap_hostTransmit(const uint8_t *buffer, int size);
-int stap_hostTransmitChar(uint8_t c);
-
-//
-// Telemetry interface
-//
-
-int stap_telemetryTransmitState(void);
-int stap_telemetryTransmit(const uint8_t *buffer, int size);
-int stap_telemetryTransmitChar(uint8_t c);
-int stap_telemetryReceiveState(void);   // How many chars in the buffer
-int stap_telemetryReceive(uint8_t *buffer, int size);
-uint8_t stap_telemetryReceiveChar(void);
-
-//
-// SRXL interface
-//
-
-int stap_srxlReceiveState(void);   // How many chars in the buffer
-int stap_srxlReceive(uint8_t *buffer, int size);
-uint8_t stap_srxlReceiveChar(void);
 
 //
 // Gyro interface

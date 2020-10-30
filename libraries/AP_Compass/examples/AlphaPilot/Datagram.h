@@ -12,7 +12,7 @@ void datagramHeartbeat(bool force);
 void datagramTxStart(uint8_t );
 void datagramTxStartLocal(uint8_t );
 void datagramTxOutByte(const uint8_t c);
-void datagramTxOut(const uint8_t *data, int l);
+void datagramTxOut(const uint8_t *data, uint8_t l);
 void datagramTxEnd(void);
 void datagramRxInputChar(uint8_t port, const uint8_t c);
 
@@ -30,7 +30,7 @@ void datagramRxInputChar(uint8_t port, const uint8_t c);
 #define DG_ANNUNCIATOR   13
 
 extern void datagramInterpreter(uint8_t port, const uint8_t *data, int size);
-extern void datagramSerialOut(uint8_t);
+extern void datagramSerialOut(const uint8_t*, int);
 extern void datagramRxError(const char *, uint16_t code);
   
 extern uint16_t maxDatagramSize;
