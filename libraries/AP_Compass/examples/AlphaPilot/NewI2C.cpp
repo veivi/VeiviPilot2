@@ -3,7 +3,6 @@
 #include <avr/io.h>
 
 extern "C" {
-  // #include "StaP.h"
 #include "Time.h"
 }
 
@@ -142,14 +141,14 @@ uint8_t NewI2C::wait(uint8_t address)
   }
 }
 
-uint8_t NewI2C::write(uint8_t address, const I2CBuffer_t *buffers, int numberBuffers)
+uint8_t NewI2C::write(uint8_t address, const STAP_I2CBuffer_t *buffers, int numberBuffers)
 {
   return write(address, NULL, 0, buffers, numberBuffers);
 }
 
 uint8_t NewI2C::write(uint8_t address, const uint8_t *data, uint8_t numberBytes)
 {
-  I2CBuffer_t buffer = { data, numberBytes };
+  STAP_I2CBuffer_t buffer = { data, numberBytes };
   return write(address, NULL, 0, &buffer, 1);
 }
 
@@ -168,7 +167,7 @@ uint8_t NewI2C::write(uint8_t address, uint16_t memAddress, const uint8_t *data,
   return write(address, addrArray, sizeof(addrArray), data, numberBytes);
 }
 
-uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const I2CBuffer_t *buffer, int numberBuffers)
+uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const STAP_I2CBuffer_t *buffer, int numberBuffers)
 {
   returnStatus = start();
   if(returnStatus){return(returnStatus);}
@@ -212,7 +211,7 @@ uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSiz
 
 uint8_t NewI2C::write(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const uint8_t *data, uint8_t numberBytes)
 {
-  I2CBuffer_t buffer = { data, numberBytes };
+  STAP_I2CBuffer_t buffer = { data, numberBytes };
   return write(address, addrArray, addrSize, &buffer, 1);
 }
 

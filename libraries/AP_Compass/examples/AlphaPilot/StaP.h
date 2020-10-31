@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "StaP_TARGET.h"
-#include "BaseI2C.h"
 
 /*
  * Serial interface
@@ -27,6 +26,25 @@ uint8_t stap_rxGetChar(int);
 int stap_txStatus(int);
 void stap_txPutChar(int, uint8_t);
 void stap_txPut(int, const uint8_t *, int);
+
+//
+// I2C interface
+//
+
+typedef struct {
+    const uint8_t *data;
+    uint8_t size;
+} STAP_I2CBuffer_t;
+
+uint8_t stap_I2cWrite(uint8_t, const uint8_t*, uint8_t, const STAP_I2CBuffer_t*, int);
+uint8_t stap_I2cRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
+uint8_t stap_I2cWait(uint8_t);
+uint16_t stap_i2cErrorCount(void);
+uint16_t stap_i2cErrorCode(void);
+
+//
+// Trace support
+//
 
 #define STAP_TRACEON       stap_traceEnable(true)
 #define STAP_TRACEOFF      stap_traceEnable(false)
@@ -80,16 +98,6 @@ bool stap_sensorRead(stap_Vector3f_t *acc, stap_Vector3f_t *atti, stap_Vector3f_
 
 bool stap_baroUpdate(void);
 float stap_baroRead(void);
-
-//
-// I2C interface
-//
-
-uint8_t stap_I2cWrite(uint8_t, const uint8_t*, uint8_t, const I2CBuffer_t*, int);
-uint8_t stap_I2cRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
-uint8_t stap_I2cWait(uint8_t);
-uint16_t stap_i2cErrorCount(void);
-uint16_t stap_i2cErrorCode(void);
 
 //
 // Canopy latch interface

@@ -48,7 +48,7 @@ extern "C" uint8_t stap_I2cWait(uint8_t d)
   return I2c.wait(d);
 }
  
-extern "C" uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
+extern "C" uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const STAP_I2CBuffer_t *b, int c)
 {
   return I2c.write(d, a, as, b, c);
 }

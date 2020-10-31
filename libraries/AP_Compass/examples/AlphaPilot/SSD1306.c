@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "SSD1306.h"
 #include "DSP.h"
-#include "StaP.h"
 #include "BaseI2C.h"
 
 //
@@ -82,7 +81,7 @@ static BaseI2CTarget_t target = { "display" };
 static uint8_t scanRow, scanCol;
 static bool scanning = false, initialized = false;
 
-static bool SSD1306_transmitBuffers(const I2CBuffer_t *buffers, int numBuffers) 
+static bool SSD1306_transmitBuffers(const STAP_I2CBuffer_t *buffers, int numBuffers) 
 {
   if(!basei2cIsOnline(&target))
     return false;
@@ -92,9 +91,9 @@ static bool SSD1306_transmitBuffers(const I2CBuffer_t *buffers, int numBuffers)
 
 static bool SSD1306_transmit(uint8_t token, const uint8_t *data, uint8_t bytes) 
 {
-  I2CBuffer_t buffers[] = { { &token, 1 }, { data, bytes } };
+  STAP_I2CBuffer_t buffers[] = { { &token, 1 }, { data, bytes } };
     
-  return SSD1306_transmitBuffers(buffers, sizeof(buffers)/sizeof(I2CBuffer_t));
+  return SSD1306_transmitBuffers(buffers, sizeof(buffers)/sizeof(STAP_I2CBuffer_t));
 }
 
 static bool SSD1306_data(const uint8_t *storage, uint8_t bytes) 
