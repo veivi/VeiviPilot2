@@ -114,34 +114,34 @@ extern "C" float stap_baroRead(void)
   return (float) barometer.get_altitude();
 }
 
-extern "C" int stap_rxStatus(int port) {
+extern "C" int APM2_stap_rxStatus(int port) {
 if(uartPorts[port])
     return uartPorts[port]->available();
   else
     return 0;
 }
 
-extern "C" int stap_txStatus(int port) {
+extern "C" int APM2_stap_txStatus(int port) {
 if(uartPorts[port])
     return uartPorts[port]->txspace();
   else
     return 0;
 }
 
-extern "C" uint8_t stap_rxGetChar(int port) {
+extern "C" uint8_t APM2_stap_rxGetChar(int port) {
   if(uartPorts[port])
     return uartPorts[port]->read();
   else
     return 0;
 }
   
-extern "C" void stap_txPut(int port, const uint8_t *buffer, int size) {
+extern "C" void APM2_stap_txPut(int port, const uint8_t *buffer, int size) {
 if(uartPorts[port])
     uartPorts[port]->write(buffer, size);
 }
 
-extern "C" void stap_txPutChar(int port, uint8_t c) {
-stap_txPut(port, &c, 1);
+extern "C" void APM2_stap_txPutChar(int port, uint8_t c) {
+APM2_stap_txPut(port, &c, 1);
 }
 
 extern "C" STAP_MICROS_T stap_timeMicros(void)
@@ -419,14 +419,14 @@ void stap_rxInputPoll(void)
 extern "C" {
   void stap_initialize(void)
 {
+  uartPorts[STAP_PORT_HOST] = hal.console;
+  
   consoleNote_P(CS_STRING("Initializing serial comms... "));
   consoleFlush();
 
-  uartPorts[STAP_PORT_HOST] = hal.console;
   uartPorts[STAP_PORT_TELEM] = hal.uartB;
-  uartPorts[STAP_PORT_SRXL] = hal.uartC;
-  
   uartPorts[STAP_PORT_TELEM]->begin(115200, 32, 32);
+  uartPorts[STAP_PORT_SRXL] = hal.uartC;
   uartPorts[STAP_PORT_SRXL]->begin(115200, 64, 8);
 
   consoleNote_P(CS_STRING("I2C... "));
@@ -452,6 +452,8 @@ extern "C" {
   
   consolePrint_P(CS_STRING("PPM RX... "));
   consoleFlush();
+
+  STAP_FORBID;
   
   configureInput(&ppmInputPin, true);
   

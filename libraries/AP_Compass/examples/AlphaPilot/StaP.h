@@ -15,17 +15,6 @@
 #define STAP_PORT_GPS     3
 
 #define STAP_PORTID(port) STAP_PORT_ ## port
-#define STAP_rxStatus(port) stap_rxStatus(STAP_PORTID(port))
-#define STAP_rxGetChar(port) stap_rxGetChar(STAP_PORTID(port))
-#define STAP_txStatus(port) stap_txStatus(STAP_PORTID(port))
-#define STAP_txPutChar(port, c) stap_txPutChar(STAP_PORTID(port), c)
-#define STAP_txPut(port, b, s) stap_txPut(STAP_PORTID(port), b, s)
-
-int stap_rxStatus(int);
-uint8_t stap_rxGetChar(int);
-int stap_txStatus(int);
-void stap_txPutChar(int, uint8_t);
-void stap_txPut(int, const uint8_t *, int);
 
 //
 // I2C interface
