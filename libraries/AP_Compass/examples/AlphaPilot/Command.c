@@ -2,7 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "Command.h"
-#include "StaP.h"
+#include "BaseI2C.h"
 #include "Objects.h"
 #include "Logging.h"
 #include "Datagram.h"
@@ -336,7 +336,7 @@ void executeCommand(char *buf)
     case c_read:
       if(numParams > 1) {
 	uint8_t target = param[0], addr = param[1], data = 0,
-	  status = STAP_I2CRead(target, &addr, 1, &data, 1);
+	  status = basei2cReadWithByte(target, addr, &data, 1);
 	consolePrintUI(data);
 	consolePrint(", ");
 	consolePrintLnUI(status);

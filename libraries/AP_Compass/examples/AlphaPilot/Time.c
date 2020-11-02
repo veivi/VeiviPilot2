@@ -57,11 +57,11 @@ static bool vpInertiaOnOff(VPInertiaTimer_t *timer, bool state, bool force)
   if(*timer->state == state || timer->elapsed >= timer->inertia || force) {
     if(*timer->state != state) {
       *timer->state = state;
+      timer->elapsed = 0;
       status = true;
     }
     
     timer->startTime = vpTimeMillisApprox;
-    timer->elapsed = 0;
   }
   
   return status;
