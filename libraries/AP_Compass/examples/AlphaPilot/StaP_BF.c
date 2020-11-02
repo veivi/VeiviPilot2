@@ -111,7 +111,7 @@ void stap_reboot(bool bootloader)
     systemReset();
 }
 
-uint8_t stap_I2cWait(uint8_t d)
+uint8_t BFSTAP_I2CWait(uint8_t d)
 {
   void *handle = STAP_TRACEON;
   bool status = i2cWait(I2C_DEVICE, d);
@@ -121,19 +121,19 @@ uint8_t stap_I2cWait(uint8_t d)
   return status ? 0 : i2cGetErrorCode();
 }
 
-uint16_t stap_i2cErrorCount(void)
+uint16_t BFSTAP_I2CErrorCount(void)
 {
   return i2cGetErrorCounterReset();
 }
 
-uint16_t stap_i2cErrorCode(void)
+uint16_t BFSTAP_I2CErrorCode(void)
 {
   return i2cGetErrorCodeReset();
 }
 
 #define MAX_BUFFER 0x100
 
-uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t *b, int c)
+uint8_t BFSTAP_I2CWrite(uint8_t d, const uint8_t *a, uint8_t as, const STAP_I2CBuffer_t *b, int c)
 {
   uint8_t buffer[MAX_BUFFER];
   uint16_t total = 0;
@@ -156,7 +156,7 @@ uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const I2CBuffer_t
   return status ? 0 : i2cGetErrorCode();
 }
 
-uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
+uint8_t BFSTAP_I2CRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
   void *handle = STAP_TRACEON;
   bool status = i2cReadGeneric(I2C_DEVICE, d, as, a, bs, b);
@@ -230,9 +230,10 @@ float stap_baroRead(void)
 
 #include "io/serial.h"
 
-serialPort_t *stap_serialPort;
+serialPort_t *stap_serialPort[4];
 
-int stap_hostReceiveState(void)
+
+int BFSTAP_rxStatus(int port)
 {
   /*
   if(traceLen > 0) {
@@ -253,85 +254,69 @@ int stap_hostReceiveState(void)
     if(overflow > 0)
       consoleNoteLn_P(CS_STRING("TRACE OVERFLOW"));
   }
-  */  
-  if(serialRxBytesWaiting(stap_serialPort))
+  */
+  
+  if(stap_serialPort[port] && serialRxBytesWaiting(stap_serialPort[port]))
     return 1;
+  
   return 0;
 }
 
 int stap_hostReceive(uint8_t *buffer, int size)
 {
   while(size-- > 0)
-    *buffer++ = stap_hostReceiveChar();
+    *buffer++ = BFSTAP_rxGetChar(0);
 
   return 0;
 }
 
-uint8_t stap_hostReceiveChar(void)
+uint8_t BFSTAP_rxGetChar(int port)
 {
-  return serialRead(stap_serialPort);
+  if(stap_serialPort[port])
+    return serialRead(stap_serialPort[port]);
+  else
+    return 0;
 }
 
-int stap_hostTransmitState(void)
+int BFSTAP_txStatus(int port)
 {
-  return (int) serialTxBytesFree(stap_serialPort);
+  if(stap_serialPort[port])
+    return (int) serialTxBytesFree(stap_serialPort[port]);
+  else
+    return 1;
 }
 
-int stap_hostTransmitNonblock(const uint8_t *buffer, int size)
+int BFSTAP_txPutNB(int port, const uint8_t *buffer, int size)
 {
-  int len = stap_hostTransmitState();
+  int len = BFSTAP_txStatus(port);
   if(len > size)
     len = size;
-  serialWriteBuf(stap_serialPort, buffer, len);
+  if(stap_serialPort[port])
+  serialWriteBuf(stap_serialPort[port], buffer, len);
   return len;
 }
 
-int stap_hostTransmit(const uint8_t *buffer, int size)
+void BFSTAP_txPut(int port, const uint8_t *buffer, int size)
 {
   int left = size;
   
   while(left > 0) {
-    int len = stap_hostTransmitNonblock(buffer, left);
+    int len = BFSTAP_txPutNB(port, buffer, left);
     buffer += len;
     left -= len;
   }
-  
-  return size;
 }
 
-int stap_hostTransmitChar(uint8_t c)
+void BFSTAP_txPutChar(int port, uint8_t c)
 {
-  return stap_hostTransmit(&c, 1);
+  BFSTAP_txPut(port, &c, 1);
 }
 
-void stap_hostFlush()
+void BFSTAP_txDrain(int port)
 {
-  while(!isSerialTransmitBufferEmpty(stap_serialPort));
-}
-
-uint8_t stap_srxlReceiveChar(void)
-{
-  return 0;
-}
-
-int stap_srxlReceiveState(void)
-{
-  return 0;
-}
-
-int stap_telemetryReceiveState(void)
-{
-  return 0;
-}
-
-uint8_t stap_telemetryReceiveChar(void)
-{
-  return 0;
-}
-
-int stap_telemetryTransmitChar(uint8_t c)
-{
-
+  if(!stap_serialPort[port])
+    return;
+  while(!isSerialTransmitBufferEmpty(stap_serialPort[port]));
 }
 
 STAP_MICROS_T stap_timeMicros(void)

@@ -48,7 +48,7 @@ bool m24xxWait(uint32_t addr)
   while(vpTimeMillis() - lastWriteTime < M24XX_LATENCY);
   return true;
 #else
-  return basei2cInvoke(&target, stap_I2cWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
+  return basei2cInvoke(&target, STAP_I2CWait((uint8_t) (M24XX_I2C_ADDR + (uint8_t) ((addr>>16) & 0x7))));
 #endif
 }
 

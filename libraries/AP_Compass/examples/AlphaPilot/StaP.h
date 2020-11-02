@@ -3,11 +3,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "StaP_TARGET.h"
 
-/*
- * Serial interface
- */
+//
+// Serial interface
+//
 
 #define STAP_PORT_HOST    0
 #define STAP_PORT_TELEM   1
@@ -24,12 +23,6 @@ typedef struct {
     const uint8_t *data;
     uint8_t size;
 } STAP_I2CBuffer_t;
-
-uint8_t stap_I2cWrite(uint8_t, const uint8_t*, uint8_t, const STAP_I2CBuffer_t*, int);
-uint8_t stap_I2cRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
-uint8_t stap_I2cWait(uint8_t);
-uint16_t stap_i2cErrorCount(void);
-uint16_t stap_i2cErrorCode(void);
 
 //
 // Trace support
@@ -92,6 +85,7 @@ float stap_baroRead(void);
 // Canopy latch interface
 //
 
+#include "StaP_TARGET.h"
 
 #endif
 

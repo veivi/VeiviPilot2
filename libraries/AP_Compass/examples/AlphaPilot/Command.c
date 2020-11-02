@@ -336,7 +336,7 @@ void executeCommand(char *buf)
     case c_read:
       if(numParams > 1) {
 	uint8_t target = param[0], addr = param[1], data = 0,
-	  status = stap_I2cRead(target, &addr, 1, &data, 1);
+	  status = STAP_I2CRead(target, &addr, 1, &data, 1);
 	consolePrintUI(data);
 	consolePrint(", ");
 	consolePrintLnUI(status);

@@ -21,6 +21,8 @@ NewI2C I2c = NewI2C();
 
 volatile uint8_t nestCount = 0;
 
+static uint16_t i2cErrorCode, i2cErrorCount;
+
 AP_HAL::UARTDriver  *uartPorts[5];
 
 extern "C" void stap_reboot(bool bootloader)
@@ -33,29 +35,48 @@ extern "C" void stap_reboot(bool bootloader)
   while(1);
 }
 
-extern "C" uint16_t stap_i2cErrorCount(void)
+extern "C" uint16_t APM2STAP_I2CErrorCount(void)
 {
-  return 0;
+  uint16_t value = i2cErrorCount;
+  i2cErrorCount = 0;
+  return value;
 }
 
-extern "C" uint16_t stap_i2cErrorCode(void)
+extern "C" uint16_t APM2STAP_I2CErrorCode(void)
 {
-  return 0;
+  uint16_t value = i2cErrorCode;
+  i2cErrorCode = 0;
+  return value;
 }
 
-extern "C" uint8_t stap_I2cWait(uint8_t d)
+extern "C" uint8_t APM2STAP_I2CWait(uint8_t d)
 {
-  return I2c.wait(d);
+  uint8_t status = I2c.wait(d);
+  if(status) {
+    i2cErrorCount++;
+    i2cErrorCode = status;
+  }
+  return status;
 }
  
-extern "C" uint8_t stap_I2cWrite(uint8_t d, const uint8_t *a, uint8_t as, const STAP_I2CBuffer_t *b, int c)
+extern "C" uint8_t APM2STAP_I2CWrite(uint8_t d, const uint8_t *a, uint8_t as, const STAP_I2CBuffer_t *b, int c)
 {
-  return I2c.write(d, a, as, b, c);
+  uint8_t status = I2c.write(d, a, as, b, c);
+  if(status) {
+    i2cErrorCount++;
+    i2cErrorCode = status;
+  }
+  return status;
 }
   
-extern "C" uint8_t stap_I2cRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
+extern "C" uint8_t APM2STAP_I2CRead(uint8_t d, const uint8_t *a, uint8_t as, uint8_t *b, uint8_t bs)
 {
-  return I2c.read(d, a, as, b, bs);
+  uint8_t status = I2c.read(d, a, as, b, bs);
+  if(status) {
+    i2cErrorCount++;
+    i2cErrorCode = status;
+  }
+  return status;
 }
  
 extern "C" bool stap_gyroUpdate(void)
@@ -114,34 +135,34 @@ extern "C" float stap_baroRead(void)
   return (float) barometer.get_altitude();
 }
 
-extern "C" int APM2_stap_rxStatus(int port) {
+extern "C" int APM2STAP_rxStatus(int port) {
 if(uartPorts[port])
     return uartPorts[port]->available();
   else
     return 0;
 }
 
-extern "C" int APM2_stap_txStatus(int port) {
+extern "C" int APM2STAP_txStatus(int port) {
 if(uartPorts[port])
     return uartPorts[port]->txspace();
   else
     return 0;
 }
 
-extern "C" uint8_t APM2_stap_rxGetChar(int port) {
+extern "C" uint8_t APM2STAP_rxGetChar(int port) {
   if(uartPorts[port])
     return uartPorts[port]->read();
   else
     return 0;
 }
   
-extern "C" void APM2_stap_txPut(int port, const uint8_t *buffer, int size) {
+extern "C" void APM2STAP_txPut(int port, const uint8_t *buffer, int size) {
 if(uartPorts[port])
     uartPorts[port]->write(buffer, size);
 }
 
-extern "C" void APM2_stap_txPutChar(int port, uint8_t c) {
-APM2_stap_txPut(port, &c, 1);
+extern "C" void APM2STAP_txPutChar(int port, uint8_t c) {
+APM2STAP_txPut(port, &c, 1);
 }
 
 extern "C" STAP_MICROS_T stap_timeMicros(void)

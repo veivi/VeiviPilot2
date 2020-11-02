@@ -4,18 +4,30 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#define STAP_rxStatus(port) APM2STAP_rxStatus(STAP_PORTID(port))
 
-#define STAP_rxStatus(port) APM2_stap_rxStatus(STAP_PORTID(port))
-#define STAP_rxGetChar(port) APM2_stap_rxGetChar(STAP_PORTID(port))
-#define STAP_txStatus(port) APM2_stap_txStatus(STAP_PORTID(port))
-#define STAP_txPutChar(port, c) APM2_stap_txPutChar(STAP_PORTID(port), c)
-#define STAP_txPut(port, b, s) APM2_stap_txPut(STAP_PORTID(port), b, s)
+#define STAP_rxGetChar(port) APM2STAP_rxGetChar(STAP_PORTID(port))
+#define STAP_txStatus(port) APM2STAP_txStatus(STAP_PORTID(port))
+#define STAP_txPutChar(port, c) APM2STAP_txPutChar(STAP_PORTID(port), c)
+#define STAP_txPut(port, b, s) APM2STAP_txPut(STAP_PORTID(port), b, s)
 
-int APM2_stap_rxStatus(int);
-uint8_t APM2_stap_rxGetChar(int);
-int APM2_stap_txStatus(int);
-void APM2_stap_txPutChar(int, uint8_t);
-void APM2_stap_txPut(int, const uint8_t *, int);
+int APM2STAP_rxStatus(int);
+uint8_t APM2STAP_rxGetChar(int);
+int APM2STAP_txStatus(int);
+void APM2STAP_txPutChar(int, uint8_t);
+void APM2STAP_txPut(int, const uint8_t *, int);
+
+#define STAP_I2CWrite(dev, a, as, b, bn) APM2STAP_I2CWrite(dev, a, as, b, bn)
+#define STAP_I2CRead(dev, a, as, d, ds) APM2STAP_I2CRead(dev, a, as, d, ds)
+#define STAP_I2CWait(dev) APM2STAP_I2CWait(dev)
+#define STAP_I2CErrorCount APM2STAP_I2CErrorCount()
+#define STAP_I2CErrorCode  APM2STAP_I2CErrorCode()
+
+uint8_t APM2STAP_I2CWrite(uint8_t, const uint8_t*, uint8_t, const STAP_I2CBuffer_t*, int);
+uint8_t APM2STAP_I2CRead(uint8_t, const uint8_t*, uint8_t, uint8_t*, uint8_t);
+uint8_t APM2STAP_I2CWait(uint8_t);
+uint16_t APM2STAP_I2CErrorCount(void);
+uint16_t APM2STAP_I2CErrorCode(void);
 
 #define CS_QUALIFIER  PROGMEM
 #define CS_MEMCPY memcpy_P

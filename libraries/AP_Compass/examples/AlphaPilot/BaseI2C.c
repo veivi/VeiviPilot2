@@ -79,18 +79,18 @@ float basei2cEntropy(BaseI2CTarget_t *target)
 uint8_t basei2cWriteGeneric(uint8_t address, const uint8_t *addrArray, uint8_t addrSize, const uint8_t *data, uint8_t numberBytes)
 {
   STAP_I2CBuffer_t buffer = { data, numberBytes };
-  return stap_I2cWrite(address, addrArray, addrSize, &buffer, 1);
+  return STAP_I2CWrite(address, addrArray, addrSize, &buffer, 1);
 }
 
 uint8_t basei2cWriteBuffers(uint8_t address, const STAP_I2CBuffer_t *buffers, int numberBuffers)
 {
-  return stap_I2cWrite(address, NULL, 0, buffers, numberBuffers);
+  return STAP_I2CWrite(address, NULL, 0, buffers, numberBuffers);
 }
 
 uint8_t basei2cWrite(uint8_t address, const uint8_t *data, uint8_t numberBytes)
 {
   STAP_I2CBuffer_t buffer = { data, numberBytes };
-  return stap_I2cWrite(address, NULL, 0, &buffer, 1);
+  return STAP_I2CWrite(address, NULL, 0, &buffer, 1);
 }
 
 uint8_t basei2cWriteWithByte(uint8_t address, uint8_t registerAddress, const uint8_t *data, uint8_t numberBytes)
@@ -115,19 +115,19 @@ uint8_t basei2cWriteWithWord(uint8_t address, uint16_t memAddress, const uint8_t
 
 uint8_t basei2cRead(uint8_t address, uint8_t *dataBuffer, uint8_t numberBytes)
 {
-  return stap_I2cRead(address, NULL, 0, dataBuffer, numberBytes);
+  return STAP_I2CRead(address, NULL, 0, dataBuffer, numberBytes);
 }
 
 uint8_t basei2cReadWithByte(uint8_t address, uint8_t registerAddress, uint8_t *dataBuffer, uint8_t numberBytes)
 {
-  return stap_I2cRead(address, &registerAddress, sizeof(registerAddress), dataBuffer, numberBytes);
+  return STAP_I2CRead(address, &registerAddress, sizeof(registerAddress), dataBuffer, numberBytes);
 }
 
 uint8_t basei2cReadWithWord(uint8_t address, uint16_t memAddress, uint8_t *dataBuffer, uint8_t numberBytes)
 {
   uint8_t addrArray[sizeof(memAddress)];
   addrFromUINT16(addrArray, memAddress);        
-  return stap_I2cRead(address, addrArray, sizeof(addrArray), dataBuffer, numberBytes);
+  return STAP_I2CRead(address, addrArray, sizeof(addrArray), dataBuffer, numberBytes);
 }
 
 

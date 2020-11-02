@@ -22,13 +22,11 @@ bool datagramLocalOnly;
 
 void datagramRxError(const char *error, uint16_t code)
 {
-  /*
   consoleNote_P(CS_STRING("DG "));
   consolePrint(error);
   consolePrint(" (");
   consolePrintUI(code);
   consolePrintLn(")");
-  */
 }
   
 void datagramInterpreterKind(uint8_t port, uint8_t kind, const uint8_t *data, int size)
@@ -215,8 +213,8 @@ void schedulerReport(void)
 void hostLoopback(void)
 {
   while(1) {
-    if(stap_hostReceiveState() > 0)
-      stap_hostTransmitChar(toupper(stap_hostReceiveChar()));
+    if(STAP_rxStatus(HOST) > 0)
+      STAP_txPutChar(HOST, toupper(STAP_rxGetChar(HOST)));
   }
 }
 

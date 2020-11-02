@@ -496,13 +496,13 @@ void monitorTask()
   
   // I2C errors
 
-  uint16_t num = stap_i2cErrorCount();
+  uint16_t num = STAP_I2CErrorCount;
 
   if(num > 0) {
     consoleNote("I2C errors ");
     consolePrintUI(num);
     consolePrint(" (last code ");
-    consolePrintUI(stap_i2cErrorCode());
+    consolePrintUI(STAP_I2CErrorCode);
     consolePrintLn(")");
   }
 
