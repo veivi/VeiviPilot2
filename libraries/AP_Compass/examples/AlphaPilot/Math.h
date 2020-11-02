@@ -8,8 +8,10 @@
 // MIN/MAX macros
 //
 
+#ifndef MAX
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
 
 //
 // Various constants
@@ -44,6 +46,7 @@ float rollRatePredictInverse(float x);
 float scaleByIAS_E(float k, float p);
 float scaleByIAS(float k);
 void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state);
+uint16_t randomUINT16();
 
 #endif
 

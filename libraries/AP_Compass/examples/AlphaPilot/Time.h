@@ -7,6 +7,9 @@
 typedef uint32_t VP_TIME_MICROS_T;
 typedef uint16_t VP_TIME_MILLIS_T;
 
+#define VP_TIME_MICROS_MAX 0xFFFFFFFFUL
+#define VP_TIME_MILLIS_MAX 0xFFFFU
+
 #define VP_ELAPSED_MILLIS(start, stop) (VP_TIME_MILLIS_T) ((stop - start) & 0xFFFF)
 #define VP_ELAPSED_MICROS(start, stop) (VP_TIME_MICROS_T) ((stop - start) & 0xFFFFFFFFUL)
 

@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "BaseI2C.h"
 #include "Console.h"
+#include "Math.h"
 
 #define BACKOFF (0.1e3)
 #define BACKOFF_FRACTION  3
@@ -31,9 +32,12 @@ bool basei2cInvoke(BaseI2CTarget_t *target, uint8_t status)
     consolePrint(target->name);
     consolePrintLn_P(CS_STRING(") ERROR"));
 
-    if(target->failed)
-      target->backoff += target->backoff/BACKOFF_FRACTION;
-    else if(target->failCount++ > 3) {
+    if(target->failed) {
+      target->backoff +=
+	target->backoff/BACKOFF_FRACTION + (randomUINT16() & 0xFFF);
+      while(target->backoff > VP_TIME_MILLIS_MAX/2)
+	target->backoff -= VP_TIME_MILLIS_MAX/8;
+    } else if(target->failCount++ > 3) {
       consoleNote_P(CS_STRING("I2C("));
       consolePrint(target->name);
       consolePrintLn_P(CS_STRING(") is OFFLINE"));
@@ -100,7 +104,7 @@ uint8_t basei2cWriteWithByte(uint8_t address, uint8_t registerAddress, const uin
 
 static void addrFromUINT16(uint8_t *buffer, uint16_t addr)
 {
-  int i = 0;
+  unsigned int i = 0;
   
   for(i = 0; i < sizeof(addr); i++)
     buffer[i] = (addr >> 8*(sizeof(addr) - i - 1)) & 0xFF;

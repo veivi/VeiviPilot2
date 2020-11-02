@@ -177,10 +177,17 @@ void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state)
   uint8_t i = 0;
   
   for(i = 0; i < size; i++) {
-    *state = crc16_update(*state, 0x0);
+    *state = crc16_update(*state, 0xFF);
     value[i] = (*state) & 0xFF;
   }
 }
 
+uint16_t randomUINT16()
+{
+  static uint16_t state = 0xFFFF;
+  uint16_t value = 0;
+  pseudoRandom((uint8_t*) &value, sizeof(value), &state);
+  return value;
+}
 
 
