@@ -14,7 +14,7 @@ void basei2cReset(BaseI2CTarget_t *target)
 
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
-  return !target->failed || vpTimeMillis() > target->failedAt+target->backoff;
+  return !target->failed || VP_ELAPSED_MILLIS(target->failedAt, vpTimeMillisApprox) > target->backoff;
 }
 
 bool basei2cWarning(BaseI2CTarget_t *target)
@@ -109,7 +109,7 @@ static void addrFromUINT16(uint8_t *buffer, uint16_t addr)
 uint8_t basei2cWriteWithWord(uint8_t address, uint16_t memAddress, const uint8_t *data, uint8_t numberBytes)
 {
   uint8_t addrArray[sizeof(memAddress)];
-  addrFromUINT16(&addrArray, memAddress);    
+  addrFromUINT16(addrArray, memAddress);    
   return basei2cWriteGeneric(address, addrArray, sizeof(addrArray), data, numberBytes);
 }
 
@@ -126,7 +126,7 @@ uint8_t basei2cReadWithByte(uint8_t address, uint8_t registerAddress, uint8_t *d
 uint8_t basei2cReadWithWord(uint8_t address, uint16_t memAddress, uint8_t *dataBuffer, uint8_t numberBytes)
 {
   uint8_t addrArray[sizeof(memAddress)];
-  addrFromUINT16(&addrArray, memAddress);        
+  addrFromUINT16(addrArray, memAddress);        
   return stap_I2cRead(address, addrArray, sizeof(addrArray), dataBuffer, numberBytes);
 }
 

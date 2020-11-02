@@ -985,14 +985,14 @@ void configurationTask()
   
   if(vpMode.dontLog)
     logDisable();
-  else if(vpMode.passive && vpStatus.positiveIAS)
-    logEnable();
   else if(vpMode.takeOff && vpInput.throttle > 0.90f) {
     logEnable();
   } else if(vpStatus.airborne && !vpStatus.pitotBlocked && vpStatus.positiveIAS)
     logEnable();
   else if(vpStatus.fullStop)
     logDisable();
+  else if(vpMode.passive && vpStatus.positiveIAS)
+    logEnable();
     
   //
   // Direct mode selector input
