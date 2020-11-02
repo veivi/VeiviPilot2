@@ -17,6 +17,7 @@ typedef struct VPInertiaTimer {
   bool *state;
   VP_TIME_MILLIS_T inertia;
   VP_TIME_MILLIS_T startTime;
+  VP_TIME_MILLIS_T elapsed;
 } VPInertiaTimer_t;
 
 #define VP_INERTIA_TIMER_CONS(s, i) { s, i, 0 }
