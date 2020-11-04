@@ -4,8 +4,8 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
-#define STAP_rxStatus(port) APM2STAP_rxStatus(STAP_PORTID(port))
 
+#define STAP_rxStatus(port) APM2STAP_rxStatus(STAP_PORTID(port))
 #define STAP_rxGetChar(port) APM2STAP_rxGetChar(STAP_PORTID(port))
 #define STAP_txStatus(port) APM2STAP_txStatus(STAP_PORTID(port))
 #define STAP_txPutChar(port, c) APM2STAP_txPutChar(STAP_PORTID(port), c)
