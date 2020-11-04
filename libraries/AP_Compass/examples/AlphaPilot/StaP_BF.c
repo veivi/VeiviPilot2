@@ -6,6 +6,7 @@
 #include "Math.h"
 #include "RxInput.h"
 #include "NVState.h"
+#include "Objects.h"
 #include "platform.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
@@ -334,9 +335,14 @@ uint32_t stap_memoryFree(void)
   return 2000;
 }
 
-void stap_servoOutput(int num, const float value)
+void stap_servoOutputTrigger(void)
 {
-  pwmWriteServo(num, 1500 + 500*value);
+  int i = 0;
+
+  for(i = 0; i < MAX_SERVO; i++) {
+    if(vpActuator.active[i])
+      pwmWriteServo(i, vpActuator.value[i]);
+  }
 }
 
 void stap_rxInputPoll(void)
