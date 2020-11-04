@@ -67,7 +67,7 @@ void alphaSampleTask()
   if(vpControl.initState != it_done)
     return;
   
-  if(AS5048B_isOnline() && AS5048B_alpha(&raw)) {
+  if(AS5048B_maybeOnline() && AS5048B_alpha(&raw)) {
     samplerInput(&alphaSampler, raw);
   }
 }
@@ -220,7 +220,7 @@ void airspeedSampleTask()
   if(vpControl.initState != it_done)
     return;
   
-  if(MS4525DO_isOnline() && MS4525DO_pressure(&raw)) {
+  if(MS4525DO_maybeOnline() && MS4525DO_pressure(&raw)) {
     // We got a good value
     samplerInput(&iasSampler, raw);
   }
@@ -457,7 +457,7 @@ void sensorTaskSlow()
   
   AS5048_word_t raw = 0;
   
-  if(AS5048B_isOnline() && AS5048B_field(&raw))
+  if(AS5048B_maybeOnline() && AS5048B_field(&raw))
     fieldStrength = (float) raw / (1L<<(CHAR_BIT*sizeof(raw)));
 }
 

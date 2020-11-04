@@ -9,6 +9,11 @@ bool AS5048B_isOnline(void)
   return basei2cIsOnline(&target);
 }
 
+bool AS5048B_maybeOnline(void)
+{
+  return basei2cMaybeOnline(&target);
+}
+
 bool AS5048B_read(uint8_t addr, uint8_t *storage, uint8_t bytes) 
 {
   return basei2cInvoke(&target, basei2cReadWithByte(AS5048_ADDRESS, addr, storage, bytes));

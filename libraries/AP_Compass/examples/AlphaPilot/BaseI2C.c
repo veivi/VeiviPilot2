@@ -15,7 +15,12 @@ void basei2cReset(BaseI2CTarget_t *target)
 
 bool basei2cIsOnline(BaseI2CTarget_t *target)
 {
-  return !target->failed || VP_ELAPSED_MILLIS(target->failedAt, vpTimeMillisApprox) > target->backoff;
+  return !target->failed;
+}
+
+bool basei2cMaybeOnline(BaseI2CTarget_t *target)
+{
+  return basei2cIsOnline(target) || VP_ELAPSED_MILLIS(target->failedAt, vpTimeMillisApprox) > target->backoff;
 }
 
 bool basei2cWarning(BaseI2CTarget_t *target)

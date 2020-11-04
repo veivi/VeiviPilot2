@@ -14,6 +14,11 @@ bool MS4525DO_isOnline(void)
   return basei2cIsOnline(&target);
 }
 
+bool MS4525DO_maybeOnline(void)
+{
+  return basei2cMaybeOnline(&target);
+}
+
 static bool MS4525DO_readGeneric(uint8_t *storage, uint8_t bytes) 
 {
   return basei2cInvoke(&target, basei2cRead(MS4525DO_DEVICE, storage, bytes));
