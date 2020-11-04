@@ -96,6 +96,11 @@ struct OutputState {
   float elev, aile, brake, rudder, steer, thrustVert, thrustHoriz, flap, canard;
 };
 
+struct ActuatorState {
+  uint16_t value[MAX_SERVO];
+  bool active[MAX_SERVO];
+};
+
 struct GPSFix {
   float altitude;
   float track;
@@ -131,6 +136,7 @@ extern struct FlightState vpFlight;
 extern struct InputState vpInput;
 extern struct ControlState vpControl;
 extern struct OutputState vpOutput;
+extern struct ActuatorState vpActuator;
 
 extern float controlCycle;
 extern int16_t controlFreq;

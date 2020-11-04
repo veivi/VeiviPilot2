@@ -1701,22 +1701,22 @@ void communicationTask()
 {
   uint8_t len = 0;
   
-  if((len = STAP_rxStatus(SRXL)) > 0) {
+  if((len = STAP_LinkStatus(SRXL)) > 0) {
     while(len-- > 0) {
-      if(srxlInputChar(STAP_rxGetChar(SRXL)))
+      if(srxlInputChar(STAP_LinkGetChar(SRXL)))
 	return;
     }
   } else
     srxlHeartbeat();
   
-  if((len = STAP_rxStatus(HOST)) > 0) {
+  if((len = STAP_LinkStatus(HOSTRX)) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(0, STAP_rxGetChar(HOST));
+      datagramRxInputChar(0, STAP_LinkGetChar(HOSTRX));
   }
 
-  if((len = STAP_rxStatus(TELEM)) > 0) {
+  if((len = STAP_LinkStatus(TELEMRX)) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(1, STAP_rxGetChar(TELEM));
+      datagramRxInputChar(1, STAP_LinkGetChar(TELEMRX));
   }
 }
 
@@ -2356,28 +2356,29 @@ void controlTask()
 
 void actuatorTask()
 {
-  if(!vpMode.armed || vpStatus.simulatorLink || vpParam.virtualOnly)
+  if(vpMode.passive || !vpMode.armed || vpStatus.simulatorLink
+     || vpParam.virtualOnly)
     return;
 
   int i = 0;
   
   for(i = 0; i < MAX_SERVO; i++) {
-    if(ABS(vpParam.functionMap[i]) == fn_gear && !vpMode.gearSelected)
-      // We haven't toggled the gear yet, stay inactive
+    if(vpParam.functionMap[i] == fn_null
+       || (ABS(vpParam.functionMap[i]) == fn_gear && !vpMode.gearSelected))
       continue;
 
-    float value = 0;
+    int16_t value = 0;
 
-    if(functionInvoke(vpParam.functionMap[i], &value))
-      stap_servoOutput(i, value + vpParam.neutral[i]);
+    if(functionInvoke(vpParam.functionMap[i], &value)) {
+      vpActuator.value[i] = value + vpParam.neutral[i] + SERVO_NEUTRAL;
+      vpActuator.active[i] = true;
+    }
   }
 
-  if(!vpMode.passive) {
-    controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
-    controlLatencyCount++;
-  }
+  controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
+  controlLatencyCount++;
   
-  stap_servoOutputSync();
+  stap_servoOutputTrigger();
 
   vpControl.pwmCount = (vpControl.pwmCount + 1) & (PWM_PERIOD - 1);
 }

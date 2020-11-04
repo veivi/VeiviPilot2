@@ -16,7 +16,7 @@
 #define FF_degree 2
 #define FuelFlow_degree 2
 
-#define PARAM_VERSION 5U
+#define PARAM_VERSION 6U
 
 struct ParamRecord {
   uint16_t crc;
@@ -30,12 +30,13 @@ struct ParamRecord {
   float thresholdMargin, pushMargin, shakerMargin;
   float flare;
   int8_t functionMap[MAX_SERVO]; 
-  float neutral[MAX_SERVO]; 
+  uint16_t neutral[MAX_SERVO]; 
   float aileDefl;
   float elevDefl;
   float flapDefl;
   float rudderDefl;
-  float steerDefl, steerPark, steerTrim;
+  float steerDefl, steerPark;
+  float steerTrim;
   float brakeDefl;
   float canardDefl, canardGain, canardGainD;
   float vertDefl;

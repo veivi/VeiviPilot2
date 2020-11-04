@@ -233,9 +233,9 @@ float stap_baroRead(void)
 serialPort_t *stap_serialPort[4];
 
 
-int BFSTAP_rxStatus(int port)
+/*
+int BFSTAP_LinkStatus(int port)
 {
-  /*
   if(traceLen > 0) {
     char buffer[TRACE_BUFSIZE];
     bool overflow = traceOverflow > 0;
@@ -254,23 +254,23 @@ int BFSTAP_rxStatus(int port)
     if(overflow > 0)
       consoleNoteLn_P(CS_STRING("TRACE OVERFLOW"));
   }
-  */
   
   if(stap_serialPort[port] && serialRxBytesWaiting(stap_serialPort[port]))
     return 1;
   
   return 0;
 }
+*/
 
 int stap_hostReceive(uint8_t *buffer, int size)
 {
   while(size-- > 0)
-    *buffer++ = BFSTAP_rxGetChar(0);
+    *buffer++ = BFSTAP_LinkGetChar(0);
 
   return 0;
 }
 
-uint8_t BFSTAP_rxGetChar(int port)
+uint8_t BFSTAP_LinkGetChar(int port)
 {
   if(stap_serialPort[port])
     return serialRead(stap_serialPort[port]);
@@ -278,17 +278,21 @@ uint8_t BFSTAP_rxGetChar(int port)
     return 0;
 }
 
-int BFSTAP_txStatus(int port)
+int BFSTAP_LinkStatus(int port)
 {
-  if(stap_serialPort[port])
-    return (int) serialTxBytesFree(stap_serialPort[port]);
-  else
-    return 1;
+  if(stap_serialPort[port]) {
+    if(STAP_LINKDIR(port))
+      return (int) serialTxBytesFree(stap_serialPort[port]);
+    else
+      return serialRxBytesWaiting(stap_serialPort[port]) ? 1 : 0;
+  }
+  
+  return 1;
 }
 
-int BFSTAP_txPutNB(int port, const uint8_t *buffer, int size)
+int BFSTAP_LinkPutNB(int port, const uint8_t *buffer, int size)
 {
-  int len = BFSTAP_txStatus(port);
+  int len = BFSTAP_LinkStatus(port);
   if(len > size)
     len = size;
   if(stap_serialPort[port])
@@ -296,23 +300,23 @@ int BFSTAP_txPutNB(int port, const uint8_t *buffer, int size)
   return len;
 }
 
-void BFSTAP_txPut(int port, const uint8_t *buffer, int size)
+void BFSTAP_LinkPut(int port, const uint8_t *buffer, int size)
 {
   int left = size;
   
   while(left > 0) {
-    int len = BFSTAP_txPutNB(port, buffer, left);
+    int len = BFSTAP_LinkPutNB(port, buffer, left);
     buffer += len;
     left -= len;
   }
 }
 
-void BFSTAP_txPutChar(int port, uint8_t c)
+void BFSTAP_LinkPutChar(int port, uint8_t c)
 {
-  BFSTAP_txPut(port, &c, 1);
+  BFSTAP_LinkPut(port, &c, 1);
 }
 
-void BFSTAP_txDrain(int port)
+void BFSTAP_LinkDrain(int port)
 {
   if(!stap_serialPort[port])
     return;
@@ -330,13 +334,9 @@ uint32_t stap_memoryFree(void)
   return 2000;
 }
 
-void stap_servoOutput(int i, float fvalue)
+void stap_servoOutput(int num, const float value)
 {
-  pwmWriteServo(i, 1500 + 500*fvalue);
-}
-
-void stap_servoOutputSync(void)
-{
+  pwmWriteServo(num, 1500 + 500*value);
 }
 
 void stap_rxInputPoll(void)

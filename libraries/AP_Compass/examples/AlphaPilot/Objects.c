@@ -9,6 +9,7 @@ struct FlightState vpFlight;
 struct InputState vpInput;
 struct ControlState vpControl;
 struct OutputState vpOutput;
+struct ActuatorState vpActuator;
 
 float controlCycle;
 int16_t controlFreq;

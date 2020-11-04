@@ -33,19 +33,19 @@ const struct Command commands[] CS_QUALIFIER = {
   { "idle", c_idle, e_float, &vpParam.idle },
   { "lag", c_lag, e_float, &vpParam.lag },
   { "dimension", c_dimension, e_float, &vpParam.dimension },
-  { "edefl", c_edefl, e_angle90, &vpParam.elevDefl },
+  { "edefl", c_edefl, e_servo, &vpParam.elevDefl },
   { "takeoff", c_takeoff, e_percent, &vpParam.takeoffTrim },
-  { "adefl", c_adefl, e_angle90, &vpParam.aileDefl },
-  { "rdefl", c_rdefl, e_angle90, &vpParam.rudderDefl },
-  { "sdefl", c_sdefl, e_angle90, &vpParam.steerDefl },
-  { "strim", c_strim, e_angle90, &vpParam.steerTrim },
-  { "spark", c_park, e_angle90, &vpParam.steerPark },
-  { "fdefl", c_fdefl, e_angle90, &vpParam.flapDefl },
-  { "bdefl", c_bdefl, e_angle90, &vpParam.brakeDefl },
-  { "cdefl", c_cdefl, e_angle90, &vpParam.canardDefl },
+  { "adefl", c_adefl, e_servo, &vpParam.aileDefl },
+  { "rdefl", c_rdefl, e_servo, &vpParam.rudderDefl },
+  { "sdefl", c_sdefl, e_servo, &vpParam.steerDefl },
+  { "strim", c_strim, e_servo, &vpParam.steerTrim },
+  { "spark", c_park, e_servo, &vpParam.steerPark },
+  { "fdefl", c_fdefl, e_servo, &vpParam.flapDefl },
+  { "bdefl", c_bdefl, e_servo, &vpParam.brakeDefl },
+  { "cdefl", c_cdefl, e_servo, &vpParam.canardDefl },
   { "cgain", c_cgain, e_float, &vpParam.canardGain, &vpParam.canardGainD },
-  { "vdefl", c_vdefl, e_angle90, &vpParam.vertDefl },
-  { "hdefl", c_hdefl, e_angle90, &vpParam.horizDefl },
+  { "vdefl", c_vdefl, e_servo, &vpParam.vertDefl },
+  { "hdefl", c_hdefl, e_servo, &vpParam.horizDefl },
   { "roll_k", c_roll_k, e_float, &vpParam.roll_C, &vpParam.roll_Expo },
   { "servorate", c_servorate, e_float, &vpParam.servoRate },
   { "col_ab", c_col, e_col_curve, &vpParam.coeff_CoL[0] },
@@ -265,8 +265,8 @@ void executeCommand(char *buf)
 	*((float*) command.var[i]) = param[i]/RADIAN;
 	break;
 
-      case e_angle90:
-	*((float*) command.var[i]) = param[i]/90;
+      case e_servo:
+	*((float*) command.var[i]) = param[i]*(500.0f/90);
 	break;
 	
       case e_bool:
@@ -280,7 +280,7 @@ void executeCommand(char *buf)
 	
       case e_nmap:
 	for(k = 0; k < MAX_SERVO; k++)
-	  ((float*) command.var[i])[k] = param[i+k]/90;
+	  ((uint16_t*) command.var[i])[k] = (uint16_t) (param[i+k]*(500.0f/90));
 	break;
 	
       case e_col_curve:
@@ -684,8 +684,8 @@ static void backupParamEntry(const struct Command *e)
       consolePrintF(*((float*) e->var[i])*RADIAN);
       break;
 
-    case e_angle90:
-      consolePrintF(*((float*) e->var[i])*90);
+    case e_servo:
+      consolePrintF(*((float*) e->var[i])*(90.0f/500));
       break;
 
     case e_map:
@@ -697,7 +697,7 @@ static void backupParamEntry(const struct Command *e)
 
     case e_nmap:
       for(j = 0; j < MAX_SERVO; j++) {
-	consolePrintF(((float*) e->var[i])[j]*90);
+	consolePrintF(((float*) e->var[i])[j]*(90.0f/500));
 	consolePrint(" ");
       }
       break;

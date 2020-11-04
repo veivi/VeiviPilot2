@@ -22,6 +22,12 @@
 #define PWM_PERIOD           8
 
 //
+// Actuator output range, milliseconds
+//
+
+#define SERVO_NEUTRAL   1500U
+
+//
 // Periodic task timing
 //
 

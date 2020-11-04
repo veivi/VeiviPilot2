@@ -26,6 +26,6 @@ typedef enum {
 } function_t;
 
 void functionSet(uint8_t ch, const char *name);
-bool functionInvoke(int8_t fn, float *result);
+bool functionInvoke(int8_t fn, int16_t *result);
 
 #endif

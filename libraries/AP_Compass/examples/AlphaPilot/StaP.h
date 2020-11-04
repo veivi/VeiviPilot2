@@ -8,12 +8,16 @@
 // Serial interface
 //
 
-#define STAP_PORT_HOST    0
-#define STAP_PORT_TELEM   1
-#define STAP_PORT_SRXL    2
-#define STAP_PORT_GPS     3
+#define STAP_LINK_HOSTRX    0
+#define STAP_LINK_HOSTTX    1
+#define STAP_LINK_TELEMRX   2
+#define STAP_LINK_TELEMTX   3
+#define STAP_LINK_SRXL      4
+#define STAP_LINK_GPS       5
 
-#define STAP_PORTID(port) STAP_PORT_ ## port
+#define STAP_LINKDIR(i) ((bool[]) { false, true, false, true, false, false })[i]
+
+#define STAP_LINKID(port) STAP_LINK_ ## port
 
 //
 // I2C interface
@@ -56,10 +60,7 @@ void stap_reboot(bool bootloader);
 //
 
 void stap_rxInputPoll(void);
-uint16_t stap_rxFrameCount(void);
-void stap_servoOutputInit(void);
-void stap_servoOutput(int i, float fvalue);
-void stap_servoOutputSync(void);
+void stap_servoOutputTrigger(void);
 
 //
 // Gyro interface

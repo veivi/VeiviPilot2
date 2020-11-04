@@ -135,34 +135,31 @@ extern "C" float stap_baroRead(void)
   return (float) barometer.get_altitude();
 }
 
-extern "C" int APM2STAP_rxStatus(int port) {
-if(uartPorts[port])
-    return uartPorts[port]->available();
-  else
-    return 0;
-}
-
-extern "C" int APM2STAP_txStatus(int port) {
-if(uartPorts[port])
+extern "C" int APM2STAP_LinkStatus(int port) {
+if(uartPorts[port]) {
+  if(STAP_LINKDIR(port))
     return uartPorts[port]->txspace();
   else
-    return 0;
+    return uartPorts[port]->available();
+ }
+
+ return 0;
 }
 
-extern "C" uint8_t APM2STAP_rxGetChar(int port) {
+extern "C" uint8_t APM2STAP_LinkGetChar(int port) {
   if(uartPorts[port])
     return uartPorts[port]->read();
   else
     return 0;
 }
   
-extern "C" void APM2STAP_txPut(int port, const uint8_t *buffer, int size) {
-if(uartPorts[port])
+extern "C" void APM2STAP_LinkPut(int port, const uint8_t *buffer, int size) {
+  if(uartPorts[port])
     uartPorts[port]->write(buffer, size);
 }
 
-extern "C" void APM2STAP_txPutChar(int port, uint8_t c) {
-APM2STAP_txPut(port, &c, 1);
+extern "C" void APM2STAP_LinkPutChar(int port, uint8_t c) {
+  APM2STAP_LinkPut(port, &c, 1);
 }
 
 extern "C" STAP_MICROS_T stap_timeMicros(void)
@@ -352,37 +349,31 @@ static uint16_t constrain_period(uint16_t p) {
     else return p;
 }
 
-#define NEUTRAL 1500
-#define RANGE 500
-
-void stap_servoOutput(int i, float fvalue)
+void stap_servoOutputTrigger(void)
 {
-  struct PWMOutput *output = NULL;
+  int i = 0;
 
-  if(i >= 0 && i < MAX_SERVO)
-    output = &pwmOutput[i];
+  for(i = 0; i < MAX_SERVO; i++) {
+    struct PWMOutput *output = &pwmOutput[i];
     
-  if(!output || !output->timer)
-    return;
+    if(!vpActuator.active[i] || !output->timer)
+      continue;
 
-  uint16_t value = NEUTRAL + RANGE*fvalue;
-
-  *(output->timer->OCR[output->pwmCh]) = MICROS_TO_CNT(output->timer, constrain_period(value));
+    *(output->timer->OCR[output->pwmCh])
+      = MICROS_TO_CNT(output->timer, constrain_period(vpActuator.value[i]));
   
-  if(!output->active) {
-    configureOutput(&output->pin);
-    pwmEnable(output);
-    output->active = true;
+    if(!output->active) {
+      configureOutput(&output->pin);
+      pwmEnable(output);
+      output->active = true;
+    }
   }
-}
-
-void stap_servoOutputSync()
-{
+  
 #if SYNC_PWM_OUTPUT
   pwmTimerSync(hwTimersOwn, sizeof(hwTimersOwn)/sizeof(struct HWTimer*));
 #endif
 }
-			  
+  
 struct PinDescriptor ppmInputPin = { PortL, 1 }; 
   
 #define AVR_RC_INPUT_MAX_CHANNELS 12
@@ -440,15 +431,15 @@ void stap_rxInputPoll(void)
 extern "C" {
   void stap_initialize(void)
 {
-  uartPorts[STAP_PORT_HOST] = hal.console;
+  uartPorts[STAP_LINK_HOSTRX] = uartPorts[STAP_LINK_HOSTTX] = hal.console;
   
   consoleNote_P(CS_STRING("Initializing serial comms... "));
   consoleFlush();
 
-  uartPorts[STAP_PORT_TELEM] = hal.uartB;
-  uartPorts[STAP_PORT_TELEM]->begin(115200, 32, 32);
-  uartPorts[STAP_PORT_SRXL] = hal.uartC;
-  uartPorts[STAP_PORT_SRXL]->begin(115200, 64, 8);
+  uartPorts[STAP_LINK_TELEMRX] = uartPorts[STAP_LINK_TELEMTX] = hal.uartB;
+  uartPorts[STAP_LINK_TELEMRX]->begin(115200, 32, 32);
+  uartPorts[STAP_LINK_SRXL] = hal.uartC;
+  uartPorts[STAP_LINK_SRXL]->begin(115200, 64, 8);
 
   consoleNote_P(CS_STRING("I2C... "));
   consoleFlush();

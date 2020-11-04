@@ -6,19 +6,17 @@
 #include "drivers/system.h"
 #include "drivers/light_led.h"
 
-#define STAP_rxStatus(port) BFSTAP_rxStatus(STAP_PORTID(port))
-#define STAP_rxGetChar(port) BFSTAP_rxGetChar(STAP_PORTID(port))
-#define STAP_txStatus(port) BFSTAP_txStatus(STAP_PORTID(port))
-#define STAP_txPutChar(port, c) BFSTAP_txPutChar(STAP_PORTID(port), c)
-#define STAP_txPut(port, b, s) BFSTAP_txPut(STAP_PORTID(port), b, s)
-#define STAP_txDrain(port) BFSTAP_txDrain(STAP_PORTID(port))
+#define STAP_LinkStatus(port) BFSTAP_LinkStatus(STAP_LINKID(port))
+#define STAP_LinkGetChar(port) BFSTAP_LinkGetChar(STAP_LINKID(port))
+#define STAP_LinkPutChar(port, c) BFSTAP_LinkPutChar(STAP_LINKID(port), c)
+#define STAP_LinkPut(port, b, s) BFSTAP_LinkPut(STAP_LINKID(port), b, s)
+#define STAP_LinkDrain(port) BFSTAP_LinkDrain(STAP_LINKID(port))
 
-int BFSTAP_rxStatus(int);
-uint8_t BFSTAP_rxGetChar(int);
-int BFSTAP_txStatus(int);
-void BFSTAP_txPutChar(int, uint8_t);
-void BFSTAP_txPut(int, const uint8_t *, int);
-void BFSTAP_txDrain(int);
+int BFSTAP_LinkStatus(int);
+uint8_t BFSTAP_LinkGetChar(int);
+void BFSTAP_LinkPutChar(int, uint8_t);
+void BFSTAP_LinkPut(int, const uint8_t *, int);
+void BFSTAP_LinkDrain(int);
 
 #define STAP_I2CWrite(dev, a, as, b, bn) BFSTAP_I2CWrite(dev, a, as, b, bn)
 #define STAP_I2CRead(dev, a, as, d, ds) BFSTAP_I2CRead(dev, a, as, d, ds)

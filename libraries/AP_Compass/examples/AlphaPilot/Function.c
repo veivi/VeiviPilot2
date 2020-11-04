@@ -9,128 +9,128 @@
 // Actuator functions
 //
 
-float aileronFn()
+int16_t aileronFn()
 {
   return vpParam.aileDefl*vpOutput.aile;
 }
 
-float elevatorFn()
+int16_t elevatorFn()
 {
   return vpParam.elevDefl*vpOutput.elev;
 }
 
-float rudderFn()
+int16_t rudderFn()
 {
   return vpParam.rudderDefl*vpOutput.rudder;
 }
 
-float flapFn()
+int16_t flapFn()
 {
   return vpParam.flapDefl*vpOutput.flap;
 }
 
-float elevon1Fn()
+int16_t elevon1Fn()
 {
   return aileronFn() - elevatorFn();
 }
 
-float elevon2Fn()
+int16_t elevon2Fn()
 {
   return aileronFn() + elevatorFn();
 }
 
-float flaperon1Fn()
+int16_t flaperon1Fn()
 {
   return aileronFn() + flapFn();
 }
 
-float flaperon2Fn()
+int16_t flaperon2Fn()
 {
   return aileronFn() - flapFn();
 }
 
-float tail1Fn()
+int16_t tail1Fn()
 {
   return elevatorFn() + rudderFn();
 }
 
-float tail2Fn()
+int16_t tail2Fn()
 {
   return elevatorFn() - rudderFn();
 }
 
-float canard1Fn()
+int16_t canard1Fn()
 {
-  return vpOutput.canard/(PI_F/2) + vpParam.canardDefl*vpOutput.elev;
+  return vpOutput.canard*(500.0f/(PI_F/2)) + vpParam.canardDefl*vpOutput.elev;
 }
 
-float canard2Fn()
+int16_t canard2Fn()
 {
   return -canard1Fn();
 }
 
-float thrustVertFn()
+int16_t thrustVertFn()
 {
   return vpParam.vertDefl*vpOutput.thrustVert;
 }
 
-float thrustHorizFn()
+int16_t thrustHorizFn()
 {
   return vpParam.horizDefl*vpOutput.thrustHoriz;
 }
 
-float steeringFn()
+int16_t steeringFn()
 {
   if(vpDerived.haveRetracts && vpControl.gearSel)
     return vpParam.steerPark;
   else
-    return vpParam.steerTrim + vpParam.steerDefl*vpOutput.steer;
+    return vpParam.steerDefl*(vpOutput.steer + vpParam.steerTrim);
 }
 
-float lightFn()
+int16_t lightFn()
 {
-  float value = -0.10f;
+  int16_t value = -0.10f*500;
 
   if(vpMode.takeOff || vpStatus.airborne) {
     if(vpControl.gearState == gs_down)
-      value = 0.50f;
+      value = 0.50f*500;
     else
-      value = 0.12f;
+      value = 0.12f*500;
   }
 
   return value;
 }
 
-float gearFn()
+int16_t gearFn()
 {
-  int8_t value = 0;
+  int16_t value = 0;
 
   if(!vpMode.gearSelected)
-    return 0.0f;
+    return 0;
   
   switch(vpControl.gearState) {
   case gs_goingdown_close:
   case gs_down:
   case gs_goingup_open:
-    value = 1;
+    value = 400;
     break;
     
   case gs_goingup:
   case gs_goingup_close:
   case gs_up:
   case gs_goingdown_open:
-    value = -1;
+    value = -400;
     break;
     
   case gs_goingdown:
-    value = vpControl.pwmCount < vpParam.gearSpeed ? 1 : 0;
+    value = vpControl.pwmCount < vpParam.gearSpeed ? 400 : 0;
     break;
   }
   
-  return (float) value;
+  return value;
 }
 
-float doorFn()
+int16_t doorFn()
 {
   int8_t value = 0;
 
@@ -154,7 +154,7 @@ float doorFn()
 #define BRAKE_THRESHOLD 0.2
 #define BRAKE_BOOST     4
 
-float brakeFn()
+int16_t brakeFn()
 {
   // Brake PWM
 
@@ -180,14 +180,14 @@ float brakeFn()
   return vpParam.brakeDefl*vpOutput.brake;
 }
 
-float throttleFn()
+int16_t throttleFn()
 {
-  return RATIO(2/3)*(2*turbineOutput(&engine) - 1);
+  return 800*turbineOutput(&engine);
 }
 
 struct FnDescriptor {
   const char *name;
-  float (*code)(void);
+  int16_t (*code)(void);
 };
 
 struct FnDescriptor functionTable[] = {
@@ -238,7 +238,10 @@ void functionSet(uint8_t ch, const char *name)
 	consolePrint_P(CS_STRING("*invalid*"));
       
       consoleTab(20);
-      consolePrintLnFP(vpParam.neutral[i]*90, 1);
+      consolePrintFP(vpParam.neutral[i]*(90.0f/500), 1);
+      consoleTab(30);
+      consolePrintUI(vpParam.neutral[i]);
+      consolePrintLn_P(CS_STRING(" ms"));
     }
 
     consoleNoteLn("");
@@ -274,7 +277,7 @@ void functionSet(uint8_t ch, const char *name)
   }
 }
 
-bool functionInvoke(int8_t fn, float *result)
+bool functionInvoke(int8_t fn, int16_t *result)
 {
   function_t i = ABS(fn);
     
