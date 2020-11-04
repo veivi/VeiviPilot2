@@ -1063,7 +1063,7 @@ void configurationTask()
      && (vpFlight.IAS > vpDerived.minimumIAS
 	 || vpFlight.alpha > vpDerived.thresholdAlpha))  {
     annunciatorTalk("Rotate");
-    consoleNoteLn_P(CS_STRING("We seem to be AIRBORNE"));
+    consoleNoteLn_P(CS_STRING("We're assumed to be AIRBORNE"));
     vpMode.takeOff = false;
     vpStatus.airborne = true;
     vpMode.silent = true;

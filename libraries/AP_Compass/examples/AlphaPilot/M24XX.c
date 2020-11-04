@@ -26,6 +26,7 @@ void m24xxReset(void)
   basei2cReset(&target);
 }
 
+
 bool m24xxIsOnline(void)
 {
   return basei2cIsOnline(&target);
@@ -54,7 +55,7 @@ bool m24xxWait(uint32_t addr)
 
 bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes) 
 {
-  if(!basei2cIsOnline(&target))
+  if(!basei2cMaybeOnline(&target))
     return false;
     
   if(!m24xxWait(addr))
@@ -71,7 +72,7 @@ bool m24xxWriteDirect(uint32_t addr, const uint8_t *data, int bytes)
  
 bool m24xxReadDirect(uint32_t addr, uint8_t *data, int size) 
 {
-  if(!basei2cIsOnline(&target))
+  if(!basei2cMaybeOnline(&target))
     return false;
     
   if(!m24xxWait(addr))
