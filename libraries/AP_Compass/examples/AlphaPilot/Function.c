@@ -240,8 +240,8 @@ void functionSet(uint8_t ch, const char *name)
       consoleTab(20);
       consolePrintFP(vpParam.neutral[i]*(90.0f/500), 1);
       consoleTab(30);
-      consolePrintUI(vpParam.neutral[i]);
-      consolePrintLn_P(CS_STRING(" ms"));
+      consolePrintI(vpParam.neutral[i]);
+      consolePrintLn_P(CS_STRING(" us"));
     }
 
     consoleNoteLn("");

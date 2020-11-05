@@ -280,7 +280,7 @@ void executeCommand(char *buf)
 	
       case e_nmap:
 	for(k = 0; k < MAX_SERVO; k++)
-	  ((uint16_t*) command.var[i])[k] = (uint16_t) (param[i+k]*(500.0f/90));
+	  ((int16_t*) command.var[i])[k] = (int16_t) (param[i+k]*(500.0f/90));
 	break;
 	
       case e_col_curve:
@@ -575,7 +575,7 @@ void executeCommand(char *buf)
 
     case c_neutral:
       if(numParams > 1 && param[0] >= 0 && param[0] <= MAX_SERVO)
-	vpParam.neutral[(int) param[0]] = param[1]/90;
+	vpParam.neutral[(int) param[0]] = param[1]*500.0f/90;
       break;
 
     case c_scale:
@@ -697,7 +697,7 @@ static void backupParamEntry(const struct Command *e)
 
     case e_nmap:
       for(j = 0; j < MAX_SERVO; j++) {
-	consolePrintF(((float*) e->var[i])[j]*(90.0f/500));
+	consolePrintUI(((int16_t*) e->var[i])[j]*(90.0f/500));
 	consolePrint(" ");
       }
       break;

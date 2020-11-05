@@ -56,13 +56,6 @@ uint32_t stap_memoryFree(void);
 void stap_reboot(bool bootloader);
 
 //
-// RX and Servo (PWM) interface
-//
-
-void stap_rxInputPoll(void);
-void stap_servoOutputTrigger(void);
-
-//
 // Gyro interface
 //
 

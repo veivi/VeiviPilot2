@@ -2,6 +2,7 @@
 #include "Time.h"
 #include "Button.h"
 #include "Console.h"
+#include "RxInput.h"
 
 //
 // Buttons

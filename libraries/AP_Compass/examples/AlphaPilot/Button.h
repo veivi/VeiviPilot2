@@ -33,7 +33,7 @@ bool buttonLazy(Button_t*);
 // Buttons
 //
 
-extern Button_t rateButton, levelButton, gearButton, trimButton;
+extern Button_t levelButton, gearButton, trimButton, rateButton;
 
 #define LEVELBUTTON levelButton
 #define TRIMBUTTON trimButton

@@ -335,17 +335,17 @@ uint32_t stap_memoryFree(void)
   return 2000;
 }
 
-void stap_servoOutputTrigger(void)
+void BFSTAP_pwmOutput(int num, const uint16_t value[], const bool active[])
 {
   int i = 0;
 
-  for(i = 0; i < MAX_SERVO; i++) {
-    if(vpActuator.active[i])
-      pwmWriteServo(i, vpActuator.value[i]);
+  for(i = 0; i < num; i++) {
+    if(active[i])
+      pwmWriteServo(i, value[i]);
   }
 }
 
-void stap_rxInputPoll(void)
+void BFSTAP_rxInputPoll(void)
 {
   uint16_t input[MAX_CH];
 

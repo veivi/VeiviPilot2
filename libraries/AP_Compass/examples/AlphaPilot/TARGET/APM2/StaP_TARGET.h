@@ -27,6 +27,14 @@ uint8_t APM2STAP_I2CWait(uint8_t);
 uint16_t APM2STAP_I2CErrorCount(void);
 uint16_t APM2STAP_I2CErrorCode(void);
 
+//
+// RX and Servo (PWM) interface
+//
+
+#define STAP_pwmOutput(num, v, a)    APM2stap_pwmOutput(num, v, a)
+
+void APM2stap_pwmOutput(int num, const uint16_t value[], const bool active[]);
+
 #define CS_QUALIFIER  PROGMEM
 #define CS_MEMCPY memcpy_P
 #define CS_READCHAR(s) pgm_read_byte(s)

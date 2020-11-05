@@ -30,6 +30,9 @@ uint8_t BFSTAP_I2CWait(uint8_t);
 uint16_t BFSTAP_I2CErrorCount(void);
 uint16_t BFSTAP_I2CErrorCode(void);
 
+#define STAP_pwmOutput(num, v, a)    BFSTAP_pwmOutput(num, v, a)
+#define STAP_rxInputPoll             BFSTAP_rxInputPoll()
+
 #define STAP_PERIOD_GYRO         gyro.targetLooptime
 #define STAP_PERIOD_GYRO_STATIC  HZ_TO_PERIOD(100)
 #define STAP_PERIOD_ATTI         HZ_TO_PERIOD(100)

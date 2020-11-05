@@ -30,7 +30,7 @@ struct ParamRecord {
   float thresholdMargin, pushMargin, shakerMargin;
   float flare;
   int8_t functionMap[MAX_SERVO]; 
-  uint16_t neutral[MAX_SERVO]; 
+  int16_t neutral[MAX_SERVO]; 
   float aileDefl;
   float elevDefl;
   float flapDefl;
@@ -65,6 +65,7 @@ struct ParamRecord {
 
 struct DerivedParams {
   bool valid;
+  bool passive;
   float takeoffMass;
   bool haveRetracts, haveFlaps;
   float assumedFlap, assumedMass;
@@ -88,6 +89,7 @@ struct NVStateRecord {
 };
 
 extern struct ParamRecord vpParam;
+extern bool vpParamValid;
 extern struct NVStateRecord nvState;
 extern struct DerivedParams vpDerived;
 

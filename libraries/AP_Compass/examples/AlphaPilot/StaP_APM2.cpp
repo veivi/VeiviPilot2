@@ -349,18 +349,18 @@ static uint16_t constrain_period(uint16_t p) {
     else return p;
 }
 
-void stap_servoOutputTrigger(void)
+void APM2stap_pwmOutput(int num, const uint16_t value[], const bool active[])
 {
   int i = 0;
 
-  for(i = 0; i < MAX_SERVO; i++) {
+  for(i = 0; i < num; i++) {
     struct PWMOutput *output = &pwmOutput[i];
     
-    if(!vpActuator.active[i] || !output->timer)
+    if(!active[i] || !output->timer)
       continue;
 
     *(output->timer->OCR[output->pwmCh])
-      = MICROS_TO_CNT(output->timer, constrain_period(vpActuator.value[i]));
+      = MICROS_TO_CNT(output->timer, constrain_period(value[i]));
   
     if(!output->active) {
       configureOutput(&output->pin);
@@ -417,15 +417,6 @@ ISR(TIMER5_CAPT_vect)
   icr5_prev = icr5_current;
 }
 
-void stap_rxInputInit(void)
-{
-}
-
-void stap_rxInputPoll(void)
-{
-  // We run on PPM interrupt that calls inputSource()
-}
-  
 }
 
 extern "C" {
@@ -465,8 +456,6 @@ extern "C" {
   consolePrint_P(CS_STRING("PPM RX... "));
   consoleFlush();
 
-  STAP_FORBID;
-  
   configureInput(&ppmInputPin, true);
   
   TCCR5A = _BV(WGM50) | _BV(WGM51);
@@ -484,8 +473,11 @@ extern "C" {
   TIMSK5 |= 1<<ICIE5;
   OCR5A  = 40000 - 1; // -1 to correct for wrap
     */
-    
-  STAP_PERMIT;
+
+  // Enable interrupts
+
+  nestCount = 0;
+  sei();
   
   consolePrint_P(CS_STRING("PWM output... "));
   consoleFlush();

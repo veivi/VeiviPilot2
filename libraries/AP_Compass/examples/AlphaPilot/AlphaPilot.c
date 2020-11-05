@@ -173,7 +173,7 @@ void displayTask()
   } else if(vpMode.takeOff) {
     obdMove(DISP_COLS-7, 0);
     obdPrintAttr("TAKEOFF", (count>>2) & 1);
-  } else if(vpMode.passive) {
+  } else if(vpDerived.passive) {
     obdMove(DISP_COLS-7, 0);
     obdPrintAttr("PASSIVE", vpFlight.alpha > 0.0f);
   } else {
@@ -192,7 +192,7 @@ void displayTask()
     
     bool status = tocTestStatus(tocReportDisplay);
 
-    if(vpMode.radioFailSafe && !vpMode.passive) {
+    if(vpMode.radioFailSafe && !vpDerived.passive) {
       obdMove(0, DISP_ROWS-1);
       obdPrint("   ");
       obdPrintAttr("RADIO FAIL", (count>>2) & 1);
@@ -233,7 +233,9 @@ void configTaskGroup();
 
 void receiverTask()
 {
-  stap_rxInputPoll();
+#ifdef STAP_rxInputPoll
+  STAP_rxInputPoll;
+#endif
 
   controlInputTimeStamp = ppmInputTimeStamp;
   
@@ -435,10 +437,17 @@ void sensorTaskSync()
   
   vpFlight.ball = atan2f(-vpFlight.accY, fabs(vpFlight.accZ));
 
-  vpFlight.effIAS = fmaxf(vpFlight.IAS, vpDerived.minimumIAS);
-  vpFlight.effDynP = fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
-  vpFlight.relativeIAS = vpFlight.IAS / vpDerived.minimumIAS;
-  vpFlight.relativeEffIAS = fmaxf(vpFlight.relativeIAS, 1.0f);
+  if(vpParamValid) {
+    vpFlight.effIAS = fmaxf(vpFlight.IAS, vpDerived.minimumIAS);
+    vpFlight.effDynP = fmaxf(vpFlight.dynP, vpDerived.minimumDynP);
+    vpFlight.relativeIAS = vpFlight.IAS / vpDerived.minimumIAS;
+    vpFlight.relativeEffIAS = fmaxf(vpFlight.relativeIAS, 1.0f);
+  } else {
+    vpFlight.effIAS = vpFlight.IAS;
+    vpFlight.effDynP = vpFlight.dynP;
+    vpFlight.relativeIAS = 0.0;
+    vpFlight.relativeEffIAS = 0.0f;
+  }
 }
 
 void sensorTaskSlow()
@@ -802,16 +811,15 @@ void configurationTask()
   // Being armed?
   //
 
-  if(vpMode.passive)
+  if(vpDerived.passive)
     // Passive mode implies being armed    
     vpMode.armed = true;
   
-  if(!vpMode.armed && buttonDoublePulse(&GEARBUTTON) &&
+  if(!vpMode.armed && buttonDoublePulse(&TRIMBUTTON) &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     annunciatorTalk("ARMED");
     vpMode.armed = true;
-    buttonReset(&TRIMBUTTON);
     buttonReset(&GEARBUTTON);
 
 #ifdef RATEBUTTON
@@ -991,7 +999,7 @@ void configurationTask()
     logEnable();
   else if(vpStatus.fullStop)
     logDisable();
-  else if(vpMode.passive && vpStatus.positiveIAS)
+  else if(vpDerived.passive && !vpStatus.pitotFailed && vpStatus.positiveIAS)
     logEnable();
     
   //
@@ -1440,8 +1448,8 @@ void gaugeTask()
 	consolePrintF(ppmFreq);
 	consolePrint_P(CS_STRING(" Hz ["));
 	for(i = 0; i < MAX_CH; i++) {
-	  consolePrintFP(inputValue(i), 2);
-	  // consolePrintUI(rxInput[i].pulseWidth);
+	  // consolePrintFP(inputValue(i), 2);
+	  consolePrintUI(rxInput[i].pulseWidth);
 	  consolePrint(" ");
 	}      
 	consolePrint("]");
@@ -2356,11 +2364,11 @@ void controlTask()
 
 void actuatorTask()
 {
-  if(vpMode.passive || !vpMode.armed || vpStatus.simulatorLink
+  if(vpDerived.passive || !vpMode.armed || vpStatus.simulatorLink
      || vpParam.virtualOnly)
     return;
 
-  int i = 0;
+  int i = 0, activeCount = 0;
   
   for(i = 0; i < MAX_SERVO; i++) {
     if(vpParam.functionMap[i] == fn_null
@@ -2372,13 +2380,15 @@ void actuatorTask()
     if(functionInvoke(vpParam.functionMap[i], &value)) {
       vpActuator.value[i] = value + vpParam.neutral[i] + SERVO_NEUTRAL;
       vpActuator.active[i] = true;
+      activeCount = i;
     }
   }
 
   controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
   controlLatencyCount++;
-  
-  stap_servoOutputTrigger();
+
+  if(activeCount > 0)
+    STAP_pwmOutput(activeCount, vpActuator.value, vpActuator.active);
 
   vpControl.pwmCount = (vpControl.pwmCount + 1) & (PWM_PERIOD - 1);
 }
@@ -2435,7 +2445,7 @@ void downlinkTask()
     | (vpStatus.alphaUnreliable ? (1<<3) : 0)
     | (vpStatus.airborne ? (1<<0) : 0);
 
-  if(!vpMode.passive && vpMode.armed) {
+  if(!vpDerived.passive && vpMode.armed) {
     status |= ((vpInput.throttle > 0.5 && !vpMode.takeOff && !vpStatus.airborne)
 	       ? (1<<10) : 0)
       | (vpStatus.goAround ? (1<<9) : 0)
@@ -2447,7 +2457,7 @@ void downlinkTask()
     status |= vpFlight.alpha > vpDerived.stallAlpha ? (1<<2) : 0;
 
     if((HARD_SHAKER && vpStatus.telemetryLink)
-       || vpMode.passive || vpMode.alphaFailSafe || vpInput.stickForce > 0.0f)
+       || vpDerived.passive || vpMode.alphaFailSafe || vpInput.stickForce > 0.0f)
        status |= vpFlight.alpha > vpDerived.shakerAlpha ? (1<<1) : 0;
   }
     

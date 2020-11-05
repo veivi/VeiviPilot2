@@ -9,7 +9,7 @@
 // Configuration
 //
 
-#define RX_CHANNELS          10
+#define RX_CHANNELS          8
 #define SYNC_PWM_OUTPUT      1
 #define PWM_HZ               50
 #define HARD_PUSHER          0

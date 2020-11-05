@@ -13,6 +13,7 @@
 
 struct NVStateRecord nvState;
 struct ParamRecord vpParam;
+bool vpParamValid;
 struct DerivedParams vpDerived;
 
 #define stateOffset 0U
@@ -104,6 +105,8 @@ bool setModel(int model, bool verbose)
   
   if(isGood && verbose)
     printParams();
+
+  vpParamValid = isGood;
   
   return isGood;
 }
@@ -336,40 +339,40 @@ void printParams()
   consolePrintLn(")");
   consoleNoteLn_P(CS_STRING("  CONTROL SURFACE DEFLECTIONS"));
   consoleNote_P(CS_STRING("    Elevator    "));
-  consolePrintF(vpParam.elevDefl*90);
+  consolePrintI(vpParam.elevDefl);
   consoleTab(30);
   consolePrint_P(CS_STRING("trim%(takeoff) = "));
   consolePrintLnF(vpParam.takeoffTrim*100);
   consoleNote_P(CS_STRING("    Aileron     "));
-  consolePrintF(vpParam.aileDefl*90);
+  consolePrintI(vpParam.aileDefl);
   consoleTab(30);
   consolePrint_P(CS_STRING("servo rate = "));
   consolePrintLnF(vpParam.servoRate);
   consoleNote_P(CS_STRING("    Canard      "));
-  consolePrintF(vpParam.canardDefl*90);
+  consolePrintI(vpParam.canardDefl);
   consolePrint_P(CS_STRING(" (alpha gain P,D "));
   consolePrintF(vpParam.canardGain);
   consolePrint_P(CS_STRING(", ")); 
   consolePrintF(vpParam.canardGainD);
   consolePrintLn_P(CS_STRING(")")); 
   consoleNote_P(CS_STRING("    Vector(v,h) "));
-  consolePrintF(vpParam.vertDefl*90);
+  consolePrintI(vpParam.vertDefl);
   consolePrint(", ");
-  consolePrintLnF(vpParam.horizDefl*90);
+  consolePrintLnI(vpParam.horizDefl);
   consoleNote_P(CS_STRING("    Rudder      "));
-  consolePrintF(vpParam.rudderDefl*90);
+  consolePrintI(vpParam.rudderDefl);
   consoleTab(30);
   consolePrint_P(CS_STRING("aile mix = "));
   consolePrintLnF(vpParam.r_Mix);
   consoleNote_P(CS_STRING("    Nose wheel  "));
-  consolePrintF(vpParam.steerDefl*90);
+  consolePrintI(vpParam.steerDefl);
   consoleTab(30);
   consolePrint_P(CS_STRING("trim = "));
   consolePrintLnF(vpParam.steerTrim*90);
   consoleNote_P(CS_STRING("    Flap        "));
-  consolePrintLnF(vpParam.flapDefl*90);
+  consolePrintLnI(vpParam.flapDefl);
   consoleNote_P(CS_STRING("    Brake       "));
-  consolePrintLnF(vpParam.brakeDefl*90);
+  consolePrintLnI(vpParam.brakeDefl);
 
   consoleNote_P(CS_STRING("  We"));
   if(!vpParam.haveGear)
@@ -439,12 +442,12 @@ void derivedValidate()
 
   // Check the functions: Passive mode? Do we have rectracts and/or flaps?
 
-  vpMode.passive = true;
+  vpDerived.passive = true;
   vpDerived.haveRetracts = vpDerived.haveFlaps = false;
 
   for(i = 0; i < MAX_SERVO; i++) {
     if(vpParam.functionMap[i] != fn_null)
-      vpMode.passive = false;
+      vpDerived.passive = false;
     
     switch(ABS(vpParam.functionMap[i])) {
     case fn_gear:
