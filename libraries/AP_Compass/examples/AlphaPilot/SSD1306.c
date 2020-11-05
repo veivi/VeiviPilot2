@@ -83,7 +83,7 @@ static bool scanning = false, initialized = false;
 
 static bool SSD1306_transmitBuffers(const STAP_I2CBuffer_t *buffers, int numBuffers) 
 {
-  if(!basei2cIsOnline(&target))
+  if(!basei2cMaybeOnline(&target))
     return false;
   
   return basei2cInvoke(&target, basei2cWriteBuffers(SSD1306_ADDR, buffers, numBuffers));
@@ -192,7 +192,7 @@ void obdRefresh()
 {
   int i = 0;
 
-  if(!basei2cIsOnline(&target)) {
+  if(!basei2cMaybeOnline(&target)) {
     initialized = false;
     return;
   }

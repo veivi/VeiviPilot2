@@ -601,7 +601,7 @@ void executeCommand(char *buf)
 
     case c_elevator:
       if(numParams > 0 && param[0] != vpParam.elevDefl) {
-	const float value = param[0] / 90.0f, scale = vpParam.elevDefl/value;
+	const float value = param[0] * 500.0f / 90, scale = vpParam.elevDefl/value;
 	
 	consoleNote_P(CS_STRING("Elevator deflection changed to "));
 	consolePrintF(param[0]);

@@ -815,7 +815,7 @@ void configurationTask()
     // Passive mode implies being armed    
     vpMode.armed = true;
   
-  if(!vpMode.armed && buttonDoublePulse(&TRIMBUTTON) &&
+  else if(!vpMode.armed && buttonDoublePulse(&TRIMBUTTON) &&
      vpInput.throttle < 0.1f && vpInput.aile < -0.9f && vpInput.elev > 0.9f) {
     consoleNoteLn_P(CS_STRING("We're now ARMED"));
     annunciatorTalk("ARMED");
