@@ -5,15 +5,15 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
-#define STAP_LinkStatus(port) APM2STAP_LinkStatus(STAP_LINKID(port))
-#define STAP_LinkGetChar(port) APM2STAP_LinkGetChar(STAP_LINKID(port))
-#define STAP_LinkPutChar(port, c) APM2STAP_LinkPutChar(STAP_LINKID(port), c)
-#define STAP_LinkPut(port, b, s) APM2STAP_LinkPut(STAP_LINKID(port), b, s)
+#define STAP_LinkStatus(port) APM2STAP_LinkStatus(port)
+#define STAP_LinkGetChar(port) APM2STAP_LinkGetChar(port)
+#define STAP_LinkPutChar(port, c) APM2STAP_LinkPutChar(port, c)
+#define STAP_LinkPut(port, b, s) APM2STAP_LinkPut(port, b, s)
 
-int APM2STAP_LinkStatus(int);
-uint8_t APM2STAP_LinkGetChar(int);
-void APM2STAP_LinkPutChar(int, uint8_t);
-void APM2STAP_LinkPut(int, const uint8_t *, int);
+uint8_t APM2STAP_LinkStatus(uint8_t);
+uint8_t APM2STAP_LinkGetChar(uint8_t);
+void APM2STAP_LinkPutChar(uint8_t, uint8_t);
+void APM2STAP_LinkPut(uint8_t, const uint8_t *, int);
 
 #define STAP_I2CWrite(dev, a, as, b, bn) APM2STAP_I2CWrite(dev, a, as, b, bn)
 #define STAP_I2CRead(dev, a, as, d, ds) APM2STAP_I2CRead(dev, a, as, d, ds)
@@ -31,9 +31,9 @@ uint16_t APM2STAP_I2CErrorCode(void);
 // RX and Servo (PWM) interface
 //
 
-#define STAP_pwmOutput(num, v, a)    APM2stap_pwmOutput(num, v, a)
+#define STAP_pwmOutput(num, pulse)    APM2stap_pwmOutput(num, pulse)
 
-void APM2stap_pwmOutput(int num, const uint16_t value[], const bool active[]);
+void APM2stap_pwmOutput(uint8_t num, const uint16_t value[]);
 
 #define CS_QUALIFIER  PROGMEM
 #define CS_MEMCPY memcpy_P

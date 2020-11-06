@@ -96,8 +96,7 @@ struct OutputState {
 };
 
 struct ActuatorState {
-  uint16_t value[MAX_SERVO];
-  bool active[MAX_SERVO];
+  uint16_t pulse[MAX_SERVO];   // Microseconds
 };
 
 struct GPSFix {

@@ -23,7 +23,7 @@ volatile uint8_t nestCount = 0;
 
 static uint16_t i2cErrorCode, i2cErrorCount;
 
-AP_HAL::UARTDriver  *uartPorts[5];
+AP_HAL::UARTDriver  *uartPorts[8];
 
 extern "C" void stap_reboot(bool bootloader)
 {/*
@@ -135,7 +135,7 @@ extern "C" float stap_baroRead(void)
   return (float) barometer.get_altitude();
 }
 
-extern "C" int APM2STAP_LinkStatus(int port) {
+extern "C" uint8_t APM2STAP_LinkStatus(uint8_t port) {
 if(uartPorts[port]) {
   if(STAP_LINKDIR(port))
     return uartPorts[port]->txspace();
@@ -146,19 +146,19 @@ if(uartPorts[port]) {
  return 0;
 }
 
-extern "C" uint8_t APM2STAP_LinkGetChar(int port) {
+extern "C" uint8_t APM2STAP_LinkGetChar(uint8_t port) {
   if(uartPorts[port])
     return uartPorts[port]->read();
   else
     return 0;
 }
   
-extern "C" void APM2STAP_LinkPut(int port, const uint8_t *buffer, int size) {
+extern "C" void APM2STAP_LinkPut(uint8_t port, const uint8_t *buffer, int size) {
   if(uartPorts[port])
     uartPorts[port]->write(buffer, size);
 }
 
-extern "C" void APM2STAP_LinkPutChar(int port, uint8_t c) {
+extern "C" void APM2STAP_LinkPutChar(uint8_t port, uint8_t c) {
   APM2STAP_LinkPut(port, &c, 1);
 }
 
@@ -349,14 +349,14 @@ static uint16_t constrain_period(uint16_t p) {
     else return p;
 }
 
-void APM2stap_pwmOutput(int num, const uint16_t value[], const bool active[])
+void APM2stap_pwmOutput(uint8_t num, const uint16_t value[])
 {
   int i = 0;
 
   for(i = 0; i < num; i++) {
     struct PWMOutput *output = &pwmOutput[i];
     
-    if(!active[i] || !output->timer)
+    if(value[i] == 0 || !output->timer)
       continue;
 
     *(output->timer->OCR[output->pwmCh])
@@ -429,8 +429,8 @@ extern "C" {
 
   uartPorts[STAP_LINK_TELEMRX] = uartPorts[STAP_LINK_TELEMTX] = hal.uartB;
   uartPorts[STAP_LINK_TELEMRX]->begin(115200, 32, 32);
-  uartPorts[STAP_LINK_SRXL] = hal.uartC;
-  uartPorts[STAP_LINK_SRXL]->begin(115200, 64, 8);
+  uartPorts[STAP_LINK_SRXLIN] = uartPorts[STAP_LINK_SRXLOUT] = hal.uartC;
+  uartPorts[STAP_LINK_SRXLIN]->begin(115200, 64, 8);
 
   consoleNote_P(CS_STRING("I2C... "));
   consoleFlush();

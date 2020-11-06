@@ -231,7 +231,7 @@ float stap_baroRead(void)
 
 #include "io/serial.h"
 
-serialPort_t *stap_serialPort[4];
+serialPort_t *stap_serialPort[8];
 
 
 /*
@@ -263,23 +263,7 @@ int BFSTAP_LinkStatus(int port)
 }
 */
 
-int stap_hostReceive(uint8_t *buffer, int size)
-{
-  while(size-- > 0)
-    *buffer++ = BFSTAP_LinkGetChar(0);
-
-  return 0;
-}
-
-uint8_t BFSTAP_LinkGetChar(int port)
-{
-  if(stap_serialPort[port])
-    return serialRead(stap_serialPort[port]);
-  else
-    return 0;
-}
-
-int BFSTAP_LinkStatus(int port)
+uint8_t BFSTAP_LinkStatus(uint8_t port)
 {
   if(stap_serialPort[port]) {
     if(STAP_LINKDIR(port))
@@ -291,7 +275,15 @@ int BFSTAP_LinkStatus(int port)
   return 1;
 }
 
-int BFSTAP_LinkPutNB(int port, const uint8_t *buffer, int size)
+uint8_t BFSTAP_LinkGetChar(uint8_t port)
+{
+  if(stap_serialPort[port])
+    return serialRead(stap_serialPort[port]);
+  else
+    return 0;
+}
+
+uint8_t BFSTAP_LinkPutNB(uint8_t port, const uint8_t *buffer, int size)
 {
   int len = BFSTAP_LinkStatus(port);
   if(len > size)
@@ -301,7 +293,7 @@ int BFSTAP_LinkPutNB(int port, const uint8_t *buffer, int size)
   return len;
 }
 
-void BFSTAP_LinkPut(int port, const uint8_t *buffer, int size)
+void BFSTAP_LinkPut(uint8_t port, const uint8_t *buffer, int size)
 {
   int left = size;
   
@@ -312,12 +304,12 @@ void BFSTAP_LinkPut(int port, const uint8_t *buffer, int size)
   }
 }
 
-void BFSTAP_LinkPutChar(int port, uint8_t c)
+void BFSTAP_LinkPutChar(uint8_t port, uint8_t c)
 {
   BFSTAP_LinkPut(port, &c, 1);
 }
 
-void BFSTAP_LinkDrain(int port)
+void BFSTAP_LinkDrain(uint8_t port)
 {
   if(!stap_serialPort[port])
     return;

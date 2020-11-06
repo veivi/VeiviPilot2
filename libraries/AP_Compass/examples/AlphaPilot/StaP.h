@@ -12,12 +12,11 @@
 #define STAP_LINK_HOSTTX    1
 #define STAP_LINK_TELEMRX   2
 #define STAP_LINK_TELEMTX   3
-#define STAP_LINK_SRXL      4
-#define STAP_LINK_GPS       5
+#define STAP_LINK_SRXLIN    4
+#define STAP_LINK_SRXLOUT   5
+#define STAP_LINK_GPS       6
 
 #define STAP_LINKDIR(i) ((bool[]) { false, true, false, true, false, false })[i]
-
-#define STAP_LINKID(port) STAP_LINK_ ## port
 
 //
 // I2C interface

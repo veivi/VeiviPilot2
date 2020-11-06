@@ -22,10 +22,11 @@
 #define PWM_PERIOD           8
 
 //
-// Actuator output range, milliseconds
+// PWM/RX in/out constants
 //
 
-#define SERVO_NEUTRAL   1500U
+#define RX_CHANNELS_MAX      16
+#define SERVO_NEUTRAL        1500U
 
 //
 // Periodic task timing

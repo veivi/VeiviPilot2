@@ -1708,23 +1708,19 @@ void gaugeTask()
 void communicationTask()
 {
   uint8_t len = 0;
+
+#ifdef STAP_LINK_SRXLIN
+  srxlInput(STAP_LINK_SRXLIN);
+#endif
   
-  if((len = STAP_LinkStatus(SRXL)) > 0) {
-    while(len-- > 0) {
-      if(srxlInputChar(STAP_LinkGetChar(SRXL)))
-	return;
-    }
-  } else
-    srxlHeartbeat();
-  
-  if((len = STAP_LinkStatus(HOSTRX)) > 0) {
+  if((len = STAP_LinkStatus(STAP_LINK_HOSTRX)) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(0, STAP_LinkGetChar(HOSTRX));
+      datagramRxInputChar(0, STAP_LinkGetChar(STAP_LINK_HOSTRX));
   }
 
-  if((len = STAP_LinkStatus(TELEMRX)) > 0) {
+  if((len = STAP_LinkStatus(STAP_LINK_TELEMRX)) > 0) {
     while(len-- > 0)
-      datagramRxInputChar(1, STAP_LinkGetChar(TELEMRX));
+      datagramRxInputChar(1, STAP_LinkGetChar(STAP_LINK_TELEMRX));
   }
 }
 
@@ -1931,15 +1927,6 @@ void elevatorModule()
 	      -30.0f/RADIAN - vpFlight.pitch, maxPitch - vpFlight.pitch)
       * vpControl.o_P * ( 1 + (vpStatus.stall ? pusherBoost_c : 0) );
 
-    /*
-    consolePrintF(vpFlight.bank*RADIAN);
-    consolePrint(" ");
-    consolePrintF(vpControl.targetAlpha*RADIAN);
-    consolePrint(" ");
-    consolePrintF(nominalPitchRateLevel(vpFlight.bank, vpControl.targetAlpha)*RADIAN);
-    consolePrint(" ");
-    consolePrintLnF(vpControl.targetPitchR*RADIAN);
-    */
   } else
     vpControl.targetPitchR = vpInput.elevExpo*PI_F/2;
 
@@ -2378,8 +2365,7 @@ void actuatorTask()
     int16_t value = 0;
 
     if(functionInvoke(vpParam.functionMap[i], &value)) {
-      vpActuator.value[i] = value + vpParam.neutral[i] + SERVO_NEUTRAL;
-      vpActuator.active[i] = true;
+      vpActuator.pulse[i] = SERVO_NEUTRAL + vpParam.neutral[i] + value;
       activeCount = i;
     }
   }
@@ -2388,7 +2374,7 @@ void actuatorTask()
   controlLatencyCount++;
 
   if(activeCount > 0)
-    STAP_pwmOutput(activeCount, vpActuator.value, vpActuator.active);
+    STAP_pwmOutput(activeCount, vpActuator.pulse);
 
   vpControl.pwmCount = (vpControl.pwmCount + 1) & (PWM_PERIOD - 1);
 }

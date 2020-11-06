@@ -95,10 +95,10 @@ void datagramInterpreter(uint8_t port, const uint8_t *data, int size)
 void datagramSerialOut(const uint8_t *b, int l)
 {
   if(vpStatus.consoleLink)
-    STAP_LinkPut(HOSTTX, b, l);
+    STAP_LinkPut(STAP_LINK_HOSTTX, b, l);
 
   if(!datagramLocalOnly)
-    STAP_LinkPut(TELEMTX, b, l);
+    STAP_LinkPut(STAP_LINK_TELEMTX, b, l);
 }
 
 //
@@ -213,8 +213,8 @@ void schedulerReport(void)
 void hostLoopback(void)
 {
   while(1) {
-    if(STAP_LinkStatus(HOSTRX) > 0)
-      STAP_LinkPutChar(HOSTTX, toupper(STAP_LinkGetChar(HOSTRX)));
+    if(STAP_LinkStatus(STAP_LINK_HOSTRX) > 0)
+      STAP_LinkPutChar(STAP_LINK_HOSTTX, toupper(STAP_LinkGetChar(STAP_LINK_HOSTRX)));
   }
 }
 

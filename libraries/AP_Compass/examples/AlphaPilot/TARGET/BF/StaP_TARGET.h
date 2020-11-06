@@ -6,17 +6,17 @@
 #include "drivers/system.h"
 #include "drivers/light_led.h"
 
-#define STAP_LinkStatus(port) BFSTAP_LinkStatus(STAP_LINKID(port))
-#define STAP_LinkGetChar(port) BFSTAP_LinkGetChar(STAP_LINKID(port))
-#define STAP_LinkPutChar(port, c) BFSTAP_LinkPutChar(STAP_LINKID(port), c)
-#define STAP_LinkPut(port, b, s) BFSTAP_LinkPut(STAP_LINKID(port), b, s)
-#define STAP_LinkDrain(port) BFSTAP_LinkDrain(STAP_LINKID(port))
+#define STAP_LinkStatus(port) BFSTAP_LinkStatus(port)
+#define STAP_LinkGetChar(port) BFSTAP_LinkGetChar(port)
+#define STAP_LinkPutChar(port, c) BFSTAP_LinkPutChar(port, c)
+#define STAP_LinkPut(port, b, s) BFSTAP_LinkPut(port, b, s)
+#define STAP_LinkDrain(port) BFSTAP_LinkDrain(port)
 
-int BFSTAP_LinkStatus(int);
-uint8_t BFSTAP_LinkGetChar(int);
-void BFSTAP_LinkPutChar(int, uint8_t);
-void BFSTAP_LinkPut(int, const uint8_t *, int);
-void BFSTAP_LinkDrain(int);
+uint8_t BFSTAP_LinkStatus(uint8_t);
+uint8_t BFSTAP_LinkGetChar(uint8_t);
+void BFSTAP_LinkPutChar(uint8_t, uint8_t);
+void BFSTAP_LinkPut(uint8_t, const uint8_t *, int);
+void BFSTAP_LinkDrain(uint8_t);
 
 #define STAP_I2CWrite(dev, a, as, b, bn) BFSTAP_I2CWrite(dev, a, as, b, bn)
 #define STAP_I2CRead(dev, a, as, d, ds) BFSTAP_I2CRead(dev, a, as, d, ds)
@@ -30,7 +30,7 @@ uint8_t BFSTAP_I2CWait(uint8_t);
 uint16_t BFSTAP_I2CErrorCount(void);
 uint16_t BFSTAP_I2CErrorCode(void);
 
-#define STAP_pwmOutput(num, v, a)    BFSTAP_pwmOutput(num, v, a)
+#define STAP_pwmOutput(num, pulse)    BFSTAP_pwmOutput(num, pulse)
 #define STAP_rxInputPoll             BFSTAP_rxInputPoll()
 
 #define STAP_PERIOD_GYRO         gyro.targetLooptime
