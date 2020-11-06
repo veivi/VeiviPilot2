@@ -5,18 +5,21 @@
 #include <stdbool.h>
 
 //
-// Serial interface
+// Serial interface link definitions
 //
 
 #define STAP_LINK_HOSTRX    0
 #define STAP_LINK_HOSTTX    1
 #define STAP_LINK_TELEMRX   2
 #define STAP_LINK_TELEMTX   3
-#define STAP_LINK_SRXLIN    4
-#define STAP_LINK_SRXLOUT   5
-#define STAP_LINK_GPS       6
+#define STAP_LINK_SRXLINA   4
+#define STAP_LINK_SRXLOUTA  5
+#define STAP_LINK_SRXLINB   6
+#define STAP_LINK_SRXLOUTB  7
+#define STAP_LINK_GPS       8
+#define STAP_LINKS          9
 
-#define STAP_LINKDIR(i) ((bool[]) { false, true, false, true, false, true, false })[i]
+#define STAP_LINKDIR(i) ((bool[STAP_LINKS]) { false, true, false, true, false, true, false, true, false })[i]
 
 //
 // I2C interface

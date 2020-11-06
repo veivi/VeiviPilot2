@@ -231,7 +231,7 @@ float stap_baroRead(void)
 
 #include "io/serial.h"
 
-serialPort_t *stap_serialPort[8];
+serialPort_t *stap_serialPort[STAP_LINKS];
 
 
 /*

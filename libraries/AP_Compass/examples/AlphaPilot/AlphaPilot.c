@@ -811,7 +811,7 @@ void configurationTask()
   // Being armed?
   //
 
-  if(vpDerived.passive)
+  if(vpParamValid && vpDerived.passive)
     // Passive mode implies being armed    
     vpMode.armed = true;
   
@@ -1709,8 +1709,12 @@ void communicationTask()
 {
   uint8_t len = 0;
 
-#ifdef STAP_LINK_SRXLIN
-  srxlInput(STAP_LINK_SRXLIN);
+#ifdef STAP_LINK_SRXLINA
+  srxlInput(STAP_LINK_SRXLINA);
+#endif
+  
+#ifdef STAP_LINK_SRXLINB
+  srxlInput(STAP_LINK_SRXLINB);
 #endif
   
   if((len = STAP_LinkStatus(STAP_LINK_HOSTRX)) > 0) {
@@ -2373,8 +2377,17 @@ void actuatorTask()
   controlLatencyTotal += vpTimeMicros() - controlInputTimeStamp;
   controlLatencyCount++;
 
-  if(activeCount > 0)
+  if(activeCount > 0) {
     STAP_pwmOutput(activeCount, vpActuator.pulse);
+    
+#ifdef STAP_LINK_SRXLOUTA
+    srxlOutput(STAP_LINK_SRXLOUTA, activeCount, vpActuator.pulse);
+#endif
+    
+#ifdef STAP_LINK_SRXLOUTB
+    srxlOutput(STAP_LINK_SRXLOUTB, activeCount, vpActuator.pulse);
+#endif
+  }
 
   vpControl.pwmCount = (vpControl.pwmCount + 1) & (PWM_PERIOD - 1);
 }

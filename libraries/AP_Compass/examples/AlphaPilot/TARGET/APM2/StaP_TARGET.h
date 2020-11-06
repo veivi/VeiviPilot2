@@ -5,6 +5,14 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
+//
+// Serial interface: disable unsupported links
+//
+
+#undef STAP_LINK_SRXLINB
+#undef STAP_LINK_SRXLOUTA
+#undef STAP_LINK_SRXLOUTB
+
 #define STAP_LinkStatus(port) APM2STAP_LinkStatus(port)
 #define STAP_LinkGetChar(port) APM2STAP_LinkGetChar(port)
 #define STAP_LinkPutChar(port, c) APM2STAP_LinkPutChar(port, c)

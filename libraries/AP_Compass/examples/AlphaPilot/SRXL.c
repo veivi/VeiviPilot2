@@ -12,16 +12,21 @@ static state_t state;
 static uint8_t chCount, byteCount;
 static uint16_t data[RX_CHANNELS_MAX];
 static VP_TIME_MILLIS_T lastInput;
-static bool seeingUDI12;
+static bool notReceiving = true, receivingUDI12 = false;
   
 void srxlInput(uint8_t port)
 {
   static uint8_t msb;
   uint8_t len = STAP_LinkStatus(port);
-
+  uint16_t crc = 0;
+  
   if(len == 0) {
-    if(state != srx_idle && VP_ELAPSED_MILLIS(lastInput, vpTimeMillisApprox) > 5)
+    if(VP_ELAPSED_MILLIS(lastInput, vpTimeMillisApprox) > 20) {
       state = srx_idle;
+      notReceiving = true;
+      receivingUDI12 = false;
+    }
+    
     return;
   }
   
@@ -39,12 +44,16 @@ void srxlInput(uint8_t port)
       
       chCount = 0;
       byteCount = 0;
+      crc = 0xFFFF;
       break;
 
     case srx_data12:
-      seeingUDI12 = true;
+      receivingUDI12 = true;
 
     case srx_data16:
+      notReceiving = false;
+      crc = crc16_update(crc, c);
+      
       if(byteCount++ < 1)
 	msb = c;
       else {
@@ -65,7 +74,8 @@ void srxlInput(uint8_t port)
 
     case srx_crc2:
       state = srx_idle;
-      inputSource(data, MAX(chCount, RX_CHANNELS));
+      if(crc == ((msb<<8) | c))
+	inputSource(data, MAX(chCount, RX_CHANNELS));
       break;
     }
   }
@@ -75,7 +85,7 @@ void srxlOutput(uint8_t port, uint8_t num, const uint16_t pulse[])
 {
   const uint8_t frameLen = num > 12 ? 16 : 12;
   uint8_t buffer[RX_CHANNELS_MAX*sizeof(uint16_t)];
-  uint16_t crc = 0xFFFF;
+  uint16_t crc = 0;
   int i = 0;
   
   if(frameLen > 12)

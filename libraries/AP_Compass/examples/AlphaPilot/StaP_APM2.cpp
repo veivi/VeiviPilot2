@@ -23,7 +23,7 @@ volatile uint8_t nestCount = 0;
 
 static uint16_t i2cErrorCode, i2cErrorCount;
 
-AP_HAL::UARTDriver  *uartPorts[8];
+AP_HAL::UARTDriver  *uartPorts[STAP_LINKS];
 
 extern "C" void stap_reboot(bool bootloader)
 {/*
@@ -429,8 +429,11 @@ extern "C" {
 
   uartPorts[STAP_LINK_TELEMRX] = uartPorts[STAP_LINK_TELEMTX] = hal.uartB;
   uartPorts[STAP_LINK_TELEMRX]->begin(115200, 32, 32);
-  uartPorts[STAP_LINK_SRXLIN] = uartPorts[STAP_LINK_SRXLOUT] = hal.uartC;
-  uartPorts[STAP_LINK_SRXLIN]->begin(115200, 64, 8);
+  uartPorts[STAP_LINK_SRXLINA] = hal.uartC;
+#ifdef STAP_LINK_SRXLOUTA
+  uartPorts[STAP_LINK_SRXLOUTA] = hal.uartC;
+#endif
+  uartPorts[STAP_LINK_SRXLINA]->begin(115200, 64, 8);
 
   consoleNote_P(CS_STRING("I2C... "));
   consoleFlush();
