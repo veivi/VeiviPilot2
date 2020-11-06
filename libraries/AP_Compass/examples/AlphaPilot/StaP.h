@@ -16,7 +16,7 @@
 #define STAP_LINK_SRXLOUT   5
 #define STAP_LINK_GPS       6
 
-#define STAP_LINKDIR(i) ((bool[]) { false, true, false, true, false, false })[i]
+#define STAP_LINKDIR(i) ((bool[]) { false, true, false, true, false, true, false })[i]
 
 //
 // I2C interface
