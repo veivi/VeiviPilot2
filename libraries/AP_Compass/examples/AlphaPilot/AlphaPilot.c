@@ -697,10 +697,12 @@ void statusTask()
 
   vpFlight.accDir = atan2(vpFlight.accZ, -vpFlight.accX);
   
-  if(vpStatus.alphaFailed) {
-      // Failed alpha is also unreliable
+  if(vpStatus.alphaFailed || fieldStrength < 0.1f) {
+      // Disconnected or field strength too low
     
-      vpStatus.alphaUnreliable = true;
+    if(vpInertiaOn(&alphaFailInertia))
+      consoleNoteLn_P(CS_STRING("Alpha sensor connection/field LOST"));
+
   } else {
     const float diff = fabsf(vpFlight.accDir - vpFlight.relWind),
       disagreement = MIN(diff, 2*PI_F - diff);
@@ -2572,6 +2574,7 @@ void initTask()
 }
 
 struct Task alphaPilotTasks[] = {
+
 #ifdef STAP_PERIOD_GYRO
   { gyroTask, STAP_PERIOD_GYRO_STATIC, true },
 #endif
@@ -2590,7 +2593,6 @@ struct Task alphaPilotTasks[] = {
   { controlTaskGroup, HZ_TO_PERIOD(CONTROL_HZ), true, &ppmFrameReceived },
   { configTaskGroup, HZ_TO_PERIOD(CONFIG_HZ), true },
   // { gpsTask, HZ_TO_PERIOD(100) },
-  { blinkTask, HZ_TO_PERIOD(LED_TICK), false },
   { obdRefresh, HZ_TO_PERIOD(30), false },
   { displayTask, HZ_TO_PERIOD(8), false },
   { logTask, HZ_TO_PERIOD(LOG_HZ), true },
@@ -2600,6 +2602,7 @@ struct Task alphaPilotTasks[] = {
   { heartBeatTask, HZ_TO_PERIOD(HEARTBEAT_HZ), false },
   { gaugeTask, HZ_TO_PERIOD(10), false },
   { initTask, HZ_TO_PERIOD(1), false },
+  { blinkTask, HZ_TO_PERIOD(LED_TICK), false },
   { NULL, 0, false } };
 
 

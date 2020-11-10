@@ -117,15 +117,15 @@ static bool scheduler()
   while(task->code) {
     vpTimeAcquire();
     
-    if(VP_ELAPSED_MILLIS(task->lastInvoked, vpTimeMillisApprox) >= task->period
+    if(VP_ELAPSED_MICROS(task->lastInvoked, vpTimeMicrosApprox) >= task->period
        || (task->signal && *task->signal)) {      
       if(task->realTime
-	 && vpTimeMillisApprox - task->lastInvoked < 4*task->period/3)
+	 && vpTimeMicrosApprox - task->lastInvoked < 4*task->period/3)
 	// A realtime task that has not slipped that much, try to catch up
 	task->lastInvoked += task->period;
       else {
  	// Either not a realtime task or we're slipping too much
-	task->lastInvoked = vpTimeMillisApprox;
+	task->lastInvoked = vpTimeMicrosApprox;
 	task->lagged++;
       }
       //      consoleNote("Invoking task ");
@@ -212,10 +212,8 @@ void schedulerReport(void)
 
 void hostLoopback(void)
 {
-  while(1) {
-    if(STAP_LinkStatus(STAP_LINK_HOSTRX) > 0)
-      STAP_LinkPutChar(STAP_LINK_HOSTTX, toupper(STAP_LinkGetChar(STAP_LINK_HOSTRX)));
-  }
+  if(STAP_LinkStatus(STAP_LINK_HOSTRX) > 0)
+    STAP_LinkPutChar(STAP_LINK_HOSTTX, toupper(STAP_LinkGetChar(STAP_LINK_HOSTRX)));
 }
 
 //
@@ -269,7 +267,7 @@ void mainLoop()
       }
     }
 
-    if(scheduler()) {
+    if(scheduler()) {    
       // Had something to do
       if(idling) {
 	// Not idling anymore
@@ -281,7 +279,7 @@ void mainLoop()
       idling = true;
       
       if(vpControl.initState == it_done && !logReady(false))
-	logInit(20);
+	logInitialize(20);
 
       idleStarted = vpTimeMicros();
     }

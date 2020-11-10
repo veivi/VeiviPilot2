@@ -1,5 +1,3 @@
-#ifndef CONFIG_HAL_BOARD
-
 #include <string.h>
 #include "StaP.h"
 #include "CRC16.h"
@@ -351,4 +349,3 @@ void BFSTAP_rxInputPoll(void)
   }
 }
 
-#endif

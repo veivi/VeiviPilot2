@@ -53,15 +53,15 @@
 
 struct Task {
   void (*code)(void);
-  VP_TIME_MILLIS_T period;
+  VP_TIME_MICROS_T period;
   bool realTime;
   bool *signal;
-  VP_TIME_MILLIS_T lastInvoked;
+  VP_TIME_MICROS_T lastInvoked;
   VP_TIME_MICROS_T runTime;
-  int16_t timesRun, lagged, triggered;
+  uint16_t timesRun, lagged, triggered;
 };
 
-#define HZ_TO_PERIOD(f) ((VP_TIME_MILLIS_T) (1.0e3f/(f)))
+#define HZ_TO_PERIOD(f) ((VP_TIME_MICROS_T) (1.0e6f/(f)))
 
 extern struct Task alphaPilotTasks[], *currentTask;
 

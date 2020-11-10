@@ -266,7 +266,7 @@ void logDumpBinary(void)
   datagramTxEnd();
 }
 
-bool logInit(VP_TIME_MILLIS_T maxDuration)
+bool logInitialize(VP_TIME_MILLIS_T maxDuration)
 {
   VP_TIME_MILLIS_T current = vpTimeMillis();
   static int32_t endPtr = -1, startPtr = -1, searchPtr = 0;

@@ -11,7 +11,7 @@
 
 bool logReady(bool verbose);
 bool logReadyVerbose(void);
-bool logInit(VP_TIME_MILLIS_T);
+bool logInitialize(VP_TIME_MILLIS_T);
 void logClear(void);
 void logDumpBinary(void);
 bool logTest(void);
