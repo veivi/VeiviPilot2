@@ -13,6 +13,10 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+#ifndef ABS
+#define ABS(a) ((a) < 0 ? -(a) : (a))
+#endif
+
 //
 // Various constants
 //
@@ -46,7 +50,7 @@ float rollRatePredictInverse(float x);
 float scaleByIAS_E(float k, float p);
 float scaleByIAS(float k);
 void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state);
-uint16_t randomUINT16();
+uint16_t randomUINT16(void);
 
 #endif
 

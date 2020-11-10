@@ -182,7 +182,7 @@ void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state)
   }
 }
 
-uint16_t randomUINT16()
+uint16_t randomUINT16(void)
 {
   static uint16_t state = 0xFFFF;
   uint16_t value = 0;

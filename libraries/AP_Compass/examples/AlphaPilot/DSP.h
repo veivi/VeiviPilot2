@@ -4,10 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define ABS(a) ((a) < 0 ? -(a) : (a))
+#include "Math.h"
 
 float sign(float x);
 float clamp(float value, float a, float b);
