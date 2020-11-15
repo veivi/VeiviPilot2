@@ -2313,7 +2313,7 @@ void mixingTask()
   float liftRatio = (vpMode.alphaFailSafe | vpStatus.alphaUnreliable)
     ? 0.3f : coeffOfLiftClean(vpFlight.alpha)/vpDerived.maxCoeffOfLiftClean;
 
-  liftRatio = sign(liftRatio)*powf(fabsf(liftRatio), AYC_EXPO);  
+  liftRatio = signf(liftRatio)*powf(fabsf(liftRatio), AYC_EXPO);  
   
   vpOutput.rudder =
     constrainServoOutput(vpOutput.rudder

@@ -1,13 +1,11 @@
 #include "DSP.h"
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "Console.h"
-#include "Math.h"
 
 float expo(float a, float b)
 {
-  return sign(a)*powf(fabsf(a), b);
+  return signf(a)*powf(fabsf(a), b);
 }    
 
 float polynomial(int deg, float x, const float c[])
@@ -21,11 +19,6 @@ float polynomial(int deg, float x, const float c[])
   }
 
   return acc;
-}
-
-float sign(float x)
-{
-  return x < 0.0 ? -1.0 : 1.0;
 }
 
 float clamp(float value, float a, float b)
@@ -70,20 +63,6 @@ float mixValue(float mixRatio, float a, float b)
     return b;
   else
     return (1.0 - mixRatio)*a + mixRatio*b;
-}
-
-float randomNum(float small, float large)
-{
-  return small + (large-small)*(float) ((rand()>>3) & 0xFFF) / 0x1000;
-}
-
-uint32_t randomUInt32()
-{
-  uint32_t buffer = 0;
-  unsigned int i = 0;
-  for(i = 0; i < sizeof(buffer); i++)
-    buffer = (buffer<<8) | (uint32_t) randomNum(0, 1<<8);
-  return buffer;
 }
 
 float quantize(float value, float *state, int numSteps)
@@ -170,7 +149,7 @@ float swAvgOutput(SWAvg_t *f)
   if(f->memory)
     return f->sum / f->window;
   else
-    return NAN;
+    return 0;
 }
 
 float derivatorInput(Derivator_t *d, float v, float dt)

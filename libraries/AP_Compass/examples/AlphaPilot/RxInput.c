@@ -117,11 +117,11 @@ int8_t readSwitch(struct SwitchRecord *record)
     
     record->prevValue = value;
   
-    if(diff < 0.05) {
-      if(fabs(value) < 1.0/3)
+    if(diff < 0.05f) {
+      if(fabsf(value) < 1.0f/3)
 	record->state = 0;
       else
-	record->state = value < 0.0 ? -1 : 1;
+	record->state = value < 0.0f ? -1 : 1;
     }
   }
 
@@ -163,13 +163,13 @@ float applyExpo(float value)
     rate = vpMode.halfRate ? mixValue(index, 1, HALF_RATE) : 1,
     expo = EXPO_BASE + (vpMode.halfRate ? 0 : (EXPO_DELTA*index));
 
-  return rate*sign(value)*powf(fabsf(value), expo);
+  return rate*signf(value)*powf(fabsf(value), expo);
 }
 
 float applyExpoTrim(float value, float trim)
 {
   const float valueExp = applyExpo(value),
-    boost = sign(value) == sign(trim) ? 0 : fabs(valueExp * trim);
+    boost = sign(value) == sign(trim) ? 0.0f : fabsf(valueExp * trim);
 
   return clamp(valueExp * (1 + boost) + trim, -1, 1);
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include "Command.h"
 #include "BaseI2C.h"
 #include "Objects.h"
@@ -396,7 +397,7 @@ void executeCommand(char *buf)
 
     case c_rollrate:
       if(numParams > 0) {
-	vpParam.roll_C = param[0]/RADIAN/powf(vpDerived.minimumIAS, 1);
+	vpParam.roll_C = param[0]/RADIAN/vpDerived.minimumIAS;
 	consoleNote_P(CS_STRING("Roll rate K = "));
 	consolePrintLnF(vpParam.roll_C);
 	vpDerived.valid = false;

@@ -4,15 +4,26 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 #include "Math.h"
 
-float sign(float x);
+//
+// Various constants
+//
+
+#define RATIO(v) (v ## .0f)
+#define PI_F    3.141592654f
+#define CIRCLE  (2*PI_F)
+#define RADIAN  (180/PI_F)
+#define G       9.81f
+#define FOOT    (12*25.4f/1000)
+#define KNOT    (1852.0f/60/60)
+#define PSF     47.880259f
+
 float clamp(float value, float a, float b);
 float clampStatus(float value, float a, float b, bool *status);
 float expo(float a, float b);
 float mixValue(float mixRatio, float a, float b);
-float randomNum(float small, float large);
-uint32_t randomUInt32(void);
 float quantize(float value, float *state, int numSteps);
 float polynomial(int deg, float x, const float c[]);
 

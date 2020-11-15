@@ -3,7 +3,6 @@
 #include "NVState.h"
 #include "Console.h"
 #include "Objects.h"
-#include "DSP.h"
 #include "CRC16.h"
 
 const float stabGainExp_c = -1.5;
@@ -14,6 +13,16 @@ const float servoOutputRange_c = RATIO(5/4);
 float sqrf(float x)
 {
   return x * x;
+}
+
+int sign(float x)
+{
+  if(x < 0.0f)
+    return -1;
+  else if(x > 0.0f)
+    return 1;
+  else
+    return 0;
 }
 
 float signf(float x)
@@ -182,11 +191,25 @@ void pseudoRandom(uint8_t *value, uint8_t size, uint16_t *state)
   }
 }
 
+static uint16_t randomState = 0xFFFF;
+
 uint16_t randomUINT16(void)
 {
-  static uint16_t state = 0xFFFF;
   uint16_t value = 0;
-  pseudoRandom((uint8_t*) &value, sizeof(value), &state);
+  pseudoRandom((uint8_t*) &value, sizeof(value), &randomState);
+  return value;
+}
+
+/*
+float randomNum(float small, float large)
+{
+  return small + (large-small)*(float) ((rand()>>3) & 0xFFF) / 0x1000;
+  }*/
+
+uint32_t randomUINT32()
+{
+  uint32_t value = 0;
+  pseudoRandom((uint8_t*) &value, sizeof(value), &randomState);
   return value;
 }
 
